@@ -1,0 +1,150 @@
+@import "tailwindcss";
+
+@source "../index.html";
+@source "./**/*.{js,ts,jsx,tsx}";
+
+:root {
+  --brand: #055f6d;
+  --brand-light: #e6f3f5;
+  --brand-dark: #044a56;
+  --accent: #0d9488;
+  --accent-soft: #ccfbf1;
+  --surface: #ffffff;
+  --surface-muted: #f4f7fa;
+  --surface-header: #e9eef3;
+  --text-primary: #4a5d73;
+  --text-heading: #334155;
+  --text-muted: #7b8da3;
+  --border: #dde4ec;
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  color: var(--text-primary);
+  background: var(--surface-muted);
+}
+
+body {
+  margin: 0;
+  font-family: inherit;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.card {
+  border-radius: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgb(5 95 109 / 4%);
+  overflow: hidden;
+}
+
+.card-header {
+  background: var(--surface-header);
+  border-bottom: 2px solid #055f6d;
+  padding: 0.875rem 1.25rem;
+}
+
+.table-mib {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.table-mib thead tr {
+  background: var(--surface-header);
+  border-bottom: 2px solid #055f6d;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.table-mib thead th {
+  padding: 0.5rem 1rem;
+}
+
+.table-mib tbody {
+  color: var(--text-primary);
+}
+
+.table-mib tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s ease;
+}
+
+.table-mib tbody tr:hover {
+  background: rgb(5 95 109 / 4%);
+}
+
+.table-mib tbody td {
+  padding: 0.4375rem 1rem;
+  vertical-align: middle;
+}
+
+.btn-primary {
+  background: var(--brand);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  transition: background 0.15s ease;
+}
+
+.btn-primary:hover {
+  background: var(--brand-dark);
+}
+
+.tabs-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.25rem;
+  background: var(--surface);
+}
+
+.tab-btn {
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  cursor: pointer;
+}
+
+.tab-btn:hover {
+  color: var(--text-heading);
+}
+
+.tab-btn.tabs-active {
+  color: var(--brand);
+  border-bottom-color: #055f6d;
+  font-weight: 600;
+}
+
+.card-body-full {
+  padding: 1.25rem 1.5rem;
+  width: 100%;
+}
+
+.text-heading {
+  color: var(--text-heading);
+  font-weight: 600;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+}

@@ -1,7 +1,6 @@
+/* Importa o Roboto nos pesos 400 (Regular) e 700 (Bold) */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
 @import "tailwindcss";
-
-@source "../index.html";
-@source "./**/*.{js,ts,jsx,tsx}";
 
 :root {
   --brand: #055f6d;
@@ -16,9 +15,13 @@
   --text-heading: #334155;
   --text-muted: #7b8da3;
   --border: #dde4ec;
-  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif !important;
   color: var(--text-primary);
   background: var(--surface-muted);
+}
+
+h1, h2, h3, h4, h5, h6, th, .font-bold, .font-black {
+  font-weight: 700 !important;
 }
 
 body {
@@ -32,6 +35,8 @@ input,
 select,
 textarea {
   font: inherit;
+  font-size: 14px;
+  font-weight: 400;
 }
 
 .card {
@@ -57,7 +62,6 @@ textarea {
 
 .table-mib thead tr {
   background: var(--surface-header);
-  border-bottom: 2px solid #055f6d;
   color: var(--text-muted);
   font-size: 0.6875rem;
   font-weight: 600;

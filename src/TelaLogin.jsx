@@ -1,256 +1,760 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
 
+/* ── perfis (usados apenas internamente) ── */
 const perfisAcesso = [
-  {
-    id: 'admin',
-    nome: 'Admin',
-    descricao: 'Acesso completo ao painel, cadastros, relatorios e configuracoes.',
-    iniciais: 'AD',
-  },
-  {
-    id: 'pastor',
-    nome: 'Pastor',
-    descricao: 'Visao pastoral da membresia, celulas, vinculos e indicadores.',
-    iniciais: 'PR',
-  },
-  {
-    id: 'lider-celula',
-    nome: 'Lider de Celula',
-    descricao: 'Gestao da propria celula, membros, reunioes e visitantes.',
-    iniciais: 'LC',
-  },
-  {
-    id: 'membro',
-    nome: 'Membro',
-    descricao: 'Acesso pessoal aos dados cadastrais e vinculos com a igreja.',
-    iniciais: 'MB',
-  },
-  {
-    id: 'secretaria',
-    nome: 'Secretaria',
-    descricao: 'Cadastro, atualizacao, filtros, listas e relatorios de pessoas.',
-    iniciais: 'SC',
-  },
-  {
-    id: 'tesouraria',
-    nome: 'Tesouraria',
-    descricao: 'Acesso reservado aos modulos financeiros quando habilitados.',
-    iniciais: 'TS',
-  },
+  { id: 'admin',       nome: 'Admin',          iniciais: 'AD' },
+  { id: 'pastor',      nome: 'Pastor',          iniciais: 'PR' },
+  { id: 'lider-celula',nome: 'Líder de Célula', iniciais: 'LC' },
+  { id: 'membro',      nome: 'Membro',          iniciais: 'MB' },
+  { id: 'secretaria',  nome: 'Secretaria',      iniciais: 'SC' },
+  { id: 'tesouraria',  nome: 'Tesouraria',      iniciais: 'TS' },
 ];
 
-function detectarPerfilPorEmail(email) {
-  const texto = email.trim().toLowerCase();
-  if (!texto) return 'admin';
-  if (texto.includes('pastor')) return 'pastor';
-  if (texto.includes('lider') || texto.includes('celula')) return 'lider-celula';
-  if (texto.includes('secretaria')) return 'secretaria';
-  if (texto.includes('tesouraria') || texto.includes('financeiro')) return 'tesouraria';
-  if (texto.includes('membro')) return 'membro';
-  if (texto.includes('admin')) return 'admin';
-  return 'membro';
-}
+/* ── modos da tela ── */
+const MODO = { LOGIN: 'login', ESQUECEU: 'esqueceu', NOVA_SENHA: 'nova_senha' };
 
-function TelaLogin({ onEntrar }) {
-  const [perfilSelecionado, setPerfilSelecionado] = useState('admin');
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-  const [lembrarAcesso, setLembrarAcesso] = useState(true);
-  const [erro, setErro] = useState('');
-  const [carregando, setCarregando] = useState(false);
-  const [supabaseConfigurando] = useState(!import.meta.env.VITE_SUPABASE_URL);
+/* ──────────────────────────────────────────────── */
 
+export default function TelaLogin({ onEntrar }) {
+  const [modo, setModo] = useState(MODO.LOGIN);
+  const [email, setEmail]       = useState('');
+  const [senha, setSenha]       = useState('');
+  const [novaSenha, setNovaSenha]         = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [lembrar, setLembrar]   = useState(true);
+  const [erro, setErro]         = useState('');
+  const [info, setInfo]         = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [perfilIdentificado, setPerfilIdentificado] = useState(null);
+  const canvasRef = useRef(null);
+
+  /* verificar sessão existente */
   useEffect(() => {
-    const verificarSessao = async () => {
+    (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          const perfil = detectarPerfilPorEmail(session.user.email);
-          const perfilAtualObj = perfisAcesso.find((p) => p.id === perfil);
-          onEntrar({
-            email: session.user.email,
-            perfil: perfilAtualObj,
-            lembrarAcesso: true,
-          });
+        if (session && session.user) {
+          // Busca o perfil real no banco para a sessão ativa
+          const { data: pData } = await supabase.from('pessoas')
+            .select('permissao')
+            .eq('email', session.user.email)
+            .maybeSingle();
+          const pId = pData?.permissao?.toLowerCase() || 'membro';
+          const perfil = perfisAcesso.find(p => p.id === pId) || perfisAcesso.find(p => p.id === 'membro');
+          onEntrar({ email: session.user.email, perfil, lembrarAcesso: true });
         }
-      } catch (err) {
-        console.warn('Não foi possível verificar sessão:', err);
+      } catch {
+        // Mantem a tela de login disponível quando a sessão não puder ser verificada.
       }
-    };
-    verificarSessao();
+    })();
   }, [onEntrar]);
 
-  const perfilAtual = useMemo(
-    () => perfisAcesso.find((perfil) => perfil.id === perfilSelecionado),
-    [perfilSelecionado]
-  );
+  /* canvas partículas */
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let raf;
+    const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
+    resize();
+    window.addEventListener('resize', resize);
 
-  async function handleSubmit(event) {
-    event.preventDefault();
+    const N = 38;
+    const pts = Array.from({ length: N }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: 1 + Math.random() * 1.6,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      a: 0.15 + Math.random() * 0.45,
+    }));
 
-    if (!email.trim() || !senha.trim()) {
-      setErro('Informe e-mail e senha para acessar o painel.');
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pts.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(147,197,253,${p.a})`;
+        ctx.fill();
+      });
+      /* linhas */
+      for (let i = 0; i < N; i++) {
+        for (let j = i + 1; j < N; j++) {
+          const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 110) {
+            ctx.beginPath();
+            ctx.moveTo(pts[i].x, pts[i].y);
+            ctx.lineTo(pts[j].x, pts[j].y);
+            ctx.strokeStyle = `rgba(147,197,253,${0.08 * (1 - dist / 110)})`;
+            ctx.lineWidth = 0.7;
+            ctx.stroke();
+          }
+        }
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
+  }, []);
+
+  /* ── buscar perfil real no banco ── */
+  async function buscarPerfilNoBanco(emailDigitado) {
+    const e = emailDigitado.trim().toLowerCase();
+    // Regex simples para validar se o e-mail parece concluído
+    const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!regexEmail.test(e)) {
+      setPerfilIdentificado(null);
       return;
     }
 
-    setCarregando(true);
-    setErro('');
-
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: senha.trim(),
-      });
+      const { data, error } = await supabase
+        .from('pessoas')
+        .select('permissao')
+        .eq('email', e)
+        .maybeSingle();
 
-      if (error) {
-        setErro(error.message === 'Invalid login credentials' 
-          ? 'E-mail ou senha incorretos.'
-          : error.message);
-        setCarregando(false);
-        return;
+      if (data && data.permissao) {
+        const pId = data.permissao.toLowerCase();
+        const perfil = perfisAcesso.find(x => x.id === pId) || perfisAcesso.find(x => x.id === 'membro');
+        setPerfilIdentificado(perfil);
+      } else {
+        setPerfilIdentificado(null);
       }
-
-      if (data?.user) {
-        onEntrar({
-          email: data.user.email,
-          perfil: perfilAtual,
-          lembrarAcesso,
-        });
-      }
-    } catch (err) {
-      setErro('Erro ao conectar. Tente novamente.');
-      console.error('Erro de autenticação:', err);
-    } finally {
-      setCarregando(false);
+    } catch {
+      setPerfilIdentificado(null);
     }
   }
 
-  function revelarPerfil() {
-    setPerfilSelecionado(detectarPerfilPorEmail(email));
+  /* ── handlers ── */
+  async function handleLogin(e) {
+    e.preventDefault();
+    if (!email.trim() || !senha.trim()) { setErro('Informe e-mail e senha.'); return; }
+    setLoading(true); setErro('');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: senha.trim() });
+      if (error) { setErro(error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : error.message); return; }
+      if (data?.user) {
+        // Ao logar, busca a permissão oficial da tabela pessoas
+        const { data: pData } = await supabase.from('pessoas').select('permissao').eq('email', data.user.email).maybeSingle();
+        const pId = pData?.permissao?.toLowerCase() || 'membro';
+        const perfil = perfisAcesso.find(p => p.id === pId) || perfisAcesso.find(p => p.id === 'membro');
+        
+        onEntrar({ email: data.user.email, perfil, lembrarAcesso: lembrar });
+      }
+    } catch { setErro('Erro ao conectar. Tente novamente.'); }
+    finally { setLoading(false); }
   }
 
+  async function handleEsqueceu(e) {
+    e.preventDefault();
+    if (!email.trim()) { setErro('Informe seu e-mail.'); return; }
+    setLoading(true); setErro(''); setInfo('');
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: window.location.origin + '/?reset=1',
+      });
+      if (error) { setErro(error.message); return; }
+      setInfo('Enviamos um link de redefinição para o seu e-mail. Verifique também a caixa de spam.');
+    } catch { setErro('Erro ao enviar. Tente novamente.'); }
+    finally { setLoading(false); }
+  }
+
+  async function handleNovaSenha(e) {
+    e.preventDefault();
+    if (novaSenha.length < 6) { setErro('A senha deve ter ao menos 6 caracteres.'); return; }
+    if (novaSenha !== confirmarSenha) { setErro('As senhas não coincidem.'); return; }
+    setLoading(true); setErro(''); setInfo('');
+    try {
+      const { error } = await supabase.auth.updateUser({ password: novaSenha });
+      if (error) { setErro(error.message); return; }
+      setInfo('Senha atualizada com sucesso! Faça login.');
+      setModo(MODO.LOGIN);
+    } catch { setErro('Erro ao atualizar. Tente novamente.'); }
+    finally { setLoading(false); }
+  }
+
+  const mudarModo = (m) => { setModo(m); setErro(''); setInfo(''); };
+
+  /* ── render ── */
   return (
-    <main className="min-h-screen bg-[#f3f5f8] text-slate-100 flex items-center justify-center p-4 sm:p-6">
-      <section className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[1fr_440px] bg-white text-slate-700 shadow-2xl overflow-hidden rounded-2xl">
-        <div className="relative min-h-[360px] bg-[#111827] p-6 sm:p-10 flex flex-col justify-between">
-          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_20%_20%,#1d4ed8_0,transparent_28%),radial-gradient(circle_at_80%_0,#dc2626_0,transparent_22%),linear-gradient(135deg,#111827,#172033)]" />
-          <div className="relative">
-            <div className="inline-flex items-center gap-4">
-              <img src="/logo-mib-mundau.png" alt="MIB Church" className="h-16 w-36 object-contain rounded-xl bg-white p-2" />
-              <div>
-                <h1 className="text-white text-xl font-black tracking-tight">MIB Church</h1>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Gestao de Membresia</p>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@400;600;700;800;900&family=Roboto:wght@400;500;700;900&display=swap');
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        .tl-root {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #050d1a;
+          font-family: 'Nunito', sans-serif;
+          padding: 1rem;
+        }
+ 
+        /* ── card principal ── */
+        .tl-card {
+          width: 100%;
+          max-width: 960px;
+          display: grid;
+          grid-template-columns: 1fr 420px;
+          border-radius: 24px;
+          overflow: hidden;
+          box-shadow: 0 32px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(255,255,255,.06);
+          position: relative;
+        }
+ 
+        /* ── painel esquerdo ── */
+        .tl-left {
+          position: relative;
+          background: linear-gradient(140deg, #03152e 0%, #061e40 50%, #0a2a5e 100%);
+          padding: 2rem 2.5rem; /* Ajuste o primeiro valor (3rem) para aumentar/diminuir o respiro vertical */
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          overflow: hidden;
+          min-height: 400px; /* Altere este valor para definir a altura total do card */
+        }
+ 
+        .tl-canvas {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+        }
+ 
+        /* ilustração central */
+        .tl-illustration {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+        }
+        .tl-illustration svg {
+          width: 68%;
+          opacity: 0.10;
+        }
+ 
+        /* linha de luz horizontal */
+        .tl-glow-line {
+          position: absolute;
+          left: 0; right: 0;
+          top: 55%;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(96,165,250,.5), transparent);
+        }
+ 
+        .tl-badge {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          gap: .5rem;
+          background: rgba(255,255,255,.06);
+          border: 1px solid rgba(255,255,255,.12);
+          border-radius: 999px;
+          padding: .35rem .9rem;
+          font-size: .65rem;
+          font-weight: 800;
+          letter-spacing: .18em;
+          text-transform: uppercase;
+          color: #93c5fd;
+        }
+        .tl-badge-dot {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: #60a5fa;
+          box-shadow: 0 0 6px #60a5fa;
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+ 
+        .tl-headline {
+          position: relative;
+          margin-top: auto;
+        }
+        .tl-headline h1 {
+          font-family: 'Cinzel', serif;
+          font-size: clamp(1.5rem, 3vw, 2.1rem);
+          font-weight: 900;
+          color: #fff;
+          line-height: 1.2;
+          letter-spacing: .03em;
+        }
+        .tl-headline h1 span { color: #60a5fa; }
+        .tl-headline p {
+          margin-top: .85rem;
+          font-size: .82rem;
+          color: #94a3b8;
+          line-height: 1.7;
+          max-width: 340px;
+        }
+ 
+        /* versículo */
+        .tl-verse {
+          position: relative;
+          margin-top: 2rem;
+          padding: 1rem 1.25rem;
+          border-left: 3px solid #2563eb;
+          background: rgba(37,99,235,.1);
+          border-radius: 0 12px 12px 0;
+        }
+        .tl-verse q {
+          font-size: .78rem;
+          font-style: italic;
+          color: #bfdbfe;
+          line-height: 1.65;
+          quotes: none;
+        }
+        .tl-verse cite {
+          display: block;
+          margin-top: .5rem;
+          font-size: .68rem;
+          font-weight: 800;
+          letter-spacing: .1em;
+          text-transform: uppercase;
+          color: #60a5fa;
+        }
+
+        /* logo no topo */
+        .tl-logo-wrap {
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+        }
+        .tl-logo-img {
+          height: 100px;
+          object-fit: contain;
+          filter: drop-shadow(0 2px 8px rgba(0,0,0,.5));
+          position: relative;
+          top: -25px;  /* Ajuste para cima: use valores negativos para subir */
+          left: 90px; /* Ajuste lateral: negativo para esquerda, positivo para direita */
+        }
+
+        /* ── painel direito ── */
+        .tl-right {
+          background: #ffffff;
+          padding: 2.8rem 2.5rem; /* Ajuste o primeiro valor (2.8rem) para alinhar com o lado esquerdo */
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          font-family: 'Roboto', sans-serif;
+        }
+
+        .tl-right-title {
+          font-family: 'Roboto', sans-serif;
+          font-size: 1.35rem;
+          font-weight: 700;
+          color: #334155;
+          margin-bottom: .3rem;
+        }
+        .tl-right-sub {
+          font-size: .8rem;
+          color: #64748b;
+          margin-bottom: 1.8rem;
+          line-height: 1.5;
+        }
+
+        /* campos */
+        .tl-field { margin-bottom: 1rem; }
+        .tl-label {
+          display: block;
+          font-size: .68rem;
+          font-weight: 800;
+          letter-spacing: .12em;
+          text-transform: uppercase;
+          color: #475569;
+          margin-bottom: .4rem;
+        }
+        .tl-input {
+          width: 100%;
+          padding: .78rem 1rem;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 12px;
+          font-size: .875rem;
+          font-family: 'Roboto', sans-serif;
+          color: #334155;
+          background: #f8fafc;
+          transition: border-color .2s, box-shadow .2s, background .2s;
+          outline: none;
+        }
+        .tl-input:focus {
+          border-color: #3b82f6;
+          background: #fff;
+          box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+        }
+
+        /* chip perfil */
+        .tl-perfil-chip {
+          display: flex;
+          align-items: center;
+          gap: .6rem;
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
+          border-radius: 10px;
+          padding: .6rem .9rem;
+          margin-bottom: 1rem;
+        }
+        .tl-perfil-icon {
+          width: 28px; height: 28px;
+          border-radius: 8px;
+          background: #2563eb;
+          color: #fff;
+          font-size: .62rem;
+          font-weight: 900;
+          display: flex; align-items: center; justify-content: center;
+          letter-spacing: .04em;
+          flex-shrink: 0;
+        }
+        .tl-perfil-info p:first-child {
+          font-size: .65rem;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: .1em;
+          color: #3b82f6;
+        }
+        .tl-perfil-info p:last-child {
+          font-size: .8rem;
+          font-weight: 700;
+          color: #1e3a5f;
+        }
+
+        /* checkbox */
+        .tl-check-row {
+          display: flex; align-items: center; gap: .5rem;
+          margin-bottom: 1.2rem;
+          font-size: .78rem;
+          font-weight: 600;
+          color: #64748b;
+          cursor: pointer;
+          user-select: none;
+        }
+        .tl-check-row input { accent-color: #2563eb; width: 15px; height: 15px; cursor: pointer; }
+
+        /* botão principal */
+        .tl-btn {
+          width: 100%;
+          padding: .85rem;
+          border-radius: 12px;
+          border: none;
+          cursor: pointer;
+          font-family: 'Roboto', sans-serif;
+          font-size: .875rem;
+          font-weight: 900;
+          letter-spacing: .04em;
+          transition: all .2s;
+        }
+        .tl-btn-primary {
+          background: linear-gradient(135deg, #1d4ed8, #2563eb);
+          color: #fff;
+          box-shadow: 0 4px 16px rgba(37,99,235,.35);
+        }
+        .tl-btn-primary:hover:not(:disabled) {
+          background: linear-gradient(135deg, #1e40af, #1d4ed8);
+          box-shadow: 0 6px 20px rgba(37,99,235,.45);
+          transform: translateY(-1px);
+        }
+        .tl-btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+        /* link */
+        .tl-link {
+          background: none; border: none; padding: 0;
+          font-family: 'Roboto', sans-serif;
+          font-size: .78rem;
+          font-weight: 700;
+          color: #2563eb;
+          cursor: pointer;
+          text-decoration: underline;
+          text-underline-offset: 2px;
+        }
+        .tl-link:hover { color: #1d4ed8; }
+
+        .tl-actions-row {
+          display: flex; align-items: center; justify-content: space-between;
+          margin-bottom: 1.2rem;
+        }
+
+        /* alertas */
+        .tl-alert {
+          padding: .75rem 1rem;
+          border-radius: 10px;
+          font-size: .78rem;
+          font-weight: 700;
+          margin-bottom: 1rem;
+        }
+        .tl-alert-err  { background: #fff1f2; border: 1px solid #fecdd3; color: #be123c; }
+        .tl-alert-info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+
+        /* divider */
+        .tl-divider {
+          text-align: center;
+          font-size: .7rem;
+          font-weight: 700;
+          letter-spacing: .12em;
+          text-transform: uppercase;
+          color: #94a3b8;
+          margin: 1.4rem 0;
+          position: relative;
+        }
+        .tl-divider::before, .tl-divider::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          width: 38%;
+          height: 1px;
+          background: #e2e8f0;
+        }
+        .tl-divider::before { left: 0; }
+        .tl-divider::after  { right: 0; }
+
+        /* voltar link */
+        .tl-back {
+          display: flex; align-items: center; gap: .35rem;
+          font-size: .75rem; font-weight: 700; color: #64748b;
+          background: none; border: none; cursor: pointer;
+          font-family: 'Roboto', sans-serif;
+          margin-bottom: 1.4rem;
+          padding: 0;
+        }
+        .tl-back:hover { color: #2563eb; }
+
+        /* responsive */
+        @media (max-width: 700px) {
+          .tl-card { grid-template-columns: 1fr; }
+          .tl-left  { min-height: 220px; padding: 2rem 1.5rem; }
+          .tl-right { padding: 2rem 1.5rem; }
+          .tl-headline h1 { font-size: 1.3rem; }
+        }
+      `}</style>
+
+      <div className="tl-root">
+        <div className="tl-card">
+
+          {/* ── ESQUERDA ── */}
+          <div className="tl-left">
+            <canvas ref={canvasRef} className="tl-canvas" />
+
+            {/* ilustração SVG comunidade */}
+            <div className="tl-illustration">
+              <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* pessoas em círculo */}
+                {[0,60,120,180,240,300].map((deg, i) => {
+                  const rad = (deg * Math.PI) / 180;
+                  const cx = 100 + 62 * Math.cos(rad);
+                  const cy = 100 + 62 * Math.sin(rad);
+                  return (
+                    <g key={i}>
+                      <circle cx={cx} cy={cy - 6} r="9" fill="white" />
+                      <ellipse cx={cx} cy={cy + 9} rx="11" ry="7" fill="white" />
+                    </g>
+                  );
+                })}
+                {/* conexões */}
+                {[0,60,120,180,240,300].map((deg, i) => {
+                  const rad = (deg * Math.PI) / 180;
+                  const cx = 100 + 62 * Math.cos(rad);
+                  const cy = 100 + 62 * Math.sin(rad);
+                  return <line key={i} x1={cx} y1={cy} x2="100" y2="100" stroke="white" strokeWidth="1.5" />;
+                })}
+                {/* chama central */}
+                <circle cx="100" cy="100" r="16" fill="white" />
+                <path d="M100 88 C96 92 93 96 94 101 C95 106 100 109 100 109 C100 109 105 106 106 101 C107 96 104 92 100 88Z" fill="#1d4ed8" />
+                <path d="M100 95 C98 97 97 100 98 102 C99 104 100 105 100 105 C100 105 101 104 102 102 C103 100 102 97 100 95Z" fill="#60a5fa" />
+              </svg>
+            </div>
+
+            <div className="tl-glow-line" />
+
+            {/* logo */}
+            <div className="tl-logo-wrap">
+              <img
+                src="/logo-betesda-mundau.png"
+                alt="MIB Church"
+                className="tl-logo-img"
+                onError={e => { e.target.style.display='none'; }}
+              />
+            </div>
+
+            {/* texto */}
+            <div className="tl-headline">
+              <div className="tl-badge">
+                <span className="tl-badge-dot" />
+                Sistema de Gestão
               </div>
+              <h1 style={{ marginTop: '.8rem' }}>
+                Vivemos como<br />
+                <span>família</span>, crescendo<br />
+                na Palavra.
+              </h1>
+              <p>Plataforma integrada de gestão de membros, células e vida ministerial.</p>
+            </div>
+
+            <div className="tl-verse">
+              <q>E perseveravam na doutrina dos apóstolos, e na comunhão, e no partir do pão, e nas orações.</q>
+              <cite>Atos 2:42</cite>
             </div>
           </div>
 
-          <div className="relative max-w-xl">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-200 mb-3">Painel seguro</p>
-            <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight">
-              Acesse conforme sua funcao ministerial.
-            </h2>
-            <p className="mt-4 text-sm sm:text-base text-slate-300 leading-relaxed">
-              Ao informar o e-mail, o sistema ja identifica o perfil de acesso provavel.
-            </p>
-          </div>
+          {/* ── DIREITA ── */}
+          <div className="tl-right">
 
-          <div className="relative grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {perfisAcesso.map((perfil) => (
-              <button
-                key={perfil.id}
-                type="button"
-                onClick={() => setPerfilSelecionado(perfil.id)}
-                className={`text-left p-3 rounded-xl border transition ${
-                  perfilSelecionado === perfil.id
-                    ? 'bg-blue-600 border-blue-400 text-white shadow-lg'
-                    : 'bg-white/8 border-white/10 text-slate-300 hover:bg-white/12'
-                }`}
-                aria-pressed={perfilSelecionado === perfil.id}
-              >
-                <span className="block text-[10px] font-black uppercase tracking-wider opacity-70">{perfil.iniciais}</span>
-                <span className="block mt-1 text-xs font-bold">{perfil.nome}</span>
-              </button>
-            ))}
-          </div>
+            {/* ──── MODO: LOGIN ──── */}
+            {modo === MODO.LOGIN && (
+              <form onSubmit={handleLogin} noValidate>
+                <p className="tl-right-title">Bem vindo ao MIB Church</p>
+                <p className="tl-right-sub">Acesse o painel com seu e-mail e senha ministerial.</p>
+
+                <div className="tl-field">
+                  <label className="tl-label" htmlFor="email">E-mail</label>
+                  <input
+                    id="email"
+                    type="email"
+                    className="tl-input"
+                    placeholder="nome@betesda.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    onBlur={() => buscarPerfilNoBanco(email)}
+                    autoComplete="email"
+                  />
+                </div>
+
+                {/* chip de perfil identificado */}
+                {perfilIdentificado && (
+                  <div className="tl-perfil-chip">
+                    <div className="tl-perfil-icon">{perfilIdentificado.iniciais}</div>
+                    <div className="tl-perfil-info">
+                      <p>Perfil identificado</p>
+                      <p>{perfilIdentificado.nome}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="tl-field">
+                  <label className="tl-label" htmlFor="senha">Senha</label>
+                  <input
+                    id="senha"
+                    type="password"
+                    className="tl-input"
+                    placeholder="••••••••"
+                    value={senha}
+                    onChange={e => setSenha(e.target.value)}
+                    autoComplete="current-password"
+                  />
+                </div>
+
+                <div className="tl-actions-row">
+                  <label className="tl-check-row" style={{ margin: 0 }}>
+                    <input type="checkbox" checked={lembrar} onChange={e => setLembrar(e.target.checked)} />
+                    Manter acesso
+                  </label>
+                  <button type="button" className="tl-link" onClick={() => mudarModo(MODO.ESQUECEU)}>
+                    Esqueceu a senha?
+                  </button>
+                </div>
+
+                {erro && <div className="tl-alert tl-alert-err">{erro}</div>}
+
+                <button type="submit" className="tl-btn tl-btn-primary" disabled={loading}>
+                  {loading ? 'Autenticando…' : 'Entrar no painel →'}
+                </button>
+              </form>
+            )}
+
+            {/* ──── MODO: ESQUECEU ──── */}
+            {modo === MODO.ESQUECEU && (
+              <form onSubmit={handleEsqueceu} noValidate>
+                <button type="button" className="tl-back" onClick={() => mudarModo(MODO.LOGIN)}>
+                  ← Voltar ao login
+                </button>
+
+                <p className="tl-right-title">Redefinir senha</p>
+                <p className="tl-right-sub">
+                  Informe o e-mail cadastrado e enviaremos um link para criar uma nova senha.
+                </p>
+
+                <div className="tl-field">
+                  <label className="tl-label" htmlFor="email-reset">E-mail</label>
+                  <input
+                    id="email-reset"
+                    type="email"
+                    className="tl-input"
+                    placeholder="nome@betesda.com"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    autoComplete="email"
+                  />
+                </div>
+
+                {erro  && <div className="tl-alert tl-alert-err">{erro}</div>}
+                {info  && <div className="tl-alert tl-alert-info">{info}</div>}
+
+                <button type="submit" className="tl-btn tl-btn-primary" disabled={loading}>
+                  {loading ? 'Enviando…' : 'Enviar link de redefinição →'}
+                </button>
+              </form>
+            )}
+
+            {/* ──── MODO: NOVA SENHA ──── */}
+            {modo === MODO.NOVA_SENHA && (
+              <form onSubmit={handleNovaSenha} noValidate>
+                <button type="button" className="tl-back" onClick={() => mudarModo(MODO.LOGIN)}>
+                  ← Voltar ao login
+                </button>
+
+                <p className="tl-right-title">Criar nova senha</p>
+                <p className="tl-right-sub">Escolha uma senha segura para proteger seu acesso.</p>
+
+                <div className="tl-field">
+                  <label className="tl-label" htmlFor="nova">Nova senha</label>
+                  <input
+                    id="nova"
+                    type="password"
+                    className="tl-input"
+                    placeholder="Mínimo 6 caracteres"
+                    value={novaSenha}
+                    onChange={e => setNovaSenha(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <div className="tl-field">
+                  <label className="tl-label" htmlFor="confirmar">Confirmar nova senha</label>
+                  <input
+                    id="confirmar"
+                    type="password"
+                    className="tl-input"
+                    placeholder="Repita a senha"
+                    value={confirmarSenha}
+                    onChange={e => setConfirmarSenha(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                {erro  && <div className="tl-alert tl-alert-err">{erro}</div>}
+                {info  && <div className="tl-alert tl-alert-info">{info}</div>}
+
+                <button type="submit" className="tl-btn tl-btn-primary" disabled={loading}>
+                  {loading ? 'Salvando…' : 'Salvar nova senha →'}
+                </button>
+              </form>
+            )}
+
+          </div>{/* /tl-right */}
         </div>
-
-        <form onSubmit={handleSubmit} className="p-6 sm:p-8 lg:p-10 bg-white">
-          <div className="mb-8">
-            <p className="text-xs font-black uppercase tracking-wider text-blue-600">Acesso selecionado</p>
-            <h3 className="mt-2 text-2xl font-black text-slate-900">{perfilAtual.nome}</h3>
-            <p className="mt-2 text-sm text-slate-500 leading-relaxed">{perfilAtual.descricao}</p>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="login-email" className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                E-mail
-              </label>
-              <input
-                id="login-email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                onBlur={revelarPerfil}
-                placeholder="nome@mibchurch.com"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-              />
-            </div>
-
-            <div className="rounded-xl bg-slate-50 border border-slate-100 p-3">
-              <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Perfil identificado</p>
-              <p className="mt-1 text-sm font-black text-slate-900">{perfilAtual.nome}</p>
-            </div>
-
-            <div>
-              <label htmlFor="login-senha" className="block text-xs font-bold text-slate-500 uppercase mb-1">
-                Senha
-              </label>
-              <input
-                id="login-senha"
-                type="password"
-                value={senha}
-                onChange={(event) => setSenha(event.target.value)}
-                placeholder="Digite sua senha"
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-              />
-            </div>
-
-            <label className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-              <input
-                type="checkbox"
-                checked={lembrarAcesso}
-                onChange={(event) => setLembrarAcesso(event.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 accent-blue-600"
-              />
-              Manter este acesso neste dispositivo
-            </label>
-
-            {erro && (
-              <div className="px-4 py-3 rounded-xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold">
-                {erro}
-              </div>
-            )}
-
-            {supabaseConfigurando && (
-              <div className="px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
-                ⚠️ Supabase não configurado. Configure .env.local com suas credenciais.
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={carregando}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-black py-3 rounded-xl text-sm transition shadow-sm"
-            >
-              {carregando ? 'Autenticando...' : 'Entrar no painel'}
-            </button>
-          </div>
-        </form>
-      </section>
-    </main>
+      </div>
+    </>
   );
 }
-
-export default TelaLogin;

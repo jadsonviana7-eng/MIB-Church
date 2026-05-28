@@ -24,6 +24,12 @@ if (supabaseUrl && supabaseAnonKey) {
       getSession: async () => ({ data: { session: null } }),
       signOut: async () => ({ error: null })
     },
+    functions: {
+      invoke: async () => ({
+        data: null,
+        error: { message: 'Supabase não configurado. Veja .env.local' },
+      }),
+    },
     from: () => ({
       select: async () => ({ data: null, error: { message: 'Supabase não configurado' } })
     })

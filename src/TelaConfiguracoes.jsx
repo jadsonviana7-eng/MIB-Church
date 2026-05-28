@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Card, CardHeader } from './ui';
+import { Card, CardHeader, PageHeader } from './ui'; // Importar PageHeader
 
 export default function TelaConfiguracoes({ onFechar }) {
   const [zonas, setZonas] = useState([]);
@@ -156,19 +156,6 @@ export default function TelaConfiguracoes({ onFechar }) {
           ))}
         </div>
       </Card>
-    </div>
-  );
-}
-
-function PageHeader({ titulo, subtitulo, children }) {
-  return (
-    <div className="mb-2 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-      <div>
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#055F6D]">MIB Church</p>
-        <h2 className="mt-1 text-2xl font-semibold text-[var(--text-heading)]">{titulo}</h2>
-        {subtitulo && <p className="mt-2 text-sm text-[var(--text-muted)]">{subtitulo}</p>}
-      </div>
-      {children && <div className="flex flex-wrap gap-2">{children}</div>}
     </div>
   );
 }

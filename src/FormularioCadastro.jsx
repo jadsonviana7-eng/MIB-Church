@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import { supabase } from './supabaseClient';
+import { uploadImagemCelula } from './ui'; // Importar a função de upload
 import {
   mascaraCPF,
   mascaraTelefone,
@@ -45,7 +46,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
   const [estado, setEstado] = useState('');
 
   // Vida Espiritual e Igreja
-  const [tipoMembro, setTipoMembro] = useState('membro');
+  const [cargo, setcargo] = useState('Membro');
   const [celulaId, setCelulaId] = useState('');
   const [zonaId, setZonaId] = useState('');
   const [status, setStatus] = useState('ativo');
@@ -53,6 +54,10 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
   const [dataBatismo, setDataBatismo] = useState('');
   const [batizadoAguas, setBatizadoAguas] = useState(false);
   const [atuacao, setAtuacao] = useState('');
+  const [criarAcesso, setCriarAcesso] = useState(false);
+  const [permissaoAcesso, setPermissaoAcesso] = useState('membro');
+  const [senhaAcesso, setSenhaAcesso] = useState('');
+  const [confirmarSenhaAcesso, setConfirmarSenhaAcesso] = useState('');
 
   // Estrutura de Família (Filhos)
   const [conjugeId, setConjugeId] = useState('');
@@ -136,25 +141,18 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
   async function handleSalvarFichaCompleta(e) {
     e.preventDefault();
     if (!nome.trim()) { alert('Por favor, informe o nome do membro.'); return; }
+    if (criarAcesso && !email.trim()) { alert('Informe o e-mail para criar o acesso do membro.'); setSecaoAtual('endereco'); return; }
+    if (criarAcesso && senhaAcesso.length < 6) { alert('A senha de acesso deve ter ao menos 6 caracteres.'); return; }
+    if (criarAcesso && senhaAcesso !== confirmarSenhaAcesso) { alert('As senhas de acesso não coincidem.'); return; }
     setEnviando(true);
 
     let urlFotoPublica = '';
 
     if (fotoFinalBlob) {
-      const nomeArquivo = `${Date.now()}_rosto.jpg`;
-      const { error: erroUpload } = await supabase.storage
-    .from('fotos-membros')
-    .upload(nomeArquivo, fotoFinalBlob, { 
-        contentType: 'image/jpeg', 
-        cacheControl: '3600',
-        upsert: true // ⚡ Previne erros caso a geração de timestamp colida
-    });
-
-      if (!erroUpload) {
-        const { data: link } = supabase.storage.from('fotos-membros').getPublicUrl(nomeArquivo);
-        urlFotoPublica = link.publicUrl;
-      } else {
-        console.error('Erro ao fazer upload da foto:', erroUpload);
+      try {
+        urlFotoPublica = await uploadImagemCelula(fotoFinalBlob, 'nova'); // Usar a função de upload
+      } catch (error) {
+        console.error('Erro ao fazer upload da foto:', error);
       }
     }
 
@@ -176,7 +174,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
       bairro,
       cidade,
       estado,
-      tipo_membro: tipoMembro,
+      cargo: cargo,
       celula_id: celulaId || null,
       zona_id: zonaId || null,
       status,
@@ -185,6 +183,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
       batizado_aguas: batizadoAguas,
       conjuge_id: conjugeId || null,
       atuacao: atuacao.trim() || null,
+      permissao: criarAcesso ? permissaoAcesso : null,
     };
 
     const { data: novaPessoa, error } = await supabase.from('pessoas').insert([payload]).select();
@@ -192,15 +191,34 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
     if (error) {
       setMensagem('❌ Erro de salvamento: ' + error.message);
     } else {
+      const pessoaCriada = novaPessoa?.[0];
       if (novaPessoa && novaPessoa.length > 0 && filhosSelecionados.length > 0) {
-        const paiOuMaeId = novaPessoa[0].id;
+        const paiOuMaeId = pessoaCriada.id;
         const vinculosFilhos = filhosSelecionados.map(filhoId => ({
           id_pai_mae: paiOuMaeId,
           id_filho: filhoId
         }));
         await supabase.from('relacoes_familiares').insert(vinculosFilhos);
       }
-      setMensagem('🎉 Cadastro realizado com sucesso!');
+      if (criarAcesso && pessoaCriada) {
+        const { error: erroAcesso } = await supabase.functions.invoke('criar-usuario-membro', {
+          body: {
+            pessoaId: pessoaCriada.id,
+            nome: pessoaCriada.nome,
+            email: email.trim().toLowerCase(),
+            senha: senhaAcesso,
+            permissao: permissaoAcesso,
+          },
+        });
+
+        if (erroAcesso) {
+          setMensagem(`Cadastro salvo, mas o acesso não foi criado: ${erroAcesso.message}`);
+          setEnviando(false);
+          return;
+        }
+      }
+
+      setMensagem(criarAcesso ? 'Cadastro e acesso criados com sucesso!' : 'Cadastro realizado com sucesso!');
       setTimeout(() => onPessoaCadastrada(), 1500);
     }
     setEnviando(false);
@@ -292,7 +310,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Gênero</label>
-                <select value={genero} onChange={e => setGenero(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800">
+                <select value={genero} onChange={e => setGenero(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800">
                   <option value="">Selecione</option>
                   <option value="Masculino">Masculino</option>
                   <option value="Feminino">Feminino</option>
@@ -307,7 +325,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Estado Civil</label>
-                <select value={estadoCivil} onChange={e => setEstadoCivil(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800">
+                <select value={estadoCivil} onChange={e => setEstadoCivil(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800">
                   <option value="Solteiro(a)">Solteiro(a)</option>
                   <option value="Casado(a)">Casado(a)</option>
                   <option value="Divorciado(a)">Divorciado(a)</option>
@@ -334,7 +352,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
 
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Escolaridade</label>
-              <select value={escolaridade} onChange={e => setEscolaridade(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800">
+              <select value={escolaridade} onChange={e => setEscolaridade(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800">
                 <option value="">Selecione</option>
                 <option value="Ensino Fundamental">Ensino Fundamental</option>
                 <option value="Ensino Medio">Ensino Medio</option>
@@ -397,15 +415,15 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Cargo / Função</label>
-                <select value={tipoMembro} onChange={e => setTipoMembro(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800">
+                <select value={cargo} onChange={e => setcargo(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800">
                   <option value="">Selecione o cargo</option>
                   {cargosLista.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
-                  {tipoMembro && !cargosLista.some((c) => c.nome === tipoMembro) && <option value={tipoMembro}>{tipoMembro}</option>}
+                  {cargo && !cargosLista.some((c) => c.nome === cargo) && <option value={cargo}>{cargo}</option>}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Status</label>
-                <select value={status} onChange={e => setStatus(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800">
+                <select value={status} onChange={e => setStatus(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800">
                   <option value="ativo">Ativo</option>
                   <option value="inativo">Inativo</option>
                   <option value="afastado">Afastado</option>
@@ -417,7 +435,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Célula que Frequenta</label>
-                <select value={celulaId} onChange={e => setCelulaId(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800">
+                <select value={celulaId} onChange={e => setCelulaId(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800">
                   <option value="">Sem Vínculo Específico</option>
                   {celulasExistentes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
@@ -427,7 +445,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Sub-Região / Zona</label>
-                <select value={zonaId} onChange={e => setZonaId(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800">
+                <select value={zonaId} onChange={e => setZonaId(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800">
                   <option value="">Todas as Regiões</option>
                   {zonasExistentes.map(z => <option key={z.id} value={z.id}>{z.nome}</option>)}
                 </select>
@@ -445,7 +463,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-500 mb-1">Campo de Atuação</label>
-                <select value={atuacao} onChange={e => setAtuacao(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800">
+                <select value={atuacao} onChange={e => setAtuacao(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800">
                   <option value="">Selecione (cadastre em Configurações)</option>
                   {atuacoesLista.map((a) => <option key={a.id} value={a.nome}>{a.nome}</option>)}
                   {atuacao && !atuacoesLista.some((a) => a.nome === atuacao) && <option value={atuacao}>{atuacao}</option>}
@@ -457,6 +475,40 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
               <input type="checkbox" checked={batizadoAguas} onChange={e => setBatizadoAguas(e.target.checked)} className="w-4 h-4 accent-blue-600" />
               Batizado nas águas
             </label>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+              <label className="flex items-start gap-3 text-xs font-bold text-slate-700">
+                <input type="checkbox" checked={criarAcesso} onChange={e => setCriarAcesso(e.target.checked)} className="mt-0.5 w-4 h-4 accent-blue-600" />
+                <span>
+                  Criar usuário e senha para este membro
+                  <small className="block mt-1 font-medium text-slate-500">Usa o e-mail informado na etapa de endereço. A senha será criada no Supabase Auth.</small>
+                </span>
+              </label>
+
+              {criarAcesso && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-slate-200">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Perfil de acesso</label>
+                    <select value={permissaoAcesso} onChange={e => setPermissaoAcesso(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800">
+                      <option value="admin">Admin</option>
+                      <option value="pastor">Pastor</option>
+                      <option value="lider-celula">Líder de Célula</option>
+                      <option value="secretaria">Secretaria</option>
+                      <option value="tesouraria">Tesouraria</option>
+                      <option value="membro">Membro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Senha inicial</label>
+                    <input type="password" value={senhaAcesso} onChange={e => setSenhaAcesso(e.target.value)} minLength={6} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-800" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Confirmar senha</label>
+                    <input type="password" value={confirmarSenhaAcesso} onChange={e => setConfirmarSenhaAcesso(e.target.value)} minLength={6} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-800" />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -464,7 +516,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
           <div className="space-y-4 animation-fade-in">
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Cônjuge</label>
-              <select value={conjugeId} onChange={e => setConjugeId(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white text-slate-800">
+              <select value={conjugeId} onChange={e => setConjugeId(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800">
                 <option value="">Sem cônjuge vinculado</option>
                 {listaPessoasExistentes.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
               </select>

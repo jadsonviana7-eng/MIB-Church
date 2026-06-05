@@ -10,6 +10,15 @@ export function mascaraCPF(valor) {
     .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
 }
 
+export function mascaraCNPJ(valor) {
+  const n = soNumeros(valor).slice(0, 14);
+  return n
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/(\d{3})(\d{4})/, '$1/$2')
+    .replace(/(\d{4})(\d{2})/, '$1-$2');
+}
+
 export function mascaraTelefone(valor) {
   const n = soNumeros(valor).slice(0, 11);
   if (n.length <= 10) {
@@ -66,6 +75,11 @@ export function dataBRparaISO(br) {
 }
 
 export function desmascararCPF(valor) {
+  const n = soNumeros(valor);
+  return n || null;
+}
+
+export function desmascararCNPJ(valor) {
   const n = soNumeros(valor);
   return n || null;
 }

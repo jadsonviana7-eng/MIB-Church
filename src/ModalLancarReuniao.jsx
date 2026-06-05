@@ -13,12 +13,16 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
   const [novoVisitante, setNovoVisitante] = useState('');
   const [enviando, setEnviando] = useState(false);
 
+  const nomeCelula = useMemo(() => {
+    return celulas.find(c => String(c.id) === String(celulaId))?.nome || 'Célula não identificada';
+  }, [celulas, celulaId]);
+
   const membros = useMemo(
-    () => pessoas.filter((p) => String(p.celula_id || '') === String(celulaId)),
+    () => pessoas.filter((p) => String(p.celula_id || '') === String(celulaId) && p.status !== 'inativo'),
     [pessoas, celulaId]
   );
   const tituloModal = reuniaoParaEditar ? 'Editar encontro da célula' : 'Lançar encontro da célula';
-  const botaoTexto = reuniaoParaEditar ? '💾 Salvar Alterações' : '⛺ Concluir';
+  const botaoTexto = reuniaoParaEditar ? '💾 Salvar Alterações' : 'Concluir';
 
   useEffect(() => {
     if (reuniaoParaEditar) {
@@ -141,63 +145,64 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
           <h4 className="font-semibold text-[var(--text-heading)]">{tituloModal}</h4>
           <button type="button" onClick={onFechar} className="text-[var(--text-muted)] font-bold cursor-pointer">✕</button>
         </div>
-        <form onSubmit={handleSalvar} className="p-5 overflow-y-auto space-y-4 flex-1">
-          <div>
-            <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Célula</label>
-            <select value={celulaId} onChange={(e) => setCelulaId(e.target.value)} required className="w-full px-3 py-2 border border-[var(--border)] rounded-xl text-sm bg-white cursor-pointer">
-              <option value="">Selecione a célula</option>
-              {celulas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-            </select>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
+        <form onSubmit={handleSalvar} className="flex flex-col flex-1 overflow-hidden">
+          <div className="p-5 overflow-y-auto space-y-4 flex-1">
+            <div className="flex flex-col gap-1">
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Célula em foco</label>
+              <span className="text-lg font-black text-[#055F6D] bg-teal-50 px-4 py-2 rounded-2xl border border-teal-100 w-fit shadow-sm">
+                {nomeCelula}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-medium mb-1">Data</label>
+                <input type="date" value={dataReuniao} onChange={(e) => setDataReuniao(e.target.value)} required className="w-full px-3 py-2 border rounded-xl text-sm cursor-pointer" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Tema</label>
+                <input type="text" value={temaMinistrado} onChange={(e) => setTemaMinistrado(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Oferta (R$)</label>
+                <input type="number" step="0.01" min="0" value={oferta} onChange={(e) => setOferta(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
+              </div>
+            </div>
+            <div className="bg-[var(--surface-muted)] p-3 rounded-xl border space-y-2">
+              <label className="text-xs font-medium">Visitantes ({nomesVisitantes.length})</label>
+              <div className="flex gap-2">
+                <input type="text" value={novoVisitante} onChange={(e) => setNovoVisitante(e.target.value)} placeholder="Nome do visitante" className="flex-1 px-3 py-1.5 border rounded-xl text-xs bg-white" />
+                <button type="button" onClick={() => { if (novoVisitante.trim()) { setNomesVisitantes([...nomesVisitantes, novoVisitante.trim()]); setNovoVisitante(''); } }} className="btn-primary text-xs px-3 rounded-xl cursor-pointer">+</button>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {nomesVisitantes.map((n, i) => (
+                  <span key={i} className="text-[11px] bg-white border px-2 py-0.5 rounded-lg">{n} <button type="button" onClick={() => setNomesVisitantes(nomesVisitantes.filter((_, j) => j !== i))} className="cursor-pointer">×</button></span>
+                ))}
+              </div>
+            </div>
+            {membros.length > 0 && (
+              <div className="border rounded-xl max-h-36 overflow-y-auto p-2">
+                {membros.map((m) => (
+                  <div key={m.id} 
+                    onClick={() => setPresencas((p) => {
+                      const seguro = (typeof p === 'object' && p !== null) ? p : {};
+                      return { ...seguro, [m.id]: !seguro[m.id] };
+                    })} 
+                    className="flex justify-between py-1.5 px-2 cursor-pointer hover:bg-[var(--surface-muted)] rounded-lg text-xs transition active:scale-95 select-none"
+                  >
+                    <span>{m.nome}</span>
+                    <span className={presencas[m.id] ? 'text-emerald-700' : 'text-rose-600'}>{presencas[m.id] ? 'Presente' : 'Ausente'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div>
-              <label className="block text-xs font-medium mb-1">Data</label>
-              <input type="date" value={dataReuniao} onChange={(e) => setDataReuniao(e.target.value)} required className="w-full px-3 py-2 border rounded-xl text-sm cursor-pointer" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1">Tema</label>
-              <input type="text" value={temaMinistrado} onChange={(e) => setTemaMinistrado(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1">Oferta (R$)</label>
-              <input type="number" step="0.01" min="0" value={oferta} onChange={(e) => setOferta(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
+              <label className="block text-xs font-medium mb-1">Observações</label>
+              <textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} className="w-full px-3 py-2 border rounded-xl text-sm" />
             </div>
           </div>
-          <div className="bg-[var(--surface-muted)] p-3 rounded-xl border space-y-2">
-            <label className="text-xs font-medium">Visitantes ({nomesVisitantes.length})</label>
-            <div className="flex gap-2">
-              <input type="text" value={novoVisitante} onChange={(e) => setNovoVisitante(e.target.value)} placeholder="Nome do visitante" className="flex-1 px-3 py-1.5 border rounded-xl text-xs bg-white" />
-              <button type="button" onClick={() => { if (novoVisitante.trim()) { setNomesVisitantes([...nomesVisitantes, novoVisitante.trim()]); setNovoVisitante(''); } }} className="btn-primary text-xs px-3 rounded-xl cursor-pointer">+</button>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {nomesVisitantes.map((n, i) => (
-                <span key={i} className="text-[11px] bg-white border px-2 py-0.5 rounded-lg">{n} <button type="button" onClick={() => setNomesVisitantes(nomesVisitantes.filter((_, j) => j !== i))} className="cursor-pointer">×</button></span>
-              ))}
-            </div>
-          </div>
-          {membros.length > 0 && (
-            <div className="border rounded-xl max-h-36 overflow-y-auto p-2">
-              {membros.map((m) => (
-                <div key={m.id} 
-                  onClick={() => setPresencas((p) => {
-                    const seguro = (typeof p === 'object' && p !== null) ? p : {};
-                    return { ...seguro, [m.id]: !seguro[m.id] };
-                  })} 
-                  className="flex justify-between py-1.5 px-2 cursor-pointer hover:bg-[var(--surface-muted)] rounded-lg text-xs transition active:scale-95 select-none"
-                >
-                  <span>{m.nome}</span>
-                  <span className={presencas[m.id] ? 'text-emerald-700' : 'text-rose-600'}>{presencas[m.id] ? 'Presente' : 'Ausente'}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          <div>
-            <label className="block text-xs font-medium mb-1">Observações</label>
-            <textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} className="w-full px-3 py-2 border rounded-xl text-sm" />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onFechar} className="px-4 py-2 text-xs border rounded-xl cursor-pointer">Cancelar</button>
-            <button type="submit" disabled={enviando} className="btn-primary text-xs font-semibold px-5 py-2 rounded-xl disabled:opacity-50 cursor-pointer">
+          <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-end gap-2 shrink-0">
+            <button type="button" onClick={onFechar} className="px-4 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-600 font-semibold hover:bg-slate-100 transition cursor-pointer">Cancelar</button>
+            <button type="submit" disabled={enviando} className="btn-primary text-xs font-semibold px-5 py-2 rounded-xl disabled:opacity-50 transition shadow-sm cursor-pointer">
               {enviando ? 'Salvando...' : botaoTexto}
             </button>
           </div>

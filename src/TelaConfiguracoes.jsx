@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { Card, CardHeader, PageHeader } from './ui'; // Importar PageHeader
+import { 
+  mascaraTelefone, 
+  mascaraCNPJ, 
+  desmascararTelefone, 
+  desmascararCNPJ 
+} from './mascaras';
 
 export default function TelaConfiguracoes({ onFechar }) {
   const [zonas, setZonas] = useState([]);
@@ -13,6 +19,8 @@ export default function TelaConfiguracoes({ onFechar }) {
   const [cnpj, setCnpj] = useState('');
   const [endereco, setEndereco] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [emailContato, setEmailContato] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
   const [salvandoIgreja, setSalvandoIgreja] = useState(false);
 
   async function carregarDadosConfiguracao() {
@@ -30,9 +38,11 @@ export default function TelaConfiguracoes({ onFechar }) {
       if (erroIgreja) console.warn('Tabela "dados_igreja" não encontrada. Veja DATABASE_SCHEMA.md');
       if (igr) {
         setNomeIgreja(igr.nome_igreja || '');
-        setCnpj(igr.cnpj || '');
+          setCnpj(mascaraCNPJ(igr.cnpj || ''));
         setEndereco(igr.endereco || '');
-        setTelefone(igr.telefone || '');
+          setTelefone(mascaraTelefone(igr.telefone || ''));
+        setEmailContato(igr.email_contato || '');
+        setLogoUrl(igr.logo_url || '');
       }
     } catch (err) {
       console.error('Erro ao carregar configurações:', err);
@@ -51,9 +61,11 @@ export default function TelaConfiguracoes({ onFechar }) {
     try {
       const { error } = await supabase.from('dados_igreja').update({
         nome_igreja: nomeIgreja.trim(),
-        cnpj: cnpj.trim(),
+        cnpj: desmascararCNPJ(cnpj),
         endereco: endereco.trim(),
-        telefone: telefone.trim(),
+        telefone: desmascararTelefone(telefone),
+        email_contato: emailContato.trim(),
+        logo_url: logoUrl.trim(),
       }).eq('id', 1);
       if (error) throw error;
       window.alert('Dados da igreja atualizados.');
@@ -115,9 +127,23 @@ export default function TelaConfiguracoes({ onFechar }) {
         <form onSubmit={handleSalvarDadosIgreja} className="card-body-full space-y-3">
           <input type="text" required placeholder="Nome da igreja" value={nomeIgreja} onChange={(e) => setNomeIgreja(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
           <div className="grid grid-cols-2 gap-3">
-            <input type="text" placeholder="CNPJ" value={cnpj} onChange={(e) => setCnpj(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
-            <input type="text" placeholder="Telefone" value={telefone} onChange={(e) => setTelefone(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
+            <input 
+              type="text" 
+              placeholder="CNPJ" 
+              value={cnpj} 
+              onChange={(e) => setCnpj(mascaraCNPJ(e.target.value))} 
+              className="w-full px-3 py-2 border rounded-xl text-sm" 
+            />
+            <input 
+              type="text" 
+              placeholder="Telefone" 
+              value={telefone} 
+              onChange={(e) => setTelefone(mascaraTelefone(e.target.value))} 
+              className="w-full px-3 py-2 border rounded-xl text-sm" 
+            />
           </div>
+          <input type="email" placeholder="E-mail de contato" value={emailContato} onChange={(e) => setEmailContato(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
+          <input type="url" placeholder="URL da logo (opcional)" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
           <input type="text" placeholder="Endereço sede" value={endereco} onChange={(e) => setEndereco(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
           <button type="submit" disabled={salvandoIgreja} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl ml-auto block">
             {salvandoIgreja ? 'Salvando...' : 'Salvar igreja'}

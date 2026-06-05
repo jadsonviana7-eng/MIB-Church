@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Card, CardHeader, Avatar, SelectFiltro, ColumnChart, PageHeader } from './ui';
+import { Card, CardHeader, Avatar, SelectFiltro, ColumnChart, DoughnutCard, PageHeader } from './ui';
+import { supabase } from './supabaseClient';
 import DetalhesMembro from './DetalhesMembro';
 import FormularioCadastro from './FormularioCadastro';
 import { meses, agrupamentoPor, valorCampoRelatorio, faixasEtarias } from './churchUtils';
@@ -8,7 +9,7 @@ export default function PessoasModulo(props) {
   const {
     submenu, pessoas, pessoasFiltradas, filtros, alterarFiltro, limparFiltros,
     zonas, carregando, membroSelecionadoId, setMembroSelecionadoId, obterDados,
-    cargosDisponiveis, atuacoesDisponiveis, escolaridadesDisponiveis, abrirPessoasFiltradas
+    cargosDisponiveis, atuacoesDisponiveis, escolaridadesDisponiveis, abrirPessoasFiltradas, membroLogado
     , onNavigate
   } = props;
 
@@ -24,6 +25,7 @@ export default function PessoasModulo(props) {
         onDadosAtualizados={obterDados}
         cargosLista={cargosDisponiveis}
         atuacoesLista={atuacoesDisponiveis}
+        membroLogado={membroLogado}
       />
     );
   }
@@ -62,21 +64,29 @@ export default function PessoasModulo(props) {
     return <RelatoriosPessoas pessoas={pessoas} zonas={zonas} abrirPessoasFiltradas={abrirPessoasFiltradas} relatorioSelecionado={relatorioSelecionado} setRelatorioSelecionado={setRelatorioSelecionado} breadcrumb={['Pessoas', 'Relatórios']} onNavigate={onNavigate} />;
   }
 
+  if (submenu === 'inativos') {
+    return <InativosPessoas pessoas={pessoas} onNavigate={onNavigate} obterDados={obterDados} />;
+  }
+
+  if (submenu === 'link_publico') {
+    return <LinkPublicoCadastro onNavigate={onNavigate} />;
+  }
+
   return (
     <>
-      <PageHeader titulo="Membros" subtitulo="Gestão centralizada de membros, obreiros e frequentadores." />
+      <PageHeader titulo="Membros"/>
       {carregando && <div className="text-sm font-medium text-[#2563eb] mb-4">Sincronizando dados...</div>}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5">
         <Card className="p-0">
           <CardHeader 
-            titulo={`${pessoasFiltradas.length} pessoas encontradas`} 
+            titulo={`${pessoasFiltradas.length} Pessoas`} 
             children={
               <input 
                 type="search" 
                 value={filtros.busca} 
                 onChange={(e) => alterarFiltro('busca', e.target.value)} 
                 placeholder="Buscar por nome..." 
-                className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20"
+                className="rounded-x1 border border-slate-500 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#008dc6]/20"
               />
             }
           />
@@ -111,7 +121,7 @@ function TabelaPessoas({ pessoas, onSelecionar }) {
             <tr key={p.id} onClick={() => onSelecionar(p.id)} className="cursor-pointer">
               <td>
                 <div className="flex items-center gap-3">
-                  <Avatar pessoa={p} tamanho="w-9 h-9" />
+                  <Avatar pessoa={p} tamanho="w-15  h-15" />
                   <div>
                     <p className="font-semibold text-slate-700">{p.nome}</p>
                     <p className="text-[11px] text-[var(--text-muted)]">{p.email || 'Sem e-mail'}</p>
@@ -120,11 +130,143 @@ function TabelaPessoas({ pessoas, onSelecionar }) {
               </td>
               <td><span className="text-xs px-2 py-0.5 rounded-lg bg-[var(--surface-muted)] border">{p.cargo || 'Membro'}</span></td>
               <td className="text-xs text-[var(--text-muted)]">{p.telefone || '—'}</td>
-              <td><span className="text-xs font-semibold text-[#2563eb]">{p.celulas?.nome || '⛺ Sem Célula'}</span></td>
+              <td><span className="text-xs font-semibold text-[#2563eb]">{p.celulas?.nome || '😢 Sem Célula'}</span></td>
             </tr>
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function LinkPublicoCadastro({ onNavigate }) {
+  const urlPublica = window.location.origin + '/cadastro-publico';
+  
+  const copiarLink = () => {
+    navigator.clipboard.writeText(urlPublica);
+    window.alert('✅ Link copiado! Agora você pode colar no WhatsApp ou redes sociais.');
+  };
+
+  return (
+    <div className="space-y-6">
+      <PageHeader 
+        titulo="Link de Autocadastro" 
+        breadcrumb={['Pessoas', 'Link Público']} 
+        onNavigate={() => onNavigate('todos')}
+        subtitulo="Compartilhe este link para que novos membros preencham seus próprios dados."
+      />
+      
+      <Card className="p-8 text-center max-w-2xl mx-auto bg-gradient-to-br from-white to-blue-50/20">
+        <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-6 shadow-sm">
+          🔗
+        </div>
+        
+        <h3 className="text-xl font-bold text-slate-800 mb-2">Pronto para compartilhar!</h3>
+        <p className="text-sm text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
+          Copie o link abaixo e envie pelo WhatsApp para novos convertidos ou visitantes. 
+          O formulário exibe automaticamente a logo e dados configurados em sua igreja.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row items-stretch gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <code className="text-[11px] font-mono font-bold text-blue-700 bg-blue-50/50 px-4 py-3 rounded-xl flex-1 flex items-center break-all text-left">
+            {urlPublica}
+          </code>
+          <button 
+            onClick={copiarLink}
+            className="px-6 py-3 bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-xl text-xs font-bold transition-all active:scale-95 shadow-lg shadow-blue-900/20 whitespace-nowrap"
+          >
+            📋 Copiar Link
+          </button>
+        </div>
+        
+        <div className="mt-10 pt-8 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-6 text-left">
+          <div className="flex gap-4">
+            <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">🛡️</div>
+            <div>
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-tight">Segurança Total</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">O link permite apenas a criação de novos cadastros. Ninguém poderá ver dados de outros membros por aqui.</p>
+            </div>
+          </div>
+          <div className="flex gap-4">
+            <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center shrink-0">✨</div>
+            <div>
+              <p className="text-xs font-bold text-slate-700 uppercase tracking-tight">Identidade Visual</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">A logo e os contatos que aparecem no topo são os que você definiu na tela de "Configurações".</p>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function InativosPessoas({ pessoas, onNavigate, obterDados }) {
+  const inativos = useMemo(() => {
+    return pessoas.filter(p => p.status === 'inativo')
+      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+  }, [pessoas]);
+
+  async function handleReativar(id, nome) {
+    if (!window.confirm(`Deseja reativar o cadastro de ${nome}?`)) return;
+    
+    const { error } = await supabase
+      .from('pessoas')
+      .update({ status: 'ativo', motivo_exclusao: null })
+      .eq('id', id);
+
+    if (!error) {
+      obterDados();
+    } else {
+      alert('Erro ao reativar: ' + error.message);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader titulo="Membros Inativos" breadcrumb={['Pessoas', 'Inativos']} onNavigate={() => onNavigate('todos')} subtitulo="Listagem de cadastros desativados do sistema." />
+      <Card className="p-0">
+        <div className="overflow-x-auto">
+          <table className="table-mib">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Motivo da Inativação</th>
+                <th>Data</th>
+                <th className="text-right pr-6">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {inativos.length === 0 ? (
+                <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhum membro inativo no momento.</td></tr>
+              ) : (
+                inativos.map(p => (
+                  <tr key={p.id}>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <Avatar pessoa={p} tamanho="w-8 h-8" />
+                        <span className="font-bold text-slate-700">{p.nome}</span>
+                      </div>
+                    </td>
+                    <td className="text-sm text-slate-500">{p.motivo_exclusao || 'Não informado'}</td>
+                    <td className="text-xs text-slate-400">{new Date(p.updated_at).toLocaleDateString('pt-BR')}</td>
+                    <td className="text-right pr-6">
+                      <button 
+                        onClick={() => handleReativar(p.id, p.nome)}
+                        className="p-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition shadow-sm"
+                        title="Reativar Membro"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 }
@@ -147,13 +289,14 @@ function FiltrosPessoas({ filtros, alterarFiltro, limparFiltros, zonas, cargosDi
 }
 
 function AniversariantesPessoas({ pessoas, mesSelecionado, setMesSelecionado, onNavigate }) {
+  const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo'), [pessoas]);
   const contagemMeses = meses.map((_, index) =>
-    pessoas.filter((p) => p.data_nascimento && new Date(`${p.data_nascimento}T00:00:00`).getMonth() === index).length
+    pessoasAtivas.filter((p) => p.data_nascimento && new Date(`${p.data_nascimento}T00:00:00`).getMonth() === index).length
   );
   const aniversariantes = useMemo(() => {
-    return pessoas.filter((p) => p.data_nascimento && new Date(`${p.data_nascimento}T00:00:00`).getMonth() === mesSelecionado)
+    return pessoasAtivas.filter((p) => p.data_nascimento && new Date(`${p.data_nascimento}T00:00:00`).getMonth() === mesSelecionado)
       .sort((a, b) => new Date(`${a.data_nascimento}T00:00:00`).getDate() - new Date(`${b.data_nascimento}T00:00:00`).getDate());
-  }, [pessoas, mesSelecionado]);
+  }, [pessoasAtivas, mesSelecionado]);
 
   return (
     <div className="space-y-6">
@@ -194,11 +337,12 @@ function AgrupamentoPessoas({ titulo, itens, campo, pessoas, abrirPessoasFiltrad
           <thead><tr><th>Nome</th><th>Vinculados</th><th className="text-right">Ação</th></tr></thead>
           <tbody>
             {itens.map((item) => {
+              const pessoasAtivas = pessoas.filter(p => p.status !== 'inativo');
               // Cargos e Atuações no banco guardam o NOME, enquanto Zonas guardam o ID.
               const isIdField = campo.endsWith('_id');
               const val = isIdField ? (item.id || item) : (item.nome || item);
               
-              const contagem = pessoas.filter((p) => String(p[campo] || '') === String(val)).length;
+              const contagem = pessoasAtivas.filter((p) => String(p[campo] || '') === String(val)).length;
               return (
                 <tr key={val}>
                   <td className="font-medium">{item.nome || item}</td>
@@ -217,33 +361,62 @@ function AgrupamentoPessoas({ titulo, itens, campo, pessoas, abrirPessoasFiltrad
 }
 
 function RelatoriosPessoas({ pessoas, zonas, abrirPessoasFiltradas, relatorioSelecionado, setRelatorioSelecionado, breadcrumb = [], onNavigate }) {
-  const botoes = ['Cargos', 'Faixa etaria', 'Aniversarios', 'Sexo', 'Estado civil', 'Batismo', 'Zona de moradia'];
-  const dados = agrupamentoPor(pessoas, (p) => valorCampoRelatorio(p, relatorioSelecionado, zonas));
+  const botoes = ['Cargos', 'Faixa etaria', 'Aniversarios', 'Sexo', 'Estado civil', 'Batismo', 'Zona de moradia', 'Campo de Atuação'];
+  const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo'), [pessoas]);
+  const dados = agrupamentoPor(pessoasAtivas, (p) => valorCampoRelatorio(p, relatorioSelecionado, zonas));
+
   return (
     <div className="space-y-6">
       <PageHeader titulo="Relatórios de Membresia" breadcrumb={breadcrumb} onNavigate={() => onNavigate('todos')} />
-      <div className="flex flex-wrap gap-2">
-        {botoes.map((b) => (
-          <button key={b} onClick={() => setRelatorioSelecionado(b)} className={`px-4 py-2 rounded-xl text-xs font-bold transition ${relatorioSelecionado === b ? 'bg-[#2563eb] text-white' : 'bg-white border shadow-sm'}`}>{b}</button>
-        ))}
-      </div>
-      <ColumnChart titulo={`Indicadores: ${relatorioSelecionado}`} dados={dados} />
-      <Card className="p-0">
-        <table className="table-mib">
-          <thead><tr><th>Classificação</th><th>Cadastrados</th><th className="text-right">Ação</th></tr></thead>
-          <tbody>
-            {Object.entries(dados).map(([label, valor]) => (
-              <tr key={label}>
-                <td className="font-medium">{label}</td>
-                <td>{valor} pessoas</td>
-                <td className="text-right">
-                  <button onClick={() => abrirPessoasFiltradas({ relatorioCampo: relatorioSelecionado, relatorioValor: label })} className="text-xs font-bold text-[#2563eb]">Ver lista</button>
-                </td>
-              </tr>
+      
+      <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6 items-start">
+        {/* Painel Lateral de Opções */}
+        <Card className="p-0 h-fit">
+          <CardHeader titulo="Opções de Relatório" subtitulo="Selecione o indicador desejado." />
+          <div className="p-4 space-y-2">
+            {botoes.map((b) => (
+              <button 
+                key={b} 
+                onClick={() => setRelatorioSelecionado(b)} 
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${relatorioSelecionado === b ? 'bg-[#2563eb] text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+              >
+                {b}
+              </button>
             ))}
-          </tbody>
-        </table>
-      </Card>
+          </div>
+        </Card>
+
+        {/* Conteúdo Principal: Gráfico e Tabela */}
+        <div className="space-y-6">
+          {relatorioSelecionado === 'Faixa etaria' ? (
+            <DoughnutCard 
+              titulo={`Indicadores: ${relatorioSelecionado}`} 
+              dados={dados} 
+              startAngle={180} 
+              endAngle={0} 
+              hideLegend={true} 
+            />
+          ) : (
+            <ColumnChart titulo={`Indicadores: ${relatorioSelecionado}`} dados={dados} />
+          )}
+          <Card className="p-0">
+            <table className="table-mib">
+              <thead><tr><th>Classificação</th><th>Cadastrados</th><th className="text-right">Ação</th></tr></thead>
+              <tbody>
+                {Object.entries(dados).map(([label, valor]) => (
+                  <tr key={label}>
+                    <td className="font-medium">{label}</td>
+                    <td>{valor} pessoas</td>
+                    <td className="text-right">
+                      <button onClick={() => abrirPessoasFiltradas({ relatorioCampo: relatorioSelecionado, relatorioValor: label })} className="text-xs font-bold text-[#2563eb] cursor-pointer hover:underline">Ver lista</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

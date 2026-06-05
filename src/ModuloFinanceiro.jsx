@@ -206,7 +206,6 @@ function BotaoAtalho({ label, icon, onClick }) {
     >
       <span className="text-sm group-hover:scale-110 transition">{icon}</span>
       <span className="flex-1">{label}</span>
-      <span className="text-slate-300 group-hover:text-emerald-500 transition">→</span>
     </button>
   );
 }

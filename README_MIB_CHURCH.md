@@ -47,7 +47,54 @@ npm run preview
 - Credenciais armazenadas em variáveis de ambiente
 - Autenticação real com Supabase Auth
 - Error Boundary para tratamento gracioso de erros
-- Row Level Security recomendado para produção
+- **Row Level Security (RLS) implementado** com 4 perfis de usuário:
+  - ✅ **Admin** - Acesso total
+  - ✅ **Pastor** - Gerenciamento completo
+  - ✅ **Líder de Célula** - Gerenciamento de sua célula
+  - ✅ **Membro** - Acesso restrito ao seu perfil
+
+## 🔧 Configurar RLS
+
+Se estiver com problema de permissões após login:
+
+### 🚨 **Se está recebendo Erro 403 (Acesso Negado):**
+```
+→ Leia: INSTRUCOES-RAPIDAS-403.md
+→ Execute: supabase/RLS-CORRECAO-EMERGENCIAL.sql
+```
+
+### 📚 Referência Completa:
+
+1. **Instruções rápidas (1 min):**
+   ```
+   → INSTRUCOES-RAPIDAS-403.md
+   ```
+
+2. **Diagnóstico de erro 403:**
+   ```
+   → CORRECAO-EMERGENCIAL-403.md
+   ```
+
+3. **Início rápido (5 min):**
+   ```
+   → SETUP_RLS_RESUMO.md
+   ```
+
+4. **Passo a passo detalhado:**
+   ```
+   → TROUBLESHOOTING_RLS.md
+   ```
+
+5. **Implementação técnica:**
+   ```
+   → supabase/RLS-QUICK-FIX.sql
+   ```
+
+### Arquivos Importantes
+- `supabase/politicas-rls-perfis.sql` - Políticas RLS
+- `supabase/RLS-QUICK-FIX.sql` - Solução rápida para problemas
+- `RLS_GUIDE.md` - Documentação completa
+- `TROUBLESHOOTING_RLS.md` - Guia de troubleshooting
 
 Veja `SECURITY_FIXES.md` para mais detalhes.
 

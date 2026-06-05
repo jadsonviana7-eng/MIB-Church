@@ -3,14 +3,16 @@ import { Avatar, DoughnutCard, CombinationCard, ColumnChart, Recentes, PageHeade
 import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona } from './churchUtils'; // Importa meses
 
 export default function Dashboard({ pessoas, celulas, zonas, relatoriosCelula, indicadores, carregando, periodoConvertidos, setPeriodoConvertidos }) {
-  const zonasDados = useMemo(() => agrupamentoPor(pessoas, (p) => nomeZona(zonas, p.zona_id)), [pessoas, zonas]);
-  const faixasDados = useMemo(() => agrupamentoPor(pessoas, (p) => faixasEtarias.find((f) => f.id === faixaDaIdade(p.data_nascimento))?.curto || 'Não informada'), [pessoas]);
+  const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo'), [pessoas]);
+
+  const zonasDados = useMemo(() => agrupamentoPor(pessoasAtivas, (p) => nomeZona(zonas, p.zona_id)), [pessoasAtivas, zonas]);
+  const faixasDados = useMemo(() => agrupamentoPor(pessoasAtivas, (p) => faixasEtarias.find((f) => f.id === faixaDaIdade(p.data_nascimento))?.curto || 'Não informada'), [pessoasAtivas]);
   const faixasCelulas = useMemo(() => agrupamentoPor(celulas, (c) => c.faixa_etaria || 'Não informada'), [celulas]);
   
-  const aniversariantesMes = useMemo(() => pessoas.filter((p) => {
+  const aniversariantesMes = useMemo(() => pessoasAtivas.filter((p) => {
     if (!p.data_nascimento) return false;
     return new Date(`${p.data_nascimento}T00:00:00`).getMonth() === new Date().getMonth();
-  }), [pessoas]);
+  }), [pessoasAtivas]);
   
   const novosConvertidos = useMemo(() => {
     const dados = agrupamentoPor(pessoas.filter(p => p.data_conversao), (p) => {

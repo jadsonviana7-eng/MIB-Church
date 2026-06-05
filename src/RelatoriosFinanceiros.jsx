@@ -236,7 +236,7 @@ export default function RelatoriosFinanceiros() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-8 gap-3 items-end print:hidden">
         {/* Seletor de Período Estilizado */}
         <div className="relative xl:col-span-2">
-          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">Período</label>
+          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">Data do Relatório</label>
           <div 
             onClick={() => setCalendarioAberto(!calendarioAberto)}
             className="flex items-center gap-3 px-4 py-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer transition-all shadow-sm group hover:border-slate-300"

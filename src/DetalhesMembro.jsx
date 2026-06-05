@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import Cropper from 'react-easy-crop';
 import { supabase } from './supabaseClient';
 import { Card, CardHeader, CampoLinha, CampoInput, uploadImagemCelula } from './ui';
+import SidebarVinculos from './SidebarVinculos';
 import { ModalLancarTransacao } from './TransacoesFinanceiras';
 import {
   mascaraCPF,
@@ -22,13 +23,6 @@ const MOTIVOS_EXCLUSAO = [
   'Cadastro duplicado',
   'Inatividade prolongada',
   'Outro motivo',
-];
-
-const ABAS = [
-  { id: 'informacoes', label: 'Informações' },
-  { id: 'adicionais', label: 'Informações Adicionais' },
-  { id: 'financeiro', label: 'Financeiro' },
-  { id: 'permissoes', label: 'Permissões' },
 ];
 
 function vinculosPermissaoMembro(membro) {
@@ -77,13 +71,14 @@ function vinculosPermissaoMembro(membro) {
   return itens;
 }
 
-function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualizados, cargosLista = [], atuacoesLista = [] }) {
+function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualizados, cargosLista = [], atuacoesLista = [], isStudentCadernetaView = false, membroLogado }) {
   const [membro, setMembro] = useState(null);
   const [filhos, setFilhos] = useState([]);
   const [celulas, setCelulas] = useState([]);
   const [zonas, setZonas] = useState([]);
+  const [cargos, setCargos] = useState([]);
+  const [atuacoes, setAtuacoes] = useState([]);
   const [contribuicoes, setContribuicoes] = useState([]);
-  const [carregando, setCarregando] = useState(true);
   const [abaAtiva, setAbaAtiva] = useState('informacoes');
   const [modoEdicao, setModoEdicao] = useState(false);
   const [salvando, setSalvando] = useState(false);
@@ -115,7 +110,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
   const [dataConversao, setDataConversao] = useState('');
   const [status, setStatus] = useState('ativo');
   const [batizadoAguas, setBatizadoAguas] = useState(false);
-  const [atuacao, setAtuacao] = useState('');
+  const [atuacao, setAtuacao] = useState([]);
   const [permissao, setPermissao] = useState('');
   const [senhaNovoAcesso, setSenhaNovoAcesso] = useState('');
   const [confirmarSenhaNovoAcesso, setConfirmarSenhaNovoAcesso] = useState('');
@@ -130,6 +125,23 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
   const [modalExclusaoAberto, setModalExclusaoAberto] = useState(false);
   const [motivoExclusao, setMotivoExclusao] = useState('');
   const [excluindoCadastro, setExcluindoCadastro] = useState(false);
+  const [perfilAguia, setPerfilAguia] = useState('');
+  const [perfilGato, setPerfilGato] = useState('');
+  const [perfilLobo, setPerfilLobo] = useState('');
+  const [perfilTubarao, setPerfilTubarao] = useState('');
+  const [perfilPensante, setPerfilPensante] = useState('');
+  const [perfilRazao, setPerfilRazao] = useState('');
+  const [perfilEmocao, setPerfilEmocao] = useState('');
+  const [perfilAtuante, setPerfilAtuante] = useState('');
+  const [testePersonalidade, setTestePersonalidade] = useState(null);
+
+  const isMembro = membroLogado?.permissao === 'membro';
+  const [historicoPresenca, setHistoricoPresenca] = useState([]);
+  const [carregandoPresenca, setCarregandoPresenca] = useState(false);
+  
+  // Estados para Gestão Escolar
+  const [turmasDisponiveis, setTurmasDisponiveis] = useState([]);
+  const [matriculasMembro, setMatriculasMembro] = useState([]);
 
   const [imageSrc, setImageSrc] = useState(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -142,6 +154,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
   // Estados para dados acadêmicos (se isStudentCadernetaView for true)
   const [cadernetaDados, setCadernetaDados] = useState(null);
   const [faltasDados, setFaltasDados] = useState(null);
+  const [carregandoAcademicos, setCarregandoAcademicos] = useState(false);
   const [crescimentoDados, setCrescimentoDados] = useState(null);
   const carregarFinanceiro = useCallback(async () => {
     if (!pessoaId) return;
@@ -158,9 +171,89 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
     }
   }, [pessoaId]);
 
+  const carregarHistoricoPresenca = useCallback(async () => {
+    if (!pessoaId || !membro?.celula_id) return;
+    setCarregandoPresenca(true);
+    try {
+      const { data: reunioes } = await supabase
+        .from('relatorios_celula')
+        .select('id, data_reuniao')
+        .eq('celula_id', membro.celula_id)
+        .order('data_reuniao', { ascending: false });
+
+      if (!reunioes || reunioes.length === 0) {
+        setHistoricoPresenca([]);
+        return;
+      }
+
+      const { data: presencas } = await supabase
+        .from('presencas_relatorio')
+        .select('relatorio_id')
+        .eq('pessoa_id', pessoaId)
+        .in('relatorio_id', reunioes.map(r => r.id));
+
+      const idsPresentes = new Set(presencas?.map(p => p.relatorio_id) || []);
+
+      setHistoricoPresenca(reunioes.map(r => ({
+        id: r.id,
+        data: r.data_reuniao,
+        presente: idsPresentes.has(r.id)
+      })));
+    } catch (err) {
+      console.error('Erro ao carregar histórico de presença:', err);
+    } finally {
+      setCarregandoPresenca(false);
+    }
+  }, [pessoaId, membro?.celula_id]);
+
+  const carregarDadosEscolares = useCallback(async () => {
+    if (!pessoaId) return;
+    
+    setMatriculasMembro([]); // Limpa antes de buscar novos dados
+    try {
+      // 1. Carregar turmas abertas (Escolas)
+      const { data: listTurmas } = await supabase
+        .from('turmas')
+        .select('id, nome, escolas(nome)')
+        .eq('ativa', true);
+      if (listTurmas) setTurmasDisponiveis(listTurmas);
+
+      // 2. Carregar matrículas atuais do membro
+      const { data: alunoData } = await supabase.from('alunos').select('id').eq('pessoa_id', pessoaId).maybeSingle();
+      
+      if (alunoData) {
+        const { data: matriculas } = await supabase
+          .from('alunos_turmas')
+          .select('id, status, turmas(id, nome, escolas(nome))')
+          .eq('aluno_id', alunoData.id);
+        setMatriculasMembro(matriculas || []);
+      } else {
+        setMatriculasMembro([]);
+      }
+    } catch (err) {
+      console.warn('Erro ao carregar dados escolares:', err.message);
+    }
+  }, [pessoaId]);
+
+  useEffect(() => {
+    carregarDadosEscolares();
+  }, [carregarDadosEscolares]);
+
+  useEffect(() => {
+    if (abaAtiva === 'financeiro') {
+      carregarFinanceiro();
+    }
+  }, [abaAtiva, carregarFinanceiro]);
+
+  useEffect(() => {
+    if (abaAtiva === 'frequencia') {
+      carregarHistoricoPresenca();
+    }
+  }, [abaAtiva, carregarHistoricoPresenca]);
+
   const carregarDadosAcademicos = useCallback(async () => {
     if (!pessoaId || !isStudentCadernetaView) return;
-    setCarregando(true);
+    setCarregandoAcademicos(true);
     try {
       // Dados simulados conforme a regra de 3 módulos e 3 avaliações
       const criarModulo = (nome, n1, n2, n3, faltas) => ({
@@ -172,8 +265,8 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
 
       setCadernetaDados({
         modulos: [
-          criarModulo('Módulo 1', 8, 7.5, 9, 2),
-          criarModulo('Módulo 2', 6, 7, 6.5, 1),
+          criarModulo('Módulo 1 - Vida Cristã Genuína', 8, 7.5, 9, 2),
+          criarModulo('Módulo 2 - Compreendendo o Modelo dos "12"', 6, 7, 6.5, 1),
           criarModulo('Módulo 3', 10, 9, 8.5, 0)
         ],
       });
@@ -185,9 +278,33 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
     } catch (error) {
       console.error('Erro ao carregar dados acadêmicos:', error);
     } finally {
-      setCarregando(false);
+      setCarregandoAcademicos(false);
     }
   }, [pessoaId, isStudentCadernetaView]);
+
+  const handleNotaChange = (moduloIdx, avalIdx, valor) => {
+    const nota = parseFloat(valor) || 0;
+    setCadernetaDados(prev => {
+      if (!prev) return prev;
+      const modulos = [...prev.modulos];
+      const avaliacoes = [...modulos[moduloIdx].avaliacoes];
+      avaliacoes[avalIdx] = { ...avaliacoes[avalIdx], nota };
+      const media = avaliacoes.reduce((acc, a) => acc + a.nota, 0) / avaliacoes.length;
+      modulos[moduloIdx] = { ...modulos[moduloIdx], avaliacoes, media };
+      return { ...prev, modulos };
+    });
+  };
+
+  const handleFaltasChange = (moduloIdx, valor) => {
+    const faltas = parseInt(valor) || 0;
+    setFaltasDados(prev => {
+      if (!prev) return prev;
+      const modulos = [...prev.modulos];
+      modulos[moduloIdx] = { ...modulos[moduloIdx], faltas };
+      const total = modulos.reduce((acc, m) => acc + m.faltas, 0);
+      return { ...prev, modulos, total };
+    });
+  };
 
   function preencherFormulario(p) {
     setMembro(p);
@@ -214,7 +331,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
     setDataConversao(dataISOparaBR(p.data_conversao));
     setStatus(p.status || 'ativo');
     setBatizadoAguas(Boolean(p.batizado_aguas));
-    setAtuacao(p.atuacao || '');
+    setAtuacao(p.atuacao ? p.atuacao.split(',').map(s => s.trim()) : []);
     setPermissao(p.permissao || '');
     setSenhaNovoAcesso('');
     setConfirmarSenhaNovoAcesso('');
@@ -222,20 +339,48 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
     setAvaliacaoEscola(p.avaliacao_escola_discipulos || '');
     setPerfilComportamental(p.perfil_comportamental || '');
     setAtividadeCerebral(p.atividade_cerebral || '');
+    setPerfilAguia(p.perfil_aguia || '');
+    setPerfilGato(p.perfil_gato || '');
+    setPerfilLobo(p.perfil_lobo || '');
+    setPerfilPensante(p.perfil_pensante || '');
+    setPerfilRazao(p.perfil_razao || '');
+    setPerfilEmocao(p.perfil_emocao || '');
+    setPerfilAtuante(p.perfil_atuante || '');
+    setPerfilTubarao(p.perfil_tubarao || '');
     setConjugeId(p.conjuge_id || '');
     setPreviewNovaFotoUrl('');
     setFotoFinalBlob(null);
   }
 
+  const [carregandoMembro, setCarregandoMembro] = useState(true);
   useEffect(() => {
     async function carregarFichaDoMembro() {
       if (!pessoaId) return;
-      setCarregando(true);
+      setCarregandoMembro(true);
+      setTestePersonalidade(null); // Limpa o teste anterior antes de buscar o novo
 
       try {
-        const { data: p, error: erroPessoa } = await supabase.from('pessoas').select('*').eq('id', pessoaId).single();
+        const { data: p, error: erroPessoa } = await supabase
+          .from('pessoas')
+          .select('*, celulas(nome, imagem_url)')
+          .eq('id', pessoaId).single();
         if (erroPessoa) console.warn('Erro ao carregar pessoa:', erroPessoa);
         if (p) preencherFormulario(p);
+
+        // Busca teste de personalidade mais recente
+        if (p?.auth_user_id) {
+          const { data: testePers } = await supabase
+            .from('personality_tests')
+            .select('*')
+            .eq('member_id', p.auth_user_id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (testePers) setTestePersonalidade(testePers);
+          setTestePersonalidade(testePers || null);
+        } else {
+          setTestePersonalidade(null);
+        }
 
         const { data: relacoes, error: erroRelacoes } = await supabase.from('relacoes_familiares').select('id_filho').eq('id_pai_mae', pessoaId);
         if (erroRelacoes) console.warn('Tabela "relacoes_familiares" não encontrada. Veja DATABASE_SCHEMA.md');
@@ -256,6 +401,14 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
         if (erroZonas) console.warn('Tabela "zonas_moradia" não encontrada. Veja DATABASE_SCHEMA.md');
         if (z) setZonas(z);
 
+        // Busca a lista de cargos para os selects
+        const { data: listCargos } = await supabase.from('cargos').select('id, nome').order('nome');
+        if (listCargos) setCargos(listCargos);
+
+        // Busca a lista de atuações para os checkboxes
+        const { data: listAtuacoes } = await supabase.from('atuacoes').select('id, nome').order('nome');
+        if (listAtuacoes) setAtuacoes(listAtuacoes);
+
         await carregarFinanceiro();
 
         const { data: cFin } = await supabase.from('contas_financeiras').select('id, nome').order('nome');
@@ -266,13 +419,41 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
       } catch (err) {
         console.error('Erro ao carregar ficha do membro:', err);
       } finally {
-        setCarregando(false);
+      setCarregandoMembro(false); // Já estava correto, mas mantendo para revisão
       }
     }
-    if (!isStudentCadernetaView) { // Carrega dados normais se não for caderneta
-      carregarFichaDoMembro();
-    }
+    carregarFichaDoMembro();
   }, [pessoaId, listaPessoas, carregarFinanceiro, isStudentCadernetaView]);
+
+  // Dynamic ABAS
+  const dynamicAbas = useMemo(() => {
+    if (isStudentCadernetaView) {
+      return [
+        { id: 'informacoes', label: 'Informações Pessoais' },
+        { id: 'caderneta', label: 'Caderneta Escolar' },
+        { id: 'faltas', label: 'Registro de Faltas' },
+        { id: 'crescimento', label: 'Avaliação de Crescimento' },
+      ];
+    }
+    const list = [
+      { id: 'informacoes', label: 'Informações' },
+      { id: 'adicionais', label: 'Informações Adicionais' },
+      { id: 'escola', label: 'Escola' },
+      { id: 'frequencia', label: 'Frequência' },
+      { id: 'financeiro', label: 'Financeiro' },
+    ];
+    if (!isMembro) list.push({ id: 'permissoes', label: 'Permissões' });
+    return list;
+  }, [isStudentCadernetaView, isMembro]);
+
+  // Initialize abaAtiva based on isStudentCadernetaView
+  useEffect(() => {
+    if (isStudentCadernetaView) {
+      setAbaAtiva('caderneta');
+    } else {
+      setAbaAtiva('informacoes');
+    }
+  }, [isStudentCadernetaView]);
 
   useEffect(() => {
     if (isStudentCadernetaView) {
@@ -376,11 +557,19 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
       data_conversao: dataBRparaISO(dataConversao),
       status,
       batizado_aguas: batizadoAguas,
-      atuacao: atuacao.trim() || null,
+      atuacao: Array.isArray(atuacao) ? (atuacao.join(', ') || null) : (atuacao || null),
       permissao: permissao.trim() || null,
       avaliacao_escola_discipulos: avaliacaoEscola.trim() || null,
       perfil_comportamental: perfilComportamental.trim() || null,
       atividade_cerebral: atividadeCerebral.trim() || null,
+      perfil_aguia: perfilAguia || null,
+      perfil_gato: perfilGato || null,
+      perfil_lobo: perfilLobo || null,
+      perfil_pensante: perfilPensante || null,
+      perfil_razao: perfilRazao || null,
+      perfil_emocao: perfilEmocao || null,
+      perfil_atuante: perfilAtuante || null,
+      perfil_tubarao: perfilTubarao || null,
       foto_url: urlFotoPublica,
       conjuge_id: conjugeId || null,
     };
@@ -394,7 +583,10 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
         );
       }
       setModoEdicao(false);
-      const { data: atualizado } = await supabase.from('pessoas').select('*').eq('id', pessoaId).single();
+      const { data: atualizado } = await supabase
+        .from('pessoas')
+        .select('*, celulas(nome, imagem_url)')
+        .eq('id', pessoaId).single();
       if (atualizado) preencherFormulario(atualizado);
       onDadosAtualizados();
     } else {
@@ -449,7 +641,10 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
       setMensagemAcesso('Acesso criado com sucesso.');
       setSenhaNovoAcesso('');
       setConfirmarSenhaNovoAcesso('');
-      const { data: atualizado } = await supabase.from('pessoas').select('*').eq('id', pessoaId).single();
+      const { data: atualizado } = await supabase
+        .from('pessoas')
+        .select('*, celulas(nome, imagem_url)')
+        .eq('id', pessoaId).single();
       if (atualizado) preencherFormulario(atualizado);
       if (onDadosAtualizados) onDadosAtualizados();
     }
@@ -465,15 +660,47 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
     });
   }
 
-  async function confirmarExclusaoCadastro() {
+  async function handleMatricularEmTurma(turmaId) {
+    if (!window.confirm('Deseja matricular este membro nesta turma?')) return;
+    
+    setSalvando(true);
+    try {
+      // 1. Garantir que a pessoa existe na tabela de alunos
+      let { data: aluno } = await supabase.from('alunos').select('id').eq('pessoa_id', pessoaId).maybeSingle();
+      
+      if (!aluno) {
+        const { data: novoAluno, error: errA } = await supabase.from('alunos').insert([{ pessoa_id: pessoaId }]).select().single();
+        if (errA) throw errA;
+        aluno = novoAluno;
+      }
+
+      // 2. Inserir na turma
+      const { error: errT } = await supabase.from('alunos_turmas').insert([{
+        aluno_id: aluno.id,
+        turma_id: turmaId,
+        status: 'ativo'
+      }]);
+
+      if (errT) throw errT;
+      
+      await carregarDadosEscolares();
+      window.alert('Matrícula realizada com sucesso!');
+    } catch (err) {
+      window.alert('Erro ao matricular: ' + err.message);
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  async function confirmarInativacaoCadastro() {
     if (!motivoExclusao) {
-      window.alert('Selecione o motivo da exclusão.');
+      window.alert('Selecione o motivo da inativação.');
       return;
     }
     setExcluindoCadastro(true);
     const { error } = await supabase
       .from('pessoas')
-      .update({ status: 'excluido', motivo_exclusao: motivoExclusao })
+      .update({ status: 'inativo', motivo_exclusao: motivoExclusao })
       .eq('id', pessoaId);
     setExcluindoCadastro(false);
     if (!error) {
@@ -481,7 +708,30 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
       onDadosAtualizados();
       onFechar();
     } else {
-      window.alert('Erro ao excluir: ' + error.message);
+      window.alert('Erro ao inativar: ' + error.message);
+    }
+  }
+
+  async function handleExcluirPermanente() {
+    const confirmacao = window.confirm(
+      `⚠️ ATENÇÃO: Você está prestes a excluir PERMANENTEMENTE o cadastro de ${nome}.\n\nEsta ação não pode ser desfeita e removerá todos os vínculos (familiares, históricos, etc) desta pessoa.\n\nDeseja continuar?`
+    );
+    if (!confirmacao) return;
+
+    setSalvando(true);
+    try {
+      // Remove relações familiares vinculadas antes de deletar a pessoa
+      await supabase.from('relacoes_familiares').delete().or(`id_pai_mae.eq.${pessoaId},id_filho.eq.${pessoaId}`);
+      
+      const { error } = await supabase.from('pessoas').delete().eq('id', pessoaId);
+      if (error) throw error;
+
+      if (onDadosAtualizados) onDadosAtualizados();
+      onFechar();
+    } catch (err) {
+      window.alert('Erro ao excluir permanentemente: ' + err.message);
+    } finally {
+      setSalvando(false);
     }
   }
 
@@ -489,7 +739,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
     (p) => String(p.id) !== String(pessoaId) && p.nome?.toLowerCase().includes(filtroBuscaFilho.toLowerCase())
   );
 
-  if (carregando) {
+  if (carregandoMembro) {
     return <div className="text-center py-12 text-sm text-[var(--text-muted)] font-medium">Buscando ficha do membro...</div>;
   }
   if (!membro) {
@@ -500,14 +750,14 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
   const dis = !modoEdicao;
 
   return (
-    <div className="w-full space-y-0">
+    <div className="w-full space-y-4">
       {modalExclusaoAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50">
           <div className="bg-white rounded-2xl border shadow-xl w-full max-w-md p-5 space-y-4">
-            <h3 className="font-semibold text-[var(--text-heading)]">Excluir Cadastro de {nome}</h3>
-            <p className="text-sm text-[var(--text-muted)]">O cadastro será marcado como excluído (não aparece mais nas listas).</p>
+            <h3 className="font-semibold text-[var(--text-heading)]">Inativar Cadastro de {nome}</h3>
+            <p className="text-sm text-[var(--text-muted)]">O membro será movido para a lista de inativos. Você poderá reativá-lo a qualquer momento.</p>
             <div>
-              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Motivo da exclusão</label>
+              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Motivo da inativação</label>
               <select value={motivoExclusao} onChange={(e) => setMotivoExclusao(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm bg-white">
                 <option value="">Selecione o motivo</option>
                 {MOTIVOS_EXCLUSAO.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -515,8 +765,8 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
             </div>
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setModalExclusaoAberto(false)} className="px-4 py-2 text-xs border rounded-xl">Cancelar</button>
-              <button type="button" onClick={confirmarExclusaoCadastro} disabled={excluindoCadastro} className="px-4 py-2 text-xs font-semibold rounded-xl bg-rose-600 text-white disabled:opacity-50">
-                {excluindoCadastro ? 'Excluindo...' : 'Confirmar exclusão'}
+              <button type="button" onClick={confirmarInativacaoCadastro} disabled={excluindoCadastro} className="px-4 py-2 text-xs font-semibold rounded-xl bg-amber-600 text-white disabled:opacity-50">
+                {excluindoCadastro ? 'Processando...' : 'Confirmar inativação'}
               </button>
             </div>
           </div>
@@ -565,9 +815,17 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
               </div>
               <h1 className="text-3xl sm:text-4xl font-semibold text-[var(--text-heading)] tracking-tight leading-tight">{nome}</h1>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                <p><span className="text-[var(--text-muted)]">Zona de moradia:</span> <span className="font-medium text-[var(--text-heading)]">{nomeZona}</span></p>
-                <p><span className="text-[var(--text-muted)]">Cargo:</span> <span className="font-medium text-[var(--text-heading)] capitalize">{cargo || 'Membro'}</span></p>
-                <p><span className="text-[var(--text-muted)]">Telefone:</span> <span className="font-medium text-[var(--text-heading)]">{telefone || '—'}</span></p>
+                <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Zona de moradia</span> <span className="font-medium text-[var(--text-heading)]">{nomeZona}</span></p>
+                <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Célula</span> 
+                  <span className="font-medium text-[#055F6D]">
+                    {nomeCelula} 
+                    {celulaId && (
+                      <span className="ml-2 text-[9px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded border border-teal-100 font-black">MEMBRO ATIVO</span>
+                    )}
+                  </span>
+                </p>
+                <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Cargo</span> <span className="font-medium text-[var(--text-heading)] capitalize">{cargo || 'Membro'}</span></p>
+                <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Telefone</span> <span className="font-medium text-[var(--text-heading)]">{telefone || '—'}</span></p>
                 <p className="sm:col-span-2"><span className="text-[var(--text-muted)]">Endereço:</span> <span className="font-medium text-[var(--text-heading)]">{enderecoCompleto}</span></p>
               </div>
             </div>
@@ -577,7 +835,16 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
             {!modoEdicao ? (
               <>
                 <button type="button" onClick={() => setModoEdicao(true)} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl">✏️ Editar</button>
-                <button type="button" onClick={() => setModalExclusaoAberto(true)} className="px-4 py-2 rounded-xl border border-rose-200 text-rose-700 text-xs font-semibold bg-rose-50">Excluir Cadastro</button>
+                {!isMembro && (
+                  <>
+                    <button type="button" onClick={() => setModalExclusaoAberto(true)} className="px-2 text-[11px] font-semibold text-slate-400 hover:text-amber-600 transition-colors">Inativar</button>
+                    <button type="button" onClick={handleExcluirPermanente} className="px-2 text-slate-400 hover:text-rose-600 transition-colors" title="Excluir Permanentemente">
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </>
+                )}
                 <button type="button" onClick={onFechar} className="px-4 py-2 rounded-xl border border-[var(--border)] text-xs font-medium text-[var(--text-primary)]">Fechar</button>
               </>
             ) : (
@@ -587,14 +854,15 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
         </div>
       </Card>
 
-      <Card className="p-0 w-full mt-4">
-        <nav className="tabs-nav" aria-label="Abas da ficha">
-          {ABAS.map((aba) => (
+      <div className="flex flex-col lg:flex-row gap-6 items-start w-full mt-4">
+      <Card className="p-0 flex-1 min-w-0 w-full">
+        <nav className="tabs-nav" aria-label="Abas da ficha"> {/* Use dynamicAbas here */}
+          {dynamicAbas.map((aba) => (
             <button
               key={aba.id}
               type="button"
               onClick={() => setAbaAtiva(aba.id)}
-              className={`tab-btn ${abaAtiva === aba.id ? 'tabs-active' : ''}`}
+              className={`tab-btn ${abaAtiva === aba.id ? 'tabs-active' : ''}`} // Corrected class name
             >
               {aba.label}
             </button>
@@ -643,7 +911,19 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                   <CampoInput label="Profissão" value={profissao} onChange={setProfissao} disabled={dis} />
                   <CampoInput label="E-mail" value={email} onChange={setEmail} disabled={dis} />
                   <CampoInput label="Telefone" value={telefone} onChange={setTelefone} disabled={dis} mask={mascaraTelefone} />
-                  <CampoInput label="Status" value={status} onChange={setStatus} disabled={dis} />
+                  {!dis ? (
+                    <div>
+                      <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Status</label>
+                      <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-3 py-1.5 text-xs font-medium border border-[var(--border)] rounded-xl bg-white focus:outline-none">
+                        <option value="ativo">Ativo</option>
+                        <option value="inativo">Inativo</option>
+                        <option value="afastado">Afastado</option>
+                        <option value="transferido">Transferido</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <CampoLinha label="Status" valor={status} />
+                  )}
                 </div>
               </Card>
 
@@ -668,8 +948,8 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                         <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Cargo</label>
                         <select value={cargo} onChange={(e) => setCargo(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
                           <option value="">Selecione o cargo</option>
-                          {cargosLista.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
-                          {cargo && !cargosLista.some((c) => c.nome === cargo) && <option value={cargo}>{cargo}</option>}
+                          {cargos.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+                          {cargo && !cargos.some((c) => c.nome === cargo) && <option value={cargo}>{cargo}</option>}
                         </select>
                       </div>
                       <div>
@@ -754,52 +1034,349 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
             </div>
           )}
 
-          {abaAtiva === 'adicionais' && (
-            <Card className="p-0">
-              <CardHeader titulo="Informações Adicionais" subtitulo="Atuação vem de Configurações → Campos de atuação." />
-              <div className="card-body-full grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Avaliações da Escola de Discípulos</label>
-                  <textarea disabled={dis} value={avaliacaoEscola} onChange={(e) => setAvaliacaoEscola(e.target.value)} rows={4} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" placeholder="Registros de avaliação, módulos concluídos..." />
+          {abaAtiva === 'adicionais' && !isStudentCadernetaView && (
+            <div className="space-y-6">
+              {/* Novo Ambiente: Perfil Comportamental */}
+              <Card className="p-0">
+                <CardHeader titulo="Perfil Comportamental" subtitulo="Valores numéricos baseados no teste de perfil (0 a 100)." />
+                <div className="card-body-full grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-center gap-3 p-3 rounded-xl border border-blue-100 bg-blue-50/30">
+                    <span className="text-xl">🦅</span>
+                    <span className="font-bold text-slate-700 text-sm flex-1">Águia</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={perfilAguia}
+                      onChange={(e) => setPerfilAguia(e.target.value)}
+                      disabled={dis}
+                      className="w-20 px-2 py-1 border border-blue-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-blue-500/20 outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-100 bg-purple-50/30">
+                    <span className="text-xl">🐈</span>
+                    <span className="font-bold text-slate-700 text-sm flex-1">Gato</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={perfilGato}
+                      onChange={(e) => setPerfilGato(e.target.value)}
+                      disabled={dis}
+                      className="w-20 px-2 py-1 border border-purple-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-purple-500/20 outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/30">
+                    <span className="text-xl">🐺</span>
+                    <span className="font-bold text-slate-700 text-sm flex-1">Lobo</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={perfilLobo}
+                      onChange={(e) => setPerfilLobo(e.target.value)}
+                      disabled={dis}
+                      className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-gray-500/20 outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 bg-red-50/30">
+                    <span className="text-xl">🦈</span>
+                    <span className="font-bold text-slate-700 text-sm flex-1">Tubarão</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={perfilTubarao}
+                      onChange={(e) => setPerfilTubarao(e.target.value)}
+                      disabled={dis}
+                      className="w-20 px-2 py-1 border border-red-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Perfil comportamental</label>
-                  <textarea disabled={dis} value={perfilComportamental} onChange={(e) => setPerfilComportamental(e.target.value)} rows={4} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" placeholder="Ex: comunicador, analítico, executor..." />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Atividade cerebral</label>
-                  <textarea disabled={dis} value={atividadeCerebral} onChange={(e) => setAtividadeCerebral(e.target.value)} rows={3} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Campo de atuação</label>
-                  {!dis ? (
-                    <select value={atuacao} onChange={(e) => setAtuacao(e.target.value)} className="w-full px-3 py-2 text-sm font-normal border rounded-xl bg-white">
-                      <option value="">Selecione</option>
-                      {atuacoesLista.map((a) => <option key={a.id} value={a.nome}>{a.nome}</option>)}
-                      {atuacao && !atuacoesLista.some((a) => a.nome === atuacao) && <option value={atuacao}>{atuacao}</option>}
-                    </select>
+              </Card>
+
+              {/* Novo Ambiente: Personalidade (Temperamentos) */}
+              <Card className="p-0">
+                <CardHeader titulo="Personalidade" subtitulo="Temperamentos baseados no último teste realizado (Escala 7-35)." />
+                <div className="card-body-full">
+                  {testePersonalidade ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 bg-red-50/30">
+                          <span className="text-xl">🔥</span>
+                          <span className="font-bold text-slate-700 text-sm flex-1">Colérico</span>
+                          <span className="text-lg font-black text-red-600">{testePersonalidade.colerico}</span>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-100 bg-purple-50/30">
+                          <span className="text-xl">📋</span>
+                          <span className="font-bold text-slate-700 text-sm flex-1">Melancólico</span>
+                          <span className="text-lg font-black text-purple-600">{testePersonalidade.melancolico}</span>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-xl border border-amber-100 bg-amber-50/30">
+                          <span className="text-xl">☀️</span>
+                          <span className="font-bold text-slate-700 text-sm flex-1">Sanguíneo</span>
+                          <span className="text-lg font-black text-amber-600">{testePersonalidade.sanguineo}</span>
+                        </div>
+                        <div className="flex items-center gap-3 p-3 rounded-xl border border-cyan-100 bg-cyan-50/30">
+                          <span className="text-xl">💧</span>
+                          <span className="font-bold text-slate-700 text-sm flex-1">Fleumático</span>
+                          <span className="text-lg font-black text-cyan-600">{testePersonalidade.fleumatico}</span>
+                        </div>
+                      </div>
+                      <div className="p-3 bg-[#055F6D]/5 rounded-xl border border-[#055F6D]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Perfil Dominante:</span>
+                          <span className="text-xs font-black text-[#055F6D] uppercase">{testePersonalidade.dominant} + {testePersonalidade.secondary}</span>
+                        </div>
+                        <span className="text-[9px] text-slate-400 font-bold">Realizado em: {new Date(testePersonalidade.created_at).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                    </div>
                   ) : (
-                    <p className="mt-0.5 text-sm font-medium text-[var(--text-heading)]">{atuacao || '—'}</p>
+                    <p className="text-sm text-slate-400 italic py-4 text-center">Nenhum teste de personalidade registrado para este membro.</p>
                   )}
                 </div>
+              </Card>
+
+              {/* Novo Ambiente: Atividade Cerebral */}
+              <Card className="p-0">
+                <CardHeader titulo="Atividade Cerebral" subtitulo="Valores numéricos para os quadrantes cerebrais (0 a 100)." />
+                <div className="card-body-full flex flex-col items-center justify-center gap-3">
+                  {/* Pensante (Topo) */}
+                  <div className="flex flex-col items-center gap-2 w-full max-w-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pensante</span>
+                    <div className="flex items-center gap-2 p-2 rounded-xl border border-blue-100 bg-blue-50/30 w-full">
+                      <span className="text-xl">🧠</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={perfilPensante}
+                        onChange={(e) => setPerfilPensante(e.target.value)}
+                        disabled={dis}
+                        className="flex-1 px-2 py-1 border border-blue-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-blue-500/20 outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Razão (Esquerda) e Emoção (Direita) */}
+                  <div className="flex items-center justify-between w-full max-w-md gap-4">
+                    <div className="flex flex-col items-center gap-2 flex-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Razão</span>
+                      <div className="flex items-center gap-2 p-2 rounded-xl border border-green-100 bg-green-50/30 w-full">
+                        <span className="text-xl">⚖️</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={perfilRazao}
+                          onChange={(e) => setPerfilRazao(e.target.value)}
+                          disabled={dis}
+                          className="flex-1 px-2 py-1 border border-green-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-green-500/20 outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center gap-2 flex-1">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Emoção</span>
+                      <div className="flex items-center gap-2 p-2 rounded-xl border border-red-100 bg-red-50/30 w-full">
+                        <span className="text-xl">❤️</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={perfilEmocao}
+                          onChange={(e) => setPerfilEmocao(e.target.value)}
+                          disabled={dis}
+                          className="flex-1 px-2 py-1 border border-red-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Atuante (Inferior) */}
+                  <div className="flex flex-col items-center gap-2 w-full max-w-xs">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atuante</span>
+                    <div className="flex items-center gap-2 p-2 rounded-xl border border-yellow-100 bg-yellow-50/30 w-full">
+                      <span className="text-xl">💪</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={perfilAtuante}
+                        onChange={(e) => setPerfilAtuante(e.target.value)}
+                        disabled={dis}
+                        className="flex-1 px-2 py-1 border border-yellow-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-yellow-500/20 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Novo Ambiente: Área de Atuação */}
+              <Card className="p-0">
+                <CardHeader titulo="Área de Atuação" subtitulo="Selecione os ministérios e departamentos onde o membro serve ou tem aptidão." />
+                <div className="card-body-full">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {atuacoes.map((a) => {
+                      const selecionado = Array.isArray(atuacao) && atuacao.includes(a.nome);
+                      return (
+                        <button
+                          key={a.id}
+                          type="button"
+                          disabled={dis}
+                          onClick={() => {
+                            const novaLista = selecionado 
+                              ? atuacao.filter(item => item !== a.nome)
+                              : [...atuacao, a.nome];
+                            setAtuacao(novaLista);
+                          }}
+                          className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all ${
+                            selecionado 
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-900 ring-2 ring-emerald-500/10' 
+                              : 'bg-white border-slate-200 hover:border-emerald-200 text-slate-600'
+                          } ${dis ? 'cursor-default opacity-80' : 'cursor-pointer hover:shadow-sm'}`}
+                        >
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selecionado ? 'bg-emerald-600 border-emerald-600' : 'bg-white border-slate-300'}`}>
+                            {selecionado && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                          </div>
+                          <span className="text-xs font-bold">{a.nome}</span>
+                        </button>
+                      );
+                    })}
+                    {atuacoes.length === 0 && (
+                      <p className="col-span-full text-center text-sm text-slate-400 italic py-4">Nenhuma atuação cadastrada nas configurações.</p>
+                    )}
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-0">
+                <CardHeader titulo="Observações Acadêmicas e Perfil" />
+                <div className="card-body-full grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Avaliações da Escola de Discípulos</label>
+                    <textarea disabled={dis} value={avaliacaoEscola} onChange={(e) => setAvaliacaoEscola(e.target.value)} rows={4} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" placeholder="Registros de avaliação, módulos concluídos..." />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Atividade cerebral</label>
+                    <textarea disabled={dis} value={atividadeCerebral} onChange={(e) => setAtividadeCerebral(e.target.value)} rows={3} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" />
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {abaAtiva === 'escola' && !isStudentCadernetaView && (
+            <div className="space-y-6">
+              <Card className="p-0">
+                <CardHeader titulo="Matrículas Ativas" subtitulo="Cursos e turmas que o membro está frequentando." />
+                <div className="card-body-full">
+                  {matriculasMembro.length === 0 ? (
+                    <p className="text-sm text-slate-400 italic">Este membro não possui matrículas ativas.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {matriculasMembro.map(m => {
+                        const isDesistente = m.status === 'desistente';
+                        return (
+                          <div key={m.id} className={`p-3 rounded-xl border flex justify-between items-center ${
+                            isDesistente ? 'border-rose-100 bg-rose-50/30' : 'border-emerald-100 bg-emerald-50/30'
+                          }`}>
+                            <div>
+                              <p className={`text-[10px] font-bold uppercase ${
+                                isDesistente ? 'text-rose-600' : 'text-emerald-600'
+                              }`}>{m.turmas?.escolas?.nome}</p>
+                              <p className="text-sm font-bold text-slate-700">{m.turmas?.nome}</p>
+                            </div>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
+                              isDesistente ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+                            }`}>
+                              {m.status}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              <Card className="p-0">
+                <CardHeader titulo="Nova Matrícula" subtitulo="Vincular membro a uma turma aberta." />
+                <div className="card-body-full">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {turmasDisponiveis
+                      .filter(t => !matriculasMembro.some(m => m.turmas?.id === t.id))
+                      .map(turma => (
+                        <button
+                          key={turma.id}
+                          type="button"
+                          onClick={() => handleMatricularEmTurma(turma.id)}
+                          className="text-left p-3 rounded-xl border border-slate-200 hover:border-[#055F6D] hover:bg-slate-50 transition group cursor-pointer"
+                        >
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">{turma.escolas?.nome}</p>
+                          <p className="text-xs font-bold text-slate-700 group-hover:text-[#055F6D]">{turma.nome}</p>
+                          <p className="text-[10px] text-[#055F6D] mt-2 font-bold">+ Matricular agora</p>
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {abaAtiva === 'frequencia' && (
+            <Card className="p-0">
+              <CardHeader titulo="Minha Frequência na Célula" subtitulo="Histórico de presença nos encontros de célula." />
+              <div className="card-body-full">
+                {carregandoPresenca ? (
+                  <p className="text-sm text-slate-400 italic">Carregando histórico...</p>
+                ) : historicoPresenca.length === 0 ? (
+                  <p className="text-sm text-slate-400 italic">Nenhum registro de reunião para sua célula encontrado no sistema.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="table-mib">
+                      <thead>
+                        <tr>
+                          <th>Data da Reunião</th>
+                          <th className="text-right pr-6">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {historicoPresenca.map(item => (
+                          <tr key={item.id}>
+                            <td className="font-medium text-slate-700">
+                              {new Date(item.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                            </td>
+                            <td className="text-right pr-6">
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${item.presente ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                {item.presente ? '✅ PRESENTE' : '❌ AUSENTE'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </Card>
           )}
 
-          {abaAtiva === 'financeiro' && (
+          {abaAtiva === 'financeiro' && !isStudentCadernetaView && (
             <div className="space-y-6">
               <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 p-4 rounded-2xl">
                 <div>
                   <h4 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Histórico Contribuitivo</h4>
                   <p className="text-xs text-emerald-600 mt-0.5">Lançamentos vinculados a este membro no ano corrente.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsModalReceitaAberto(true)}
-                  className="px-3 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition shadow-sm"
-                >
-                  + Nova Receita
-                </button>
+                {!isMembro && (
+                  <button
+                    type="button"
+                    onClick={() => setIsModalReceitaAberto(true)}
+                    className="px-3 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition shadow-sm"
+                  >
+                    + Nova Receita
+                  </button>
+                )}
               </div>
 
               {/* Tabela de Transações do Membro */}
@@ -809,14 +1386,13 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                     <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       <th className="p-3">Data</th>
                       <th className="p-3">Categoria</th>
-                      <th className="p-3">Conta/Caixa</th>
                       <th className="p-3">Descrição</th>
                       <th className="p-3 text-right">Valor</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
                     {contribuicoes.length === 0 ? (
-                      <tr><td colSpan={5} className="p-8 text-center text-slate-400 italic">Nenhum lançamento vinculado a este membro.</td></tr>
+                      <tr><td colSpan={4} className="p-8 text-center text-slate-400 italic">Nenhum lançamento vinculado a este membro.</td></tr>
                     ) : (
                       contribuicoes.map((t) => (
                         <tr key={t.id}>
@@ -826,7 +1402,6 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                               {t.categorias_financeiras?.nome || '—'}
                             </span>
                           </td>
-                          <td className="p-3">{t.contas_financeiras?.nome || '—'}</td>
                           <td className="p-3">{t.descricao || '—'}</td>
                           <td className={`p-3 text-right font-bold ${t.tipo === 'receita' ? 'text-emerald-600' : 'text-rose-600'}`}>
                             R$ {Number(t.valor).toFixed(2)}
@@ -840,16 +1415,17 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
             </div>
           )}
 
-          {isStudentCadernetaView && abaAtiva === 'caderneta' && (
+          {abaAtiva === 'caderneta' && (
             <Card className="p-0">
               <CardHeader titulo="Caderneta Escolar" subtitulo="Notas e desempenho do aluno nos módulos do curso." />
-              <div className="card-body-full space-y-4">
-                {carregando ? (
+                  <div className="card-body-full">
+                {carregandoAcademicos ? (
                   <p className="text-sm text-slate-400 italic">Carregando caderneta...</p>
                 ) : cadernetaDados?.modulos?.length === 0 ? (
                   <p className="text-sm text-slate-400 italic">Nenhuma avaliação registrada ainda.</p>
                 ) : (
-                  cadernetaDados?.modulos.map((modulo, idx) => (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {cadernetaDados?.modulos?.map((modulo, idx) => (
                     <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                       <h4 className="font-bold text-slate-800 mb-2">{modulo.nome}</h4>
                       <table className="w-full text-left text-xs">
@@ -863,7 +1439,21 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                           {modulo.avaliacoes.map((aval, aIdx) => (
                             <tr key={aIdx}>
                               <td className="py-1">{aval.tipo}</td>
-                              <td className="py-1 text-right font-bold text-slate-700">{aval.nota.toFixed(1)}</td>
+                                    <td className="py-1 text-right font-bold text-slate-700">
+                                      {modoEdicao ? (
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          max="10"
+                                          step="0.1"
+                                          value={aval.nota}
+                                          onChange={(e) => handleNotaChange(idx, aIdx, e.target.value)}
+                                          className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-[#055F6D]/20 outline-none"
+                                        />
+                                      ) : (
+                                        aval.nota.toFixed(1)
+                                      )}
+                                    </td>
                             </tr>
                           ))}
                           <tr className={`font-bold border-t border-slate-200 ${modulo.media < 7 ? 'text-rose-600' : 'text-[#055F6D]'}`}>
@@ -873,17 +1463,18 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                         </tbody>
                       </table>
                     </div>
-                  ))
+                  ))}
+                      </div>
                 )}
               </div>
             </Card>
           )}
 
-          {isStudentCadernetaView && abaAtiva === 'faltas' && (
+          {abaAtiva === 'faltas' && (
             <Card className="p-0">
               <CardHeader titulo="Registro de Faltas" subtitulo="Controle de ausências do aluno por módulo." />
               <div className="card-body-full space-y-4">
-                {carregando ? (
+                {carregandoAcademicos ? (
                   <p className="text-sm text-slate-400 italic">Carregando faltas...</p>
                 ) : faltasDados?.modulos?.length === 0 ? (
                   <p className="text-sm text-slate-400 italic">Nenhuma falta registrada.</p>
@@ -899,10 +1490,22 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                           </tr>
                         </thead>
                         <tbody>
-                          {faltasDados?.modulos.map((modulo, idx) => (
+                          {faltasDados?.modulos?.map((modulo, idx) => (
                             <tr key={idx}>
                               <td className="py-1">{modulo.nome}</td>
-                              <td className="py-1 text-right font-bold text-rose-600">{modulo.faltas}</td>
+                                    <td className="py-1 text-right font-bold text-rose-600">
+                                      {modoEdicao ? (
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          value={modulo.faltas}
+                                          onChange={(e) => handleFaltasChange(idx, e.target.value)}
+                                          className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-rose-500/20 outline-none"
+                                        />
+                                      ) : (
+                                        modulo.faltas
+                                      )}
+                                    </td>
                             </tr>
                           ))}
                         </tbody>
@@ -917,11 +1520,11 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
             </Card>
           )}
 
-          {isStudentCadernetaView && abaAtiva === 'crescimento' && (
+          {abaAtiva === 'crescimento' && (
             <Card className="p-0">
               <CardHeader titulo="Avaliação de Crescimento" subtitulo="Observações sobre o desenvolvimento do aluno na escola." />
               <div className="card-body-full space-y-4">
-                {carregando ? (
+                {carregandoAcademicos ? (
                   <p className="text-sm text-slate-400 italic">Carregando avaliação...</p>
                 ) : (
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -940,7 +1543,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
             </Card>
           )}
 
-          {abaAtiva === 'permissoes' && (
+          {abaAtiva === 'permissoes' && !isStudentCadernetaView && !isMembro && (
             <Card className="p-0">
               <CardHeader
                 titulo="Permissões"
@@ -1022,6 +1625,8 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
           )}
         </form>
       </Card>
+      <SidebarVinculos pessoaId={pessoaId} pessoaData={membro} matriculasEscolares={matriculasMembro} />
+      </div>
 
       {isModalReceitaAberto && (
         <ModalLancarTransacao

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { ErrorBoundary } from './ErrorBoundary.jsx'
+import { registerServiceWorker } from './serviceWorkerRegistration.js'
 
 console.log('Iniciando aplicação...');
 
@@ -13,3 +14,5 @@ createRoot(document.getElementById('root')).render(
     </ErrorBoundary>
   </StrictMode>,
 )
+
+registerServiceWorker()

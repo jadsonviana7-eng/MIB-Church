@@ -1,26 +1,36 @@
-/* Importa o Roboto nos pesos 400 (Regular) e 700 (Bold) */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+/* Fontes gratuitas via Google Fonts: Montserrat para titulos e Roboto para UI/texto. */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 :root {
-  --brand: #055f6d;
+  --brand: #0f5b67;
   --brand-light: #e6f3f5;
-  --brand-dark: #044a56;
+  --brand-dark: #083f49;
+  --brand-strong: #123c69;
   --accent: #0d9488;
   --accent-soft: #ccfbf1;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --success: #16a34a;
   --surface: #ffffff;
   --surface-muted: #f4f7fa;
   --surface-header: #e9eef3;
   --text-primary: #4a5d73;
-  --text-heading: #334155;
+  --text-heading: #001657;
   --text-muted: #7b8da3;
   --border: #dde4ec;
-  font-family: 'Roboto', ui-sans-serif, system-ui, sans-serif !important;
+  --shadow-soft: 0 10px 30px rgb(15 91 103 / 8%);
+  --shadow-control: 0 1px 2px rgb(15 91 103 / 8%);
+  --radius-control: 0.75rem;
+  --font-body: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Montserrat', 'Roboto', ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body) !important;
   color: var(--text-primary);
   background: var(--surface-muted);
 }
 
 h1, h2, h3, h4, h5, h6, th, .font-bold, .font-black {
+  font-family: var(--font-heading);
   font-weight: 700 !important;
 }
 
@@ -28,6 +38,15 @@ body {
   margin: 0;
   font-family: inherit;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  cursor: default;
+}
+
+a,
+button,
+[role='button'],
+summary,
+select {
+  cursor: pointer;
 }
 
 button,
@@ -39,17 +58,39 @@ textarea {
   font-weight: 400;
 }
 
+button,
+input,
+select,
+textarea,
+.card,
+.modal,
+.tab-btn {
+  border-radius: var(--radius-control);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #001657;
+  outline-offset: 2px;
+}
+
+::selection {
+  color: #ffffff;
+  background: var(--brand);
+}
+
 .card {
-  border-radius: 1rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 2px rgb(5 95 109 / 4%);
+  box-shadow: var(--shadow-control);
   overflow: hidden;
 }
 
 .card-header {
   background: var(--surface-header);
-  border-bottom: 2px solid #055f6d;
+  border-bottom: 2px solid #004fff;
   padding: 0.875rem 1.25rem;
 }
 
@@ -95,12 +136,14 @@ textarea {
   background: var(--brand);
   color: #fff;
   font-weight: 600;
-  border-radius: 0.75rem;
-  transition: background 0.15s ease;
+  box-shadow: var(--shadow-control);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .btn-primary:hover {
   background: var(--brand-dark);
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-1px);
 }
 
 .tabs-nav {
@@ -113,6 +156,9 @@ textarea {
 }
 
 .tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   padding: 0.75rem 1rem;
   font-size: 0.8125rem;
   font-weight: 500;
@@ -133,7 +179,7 @@ textarea {
 
 .tab-btn.tabs-active {
   color: var(--brand);
-  border-bottom-color: #055f6d;
+  border-bottom-color: #004fff;
   font-weight: 600;
 }
 
@@ -145,6 +191,22 @@ textarea {
 .text-heading {
   color: var(--text-heading);
   font-weight: 600;
+}
+
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.app-icon {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
 }
 
 @media print {

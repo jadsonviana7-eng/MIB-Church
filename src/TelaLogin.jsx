@@ -42,7 +42,7 @@ export default function TelaLogin({ onEntrar }) {
             .maybeSingle();
           const pId = pData?.permissao?.toLowerCase() || 'membro';
           const perfil = perfisAcesso.find(p => p.id === pId) || perfisAcesso.find(p => p.id === 'membro');
-          onEntrar({ email: session.user.email, perfil, lembrarAcesso: true });
+          onEntrar({ id: session.user.id, email: session.user.email, perfil, lembrarAcesso: true });
         }
       } catch {
         // Mantem a tela de login disponível quando a sessão não puder ser verificada.
@@ -148,7 +148,7 @@ export default function TelaLogin({ onEntrar }) {
         const pId = pData?.permissao?.toLowerCase() || 'membro';
         const perfil = perfisAcesso.find(p => p.id === pId) || perfisAcesso.find(p => p.id === 'membro');
         
-        onEntrar({ email: data.user.email, perfil, lembrarAcesso: lembrar });
+        onEntrar({ id: data.user.id, email: data.user.email, perfil, lembrarAcesso: lembrar });
       }
     } catch { setErro('Erro ao conectar. Tente novamente.'); }
     finally { setLoading(false); }

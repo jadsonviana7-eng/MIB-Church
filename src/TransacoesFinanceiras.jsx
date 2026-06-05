@@ -229,7 +229,26 @@ export default function TransacoesFinanceiras({
     carregarAuxiliares();
   }, []); // Array de dependência vazio para rodar apenas uma vez
 
-  // Carrega as transações sempre que o callback de busca mudar (filtros alterados)
+  const handleQuickDelete = async (e, t) => {
+    e.stopPropagation();
+    if (!window.confirm('Tem certeza que deseja excluir este lançamento permanentemente?')) return;
+    try {
+      const { error } = await supabase
+        .from('transacoes_financeiras')
+        .delete()
+        .eq('id', t.id);
+      if (error) throw error;
+      await registrarLogFinanceiro(
+        usuarioLogado?.email, 
+        'Exclusão de Transação', 
+        `Removeu ${t.tipo}: ${t.descricao} (R$ ${t.valor})`
+      );
+      carregarTransacoes();
+    } catch (err) {
+      alert('Erro ao excluir lançamento: ' + err.message);
+    }
+  };
+
   useEffect(() => {
     carregarTransacoes();
   }, [carregarTransacoes]);
@@ -310,7 +329,7 @@ export default function TransacoesFinanceiras({
       <div className="space-y-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[240px] relative datepicker-container">
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Período Selecionado</label>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Data da Movimentação</label>
             <div 
               onClick={() => setCalendarioAberto(!calendarioAberto)}
               className={`flex items-center gap-3 px-3 py-2.5 bg-white border rounded-xl cursor-pointer transition-all shadow-sm group ${calendarioAberto ? 'border-[#1e3a8a] ring-2 ring-[#1e3a8a]/10' : 'border-slate-200 hover:border-slate-300'}`}
@@ -407,7 +426,7 @@ export default function TransacoesFinanceiras({
                   <th>Categoria</th>
                   <th>Conta</th>
                   <th>Status</th>
-                  <th className="text-right">Valor</th>
+                  <th className="text-right pr-6">Valor / Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -438,7 +457,21 @@ export default function TransacoesFinanceiras({
                         {t.status}
                       </span>
                     </td>
-                    <td className="text-right font-bold">{`R$ ${t.valor.toFixed(2)}`}</td>
+                    <td className="text-right pr-6">
+                      <div className="flex items-center justify-end gap-2">
+                        <span className="font-bold mr-2">{`R$ ${t.valor.toFixed(2)}`}</span>
+                        <button onClick={(e) => { e.stopPropagation(); abrirModal(tipoNormalizado, t); }} className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Lançamento">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button onClick={(e) => handleQuickDelete(e, t)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Excluir Lançamento">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                   );
                 })}

@@ -150,7 +150,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
 
     if (fotoFinalBlob) {
       try {
-        urlFotoPublica = await uploadImagemCelula(fotoFinalBlob, 'nova'); // Usar a função de upload
+        urlFotoPublica = await uploadImagemCelula(fotoFinalBlob, `membro-novo-${Date.now()}`); // Usar a função de upload
       } catch (error) {
         console.error('Erro ao fazer upload da foto:', error);
       }

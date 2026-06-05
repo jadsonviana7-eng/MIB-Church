@@ -51,6 +51,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
   const [aulasTurma, setAulasTurma] = useState([]);
   const [isModalAddAlunosAberto, setIsModalAddAlunosAberto] = useState(false);
   const [isModalAddDisciplinaAberto, setIsModalAddDisciplinaAberto] = useState(false);
+  const [disciplinaParaEditar, setDisciplinaParaEditar] = useState(null);
   const [isModalAddAulaAberto, setIsModalAddAulaAberto] = useState(false);
   const [aulaParaEditar, setAulaParaEditar] = useState(null);
   
@@ -100,11 +101,15 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
       .select('*, alunos(id, pessoa_id, pessoas(nome, foto_url))')
       .eq('turma_id', id);
     setAlunosTurma(dataAlunos || []);
+    const sortedAlunos = (dataAlunos || []).sort((a, b) => 
+      (a.alunos?.pessoas?.nome || "").localeCompare(b.alunos?.pessoas?.nome || "")
+    );
+    setAlunosTurma(sortedAlunos);
 
     // 2. Disciplinas vinculadas
     const { data: dataDisc } = await supabase
       .from('turmas_disciplinas')
-      .select('*, disciplinas(nome), professores(pessoas(nome))')
+      .select('*, disciplinas(id, nome), professores(id, pessoa_id, pessoas(nome))')
       .eq('turma_id', id);
     setDisciplinasTurma(dataDisc || []);
 
@@ -247,6 +252,21 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
     setCarregando(false);
   };
 
+  const handleUpdateStatusAluno = async (matriculaId, novoStatus) => {
+    setCarregando(true);
+    const { error } = await supabase
+      .from('alunos_turmas')
+      .update({ status: novoStatus })
+      .eq('id', matriculaId);
+
+    if (error) {
+      alert('Erro ao atualizar status do aluno: ' + error.message);
+    } else {
+      carregarDadosTurma(turmaSelecionadaId);
+    }
+    setCarregando(false);
+  };
+
   const handleExcluirTurma = async (id) => {
     if (!window.confirm('Excluir esta turma permanentemente?')) return;
     const { error } = await supabase.from('turmas').delete().eq('id', id);
@@ -294,29 +314,63 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
     setCarregando(true);
     const turma = turmas.find(t => t.id === turmaSelecionadaId);
     
-    // 1. Criar disciplina se não existir
-    const { data: disc } = await supabase.from('disciplinas').insert([{ 
-      nome: novaDisciplinaNome, 
-      escola_id: turma.escola_id 
-    }]).select().single();
+    try {
+      // 1. Garantir que professor existe
+      let { data: prof } = await supabase.from('professores').select('id').eq('pessoa_id', novaDisciplinaProfId).maybeSingle();
+      if (!prof) {
+        const { data: novoProf, error: profError } = await supabase.from('professores').insert([{ pessoa_id: novaDisciplinaProfId }]).select().single();
+        if (profError) throw profError;
+        prof = novoProf;
+      }
 
-    // 2. Garantir que professor existe
-    let { data: prof } = await supabase.from('professores').select('id').eq('pessoa_id', novaDisciplinaProfId).maybeSingle();
-    if (!prof) {
-      const { data: novoProf } = await supabase.from('professores').insert([{ pessoa_id: novaDisciplinaProfId }]).select().single();
-      prof = novoProf;
+      if (disciplinaParaEditar) {
+        // Atualizar disciplina existente
+        const { error: discError } = await supabase
+          .from('disciplinas')
+          .update({ nome: novaDisciplinaNome })
+          .eq('id', disciplinaParaEditar.disciplinas.id);
+        if (discError) throw discError;
+
+        // Atualizar vínculo na turma (professor)
+        const { error: vincError } = await supabase
+          .from('turmas_disciplinas')
+          .update({ professor_id: prof.id })
+          .eq('id', disciplinaParaEditar.id);
+        if (vincError) throw vincError;
+      } else {
+        // Criar nova disciplina
+        const { data: disc, error: discError } = await supabase.from('disciplinas').insert([{ 
+          nome: novaDisciplinaNome, 
+          escola_id: turma.escola_id 
+        }]).select().single();
+        if (discError) throw discError;
+
+        // Vincular à turma
+        const { error: vincError } = await supabase.from('turmas_disciplinas').insert([{
+          turma_id: turmaSelecionadaId,
+          disciplina_id: disc.id,
+          professor_id: prof.id
+        }]);
+        if (vincError) throw vincError;
+      }
+
+      setIsModalAddDisciplinaAberto(false);
+      setNovaDisciplinaNome('');
+      setNovaDisciplinaProfId('');
+      setDisciplinaParaEditar(null);
+      carregarDadosTurma(turmaSelecionadaId);
+    } catch (error) {
+      alert('Erro ao salvar disciplina: ' + error.message);
+    } finally {
+      setCarregando(false);
     }
+  };
 
-    // 3. Vincular à turma
-    await supabase.from('turmas_disciplinas').insert([{
-      turma_id: turmaSelecionadaId,
-      disciplina_id: disc.id,
-      professor_id: prof.id
-    }]);
-
-    setIsModalAddDisciplinaAberto(false);
-    setNovaDisciplinaNome('');
-    carregarDadosTurma(turmaSelecionadaId);
+  const handleEditDisciplina = (d) => {
+    setDisciplinaParaEditar(d);
+    setNovaDisciplinaNome(d.disciplinas?.nome || '');
+    setNovaDisciplinaProfId(d.professores?.pessoa_id || '');
+    setIsModalAddDisciplinaAberto(true);
   };
 
   // Lógica de Aulas
@@ -541,9 +595,17 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                           {new Date(escola.data_criacao).toLocaleDateString()}
                         </td>
                         <td className="text-right pr-6">
-                          <div className="flex justify-end gap-3">
-                            <button onClick={() => handleEditar(escola)} className="text-[#055F6D] hover:underline text-xs font-bold cursor-pointer">Editar</button>
-                            <button onClick={() => handleExcluir(escola.id)} className="text-rose-400 hover:text-rose-600 text-xs font-bold cursor-pointer">Remover</button>
+                          <div className="flex justify-end gap-2">
+                            <button onClick={() => handleEditar(escola)} className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Curso">
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button onClick={() => handleExcluir(escola.id)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Remover Curso">
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -568,7 +630,13 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
             aulas={aulasTurma}
             pessoas={pessoas}
             onAddAlunos={() => { setSelectedMembrosParaAdicionar([]); setIsModalAddAlunosAberto(true); }} // Limpa a seleção ao abrir o modal
-            onAddDisciplina={() => setIsModalAddDisciplinaAberto(true)}
+            onAddDisciplina={() => {
+              setDisciplinaParaEditar(null);
+              setNovaDisciplinaNome('');
+              setNovaDisciplinaProfId('');
+              setIsModalAddDisciplinaAberto(true);
+            }}
+            onEditDisciplina={handleEditDisciplina}
             onAddAula={() => {
               const hoje = new Date().toLocaleDateString('en-CA');
               const initialPresencas = {};
@@ -584,6 +652,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
             onEditAula={handleEditAula}
             onExcluirAula={handleExcluirAula}
             onVerAluno={handleVerCadernetaAluno} // Passa a função para ver caderneta
+            onUpdateStatusAluno={handleUpdateStatusAluno}
           />
         ) : turmaSelecionadaId ? (
           <div className="p-10 text-center animate-pulse text-slate-400">Buscando dados da turma...</div>
@@ -686,9 +755,17 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                           </span>
                         </td>
                         <td className="text-right pr-6">
-                          <div className="flex justify-end gap-3" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => handleEditarTurma(t)} className="text-[#055F6D] hover:underline text-xs font-bold cursor-pointer">Editar</button>
-                            <button onClick={() => handleExcluirTurma(t.id)} className="text-rose-400 hover:text-rose-600 text-xs font-bold cursor-pointer">Remover</button>
+                          <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
+                            <button onClick={() => handleEditarTurma(t)} className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Turma">
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button onClick={() => handleExcluirTurma(t.id)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Remover Turma">
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -942,7 +1019,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
 
       {/* MODAL INCLUIR DISCIPLINA */}
       {isModalAddDisciplinaAberto && (
-        <ModalWrapper titulo="Incluir Disciplina" onFechar={() => setIsModalAddDisciplinaAberto(false)}>
+        <ModalWrapper titulo={disciplinaParaEditar ? "Editar Disciplina" : "Incluir Disciplina"} onFechar={() => setIsModalAddDisciplinaAberto(false)}>
           <form onSubmit={handleAddDisciplina} className="p-5 space-y-4">
             <div>
               <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nome da Disciplina</label>
@@ -989,7 +1066,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
               <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
                 <h4 className="text-xs font-black text-slate-400 uppercase mb-3 tracking-widest">Chamada / Presença</h4>
                 <div className="space-y-2">
-                  {alunosTurma.map(a => (
+                  {alunosTurma.filter(a => a.status === 'ativo').map(a => (
                     <div key={a.aluno_id} onClick={() => togglePresencaAula(a.aluno_id)} className="flex items-center justify-between p-2.5 rounded-lg bg-white border cursor-pointer hover:border-[#055F6D]/30 transition active:scale-[0.98] select-none">
                       <span className="text-xs font-bold text-slate-700">{a.alunos?.pessoas?.nome}</span>
                       <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${novaAulaPresencas[a.aluno_id] ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
@@ -1018,8 +1095,63 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
 
 /* COMPONENTES AUXILIARES PARA DETALHES */
 
-function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disciplinas, aulas, onAddAlunos, onAddDisciplina, onAddAula, onEditAula, onExcluirAula }) {
+function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disciplinas, aulas, onAddAlunos, onAddDisciplina, onEditDisciplina, onAddAula, onEditAula, onExcluirAula, onVerAluno, onUpdateStatusAluno }) {
   if (!turma) return null;
+
+  // Estados para a aba de Frequência
+  const [mesFrequencia, setMesFrequencia] = useState(new Date().getMonth());
+  const [anoFrequencia, setAnoFrequencia] = useState(new Date().getFullYear());
+  const [esconderDiasSemRegistro, setEsconderDiasSemRegistro] = useState(true);
+  const [relatorioFrequencia, setRelatorioFrequencia] = useState(null);
+
+  const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+  const gerarRelatorioFrequencia = () => {
+    // Filtrar aulas da turma que pertencem ao mês e ano selecionados
+    const aulasFiltradas = aulas.filter(aula => {
+      const data = new Date(aula.data_aula);
+      // Ajuste de timezone para comparação precisa
+      const dataAjustada = new Date(data.getTime() + data.getTimezoneOffset() * 60000);
+      return dataAjustada.getMonth() === Number(mesFrequencia) && dataAjustada.getFullYear() === Number(anoFrequencia);
+    });
+
+    // Mapear dias que possuem registro de aula
+    const diasComAula = [...new Set(aulasFiltradas.map(aula => {
+      const d = new Date(aula.data_aula);
+      const da = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
+      return da.getDate();
+    }))].sort((a, b) => a - b);
+
+    // Montar matriz de presença para cada aluno
+    const dados = alunos.map(aluno => {
+      const presencasPorDia = {};
+      
+      aulasFiltradas.forEach(aula => {
+        const d = new Date(aula.data_aula);
+        const da = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
+        const dia = da.getDate();
+        
+        // Processar o JSON de presenças
+        let pObj = aula.presencas || {};
+        if (typeof pObj === 'string') { try { pObj = JSON.parse(pObj); } catch(e) { pObj = {}; } }
+        
+        // Se já houver registro 'P' para o dia, mantém. Se for 'F' e encontrar um 'P', atualiza.
+        const statusAnterior = presencasPorDia[dia];
+        const statusAtual = pObj[aluno.aluno_id] ? 'P' : 'F';
+        
+        if (statusAnterior !== 'P') {
+          presencasPorDia[dia] = statusAtual;
+        }
+      });
+
+      return {
+        nome: aluno.alunos?.pessoas?.nome,
+        presencas: presencasPorDia
+      };
+    });
+
+    setRelatorioFrequencia({ diasComAula, dados });
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -1066,27 +1198,90 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
 
       <div className="space-y-6">
         {/* NAVEGAÇÃO DE ABAS */}
-        <div className="flex border-b border-slate-200 gap-8 px-2 overflow-x-auto scrollbar-hide">
-          {['alunos', 'disciplinas', 'aulas'].map(tab => (
-            <button 
-              key={tab} 
-              onClick={() => setAbaAtiva(tab)}
-              className={`pb-3 text-sm font-bold transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer px-1 ${abaAtiva === tab ? 'text-[#055F6D] border-b-2 border-[#055F6D]' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50/50'}`}
-              style={{ fontFamily: 'Roboto, sans-serif' }}
-            >
-              {tab === 'alunos' && (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-              )}
-              {tab === 'disciplinas' && (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-              )}
-              {tab === 'aulas' && (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              )}
-              <span>{tab === 'alunos' ? 'Alunos' : tab === 'disciplinas' ? 'Disciplinas' : 'Aulas'}</span>
-            </button>
-          ))}
-        </div>
+        {(() => {
+          const tabConfig = [
+            {
+              id: 'alunos',
+              label: 'Alunos',
+              cor: '#055F6D',
+              badge: alunos.length,
+              icon: (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              ),
+            },
+            {
+              id: 'disciplinas',
+              label: 'Disciplinas',
+              cor: '#6366f1',
+              badge: disciplinas.length,
+              icon: (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              ),
+            },
+            {
+              id: 'aulas',
+              label: 'Aulas',
+              cor: '#f59e0b',
+              badge: aulas.length,
+              icon: (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              ),
+            },
+            {
+              id: 'frequencias',
+              label: 'Frequências',
+              cor: '#10b981',
+              badge: null,
+              icon: (
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              ),
+            },
+          ];
+
+          return (
+            <div className="flex overflow-x-auto border-b border-slate-100 bg-slate-50/60 px-2 pt-2 gap-1 rounded-t-2xl scrollbar-hide">
+              {tabConfig.map((tab) => {
+                const isAtivo = abaAtiva === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setAbaAtiva(tab.id)}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-t-xl text-[11px] font-bold whitespace-nowrap transition-all shrink-0 border-b-2 cursor-pointer ${
+                      isAtivo
+                        ? 'bg-white text-slate-900 shadow-sm'
+                        : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-white/60'
+                    }`}
+                    style={{ borderBottomColor: isAtivo ? tab.cor : 'transparent' }}
+                  >
+                    <span style={{ color: isAtivo ? tab.cor : undefined }}>{tab.icon}</span>
+                    {tab.label}
+                    {tab.badge !== null && (
+                      <span
+                        className="text-[9px] font-black px-1.5 py-0.5 rounded-full ml-0.5"
+                        style={
+                          isAtivo
+                            ? { backgroundColor: tab.cor, color: 'white' }
+                            : { backgroundColor: '#e2e8f0', color: '#94a3b8' }
+                        }
+                      >
+                        {tab.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
 
         {/* CONTEÚDO DAS ABAS */}
         {abaAtiva === 'alunos' && (
@@ -1096,14 +1291,46 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
           </div>
           <Card className="p-0 overflow-hidden">
             <table className="table-mib">
-              <thead><tr><th>Aluno</th><th>Status na Turma</th><th className="text-right">Matrícula</th></tr></thead>
+              <thead><tr><th>Aluno</th><th>Status na Turma</th><th>Matrícula</th><th className="text-right pr-6">Ações</th></tr></thead>
               <tbody>
-                {alunos.length === 0 ? <tr><td colSpan="3" className="p-10 text-center text-slate-400 italic">Nenhum aluno matriculado nesta turma.</td></tr> :
+                {alunos.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhum aluno matriculado nesta turma.</td></tr> : 
                   alunos.map(a => (
                     <tr key={a.id} onClick={() => onVerAluno(a.alunos?.pessoa_id)} className="cursor-pointer hover:bg-slate-50 transition">
                       <td><div className="flex items-center gap-2"><Avatar pessoa={a.alunos?.pessoas} tamanho="w-8 h-8"/><span className="font-bold text-sm text-slate-700">{a.alunos?.pessoas?.nome}</span></div></td>
-                      <td><span className="text-[10px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{a.status}</span></td>
-                      <td className="text-right pr-6 font-mono text-xs text-slate-400">{a.alunos?.matricula || '---'}</td>
+                      <td>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
+                          a.status === 'ativo' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                          a.status === 'desistente' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                          'bg-slate-100 text-slate-500 border-slate-200'
+                        }`}>
+                          {a.status}
+                        </span>
+                      </td>
+                      <td className="font-mono text-xs text-slate-400">{a.alunos?.matricula || '---'}</td>
+                      <td className="text-right pr-6">
+                        <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
+                          <button 
+                            onClick={() => onUpdateStatusAluno(a.id, a.status === 'ativo' ? 'desistente' : 'ativo')}
+                            className={`transition p-1.5 rounded-lg cursor-pointer ${
+                              a.status === 'ativo' 
+                                ? 'text-slate-400 hover:text-rose-500 hover:bg-rose-50' 
+                                : 'text-slate-400 hover:text-emerald-500 hover:bg-emerald-50'
+                            }`}
+                            title={a.status === 'ativo' ? 'Desativar Aluno' : 'Reativar Aluno'}
+                          >
+                            
+                            {a.status === 'ativo' ? (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))
                 }
@@ -1115,24 +1342,40 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
 
         {abaAtiva === 'disciplinas' && (
           <div className="space-y-4">
-        <div className="space-y-4">
-          <div className="flex justify-end">
-            <button onClick={onAddDisciplina} className="px-4 py-2 bg-[#055F6D] text-white rounded-xl text-xs font-bold hover:opacity-90 transition cursor-pointer">+ Incluir Disciplina</button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {disciplinas.length === 0 ? <p className="col-span-full py-10 text-center text-slate-400 italic">Nenhuma disciplina vinculada.</p> : 
-              disciplinas.map(d => (
-                <Card key={d.id} className="p-4 border-l-4 border-l-[#055F6D]">
-                  <h4 className="font-black text-slate-800 text-base mb-1">{d.disciplinas?.nome}</h4>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-3">Professor: <span className="text-[#055F6D]">{d.professores?.pessoas?.nome}</span></p>
-                  <div className="flex justify-end pt-2 border-t border-slate-50">
-                    <button className="text-[10px] font-bold text-rose-500 hover:underline cursor-pointer">Remover</button>
-                  </div>
-                </Card>
-              ))
-            }
-          </div>
-          </div>
+            <div className="flex justify-end">
+              <button onClick={onAddDisciplina} className="px-4 py-2 bg-[#055F6D] text-white rounded-xl text-xs font-bold hover:opacity-90 transition cursor-pointer">+ Incluir Disciplina</button>
+            </div>
+            <Card className="p-0 overflow-hidden">
+              <table className="table-mib">
+                <thead>
+                  <tr>
+                    <th>Disciplina</th>
+                    <th>Professor</th>
+                    <th className="text-right pr-6">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {disciplinas.length === 0 ? (
+                    <tr><td colSpan="3" className="p-10 text-center text-slate-400 italic">Nenhuma disciplina vinculada.</td></tr>
+                  ) : (
+                    disciplinas.map(d => (
+                      <tr key={d.id}>
+                        <td><span className="font-bold text-sm text-slate-700">{d.disciplinas?.nome}</span></td>
+                        <td><span className="text-xs font-bold text-[#055F6D]">{d.professores?.pessoas?.nome}</span></td>
+                        <td className="text-right pr-6 space-x-4">
+                          <button onClick={() => onEditDisciplina(d)} className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Disciplina">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          </button>
+                          <button className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Remover Disciplina">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </Card>
           </div>
         )}
 
@@ -1167,8 +1410,8 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                         <td><span className="text-[10px] font-black bg-blue-50 text-[#055F6D] px-2 py-0.5 rounded-full">{aula.turmas_disciplinas?.disciplinas?.nome}</span></td>
                         <td className="text-xs text-slate-500">{aula.conteudo_proposto}</td>
                         <td className="text-center">
-                          <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100 uppercase tracking-tighter">
-                            {presentesCount} presentes
+                          <span className="text-[14px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100 uppercase tracking-tighter">
+                            {presentesCount}
                           </span>
                         </td>
                         <td className="text-right pr-6 space-x-4">
@@ -1187,6 +1430,87 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
             </table>
           </Card>
         </div>
+          </div>
+        )}
+
+        {abaAtiva === 'frequencias' && (
+          <div className="space-y-6">
+            {/* PAINEL DE FILTROS DA FREQUÊNCIA */}
+            <Card className="p-4 bg-slate-50 border-slate-200">
+              <div className="flex flex-wrap items-end gap-4">
+                <div className="flex-1 min-w-[150px]">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Mês</label>
+                  <select value={mesFrequencia} onChange={e => setMesFrequencia(e.target.value)} className="w-full px-3 py-2 border rounded-xl bg-white text-sm">
+                    {mesesNomes.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                  </select>
+                </div>
+                <div className="flex-1 min-w-[120px]">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Ano</label>
+                  <select value={anoFrequencia} onChange={e => setAnoFrequencia(e.target.value)} className="w-full px-3 py-2 border rounded-xl bg-white text-sm">
+                    {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={gerarRelatorioFrequencia} className="px-6 py-2 bg-[#055F6D] text-white rounded-xl text-xs font-bold hover:opacity-90 transition">
+                    Gerar Frequência
+                  </button>
+                  <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm h-[38px]">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Exibir dias vazios</span>
+                    <button 
+                      type="button"
+                      onClick={() => setEsconderDiasSemRegistro(!esconderDiasSemRegistro)} 
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${!esconderDiasSemRegistro ? 'bg-[#055F6D]' : 'bg-slate-200'}`}
+                    >
+                      <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${!esconderDiasSemRegistro ? 'translate-x-4' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* RELATÓRIO EM TABELA */}
+            {relatorioFrequencia ? (
+              <Card className="p-0 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="table-mib">
+                    <thead>
+                      <tr className="bg-slate-50">
+                        <th className="sticky left-0 bg-slate-50 z-10">Aluno</th>
+                        {/* Gerar colunas para os dias */}
+                        {(esconderDiasSemRegistro ? relatorioFrequencia.diasComAula : Array.from({length: 31}, (_, i) => i + 1)).map(dia => (
+                          <th key={dia} className="text-center w-8 min-w-[32px] px-1">{dia}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {relatorioFrequencia.dados.map((row, idx) => (
+                        <tr key={idx}>
+                          <td className="sticky left-0 bg-white z-10 font-bold text-slate-700 text-xs border-r">{row.nome}</td>
+                          {(esconderDiasSemRegistro ? relatorioFrequencia.diasComAula : Array.from({length: 31}, (_, i) => i + 1)).map(dia => {
+                            const status = row.presencas[dia];
+                            return (
+                              <td key={dia} className="text-center p-0">
+                                <span className={`inline-block w-full py-2 text-[10px] font-black ${
+                                  status === 'P' ? 'text-emerald-600 bg-emerald-50/50' : 
+                                  status === 'F' ? 'text-rose-600 bg-rose-50/50' : 
+                                  'text-slate-200'
+                                }`}>
+                                  {status || '-'}
+                                </span>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            ) : (
+              <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-3xl text-slate-300 italic text-sm">
+                Selecione o período e clique em "Gerar Frequência" para visualizar o mapa de presença.
+              </div>
+            )}
           </div>
         )}
       </div>

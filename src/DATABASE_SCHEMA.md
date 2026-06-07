@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS pessoas (
   foto_url TEXT,
   auth_user_id uuid,
   acesso_ativo BOOLEAN DEFAULT false,
+  permissoes_json JSONB DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );

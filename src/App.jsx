@@ -8,6 +8,8 @@ import PessoasModulo from './PessoasModulo';
 import ModuloFinanceiro from './ModuloFinanceiro';
 import ModuloUtilitarios from './ModuloUtilitarios';
 import EscolasModulo from './EscolasModulo';
+import AgendaModulo from './AgendaModulo';
+import PublicEventRegistration from './PublicEventRegistration';
 import DetalhesMembro from './DetalhesMembro';
 import PublicRegistrationForm from './PublicRegistrationForm'; // Importar o novo componente
 import { normalizarTexto, faixaDaIdade, meses, valorCampoRelatorio } from './churchUtils';
@@ -50,6 +52,12 @@ const MenuIcons = {
   escolas: (
     <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+    </svg>
+  ),
+  agenda: (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
     </svg>
   ),
   utilitarios: (
@@ -277,6 +285,17 @@ const MenuIcons = {
       <rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/>
     </svg>
   ),
+  // Submenus Agenda
+  'a-calendario': (
+    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  ),
+  'a-eventos': (
+    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+  ),
 };
 
 // Mapa de submenus → chave de ícone
@@ -285,6 +304,7 @@ const submenuIconKey = {
   celulas:  { lista: 'c-lista', adicionar: 'c-adicionar', reunioes: 'c-reunioes', relatorios: 'c-relatorios' },
   financeiro: { resumo: 'f-resumo', transacoes: 'f-transacoes', relatorios: 'f-relatorios', historico: 'f-historico', categorias: 'f-categorias', contas: 'f-contas', importar: 'f-importar' },
   escolas: { resumo: 'e-resumo', cursos: 'e-cursos', turmas: 'e-turmas', disciplinas: 'e-disciplinas', professores: 'e-professores', alunos: 'e-alunos', aulas: 'e-aulas', avaliacoes: 'e-avaliacoes', 'ficha-aluno': 'e-ficha-aluno', inscricoes: 'e-inscricoes' },
+  agenda: { calendario: 'a-calendario', eventos: 'a-eventos' },
   utilitarios: { 
     escalas: 'u-escalas', 'relatorio-semanal': 'u-relatorio-semanal', calculadora: 'u-calculadora',
     quiz: 'u-quiz', 'pedido-oracao': 'u-pedido-oracao', 'mural-oracao': 'u-mural-oracao'
@@ -320,6 +340,7 @@ export default function App() {
   const [celulasSubmenu, setCelulasSubmenu] = useState('lista');
   const [financeiroSubmenu, setFinanceiroSubmenu] = useState('resumo');
   const [escolasSubmenu, setEscolasSubmenu] = useState('resumo'); // Novo estado para o submenu de Escolas
+  const [agendaSubmenu, setAgendaSubmenu] = useState('calendario');
   const [utilitariosSubmenu, setUtilitariosSubmenu] = useState('escalas');
   const [pessoas, setPessoas] = useState([]);
   const [celulas, setCelulas] = useState([]);
@@ -339,6 +360,67 @@ export default function App() {
     if (!usuarioLogado?.email || pessoas.length === 0) return null;
     return pessoas.find(p => p.email?.toLowerCase() === usuarioLogado.email.toLowerCase());
   }, [usuarioLogado, pessoas]);
+
+  /**
+   * Verifica se o membro logado tem acesso a um módulo ou bloco específico.
+   */
+  const hasAccess = useCallback((modulo, bloco = null) => {
+    if (!membroLogado) return false;
+    if (membroLogado.permissao === 'admin') return true;
+
+    // 1. Prioridade: Permissões Manuais (JSON do banco)
+    const json = membroLogado.permissoes_json || {};
+    if (bloco) {
+      const key = `${modulo}|${bloco}`;
+      if (json[key] === true || json[`${key}|ver`] === true) return true;
+    } else {
+      const hasAnyBlock = Object.keys(json).some(k => k.startsWith(`${modulo}|`) && json[k] === true);
+      if (hasAnyBlock) return true;
+    }
+
+    // 2. Permissões Padrão por Perfil
+    const p = membroLogado.permissao?.toLowerCase() || '';
+
+    if (p === 'membro') {
+      if (modulo === 'Agenda') return true;
+      if (modulo === 'Utilitários') {
+        if (!bloco) return true;
+        return !['Relatório Semanal', 'Mural de Orações'].includes(bloco);
+      }
+      if (modulo === 'Pessoas') {
+        if (!bloco) return true;
+        // Membros podem ver a listagem e aniversariantes (o RLS do banco filtrará os dados)
+        return ['Ver todos', 'Aniversariantes'].includes(bloco);
+      }
+      if (modulo === 'Células') {
+        if (!bloco) return true;
+        return ['Lista de células'].includes(bloco);
+      }
+      return false; 
+    }
+
+    if (p === 'pastor') {
+      return true; // Pastor visualiza todos os módulos e submenus
+    }
+    
+    if (p === 'secretaria' && ['Pessoas', 'Células', 'Utilitários', 'Agenda'].includes(modulo)) return true;
+    if ((p === 'tesouraria' || p === 'financeiro') && ['Financeiro', 'Pessoas', 'Utilitários', 'Agenda'].includes(modulo)) return true;
+    if (p === 'lider-celula' || p === 'supervisor') {
+      if (modulo === 'Agenda') return true;
+      if (modulo === 'Pessoas') {
+        return !bloco || ['Ver todos', 'Aniversariantes'].includes(bloco);
+      }
+      if (modulo === 'Células') {
+        return !bloco || ['Lista de células', 'Reuniões'].includes(bloco);
+      }
+      if (modulo === 'Utilitários') {
+        return !bloco || bloco !== 'Relatório Semanal';
+      }
+      return false;
+    }
+
+    return false;
+  }, [membroLogado]);
 
   const indicadores = useMemo(() => {
     const ativas = pessoas.filter(p => normalizarTexto(p.status) !== 'inativo');
@@ -390,9 +472,9 @@ export default function App() {
 
   const alterarFiltro = (campo, valor) => setFiltros(prev => ({ ...prev, [campo]: valor }));
 
-  const submenusPessoas = [
-    ['todos', 'Ver Membros'], 
-    ['adicionar', 'Novo Cadastro'],
+  const submenusPessoas = useMemo(() => [
+    ['todos', 'Ver todos'], 
+    ['adicionar', 'Adicionar pessoa'],
     ['link_publico', 'Link de Autocadastro'],
     ['inativos', 'Membros Inativos'],
     ['aniversariantes', 'Aniversariantes'],
@@ -400,18 +482,26 @@ export default function App() {
     ['zona', 'Zonas'],
     ['atuacao', 'Atuações'],
     ['relatorios', 'Relatórios']
-  ];
-  const submenusCelulas = [['lista', 'Ver Células'], ['adicionar', 'Nova Célula'], ['reunioes', 'Histórico'], ['relatorios', 'Relatórios']];
-  const submenusFinanceiro = [
+  ].filter(([id, label]) => hasAccess('Pessoas', label)), [hasAccess]);
+
+  const submenusCelulas = useMemo(() => [
+    ['lista', 'Lista de células'], 
+    ['adicionar', 'Nova célula'], 
+    ['reunioes', 'Reuniões'], 
+    ['relatorios', 'Relatórios']
+  ].filter(([id, label]) => hasAccess('Células', label)), [hasAccess]);
+
+  const submenusFinanceiro = useMemo(() => [
     ['resumo', 'Resumo'], 
     ['transacoes', 'Transações'], 
-    ['relatorios', 'Relatórios'], 
+    ['relatorios', 'Relatórios financeiros'], 
     ['historico', 'Histórico'], 
     ['categorias', 'Categorias'], 
     ['contas', 'Contas/Caixas'],
     ['importar', 'Importar']
-  ];
-  const submenusEscolas = [
+  ].filter(([id, label]) => hasAccess('Financeiro', label)), [hasAccess]);
+
+  const submenusEscolas = useMemo(() => [
     ['resumo', 'Visão Geral'],
     ['cursos', 'Cursos'],
     ['turmas', 'Turmas'],
@@ -422,15 +512,21 @@ export default function App() {
     ['avaliacoes', 'Avaliações'],
     ['ficha-aluno', 'Ficha do Aluno'], // Novo submenu para caderneta
     ['inscricoes', 'Inscrições Públicas'],
-  ];
-  const submenusUtilitarios = [
+  ].filter(([id, label]) => hasAccess('Escolas', label)), [hasAccess]);
+
+  const submenusAgenda = useMemo(() => [
+    ['calendario', 'Calendário'],
+    ['eventos', 'Eventos'],
+  ].filter(([id, label]) => hasAccess('Agenda', label)), [hasAccess]);
+
+  const submenusUtilitarios = useMemo(() => [
     ['escalas', 'Escalas Ministerial'], 
     ['relatorio-semanal', 'Relatório Semanal'],
     ['calculadora', 'Calculadora de Tributos'],
     ['quiz', 'Teste de Temperamento'],
     ['pedido-oracao', 'Pedido de Oração'],
     ['mural-oracao', 'Mural de Orações']
-  ];
+  ].filter(([id, label]) => hasAccess('Utilitários', label)), [hasAccess]);
 
   const obterDados = useCallback(async () => {
     setCarregando(true);
@@ -503,6 +599,7 @@ export default function App() {
       if (modulo === 'celulas') setCelulasSubmenu(submenu);
       if (modulo === 'financeiro') setFinanceiroSubmenu(submenu);
       if (modulo === 'escolas') setEscolasSubmenu(submenu);
+      if (modulo === 'agenda') setAgendaSubmenu(submenu);
       if (modulo === 'utilitarios') setUtilitariosSubmenu(submenu);
     }
   }
@@ -520,6 +617,10 @@ export default function App() {
   // Verifica se a URL é para o formulário público e renderiza sem autenticação
   if (window.location.pathname === '/cadastro-publico') {
     return <PublicRegistrationForm />;
+  }
+
+  if (window.location.pathname.startsWith('/inscricao-evento/')) {
+    return <PublicEventRegistration />;
   }
 
   // Se não há usuário logado, exibe tela de login
@@ -541,12 +642,15 @@ export default function App() {
         {/* Nav items */}
         <nav className="flex items-center gap-1 flex-1">
           {/* Dashboard */}
+          {hasAccess('Visão Geral') && (
           <TopNavBtn ativo={moduloAtual === 'dashboard'} onClick={() => navegar('dashboard')} icon={MenuIcons.dashboard}>
             Visão Geral
             <span className="ml-1.5 text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full">{indicadores.totalPessoas}</span>
           </TopNavBtn>
+          )}
 
           {/* Pessoas com dropdown (Ajuste as cores dos itens internos se necessário) */}
+          {hasAccess('Pessoas') && (
           <TopNavDropdown
             icon={MenuIcons.pessoas}
             label={<>Pessoas <span className="ml-1 text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full">{pessoas.length}</span></>}
@@ -558,8 +662,10 @@ export default function App() {
               </DropdownItem>
             ))}
           </TopNavDropdown>
+          )}
 
           {/* Células com dropdown */}
+          {hasAccess('Células') && (
           <TopNavDropdown
             icon={MenuIcons.celulas}
             label={<>Células <span className="ml-1 text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full">{celulas.length}</span></>}
@@ -571,8 +677,10 @@ export default function App() {
               </DropdownItem>
             ))}
           </TopNavDropdown>
+          )}
 
           {/* Financeiro com dropdown */}
+          {hasAccess('Financeiro') && (
           <TopNavDropdown
             icon={MenuIcons.financeiro}
             label="Financeiro"
@@ -584,8 +692,10 @@ export default function App() {
               </DropdownItem>
             ))}
           </TopNavDropdown>
+          )}
 
           {/* Escolas com dropdown */}
+          {hasAccess('Escolas') && (
           <TopNavDropdown
             icon={MenuIcons.escolas}
             label="Escolas"
@@ -597,8 +707,25 @@ export default function App() {
               </DropdownItem>
             ))}
           </TopNavDropdown>
+          )}
+
+          {/* Agenda com dropdown */}
+          {hasAccess('Agenda') && (
+          <TopNavDropdown
+            icon={MenuIcons.agenda}
+            label="Agenda"
+            ativo={moduloAtual === 'agenda'}
+          >
+            {submenusAgenda.map(([id, label]) => (
+              <DropdownItem key={id} ativo={moduloAtual === 'agenda' && agendaSubmenu === id} onClick={() => navegar('agenda', id)} icon={MenuIcons[submenuIconKey.agenda[id]]}>
+                {label}
+              </DropdownItem>
+            ))}
+          </TopNavDropdown>
+          )}
 
           {/* Utilitários com dropdown */}
+          {hasAccess('Utilitários') && (
           <TopNavDropdown
             icon={MenuIcons.utilitarios}
             label="Utilitários"
@@ -610,10 +737,13 @@ export default function App() {
               </DropdownItem>
             ))}
           </TopNavDropdown>
+          )}
 
+          {hasAccess('Configurações') && (
           <TopNavBtn ativo={moduloAtual === 'configuracoes'} onClick={() => navegar('configuracoes')} icon={MenuIcons.configuracoes}>
             Configurações
           </TopNavBtn>
+          )}
         </nav>
 
         {/* Avatar do usuário com dropdown */}
@@ -647,9 +777,13 @@ export default function App() {
           </div>
         </div>
         <nav className="flex-1 p-4 space-y-5 overflow-y-auto">
+          {hasAccess('Visão Geral') && (
           <MenuButton ativo={moduloAtual === 'dashboard'} onClick={() => navegar('dashboard')} contador={indicadores.totalPessoas} icon={MenuIcons.dashboard}>
             Visão Geral
           </MenuButton>
+          )}
+          
+          {hasAccess('Pessoas') && (
           <div>
             <MenuButton ativo={moduloAtual === 'pessoas'} onClick={() => navegar('pessoas', 'todos')} contador={pessoas.length} icon={MenuIcons.pessoas}>
               Pessoas
@@ -665,6 +799,9 @@ export default function App() {
               </div>
             )}
           </div>
+          )}
+
+          {hasAccess('Células') && (
           <div>
             <MenuButton ativo={moduloAtual === 'celulas'} onClick={() => navegar('celulas', 'lista')} contador={celulas.length} icon={MenuIcons.celulas}>
               Células
@@ -680,6 +817,9 @@ export default function App() {
               </div>
             )}
           </div>
+          )}
+
+          {hasAccess('Financeiro') && (
           <div>
             <MenuButton ativo={moduloAtual === 'financeiro'} onClick={() => navegar('financeiro', 'resumo')} icon={MenuIcons.financeiro}>
               Financeiro
@@ -695,6 +835,9 @@ export default function App() {
               </div>
             )}
           </div>
+          )}
+
+          {hasAccess('Escolas') && (
           <div>
             <MenuButton ativo={moduloAtual === 'escolas'} onClick={() => navegar('escolas', 'resumo')} icon={MenuIcons.escolas}>
               Escolas
@@ -710,6 +853,27 @@ export default function App() {
               </div>
             )}
           </div>
+          )}
+
+          {hasAccess('Agenda') && (
+          <div>
+            <MenuButton ativo={moduloAtual === 'agenda'} onClick={() => navegar('agenda', 'calendario')} icon={MenuIcons.agenda}>
+              Agenda
+            </MenuButton>
+            {moduloAtual === 'agenda' && (
+              <div className="mt-2 ml-2 pl-3 border-l border-white/20 space-y-1">
+                {submenusAgenda.map(([id, label]) => (
+                  <button key={id} type="button" onClick={() => navegar('agenda', id)}
+                    className={`block w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition ${agendaSubmenu === id ? 'bg-[#2563eb] text-white' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          )}
+
+          {hasAccess('Utilitários') && (
           <div>
             <MenuButton ativo={moduloAtual === 'utilitarios'} onClick={() => navegar('utilitarios', 'escalas')} icon={MenuIcons.utilitarios}>
               Utilitários
@@ -725,7 +889,11 @@ export default function App() {
               </div>
             )}
           </div>
+          )}
+
+          {hasAccess('Configurações') && (
           <MenuButton ativo={moduloAtual === 'configuracoes'} onClick={() => navegar('configuracoes')} icon={MenuIcons.configuracoes}>Configurações</MenuButton>
+          )}
         </nav>
         <div className="p-4 border-t border-white/10">
           <div className="flex items-center gap-3 mb-3">
@@ -775,6 +943,7 @@ export default function App() {
             obterDados={obterDados}
             onNavigate={(sub) => navegar('pessoas', sub)}
             abrirPessoasFiltradas={abrirPessoasFiltradas}
+            membroLogado={membroLogado}
           />
         )}
 
@@ -793,6 +962,7 @@ export default function App() {
             setCelulaSelecionadaId={setCelulaSelecionadaId} // Passa a função para definir a célula selecionada
             obterDados={obterDados} // Passa a função para recarregar dados
             onNavigate={(sub) => navegar('celulas', sub)}
+            membroLogado={membroLogado}
           />
         )}
 
@@ -805,16 +975,37 @@ export default function App() {
             pessoas={pessoas} 
             alunoSelecionadoParaCadernetaId={alunoSelecionadoParaCadernetaId} // Passa o ID do aluno
             setAlunoSelecionadoParaCadernetaId={setAlunoSelecionadoParaCadernetaId} // Passa o setter
+            membroLogado={membroLogado}
           />
         )}
 
         {moduloAtual === 'escolas' && escolasSubmenu === 'ficha-aluno' && alunoSelecionadoParaCadernetaId && (
+          <div className="escolas-root">
+            <style>{`
+              .escolas-root, .escolas-root * { 
+                font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important; 
+                -webkit-font-smoothing: antialiased;
+              }
+              /* Ajusta o peso das abas da ficha para Segoe Black */
+              .escolas-root .tab-btn { font-weight: 900 !important; }
+            `}</style>
           <DetalhesMembro
             pessoaId={alunoSelecionadoParaCadernetaId}
             onFechar={() => navegar('escolas', 'turmas')} // Volta para a lista de turmas ou alunos
             listaPessoas={pessoas}
             onDadosAtualizados={obterDados}
             isStudentCadernetaView={true} // Indica que é a visão de caderneta do aluno
+            membroLogado={membroLogado}
+          />
+          </div>
+        )}
+
+        {moduloAtual === 'agenda' && (
+          <AgendaModulo
+            submenu={agendaSubmenu}
+            onNavigate={(sub) => navegar('agenda', sub)}
+            membroLogado={membroLogado}
+            pessoas={pessoas}
           />
         )}
 

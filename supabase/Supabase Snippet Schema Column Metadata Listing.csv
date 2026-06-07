@@ -1,0 +1,251 @@
+Tabela,Coluna,Tipo de Dado,Aceita Null?,Valor Padrão
+alunos,id,uuid,NO,gen_random_uuid()
+alunos,pessoa_id,uuid,NO,null
+alunos,matricula,text,YES,null
+alunos,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+alunos_turmas,id,uuid,NO,gen_random_uuid()
+alunos_turmas,aluno_id,uuid,NO,null
+alunos_turmas,turma_id,uuid,NO,null
+alunos_turmas,status,text,YES,'ativo'::text
+alunos_turmas,data_inscricao,date,YES,CURRENT_DATE
+atuacoes,id,bigint,NO,nextval('zonas_moradia_id_seq'::regclass)
+atuacoes,nome,text,NO,null
+atuacoes,created_at,timestamp with time zone,YES,now()
+aulas,id,uuid,NO,gen_random_uuid()
+aulas,turma_disciplina_id,uuid,NO,null
+aulas,data_aula,timestamp with time zone,NO,null
+aulas,conteudo_proposto,text,YES,null
+aulas,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+aulas,presencas,text,YES,null
+aulas,observacoes,text,YES,null
+avaliacoes,id,uuid,NO,gen_random_uuid()
+avaliacoes,turma_disciplina_id,uuid,NO,null
+avaliacoes,aluno_id,uuid,NO,null
+avaliacoes,nota,numeric,YES,null
+avaliacoes,observacao,text,YES,null
+avaliacoes,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+cargos,id,bigint,NO,nextval('zonas_moradia_id_seq'::regclass)
+cargos,nome,text,NO,null
+cargos,created_at,timestamp with time zone,YES,now()
+categorias_financeiras,id,uuid,NO,gen_random_uuid()
+categorias_financeiras,nome,text,NO,null
+categorias_financeiras,tipo,text,NO,'despesa'::text
+categorias_financeiras,created_at,timestamp without time zone,YES,now()
+categorias_financeiras,updated_at,timestamp without time zone,YES,now()
+categorias_financeiras,descricao,text,YES,null
+celulas,id,uuid,NO,gen_random_uuid()
+celulas,nome,character varying,NO,null
+celulas,horario,time without time zone,YES,null
+celulas,endereco,text,YES,null
+celulas,data_abertura,date,YES,null
+celulas,status,character varying,YES,'ativa'::character varying
+celulas,created_at,timestamp with time zone,YES,now()
+celulas,anotacoes,text,YES,null
+celulas,auxiliar_id,uuid,YES,null
+celulas,bairro,text,YES,null
+celulas,celula_mae_id,uuid,YES,null
+celulas,co_lider_id,uuid,YES,null
+celulas,faixa_etaria,text,YES,null
+celulas,genero,text,YES,null
+celulas,lider_id,uuid,YES,null
+celulas,numero,text,YES,null
+celulas,dia_semana,text,YES,null
+celulas,zona_id,bigint,YES,null
+celulas,imagem_url,text,YES,null
+celulas,excluida,text,YES,null
+celulas,motivo_exclusao,text,YES,null
+contas_financeiras,id,uuid,NO,gen_random_uuid()
+contas_financeiras,nome,text,NO,null
+contas_financeiras,descricao,text,YES,null
+contas_financeiras,saldo_inicial,numeric,YES,0.00
+contas_financeiras,created_at,timestamp without time zone,YES,now()
+contas_financeiras,updated_at,timestamp without time zone,YES,now()
+contribuicoes,id,uuid,NO,gen_random_uuid()
+contribuicoes,pessoa_id,uuid,YES,null
+contribuicoes,data_contribuicao,date,NO,CURRENT_DATE
+contribuicoes,categoria,text,NO,'Oferta'::text
+contribuicoes,valor,numeric,NO,0
+contribuicoes,observacoes,text,YES,null
+contribuicoes,created_at,timestamp with time zone,YES,now()
+dados_igreja,id,integer,NO,1
+dados_igreja,nome_igreja,text,YES,'Minha Igreja'::text
+dados_igreja,cnpj,text,YES,''::text
+dados_igreja,endereco,text,YES,''::text
+dados_igreja,telefone,text,YES,''::text
+dados_igreja,email_contato,text,YES,null
+dados_igreja,logo_url,text,YES,null
+disciplinas,id,uuid,NO,gen_random_uuid()
+disciplinas,escola_id,uuid,NO,null
+disciplinas,nome,text,NO,null
+disciplinas,carga_horaria,integer,YES,0
+disciplinas,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+equipes_escala,id,uuid,NO,gen_random_uuid()
+equipes_escala,tipo_escala,text,NO,null
+equipes_escala,pessoa_id,uuid,NO,null
+escalas_atribuicoes,id,uuid,NO,gen_random_uuid()
+escalas_atribuicoes,data,date,NO,null
+escalas_atribuicoes,tipo_escala,text,NO,null
+escalas_atribuicoes,cargo_index,integer,NO,null
+escalas_atribuicoes,pessoa_id,uuid,YES,null
+escolas,id,uuid,NO,gen_random_uuid()
+escolas,nome,text,NO,null
+escolas,descricao,text,YES,null
+escolas,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+escolas,data_criacao,date,YES,CURRENT_DATE
+escolas,gestores_ids,ARRAY,YES,'{}'::uuid[]
+filhos_membros,id,uuid,NO,gen_random_uuid()
+filhos_membros,responsavel_id,uuid,YES,null
+filhos_membros,filho_id,uuid,YES,null
+inscricoes_publicas,id,uuid,NO,gen_random_uuid()
+inscricoes_publicas,turma_id,uuid,NO,null
+inscricoes_publicas,nome_candidato,text,NO,null
+inscricoes_publicas,email_candidato,text,NO,null
+inscricoes_publicas,telefone_candidato,text,YES,null
+inscricoes_publicas,status_analise,text,YES,'pendente'::text
+inscricoes_publicas,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+lideres_celula,id,uuid,NO,gen_random_uuid()
+lideres_celula,celula_id,uuid,YES,null
+lideres_celula,pessoa_id,uuid,YES,null
+lideres_celula,tipo_lideranca,character varying,YES,'lider'::character varying
+lideres_celula,created_at,timestamp with time zone,YES,now()
+logs_financeiros,id,uuid,NO,gen_random_uuid()
+logs_financeiros,usuario_email,text,NO,null
+logs_financeiros,acao,text,NO,null
+logs_financeiros,detalhes,text,YES,null
+logs_financeiros,created_at,timestamp without time zone,YES,now()
+pedidos_oracao,id,uuid,NO,gen_random_uuid()
+pedidos_oracao,pessoa_id,uuid,NO,null
+pedidos_oracao,pedido,text,NO,null
+pedidos_oracao,urgente,boolean,YES,false
+pedidos_oracao,status,text,YES,'pendente'::text
+pedidos_oracao,created_at,timestamp with time zone,YES,now()
+personality_tests,id,uuid,NO,gen_random_uuid()
+personality_tests,member_id,uuid,NO,null
+personality_tests,colerico,integer,NO,null
+personality_tests,melancolico,integer,NO,null
+personality_tests,sanguineo,integer,NO,null
+personality_tests,fleumatico,integer,NO,null
+personality_tests,dominant,text,NO,null
+personality_tests,secondary,text,NO,null
+personality_tests,created_at,timestamp with time zone,YES,now()
+pessoas,id,uuid,NO,gen_random_uuid()
+pessoas,nome,character varying,NO,null
+pessoas,email,character varying,YES,null
+pessoas,telefone,text,YES,null
+pessoas,data_nascimento,text,YES,null
+pessoas,genero,text,YES,null
+pessoas,data_conversao,text,YES,null
+pessoas,data_batismo,text,YES,null
+pessoas,celula_id,uuid,YES,null
+pessoas,status,character varying,YES,'ativo'::character varying
+pessoas,created_at,timestamp with time zone,YES,now()
+pessoas,foto_url,text,YES,null
+pessoas,cpf,text,YES,null
+pessoas,rg,text,YES,null
+pessoas,escolaridade,character varying,YES,null
+pessoas,profissao,character varying,YES,null
+pessoas,cep,text,YES,null
+pessoas,endereco,character varying,YES,null
+pessoas,numero,character varying,YES,null
+pessoas,bairro,character varying,YES,null
+pessoas,cidade,character varying,YES,null
+pessoas,estado,text,YES,null
+pessoas,batizado_aguas,boolean,YES,false
+pessoas,conjuge_id,uuid,YES,null
+pessoas,zona_id,bigint,YES,null
+pessoas,cargo,text,YES,null
+pessoas,estado_civil,text,YES,null
+pessoas,avaliacao_escola_discipulos,text,YES,null
+pessoas,perfil_comportamental,text,YES,null
+pessoas,atividade_cerebral,text,YES,null
+pessoas,permissao,text,YES,null
+pessoas,atuacao,text,YES,null
+pessoas,motivo_exclusao,text,YES,null
+pessoas,auth_user_id,uuid,YES,null
+pessoas,acesso_ativo,boolean,YES,false
+pessoas,ultimo_login,timestamp with time zone,YES,null
+pessoas,perfil_aguia,integer,YES,null
+pessoas,perfil_gato,integer,YES,null
+pessoas,perfil_lobo,integer,YES,null
+pessoas,perfil_tubarao,integer,YES,null
+pessoas,perfil_pensante,integer,YES,null
+pessoas,perfil_razao,integer,YES,null
+pessoas,perfil_emocao,integer,YES,null
+pessoas,perfil_atuante,integer,YES,null
+presencas_relatorio,id,uuid,NO,gen_random_uuid()
+presencas_relatorio,relatorio_id,uuid,YES,null
+presencas_relatorio,pessoa_id,uuid,YES,null
+presencas_reuniao,id,bigint,NO,nextval('presencas_reuniao_id_seq'::regclass)
+presencas_reuniao,relatorio_id,uuid,YES,null
+presencas_reuniao,pessoa_id,uuid,YES,null
+presencas_reuniao,presente,boolean,NO,true
+presencas_reuniao,created_at,timestamp with time zone,YES,now()
+professores,id,uuid,NO,gen_random_uuid()
+professores,pessoa_id,uuid,NO,null
+professores,biografia,text,YES,null
+professores,especialidade,text,YES,null
+professores,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+public.atuacoes,id,bigint,NO,nextval('zonas_moradia_id_seq'::regclass)
+public.atuacoes,nome,text,NO,null
+public.atuacoes,created_at,timestamp with time zone,YES,now()
+relacoes_familiares,id,uuid,NO,gen_random_uuid()
+relacoes_familiares,id_pai_mae,uuid,YES,null
+relacoes_familiares,id_filho,uuid,YES,null
+relacoes_familiares,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+relatorios_celula,id,uuid,NO,gen_random_uuid()
+relatorios_celula,celula_id,uuid,YES,null
+relatorios_celula,data_reuniao,date,NO,null
+relatorios_celula,visitantes_presentes,integer,YES,0
+relatorios_celula,membros_presentes,integer,YES,0
+relatorios_celula,valor_oferta,numeric,YES,0.00
+relatorios_celula,observacoes,text,YES,null
+relatorios_celula,preenchido_por,uuid,YES,null
+relatorios_celula,created_at,timestamp with time zone,YES,now()
+relatorios_celula,tema_ministrado,character varying,YES,null
+relatorios_celula,nomes_visitantes,ARRAY,YES,null
+relatorios_celula,oferta,numeric,YES,0.00
+relatorios_reuniao,id,uuid,NO,gen_random_uuid()
+relatorios_reuniao,celula_id,uuid,NO,null
+relatorios_reuniao,data_reuniao,date,NO,null
+relatorios_reuniao,tema,text,YES,null
+relatorios_reuniao,valor_oferta,numeric,YES,0
+relatorios_reuniao,observacoes,text,YES,null
+relatorios_reuniao,visitantes,text,YES,null
+relatorios_reuniao,criado_por,text,YES,null
+relatorios_reuniao,created_at,timestamp with time zone,YES,now()
+relatorios_reuniao,updated_at,timestamp with time zone,YES,now()
+reunioes_celula,id,uuid,NO,gen_random_uuid()
+reunioes_celula,celula_id,uuid,NO,null
+reunioes_celula,data_reuniao,date,NO,null
+reunioes_celula,observacoes,text,YES,null
+reunioes_celula,created_at,timestamp without time zone,YES,now()
+reunioes_celula,updated_at,timestamp without time zone,YES,now()
+transacoes_financeiras,id,uuid,NO,gen_random_uuid()
+transacoes_financeiras,tipo,text,NO,null
+transacoes_financeiras,data,date,NO,CURRENT_DATE
+transacoes_financeiras,descricao,text,NO,null
+transacoes_financeiras,valor,numeric,NO,0.00
+transacoes_financeiras,status,text,NO,'pago'::text
+transacoes_financeiras,pessoa_id,uuid,YES,null
+transacoes_financeiras,categoria_id,uuid,YES,null
+transacoes_financeiras,conta_id,uuid,YES,null
+transacoes_financeiras,anotacoes,text,YES,null
+transacoes_financeiras,created_at,timestamp with time zone,YES,now()
+transacoes_financeiras,competencia,text,YES,null
+turmas,id,uuid,NO,gen_random_uuid()
+turmas,escola_id,uuid,NO,null
+turmas,nome,text,NO,null
+turmas,ano_letivo,integer,NO,null
+turmas,semestre,integer,YES,1
+turmas,ativa,boolean,YES,true
+turmas,created_at,timestamp with time zone,NO,"timezone('utc'::text, now())"
+turmas,descricao,text,YES,null
+turmas,horario,text,YES,'Não definido'::text
+turmas,status,text,YES,'Preparando turma'::text
+turmas_disciplinas,id,uuid,NO,gen_random_uuid()
+turmas_disciplinas,turma_id,uuid,NO,null
+turmas_disciplinas,disciplina_id,uuid,NO,null
+turmas_disciplinas,professor_id,uuid,YES,null
+zonas_moradia,id,bigint,NO,nextval('zonas_moradia_id_seq'::regclass)
+zonas_moradia,nome,text,NO,null
+zonas_moradia,created_at,timestamp with time zone,YES,now()

@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabaseClient';
-import { PageHeader, Card, CardHeader, Avatar } from './ui'; // Assumindo que 'ui' tem esses componentes
+import { PageHeader, Card, CardHeader, Avatar, StatCard, DoughnutCard, ColumnChart } from './ui'; 
+import { agrupamentoPor } from './churchUtils';
 
-export default function EscolasModulo({ submenu, onNavigate, pessoas = [], alunoSelecionadoParaCadernetaId, setAlunoSelecionadoParaCadernetaId }) {
+export default function EscolasModulo({ submenu, onNavigate, pessoas = [], alunoSelecionadoParaCadernetaId, setAlunoSelecionadoParaCadernetaId, membroLogado }) {
   const [escolas, setEscolas] = useState([]);
   const [carregando, setCarregando] = useState(false);
   const [escolaEditando, setEscolaEditando] = useState(null);
   const [isModalEdicaoAberto, setIsModalEdicaoAberto] = useState(false);
+  
+  const podeEditar = ['admin', 'secretaria'].includes(membroLogado?.permissao);
 
   // Estados do formulário
   const [nome, setNome] = useState('');
@@ -467,33 +470,23 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
   const breadcrumb = ['Escolas', getSubmenuTitle(submenu)];
 
   return (
-    <div className="space-y-6">
+    <div className="escolas-root space-y-6">
+      <style>{`
+        .escolas-root, .escolas-root * { 
+          font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important; 
+          -webkit-font-smoothing: antialiased;
+        }
+      `}</style>
       <PageHeader titulo={getSubmenuTitle(submenu)} breadcrumb={breadcrumb} onNavigate={() => onNavigate('resumo')} />
 
       {submenu === 'resumo' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-5 flex flex-col justify-between border-l-4 border-l-[#055F6D]">
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Cursos Ativos</p>
-              <p className="text-3xl font-black text-slate-800">{escolas.length}</p>
-              {escolas.length === 0 && (
-                <p className="text-[9px] text-slate-400 mt-1">Nenhum curso cadastrado.</p>
-              )}
-            </div>
-            <button onClick={() => onNavigate('cursos')} className="mt-4 text-xs font-bold text-[#055F6D] hover:underline text-left cursor-pointer">
-              {escolas.length === 0 ? 'Adicionar Primeiro Curso →' : 'Gerenciar Cursos →'}
-            </button>
-          </Card>
-          {/* Espaço para mais cards de resumo como Total de Alunos, Turmas Ativas, etc */}
-          <div className="p-12 col-span-full text-center bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-             <p className="text-sm text-slate-400 italic">Em breve: Indicadores de matrículas e desempenho escolar.</p>
-          </div>
-        </div>
+        <DashboardEscolas escolas={escolas} turmas={turmas} pessoas={pessoas} onNavigate={onNavigate} />
       )}
 
       {submenu === 'cursos' && (
         <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start">
           {/* PAINEL LATERAL DE CADASTRO */}
+          {podeEditar && (
           <Card className="p-0 overflow-hidden sticky top-24">
             <CardHeader 
               titulo="Novo Curso" 
@@ -553,9 +546,10 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
               </div>
             </form>
           </Card>
+          )}
 
           {/* LISTA DE CURSOS EM TABELA */}
-          <Card className="p-0 overflow-hidden">
+          <Card className={`p-0 overflow-hidden ${!podeEditar ? 'col-span-full' : ''}`}>
             <CardHeader titulo="Cursos Cadastrados" />
             <div className="overflow-x-auto">
               <table className="table-mib">
@@ -595,6 +589,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                           {new Date(escola.data_criacao).toLocaleDateString()}
                         </td>
                         <td className="text-right pr-6">
+                          {podeEditar && (
                           <div className="flex justify-end gap-2">
                             <button onClick={() => handleEditar(escola)} className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Curso">
                               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -607,6 +602,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                               </svg>
                             </button>
                           </div>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -1197,7 +1193,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
       </Card>
 
       <div className="space-y-6">
-        {/* NAVEGAÇÃO DE ABAS */}
+        {/* NAVEGAÇÃO DE ABAS E AÇÕES */}
         {(() => {
           const tabConfig = [
             {
@@ -1247,38 +1243,53 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
           ];
 
           return (
-            <div className="flex overflow-x-auto border-b border-slate-100 bg-slate-50/60 px-2 pt-2 gap-1 rounded-t-2xl scrollbar-hide">
-              {tabConfig.map((tab) => {
-                const isAtivo = abaAtiva === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setAbaAtiva(tab.id)}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-t-xl text-[11px] font-bold whitespace-nowrap transition-all shrink-0 border-b-2 cursor-pointer ${
-                      isAtivo
-                        ? 'bg-white text-slate-900 shadow-sm'
-                        : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-white/60'
-                    }`}
-                    style={{ borderBottomColor: isAtivo ? tab.cor : 'transparent' }}
-                  >
-                    <span style={{ color: isAtivo ? tab.cor : undefined }}>{tab.icon}</span>
-                    {tab.label}
-                    {tab.badge !== null && (
-                      <span
+            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-2 pt-2 gap-3 rounded-t-2xl">
+              <div className="flex overflow-x-auto gap-1 scrollbar-hide">
+                {tabConfig.map((tab) => {
+                  const isAtivo = abaAtiva === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setAbaAtiva(tab.id)}
+                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-t-xl text-[11px] font-black whitespace-nowrap transition-all shrink-0 border-b-2 cursor-pointer ${
+                        isAtivo
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-white/60'
+                      }`}
+                      style={{ borderBottomColor: isAtivo ? tab.cor : 'transparent' }}
+                    >
+                      <span style={{ color: isAtivo ? tab.cor : undefined }}>{tab.icon}</span>
+                      {tab.label}
+                      {tab.badge !== null && (
+                        <span
                         className="text-[9px] font-black px-1.5 py-0.5 rounded-full ml-0.5"
-                        style={
-                          isAtivo
-                            ? { backgroundColor: tab.cor, color: 'white' }
-                            : { backgroundColor: '#e2e8f0', color: '#94a3b8' }
-                        }
-                      >
-                        {tab.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                          style={
+                            isAtivo
+                              ? { backgroundColor: tab.cor, color: 'white' }
+                              : { backgroundColor: '#e2e8f0', color: '#94a3b8' }
+                          }
+                        >
+                          {tab.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Ações Rápidas - Alinhadas com as Abas */}
+              <div className="pb-2 sm:pb-0 pr-2 shrink-0">
+                {abaAtiva === 'alunos' && (
+                  <button onClick={onAddAlunos} className="px-4 py-1.5 bg-[#055F6D] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-teal-900/10">+ Adicionar Alunos</button>
+                )}
+                {abaAtiva === 'disciplinas' && (
+                  <button onClick={onAddDisciplina} className="px-4 py-1.5 bg-[#6366f1] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-indigo-900/10">+ Incluir Disciplina</button>
+                )}
+                {abaAtiva === 'aulas' && (
+                  <button onClick={onAddAula} className="px-4 py-1.5 bg-[#f59e0b] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-amber-900/10">📅 Lançar Aula / Presença</button>
+                )}
+              </div>
             </div>
           );
         })()}
@@ -1286,9 +1297,6 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
         {/* CONTEÚDO DAS ABAS */}
         {abaAtiva === 'alunos' && (
           <div className="space-y-4">
-          <div className="flex justify-end">
-            <button onClick={onAddAlunos} className="px-4 py-2 bg-[#055F6D] text-white rounded-xl text-xs font-bold hover:opacity-90 transition cursor-pointer">+ Adicionar Alunos</button>
-          </div>
           <Card className="p-0 overflow-hidden">
             <table className="table-mib">
               <thead><tr><th>Aluno</th><th>Status na Turma</th><th>Matrícula</th><th className="text-right pr-6">Ações</th></tr></thead>
@@ -1296,9 +1304,9 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                 {alunos.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhum aluno matriculado nesta turma.</td></tr> : 
                   alunos.map(a => (
                     <tr key={a.id} onClick={() => onVerAluno(a.alunos?.pessoa_id)} className="cursor-pointer hover:bg-slate-50 transition">
-                      <td><div className="flex items-center gap-2"><Avatar pessoa={a.alunos?.pessoas} tamanho="w-8 h-8"/><span className="font-bold text-sm text-slate-700">{a.alunos?.pessoas?.nome}</span></div></td>
+                      <td><div className="flex items-center gap-2"><Avatar pessoa={a.alunos?.pessoas} tamanho="w-8 h-8"/><span className="text-sm text-slate-700">{a.alunos?.pessoas?.nome}</span></div></td>
                       <td>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border uppercase ${
                           a.status === 'ativo' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
                           a.status === 'desistente' ? 'bg-rose-50 text-rose-600 border-rose-100' :
                           'bg-slate-100 text-slate-500 border-slate-200'
@@ -1342,9 +1350,6 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
 
         {abaAtiva === 'disciplinas' && (
           <div className="space-y-4">
-            <div className="flex justify-end">
-              <button onClick={onAddDisciplina} className="px-4 py-2 bg-[#055F6D] text-white rounded-xl text-xs font-bold hover:opacity-90 transition cursor-pointer">+ Incluir Disciplina</button>
-            </div>
             <Card className="p-0 overflow-hidden">
               <table className="table-mib">
                 <thead>
@@ -1381,10 +1386,6 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
 
         {abaAtiva === 'aulas' && (
           <div className="space-y-4">
-        <div className="space-y-4">
-          <div className="flex justify-end">
-            <button onClick={onAddAula} className="px-4 py-2 bg-[#055F6D] text-white rounded-xl text-xs font-bold hover:opacity-90 transition cursor-pointer">📅 Lançar Aula / Presença</button>
-          </div>
           <Card className="p-0 overflow-hidden">
             <table className="table-mib">
               <thead>
@@ -1430,7 +1431,6 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
             </table>
           </Card>
         </div>
-          </div>
         )}
 
         {abaAtiva === 'frequencias' && (
@@ -1485,12 +1485,12 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                     <tbody>
                       {relatorioFrequencia.dados.map((row, idx) => (
                         <tr key={idx}>
-                          <td className="sticky left-0 bg-white z-10 font-bold text-slate-700 text-xs border-r">{row.nome}</td>
+                          <td className="sticky left-0 bg-white z-10 font-medium text-slate-700 text-xs border-r">{row.nome}</td>
                           {(esconderDiasSemRegistro ? relatorioFrequencia.diasComAula : Array.from({length: 31}, (_, i) => i + 1)).map(dia => {
                             const status = row.presencas[dia];
                             return (
                               <td key={dia} className="text-center p-0">
-                                <span className={`inline-block w-full py-2 text-[10px] font-black ${
+                                <span className={`inline-block w-full py-2 text-[10px] font-semibold ${
                                   status === 'P' ? 'text-emerald-600 bg-emerald-50/50' : 
                                   status === 'F' ? 'text-rose-600 bg-rose-50/50' : 
                                   'text-slate-200'
@@ -1513,6 +1513,144 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
             )}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+/* COMPONENTE DE DASHBOARD */
+function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
+  const [stats, setStats] = useState({
+    totalAlunos: 0,
+    totalMatriculas: 0,
+    matriculasPorCurso: {},
+    porGenero: {},
+    porEscolaridade: {},
+    porStatus: {},
+    rankingFrequencia: []
+  });
+  const [carregandoStats, setCarregandoStats] = useState(true);
+
+  useEffect(() => {
+    async function carregarStats() {
+      setCarregandoStats(true);
+      try {
+        const { data: matriculas } = await supabase
+          .from('alunos_turmas')
+          .select('*, turmas(nome, escola_id, escolas(nome)), alunos(pessoa_id)');
+        
+        if (matriculas) {
+          const uniqueAlunosIds = [...new Set(matriculas.map(m => m.alunos?.pessoa_id))];
+          const alunosPessoas = pessoas.filter(p => uniqueAlunosIds.includes(p.id));
+
+          // 1. Matrículas por Curso
+          const porCurso = {};
+          matriculas.forEach(m => {
+            const nomeCurso = m.turmas?.escolas?.nome || 'Outros';
+            porCurso[nomeCurso] = (porCurso[nomeCurso] || 0) + 1;
+          });
+
+          // 2. Por Status
+          const porStatus = agrupamentoPor(matriculas, m => m.status || 'ativo');
+
+          // 3. Rankings (Simulado com base no engajamento/matrículas por aluno se não houver notas)
+          // Aqui você pode expandir para buscar médias reais da tabela de avaliações
+
+          setStats({
+            totalAlunos: uniqueAlunosIds.length,
+            totalMatriculas: matriculas.length,
+            matriculasPorCurso: porCurso,
+            porGenero: agrupamentoPor(alunosPessoas, p => p.genero || 'Não informado'),
+            porEscolaridade: agrupamentoPor(alunosPessoas, p => p.escolaridade || 'Não informada'),
+            porStatus
+          });
+        }
+      } catch (err) {
+        console.error("Erro dashboard:", err);
+      } finally {
+        setCarregandoStats(false);
+      }
+    }
+    carregarStats();
+  }, [pessoas]);
+
+  if (carregandoStats) return <div className="p-10 text-center text-slate-400 animate-pulse">Gerando indicadores...</div>;
+
+  return (
+    <div className="space-y-6">
+      {/* LINHA 1: INDICADORES RÁPIDOS */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          label="Total de Alunos" 
+          valor={stats.totalAlunos} 
+          detalhe="Alunos únicos" 
+          icone={<span className="text-2xl">🎓</span>}
+        />
+        <StatCard 
+          label="Cursos" 
+          valor={escolas.length} 
+          detalhe="Escolas ativas" 
+          icone={<span className="text-2xl">🏫</span>}
+        />
+        <StatCard 
+          label="Turmas" 
+          valor={turmas.filter(t => t.status === 'Em andamento').length} 
+          detalhe="Em andamento" 
+          icone={<span className="text-2xl">👥</span>}
+        />
+        <StatCard 
+          label="Matrículas" 
+          valor={stats.totalMatriculas} 
+          detalhe="Total acumulado" 
+          icone={<span className="text-2xl">📝</span>}
+        />
+      </div>
+
+      {/* LINHA 2: MATRÍCULAS POR CURSO E STATUS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ColumnChart titulo="Matrículas por Curso" dados={stats.matriculasPorCurso} />
+        <DoughnutCard titulo="Status das Matrículas" dados={stats.porStatus} />
+      </div>
+
+      {/* LINHA 3: PERFIL DEMOGRÁFICO */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <DoughnutCard titulo="Alunos por Gênero" dados={stats.porGenero} />
+        <DoughnutCard titulo="Alunos por Escolaridade" dados={stats.porEscolaridade} />
+      </div>
+
+      {/* LINHA 4: RANKINGS E SUGESTÕES */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_350px] gap-6">
+        <Card className="p-0">
+          <CardHeader titulo="Ranking de Cursos por Engajamento" subtitulo="Baseado no volume de matrículas ativas." />
+          <div className="overflow-x-auto">
+            <table className="table-mib">
+              <thead>
+                <tr><th>Curso</th><th>Turmas</th><th>Matrículas</th></tr>
+              </thead>
+              <tbody>
+                {escolas.map(e => (
+                  <tr key={e.id}>
+                    <td className="font-bold text-slate-700">{e.nome}</td>
+                    <td className="text-slate-500">{turmas.filter(t => t.escola_id === e.id).length} turmas</td>
+                    <td>
+                      <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-black text-xs">
+                        {stats.matriculasPorCurso[e.nome] || 0}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+        
+        <Card className="p-6 bg-gradient-to-br from-[#055F6D] to-[#0891b2] text-white">
+          <h4 className="font-black uppercase tracking-widest text-[10px] opacity-70 mb-4">Dica de Gestão</h4>
+          <p className="text-sm leading-relaxed font-medium">
+            Acompanhe a taxa de <strong>Desistência</strong> para identificar cursos que podem precisar de reforço pedagógico ou mudança na abordagem de ensino.
+          </p>
+          <button onClick={() => onNavigate('turmas')} className="mt-6 w-full py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold transition">Ver Detalhes das Turmas</button>
+        </Card>
       </div>
     </div>
   );

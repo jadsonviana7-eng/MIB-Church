@@ -25,7 +25,51 @@ const MOTIVOS_EXCLUSAO = [
   'Outro motivo',
 ];
 
+const MODULOS_SISTEMA = [
+  { modulo: 'Visão Geral', blocos: ['Dashboard', 'Indicadores e gráficos'] },
+  { modulo: 'Pessoas', blocos: ['Ver todos', 'Adicionar pessoa', 'Aniversariantes', 'Relatórios', 'Ficha do membro'] },
+  { modulo: 'Células', blocos: ['Lista de células', 'Nova célula', 'Reuniões', 'Detalhes da célula', 'Membros da célula'] },
+  { modulo: 'Financeiro', blocos: ['Resumo', 'Transações', 'Receitas', 'Contribuições', 'Relatórios financeiros', 'Categorias', 'Contas/Caixas', 'Importar'] },
+  { modulo: 'Escolas', blocos: ['Visão Geral', 'Cursos', 'Turmas', 'Disciplinas', 'Professores', 'Alunos', 'Aulas', 'Avaliações', 'Inscrições Públicas'] },
+  { modulo: 'Agenda', blocos: ['Calendário', 'Eventos'] },
+  { modulo: 'Utilitários', blocos: ['Escalas Ministerial', 'Relatório Semanal', 'Calculadora de Tributos', 'Teste de Temperamento', 'Pedido de Oração', 'Mural de Orações'] },
+  { modulo: 'Configurações', blocos: ['Listas auxiliares', 'Preferências do sistema'] },
+];
+
 function vinculosPermissaoMembro(membro) {
+  // Prioriza permissões manuais se existirem no JSONB
+  if (membro?.permissoes_json && Object.keys(membro.permissoes_json).length > 0) {
+    const list = [];
+    const entries = Object.entries(membro.permissoes_json).filter(([_, v]) => v === true);
+    if (entries.length === 0) return calcularPermissoesPorCargo(membro);
+    
+    // Agrupa por módulo e bloco para exibir na tabela de resumo de forma legível
+    const groups = {};
+    entries.forEach(([key]) => {
+      const parts = key.split('|');
+      if (parts.length < 2) return;
+      const mod = parts[0];
+      const blc = parts[1];
+      const act = parts[2]; // ver, editar, excluir (opcional)
+      
+      const groupKey = `${mod}|${blc}`;
+      if (!groups[groupKey]) groups[groupKey] = [];
+      if (act) groups[groupKey].push(act);
+    });
+
+    Object.entries(groups).forEach(([groupKey, actions]) => {
+      const [modulo, bloco] = groupKey.split('|');
+      const suffix = actions.length > 0 ? ` [${actions.join(', ')}]` : '';
+      list.push({ modulo, bloco: `${bloco}${suffix}` });
+    });
+
+    return list;
+  }
+
+  return calcularPermissoesPorCargo(membro);
+}
+
+function calcularPermissoesPorCargo(membro) {
   const chave = String(membro?.permissao || membro?.cargo || 'membro').toLowerCase();
   const itens = [];
 
@@ -44,8 +88,11 @@ function vinculosPermissaoMembro(membro) {
 
   if (chave.includes('pastor')) {
     push('Visão Geral', ['Dashboard', 'Indicadores e gráficos']);
-    push('Pessoas', ['Ver todos', 'Relatórios', 'Ficha do membro']);
-    push('Células', ['Lista de células', 'Reuniões', 'Detalhes da célula']);
+    push('Pessoas', ['Ver todos', 'Adicionar pessoa', 'Aniversariantes', 'Relatórios', 'Ficha do membro']);
+    push('Células', ['Lista de células', 'Nova célula', 'Reuniões', 'Detalhes da célula', 'Membros da célula']);
+    push('Financeiro', ['Resumo', 'Transações', 'Receitas', 'Contribuições', 'Relatórios financeiros', 'Categorias', 'Contas/Caixas', 'Importar']);
+    push('Escolas', ['Visão Geral', 'Cursos', 'Turmas', 'Disciplinas', 'Professores', 'Alunos', 'Aulas', 'Avaliações', 'Inscrições Públicas']);
+    push('Utilitários', ['Escalas Ministerial', 'Relatório Semanal', 'Calculadora de Tributos', 'Teste de Temperamento', 'Pedido de Oração', 'Mural de Orações']);
     return itens;
   }
 
@@ -64,6 +111,13 @@ function vinculosPermissaoMembro(membro) {
   if (chave.includes('lider') || chave.includes('supervisor')) {
     push('Células', ['Lista de células', 'Reuniões', 'Detalhes da célula', 'Membros da célula']);
     push('Pessoas', ['Ficha do membro']);
+    return itens;
+  }
+
+  if (chave.includes('membro')) {
+    push('Utilitários', ['Escalas Ministerial', 'Calculadora de Tributos', 'Teste de Temperamento', 'Pedido de Oração']);
+    push('Pessoas', ['Ver todos', 'Aniversariantes']);
+    push('Células', ['Lista de células']);
     return itens;
   }
 
@@ -134,6 +188,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
   const [perfilEmocao, setPerfilEmocao] = useState('');
   const [perfilAtuante, setPerfilAtuante] = useState('');
   const [testePersonalidade, setTestePersonalidade] = useState(null);
+  const [permissoesJson, setPermissoesJson] = useState({});
 
   const isMembro = membroLogado?.permissao === 'membro';
   const [historicoPresenca, setHistoricoPresenca] = useState([]);
@@ -172,7 +227,10 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
   }, [pessoaId]);
 
   const carregarHistoricoPresenca = useCallback(async () => {
-    if (!pessoaId || !membro?.celula_id) return;
+    if (!pessoaId || !membro?.celula_id) {
+      setHistoricoPresenca([]); // Limpa a lista se não houver vínculo
+      return;
+    }
     setCarregandoPresenca(true);
     try {
       const { data: reunioes } = await supabase
@@ -348,6 +406,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
     setPerfilAtuante(p.perfil_atuante || '');
     setPerfilTubarao(p.perfil_tubarao || '');
     setConjugeId(p.conjuge_id || '');
+    setPermissoesJson(p.permissoes_json || {});
     setPreviewNovaFotoUrl('');
     setFotoFinalBlob(null);
   }
@@ -469,8 +528,8 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
   }, [endereco, numero, bairro, cidade, estado]);
 
   const permissoesVinculadas = useMemo(
-    () => (membro ? vinculosPermissaoMembro({ ...membro, permissao, cargo: cargo }) : []),
-    [membro, permissao, cargo]
+    () => (membro ? vinculosPermissaoMembro({ ...membro, permissao, cargo: cargo, permissoes_json: permissoesJson }) : []),
+    [membro, permissao, cargo, permissoesJson]
   );
 
   const onFileChange = async (e) => {
@@ -572,6 +631,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
       perfil_tubarao: perfilTubarao || null,
       foto_url: urlFotoPublica,
       conjuge_id: conjugeId || null,
+      permissoes_json: permissoesJson,
     };
 
     const { error } = await supabase.from('pessoas').update(atualizacoes).eq('id', pessoaId);
@@ -834,8 +894,10 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
           <div className="flex flex-wrap gap-2 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
             {!modoEdicao ? (
               <>
-                <button type="button" onClick={() => setModoEdicao(true)} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl">✏️ Editar</button>
-                {!isMembro && (
+                {['admin', 'pastor', 'secretaria'].includes(membroLogado?.permissao) && (
+                  <button type="button" onClick={() => setModoEdicao(true)} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl">✏️ Editar</button>
+                )}
+                {['admin', 'pastor'].includes(membroLogado?.permissao) && (
                   <>
                     <button type="button" onClick={() => setModalExclusaoAberto(true)} className="px-2 text-[11px] font-semibold text-slate-400 hover:text-amber-600 transition-colors">Inativar</button>
                     <button type="button" onClick={handleExcluirPermanente} className="px-2 text-slate-400 hover:text-rose-600 transition-colors" title="Excluir Permanentemente">
@@ -1565,6 +1627,70 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                   onCriarAcesso={handleCriarAcessoSistema}
                 />
               )}
+              
+              {membroLogado?.permissao === 'admin' && (
+                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mt-4">
+                  <h4 className="text-sm font-black text-slate-800 uppercase mb-4 tracking-tight flex items-center gap-2">
+                    <span className="text-lg">🛡️</span> Gerenciamento Manual de Acessos
+                  </h4>
+                  <p className="text-xs text-slate-500 mb-6">Como administrador, você pode ligar/desligar módulos específicos para este membro, ignorando o perfil padrão.</p>
+                  
+                  <div className="space-y-6">
+                    {MODULOS_SISTEMA.map((m) => (
+                      <div key={m.modulo} className="space-y-2">
+                        <h5 className="text-[10px] font-black text-slate-500 border-b border-slate-200 pb-1 uppercase tracking-widest">{m.modulo}</h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {m.blocos.map((bloco) => {
+                            const keyBase = `${m.modulo}|${bloco}`;
+                            const ativo = permissoesJson[keyBase] === true;
+                            return (
+                              <div key={bloco} className={`p-3 rounded-2xl border transition-all ${ativo ? 'bg-white border-emerald-200 shadow-sm' : 'bg-slate-50/50 border-slate-100'}`}>
+                                <div className="flex items-center justify-between">
+                                  <span className={`text-[11px] font-bold ${ativo ? 'text-emerald-900' : 'text-slate-400'}`}>{bloco}</span>
+                                  <button
+                                    type="button"
+                                    disabled={dis}
+                                    onClick={() => setPermissoesJson(prev => {
+                                      const novoEstado = !ativo;
+                                      const next = { ...prev, [keyBase]: novoEstado };
+                                      if (!novoEstado) {
+                                        // Limpa sub-permissões ao desativar o bloco
+                                        delete next[`${keyBase}|ver`];
+                                        delete next[`${keyBase}|editar`];
+                                        delete next[`${keyBase}|excluir`];
+                                      } else {
+                                        // Ativa 'ver' por padrão ao ligar o bloco
+                                        next[`${keyBase}|ver`] = true;
+                                      }
+                                      return next;
+                                    })}
+                                    className={`w-8 h-4 rounded-full relative transition-colors ${ativo ? 'bg-emerald-600' : 'bg-slate-300'}`}
+                                  >
+                                    <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${ativo ? 'right-0.5' : 'left-0.5'}`} />
+                                  </button>
+                                </div>
+                                
+                                {ativo && (
+                                  <div className="flex gap-1 pt-3 border-t border-slate-50 mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                                    {['ver', 'editar', 'excluir'].map(action => {
+                                      const subKey = `${keyBase}|${action}`;
+                                      const subAtivo = permissoesJson[subKey] === true;
+                                      return (
+                                        <button key={action} type="button" disabled={dis} onClick={() => setPermissoesJson(p => ({ ...p, [subKey]: !subAtivo }))} className={`flex-1 py-1 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all ${subAtivo ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-100'}`}>{action}</button>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="overflow-x-auto">
                 <table className="table-mib">
                   <thead>
@@ -1625,7 +1751,13 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
           )}
         </form>
       </Card>
-      <SidebarVinculos pessoaId={pessoaId} pessoaData={membro} matriculasEscolares={matriculasMembro} />
+      <SidebarVinculos
+        pessoaId={pessoaId}
+        pessoaData={membro}
+        matriculasEscolares={matriculasMembro}
+        listaPessoas={listaPessoas}
+        onAbrirMembro={onFechar ? (id) => { onFechar(); setTimeout(() => onDadosAtualizados?.(id), 50); } : undefined}
+      />
       </div>
 
       {isModalReceitaAberto && (

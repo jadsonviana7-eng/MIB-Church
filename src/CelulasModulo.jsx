@@ -40,6 +40,7 @@ export default function CelulasModulo({
       <>
         <DetalhesCelula 
           celula={celula} 
+          celulas={celulas}
           pessoas={pessoas} 
           zonas={zonas} 
           relatoriosCelula={relatoriosCelula} 
@@ -48,6 +49,7 @@ export default function CelulasModulo({
           breadcrumb={['Células', 'Ficha']} 
           onVerReuniao={abrirReuniao}
           membroLogado={membroLogado}
+          setCelulaSelecionadaId={setCelulaSelecionadaId}
         />
         {reuniaoParaVer && (
           <ModalVerReuniao
@@ -987,7 +989,7 @@ function InfoLinha({ label, valor }) {
   );
 }
 
-function DetalhesCelula({ celula, pessoas, zonas, relatoriosCelula, onFechar, obterDados, breadcrumb = [], onVerReuniao, membroLogado }) {
+function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onFechar, obterDados, breadcrumb = [], onVerReuniao, membroLogado, setCelulaSelecionadaId }) {
   // Estados de Controle Geral e Membros
   const [pessoasSelecionadas, setPessoasSelecionadas] = useState([]);
   const [salvandoModal, setSalvandoModal] = useState(false);
@@ -1032,7 +1034,9 @@ function DetalhesCelula({ celula, pessoas, zonas, relatoriosCelula, onFechar, ob
   if (!celula) return <div className="p-8 bg-white rounded-2xl border border-slate-200">Celula nao encontrada.</div>;
 
   const relatorios = relatoriosCelula.filter((relatorio) => String(relatorio.celula_id || '') === String(celula.id));
-  const celulasFilhas = [];
+  const celulasFilhas = useMemo(() => {
+    return celulas.filter(c => String(c.celula_mae_id) === String(celula.id));
+  }, [celulas, celula.id]);
 
   async function handleSalvarMembrosModal(e) {
     e.preventDefault();
@@ -1358,8 +1362,45 @@ function DetalhesCelula({ celula, pessoas, zonas, relatoriosCelula, onFechar, ob
           </Card>
 
           <Card className="p-0">
-            <CardHeader titulo="Celulas filhas" />
-            <p className="p-5 text-sm text-[var(--text-muted)]">{celulasFilhas.length ? `${celulasFilhas.length} geracoes cadastradas.` : 'Nenhuma geracao vinculada a esta celula.'}</p>
+            <CardHeader 
+              titulo="Células Filhas (Gerações)" 
+              subtitulo={`${celulasFilhas.length} novas células multiplicadas a partir desta.`}
+            />
+            <div className="overflow-x-auto border-t border-[var(--border)]">
+              {celulasFilhas.length === 0 ? (
+                <p className="p-5 text-sm text-[var(--text-muted)] italic">Nenhuma célula filha vinculada.</p>
+              ) : (
+                <table className="table-mib">
+                  <thead>
+                    <tr>
+                      <th>Célula</th>
+                      <th>Líder</th>
+                      <th>Agenda</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {celulasFilhas.map((filha) => (
+                      <tr 
+                        key={filha.id} 
+                        onClick={() => setCelulaSelecionadaId(filha.id)}
+                        className="cursor-pointer hover:bg-slate-50 transition"
+                      >
+                        <td>
+                          <div className="flex items-center gap-3">
+                            <AvatarCelula celula={filha} />
+                            <span className="font-semibold text-sm text-slate-700">{filha.nome}</span>
+                          </div>
+                        </td>
+                        <td className="text-xs text-slate-500">{nomePessoa(pessoas, filha.lider_id)}</td>
+                        <td className="text-xs text-slate-400">
+                          {filha.dia_semana || '—'} · {filha.horario || '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
           </Card>
         </section>
       </div>

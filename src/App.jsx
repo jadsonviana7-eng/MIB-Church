@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import TelaConfiguracoes from './TelaConfiguracoes';
 import TelaLogin from './TelaLogin';
-import Dashboard from './Dashboard';
+import OverviewDashboard from './OverviewDashboard'; // Renomeado de Dashboard
 import CelulasModulo from './CelulasModulo';
 import PessoasModulo from './PessoasModulo';
 import ModuloFinanceiro from './ModuloFinanceiro';
@@ -11,7 +11,9 @@ import EscolasModulo from './EscolasModulo';
 import AgendaModulo from './AgendaModulo';
 import PublicEventRegistration from './PublicEventRegistration';
 import DetalhesMembro from './DetalhesMembro';
+import HomePage from './HomePage'; // Novo componente HomePage
 import PublicRegistrationForm from './PublicRegistrationForm'; // Importar o novo componente
+import { MenuIcons, submenuIconKey } from './icons'; // Importa MenuIcons e submenuIconKey do novo arquivo
 import { normalizarTexto, faixaDaIdade, meses, valorCampoRelatorio } from './churchUtils';
 
 const filtrosIniciais = {
@@ -19,297 +21,6 @@ const filtrosIniciais = {
   atuacao: '', batizado: '', relatorioCampo: '', relatorioValor: ''
 };
 
-
-/* ── Ícones SVG do menu ── */
-const MenuIcons = {
-  // Menu principal
-  dashboard: (
-    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
-    </svg>
-  ),
-  pessoas: (
-    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  ),
-  celulas: (
-    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3"/><circle cx="12" cy="3" r="1.5"/><circle cx="21" cy="8" r="1.5"/>
-      <circle cx="21" cy="16" r="1.5"/><circle cx="12" cy="21" r="1.5"/><circle cx="3" cy="16" r="1.5"/>
-      <circle cx="3" cy="8" r="1.5"/><line x1="12" y1="9" x2="12" y2="4.5"/><line x1="14.6" y1="10.5" x2="19.5" y2="7.5"/>
-      <line x1="14.6" y1="13.5" x2="19.5" y2="16.5"/><line x1="12" y1="15" x2="12" y2="19.5"/>
-      <line x1="9.4" y1="13.5" x2="4.5" y2="16.5"/><line x1="9.4" y1="10.5" x2="4.5" y2="7.5"/>
-    </svg>
-  ),
-  financeiro: (
-    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-    </svg>
-  ),
-  escolas: (
-    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-    </svg>
-  ),
-  agenda: (
-    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-      <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-  ),
-  utilitarios: (
-    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M5.34 18.66l-1.41 1.41M2 12h2M20 12h2M19.07 19.07l-1.41-1.41M5.34 5.34l-1.41 1.41M12 2v2M12 20v2"/>
-    </svg>
-  ),
-  configuracoes: (
-    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-    </svg>
-  ),
-  // Submenus Pessoas
-  'p-todos': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  ),
-  'p-adicionar': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/>
-      <line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/>
-    </svg>
-  ),
-  'p-link_publico': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-    </svg>
-  ),
-  'p-inativos': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-    </svg>
-  ),
-  'p-aniversariantes': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
-      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-    </svg>
-  ),
-  'p-cargo': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-    </svg>
-  ),
-  'p-zona': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-    </svg>
-  ),
-  'p-atuacao': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-    </svg>
-  ),
-  'p-relatorios': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-      <line x1="6" y1="20" x2="6" y2="14"/>
-    </svg>
-  ),
-  // Submenus Células
-  'c-lista': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
-      <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-    </svg>
-  ),
-  'c-adicionar': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
-    </svg>
-  ),
-  'c-reunioes': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-      <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-  ),
-  'c-relatorios': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-      <line x1="6" y1="20" x2="6" y2="14"/>
-    </svg>
-  ),
-  // Submenus Financeiro
-  'f-resumo': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
-    </svg>
-  ),
-  'f-transacoes': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-      <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-    </svg>
-  ),
-  'f-relatorios': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-      <line x1="6" y1="20" x2="6" y2="14"/>
-    </svg>
-  ),
-  'f-historico': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 0 .5-4.5"/>
-      <polyline points="3 3 3.05 11 11 11"/>
-    </svg>
-  ),
-  'f-categorias': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
-    </svg>
-  ),
-  'f-contas': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
-    </svg>
-  ),
-  'f-importar': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-      <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-    </svg>
-  ),
-  // Submenus Escolas
-  'e-resumo': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
-    </svg>
-  ),
-  'e-cursos': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-    </svg>
-  ),
-  'e-turmas': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  ),
-  'e-disciplinas': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-      <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
-      <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-    </svg>
-  ),
-  'e-professores': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
-    </svg>
-  ),
-  'e-alunos': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="8" r="4"/><path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>
-    </svg>
-  ),
-  'e-aulas': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-      <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-      <line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="15" x2="16" y2="15"/>
-    </svg>
-  ),
-  'e-avaliacoes': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-    </svg>
-  ),
-  'e-ficha-aluno': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-      <circle cx="12" cy="7" r="4"/>
-      <path d="M12 11v4M10 13h4" />
-    </svg>
-  ),
-  'e-inscricoes': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-    </svg>
-  ),
-  // Submenus Utilitários
-  'u-escalas': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 11l19-9-9 19-2-8-8-2z"/>
-    </svg>
-  ),
-  'u-relatorio-semanal': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-      <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
-      <line x1="16" y1="17" x2="8" y2="17"/>
-    </svg>
-  ),
-  'u-calculadora': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="4" y="2" width="16" height="20" rx="2"/>
-      <line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8.01" y2="10"/>
-      <line x1="12" y1="10" x2="12.01" y2="10"/><line x1="16" y1="10" x2="16.01" y2="10"/>
-      <line x1="8" y1="14" x2="8.01" y2="14"/><line x1="12" y1="14" x2="12.01" y2="14"/>
-      <line x1="16" y1="14" x2="16.01" y2="14"/><line x1="8" y1="18" x2="12" y2="18"/>
-      <line x1="16" y1="18" x2="16.01" y2="18"/>
-    </svg>
-  ),
-  'u-quiz': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-    </svg>
-  ),
-  'u-pedido-oracao': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M12 8v8"/><path d="M8 12h8"/>
-    </svg>
-  ),
-  'u-mural-oracao': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/>
-    </svg>
-  ),
-  // Submenus Agenda
-  'a-calendario': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-  ),
-  'a-eventos': (
-    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-    </svg>
-  ),
-};
-
-// Mapa de submenus → chave de ícone
-const submenuIconKey = {
-  pessoas: { todos: 'p-todos', adicionar: 'p-adicionar', link_publico: 'p-link_publico', inativos: 'p-inativos', aniversariantes: 'p-aniversariantes', cargo: 'p-cargo', zona: 'p-zona', atuacao: 'p-atuacao', relatorios: 'p-relatorios' },
-  celulas:  { lista: 'c-lista', adicionar: 'c-adicionar', reunioes: 'c-reunioes', relatorios: 'c-relatorios' },
-  financeiro: { resumo: 'f-resumo', transacoes: 'f-transacoes', relatorios: 'f-relatorios', historico: 'f-historico', categorias: 'f-categorias', contas: 'f-contas', importar: 'f-importar' },
-  escolas: { resumo: 'e-resumo', cursos: 'e-cursos', turmas: 'e-turmas', disciplinas: 'e-disciplinas', professores: 'e-professores', alunos: 'e-alunos', aulas: 'e-aulas', avaliacoes: 'e-avaliacoes', 'ficha-aluno': 'e-ficha-aluno', inscricoes: 'e-inscricoes' },
-  agenda: { calendario: 'a-calendario', eventos: 'a-eventos' },
-  utilitarios: { 
-    escalas: 'u-escalas', 'relatorio-semanal': 'u-relatorio-semanal', calculadora: 'u-calculadora',
-    quiz: 'u-quiz', 'pedido-oracao': 'u-pedido-oracao', 'mural-oracao': 'u-mural-oracao'
-  },
-};
 
 export default function App() {
   // Filtros para Células
@@ -342,7 +53,9 @@ export default function App() {
   const [escolasSubmenu, setEscolasSubmenu] = useState('resumo'); // Novo estado para o submenu de Escolas
   const [agendaSubmenu, setAgendaSubmenu] = useState('calendario');
   const [utilitariosSubmenu, setUtilitariosSubmenu] = useState('escalas');
+  const [filtrosFinanceiroAberto, setFiltrosFinanceiroAberto] = useState(false); // Novo estado para filtros financeiros mobile
   const [pessoas, setPessoas] = useState([]);
+  const [filtrosPessoasAberto, setFiltrosPessoasAberto] = useState(false);
   const [celulas, setCelulas] = useState([]);
   const [zonas, setZonas] = useState([]);
   const [cargosDisponiveis, setCargosDisponiveis] = useState([]);
@@ -355,6 +68,15 @@ export default function App() {
   const [alunoSelecionadoParaCadernetaId, setAlunoSelecionadoParaCadernetaId] = useState(null);
   const [filtros, setFiltros] = useState(filtrosIniciais);
   const [periodoConvertidos, setPeriodoConvertidos] = useState('mes');
+
+  // Estado para controlar dropdowns no menu mobile
+  const [mobileDropdownAberto, setMobileDropdownAberto] = useState(null);
+  const toggleMobileDropdown = (mod) => setMobileDropdownAberto(prev => prev === mod ? null : mod);
+
+  // Sincroniza o dropdown aberto com o módulo atual ao abrir o menu mobile
+  useEffect(() => {
+    if (menuAberto) setMobileDropdownAberto(moduloAtual);
+  }, [menuAberto, moduloAtual]);
 
   const membroLogado = useMemo(() => {
     if (!usuarioLogado?.email || pessoas.length === 0) return null;
@@ -629,10 +351,25 @@ export default function App() {
     return <TelaLogin onEntrar={handleEntrar} />;
   }
   console.log('Renderizando Dashboard - usuário logado:', usuarioLogado.email);
+
+  const getModuloTitle = (modulo) => {
+    switch (modulo) {
+      case 'dashboard': return 'Visão Geral';
+      case 'pessoas': return 'Pessoas';
+      case 'celulas': return 'Células';
+      case 'financeiro': return 'Financeiro';
+      case 'escolas': return 'Escolas';
+      case 'agenda': return 'Agenda';
+      case 'utilitarios': return 'Utilitários';
+      case 'configuracoes': return 'Configurações';
+      default: return '';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[var(--surface-muted)] font-sans text-[var(--text-primary)] antialiased">
       {/* ── TOPBAR FIXA — visível apenas em desktop (md+) ── */}
-      <header className="hidden md:flex print:hidden fixed top-0 inset-x-0 z-50 h-14 bg-[#1e3a8a] border-b border-white/10 items-center px-4 gap-1 shadow-md">
+      <header className="hidden md:flex print:hidden fixed top-0 inset-x-0 z-50 h-14 bg-[#1e3a8a] border-b border-white/10 items-center px-4 gap-1 shadow-md"> {/* <--- Altere bg-[#hex] aqui para o Desktop */}
         {/* Logo */}
         <button type="button" onClick={() => navegar('dashboard')} className="flex items-center gap-2.5 mr-4 shrink-0">
           <img src="/logo-mib-mundau.png" alt="Logo" className="h-8 w-14 object-contain bg-white rounded-md p-0.5" />
@@ -748,18 +485,61 @@ export default function App() {
 
         {/* Avatar do usuário com dropdown */}
         <div className="shrink-0 ml-auto border-l border-slate-700/60 pl-4">
-          <UserAvatarDropdown usuarioLogado={usuarioLogado} membroLogado={membroLogado} onSair={handleSair} />
+          <UserAvatarDropdown 
+            usuarioLogado={usuarioLogado} 
+            membroLogado={membroLogado} 
+            onSair={handleSair} 
+            onVerPerfil={() => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(membroLogado?.id); }}
+          />
         </div>
       </header>
 
       {/* ── SIDEBAR LATERAL — visível apenas no mobile ── */}
-      <button
-        type="button"
-        onClick={() => setMenuAberto(true)}
-        className="fixed left-4 top-3 z-40 md:hidden print:hidden rounded-xl bg-[#1e293b] px-3 py-2 text-sm font-bold text-white shadow-lg"
-      >
-        ☰
-      </button>
+      {/* Mobile Header */}
+      <div className="fixed top-0 inset-x-0 z-40 h-14 bg-[#1e3a8a] text-white flex items-center px-4 md:hidden print:hidden shadow-md"> {/* <--- Altere bg-[#hex] aqui para o Mobile */}
+        <div className="w-12" /> {/* Espaço para equilibrar o layout do título centralizado */}
+        <span className="flex-1 text-center text-sm font-bold uppercase tracking-wide">
+          {getModuloTitle(moduloAtual)}
+        </span>
+        <div className="flex items-center gap-1">
+          {/* Avatar clicável no mobile */}
+          <button 
+            onClick={() => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(membroLogado?.id); }}
+            className="p-1 active:scale-95 transition-transform"
+            title="Meu Perfil"
+          >
+            <UserAvatarImg usuarioLogado={usuarioLogado} membroLogado={membroLogado} tamanho="w-8 h-8" />
+          </button>
+
+        {/* Botão de Filtros exclusivo para o módulo Pessoas em mobile */}
+        {moduloAtual === 'pessoas' && !membroSelecionadoId && (
+          <button
+            type="button"
+            onClick={() => setFiltrosPessoasAberto(true)}
+            className="p-2 -mr-1 active:opacity-50 transition-opacity"
+            aria-label="Abrir filtros"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+            </svg>
+          </button>
+        )}
+        {/* Botão de Filtros exclusivo para Transações Financeiras em mobile */}
+        {moduloAtual === 'financeiro' && financeiroSubmenu === 'transacoes' && (
+          <button
+            type="button"
+            onClick={() => setFiltrosFinanceiroAberto(true)}
+            className="p-2 -mr-1 active:opacity-50 transition-opacity"
+            aria-label="Abrir filtros"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+            </svg>
+          </button>
+        )}
+        </div>
+      </div>
+      {/* Original mobile menu toggle button removed */}
       {menuAberto && (
         <button
           type="button"
@@ -768,32 +548,51 @@ export default function App() {
           className="fixed inset-0 z-40 bg-slate-950/40 md:hidden print:hidden"
         />
       )}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-[#1e3a8a] to-[#1e40af] text-white flex flex-col border-r border-white/5 transition-transform duration-200 md:hidden print:hidden ${menuAberto ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-5 border-b border-white/5 flex items-center gap-3">
-          <img src="/logo-mib-mundau.png" alt="Logo" className="h-12 w-20 object-contain bg-white rounded-lg p-1" />
-          <div>
-            <h1 className="font-bold text-white text-base tracking-tight">MIB Church</h1>
-            <p className="text-[10px] font-medium text-teal-200/70 uppercase tracking-wider">Gestão da Igreja</p>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-[#1e3a8a] to-[#1e40af] text-white flex flex-col border-r border-white/5 transition-transform duration-200 md:hidden print:hidden ${menuAberto ? 'translate-x-0' : '-translate-x-full'}`}> {/* <--- Altere o gradiente aqui */}
+        <div className="p-5 border-b border-white/5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <img src="/logo-mib-mundau.png" alt="Logo" className="h-12 w-20 object-contain bg-white rounded-lg p-1" />
+            <div>
+              <h1 className="font-bold text-white text-base tracking-tight">MIB Church</h1>
+              <p className="text-[10px] font-medium text-teal-200/70 uppercase tracking-wider">Gestão da Igreja</p>
+            </div>
           </div>
+          <button 
+            type="button" 
+            onClick={() => setMenuAberto(false)}
+            className="p-2 -mr-2 text-white/50 hover:text-white transition-colors cursor-pointer"
+            aria-label="Fechar menu"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-        <nav className="flex-1 p-4 space-y-5 overflow-y-auto">
-          {hasAccess('Visão Geral') && (
-          <MenuButton ativo={moduloAtual === 'dashboard'} onClick={() => navegar('dashboard')} contador={indicadores.totalPessoas} icon={MenuIcons.dashboard}>
-            Visão Geral
-          </MenuButton>
+        <nav className="flex-1 py-0 space-y-0 overflow-y-auto">
+          {hasAccess('Visão Geral') && ( /* Removido o div wrapper */
+            <MenuButton ativo={moduloAtual === 'dashboard'} onClick={() => navegar('dashboard')} icon={MenuIcons.dashboard}>
+              Visão Geral
+            </MenuButton>
           )}
           
           {hasAccess('Pessoas') && (
           <div>
-            <MenuButton ativo={moduloAtual === 'pessoas'} onClick={() => navegar('pessoas', 'todos')} contador={pessoas.length} icon={MenuIcons.pessoas}>
+            <MenuButton 
+              ativo={moduloAtual === 'pessoas'} 
+              onClick={() => navegar('pessoas', 'todos')} 
+              icon={MenuIcons.pessoas}
+              hasSubmenu={submenusPessoas.length > 0}
+              expanded={mobileDropdownAberto === 'pessoas'}
+              onToggle={() => toggleMobileDropdown('pessoas')}
+            >
               Pessoas
             </MenuButton>
-            {moduloAtual === 'pessoas' && (
-              <div className="mt-2 ml-2 pl-3 border-l border-white/20 space-y-1">
+            {mobileDropdownAberto === 'pessoas' && (
+              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                 {submenusPessoas.map(([id, label]) => (
                   <button key={id} type="button" onClick={() => navegar('pessoas', id)}
-                    className={`block w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition ${pessoasSubmenu === id ? 'bg-[#2563eb] text-white' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>
-                    {label}
+                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'pessoas' && pessoasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                    {MenuIcons[submenuIconKey.pessoas[id]]} {label}
                   </button>
                 ))}
               </div>
@@ -803,15 +602,22 @@ export default function App() {
 
           {hasAccess('Células') && (
           <div>
-            <MenuButton ativo={moduloAtual === 'celulas'} onClick={() => navegar('celulas', 'lista')} contador={celulas.length} icon={MenuIcons.celulas}>
+            <MenuButton 
+              ativo={moduloAtual === 'celulas'} 
+              onClick={() => navegar('celulas', 'lista')} 
+              icon={MenuIcons.celulas}
+              hasSubmenu={submenusCelulas.length > 0}
+              expanded={mobileDropdownAberto === 'celulas'}
+              onToggle={() => toggleMobileDropdown('celulas')}
+            >
               Células
             </MenuButton>
-            {moduloAtual === 'celulas' && (
-              <div className="mt-2 ml-2 pl-3 border-l border-white/20 space-y-1">
+            {mobileDropdownAberto === 'celulas' && (
+              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                 {submenusCelulas.map(([id, label]) => (
                   <button key={id} type="button" onClick={() => navegar('celulas', id)}
-                    className={`block w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition ${celulasSubmenu === id ? 'bg-[#2563eb] text-white' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>
-                    {label}
+                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'celulas' && celulasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                    {MenuIcons[submenuIconKey.celulas[id]]} {label}
                   </button>
                 ))}
               </div>
@@ -821,15 +627,22 @@ export default function App() {
 
           {hasAccess('Financeiro') && (
           <div>
-            <MenuButton ativo={moduloAtual === 'financeiro'} onClick={() => navegar('financeiro', 'resumo')} icon={MenuIcons.financeiro}>
+            <MenuButton 
+              ativo={moduloAtual === 'financeiro'} 
+              onClick={() => navegar('financeiro', 'resumo')} 
+              icon={MenuIcons.financeiro}
+              hasSubmenu={submenusFinanceiro.length > 0}
+              expanded={mobileDropdownAberto === 'financeiro'}
+              onToggle={() => toggleMobileDropdown('financeiro')}
+            >
               Financeiro
             </MenuButton>
-            {moduloAtual === 'financeiro' && (
-              <div className="mt-2 ml-2 pl-3 border-l border-white/20 space-y-1">
+            {mobileDropdownAberto === 'financeiro' && (
+              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                 {submenusFinanceiro.map(([id, label]) => (
                   <button key={id} type="button" onClick={() => navegar('financeiro', id)}
-                    className={`block w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition ${financeiroSubmenu === id ? 'bg-[#2563eb] text-white' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>
-                    {label}
+                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'financeiro' && financeiroSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                    {MenuIcons[submenuIconKey.financeiro[id]]} {label}
                   </button>
                 ))}
               </div>
@@ -839,15 +652,22 @@ export default function App() {
 
           {hasAccess('Escolas') && (
           <div>
-            <MenuButton ativo={moduloAtual === 'escolas'} onClick={() => navegar('escolas', 'resumo')} icon={MenuIcons.escolas}>
+            <MenuButton 
+              ativo={moduloAtual === 'escolas'} 
+              onClick={() => navegar('escolas', 'resumo')} 
+              icon={MenuIcons.escolas}
+              hasSubmenu={submenusEscolas.length > 0}
+              expanded={mobileDropdownAberto === 'escolas'}
+              onToggle={() => toggleMobileDropdown('escolas')}
+            >
               Escolas
             </MenuButton>
-            {moduloAtual === 'escolas' && (
-              <div className="mt-2 ml-2 pl-3 border-l border-white/20 space-y-1">
+            {mobileDropdownAberto === 'escolas' && (
+              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                 {submenusEscolas.map(([id, label]) => (
                   <button key={id} type="button" onClick={() => navegar('escolas', id)}
-                    className={`block w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition ${escolasSubmenu === id ? 'bg-[#2563eb] text-white' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>
-                    {label}
+                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'escolas' && escolasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                    {MenuIcons[submenuIconKey.escolas[id]]} {label}
                   </button>
                 ))}
               </div>
@@ -857,15 +677,22 @@ export default function App() {
 
           {hasAccess('Agenda') && (
           <div>
-            <MenuButton ativo={moduloAtual === 'agenda'} onClick={() => navegar('agenda', 'calendario')} icon={MenuIcons.agenda}>
+            <MenuButton 
+              ativo={moduloAtual === 'agenda'} 
+              onClick={() => navegar('agenda', 'calendario')} 
+              icon={MenuIcons.agenda}
+              hasSubmenu={submenusAgenda.length > 0}
+              expanded={mobileDropdownAberto === 'agenda'}
+              onToggle={() => toggleMobileDropdown('agenda')}
+            >
               Agenda
             </MenuButton>
-            {moduloAtual === 'agenda' && (
-              <div className="mt-2 ml-2 pl-3 border-l border-white/20 space-y-1">
+            {mobileDropdownAberto === 'agenda' && (
+              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                 {submenusAgenda.map(([id, label]) => (
                   <button key={id} type="button" onClick={() => navegar('agenda', id)}
-                    className={`block w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition ${agendaSubmenu === id ? 'bg-[#2563eb] text-white' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>
-                    {label}
+                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'agenda' && agendaSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                    {MenuIcons[submenuIconKey.agenda[id]]} {label}
                   </button>
                 ))}
               </div>
@@ -875,15 +702,22 @@ export default function App() {
 
           {hasAccess('Utilitários') && (
           <div>
-            <MenuButton ativo={moduloAtual === 'utilitarios'} onClick={() => navegar('utilitarios', 'escalas')} icon={MenuIcons.utilitarios}>
+            <MenuButton 
+              ativo={moduloAtual === 'utilitarios'} 
+              onClick={() => navegar('utilitarios', 'escalas')} 
+              icon={MenuIcons.utilitarios}
+              hasSubmenu={submenusUtilitarios.length > 0}
+              expanded={mobileDropdownAberto === 'utilitarios'}
+              onToggle={() => toggleMobileDropdown('utilitarios')}
+            >
               Utilitários
             </MenuButton>
-            {moduloAtual === 'utilitarios' && (
-              <div className="mt-2 ml-2 pl-3 border-l border-white/20 space-y-1">
+            {mobileDropdownAberto === 'utilitarios' && (
+              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                 {submenusUtilitarios.map(([id, label]) => (
                   <button key={id} type="button" onClick={() => navegar('utilitarios', id)}
-                    className={`block w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition ${utilitariosSubmenu === id ? 'bg-[#2563eb] text-white' : 'text-slate-400 hover:text-white hover:bg-white/10'}`}>
-                    {label}
+                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'utilitarios' && utilitariosSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                    {MenuIcons[submenuIconKey.utilitarios[id]]} {label}
                   </button>
                 ))}
               </div>
@@ -909,9 +743,54 @@ export default function App() {
         </div>
       </aside>
 
+      {/* ── BOTTOM NAVIGATION — visível apenas no mobile ── */}
+      <nav className="fixed bottom-0 inset-x-0 z-40 h-16 bg-white border-t border-slate-200 flex items-center justify-around px-4 md:hidden print:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+        {/* Botão Menu (Canto Esquerdo) */}
+        <button onClick={() => setMenuAberto(true)} className="flex flex-col items-center gap-1 text-slate-400 active:scale-95 transition-transform">
+           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+             <path fillRule="evenodd" d="M3 6.75A.75.75 0 0 1 3.75 6h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 6.75ZM3 12a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 12Zm0 5.25a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+           </svg>
+           <span className="text-[10px] font-bold uppercase tracking-tight">Menu</span>
+        </button>
+
+         {/* Botão Início (Casinha no meio) */}
+        <button onClick={() => navegar('dashboard')} className={`flex flex-col items-center gap-1 transition-colors ${moduloAtual === 'dashboard' ? 'text-[#1e3a8a]' : 'text-slate-400'}`}>
+           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+             <path d="M11.47 3.84a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.06l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 0 0 1.061 1.06l8.69-8.69Z" />
+             <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.25 0 0 0 .091-.086L12 5.432Z" />
+           </svg>
+           <span className="text-[10px] font-bold uppercase tracking-tight">Início</span>
+        </button>
+
+        {/* Botão Notificações */}
+        <button className="flex flex-col items-center gap-1 text-slate-400 relative active:scale-95 transition-transform">
+           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+             <path fillRule="evenodd" d="M5.25 9a6.75 6.75 0 0 1 13.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 0 1-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 1 1-7.48 0 24.585 24.585 0 0 1-4.831-1.244.75.75 0 0 1-.298-1.205A8.217 8.217 0 0 0 5.25 9.75V9Zm4.502 8.9a2.25 2.25 0 1 0 4.496 0 25.057 25.057 0 0 1-4.496 0Z" clipRule="evenodd" />
+           </svg>
+           <span className="text-[10px] font-bold uppercase tracking-tight">Alertas</span>
+        </button>       
+
+        {/* Botão Configurações */}
+        <button onClick={() => navegar('configuracoes')} className={`flex flex-col items-center gap-1 transition-colors ${moduloAtual === 'configuracoes' ? 'text-[#1e3a8a]' : 'text-slate-400'}`}>
+           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+             <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.11-.414.03L6.463 5.01a1.875 1.875 0 0 0-2.652 0l-.825.825a1.875 1.875 0 0 0 0 2.652l.828.828c.08.08.084.248-.03.414a7.446 7.446 0 0 0-.57.986c-.088.182-.228.277-.348.297L1.817 11.078a1.875 1.875 0 0 0-1.567 1.85v1.144c0 .917.663 1.699 1.567 1.85l1.051.176c.12.02.26.115.348.297.252.522.583 1.008.986 1.45a.447.447 0 0 1 .03.415l-.828.828a1.875 1.875 0 0 0 0 2.652l.825.825a1.875 1.875 0 0 0 2.652 0l.828-.828c.08-.08.248-.084.415-.03.442.403.928.734 1.45.986.182.088.277.228.297.348l.176 1.051a1.875 1.875 0 0 0 1.85 1.567h1.144a1.875 1.875 0 0 0 1.85-1.567l.176-1.051c.02-.12.115-.26.297-.348a7.493 7.493 0 0 0 .986-.57c.166-.115.334-.11.414-.03l.828.828a1.875 1.875 0 0 0 2.652 0l.825-.825a1.875 1.875 0 0 0 0-2.652l-.828-.828c-.08-.08-.084-.248.03-.414a7.446 7.446 0 0 0 .57-.986c.088-.182.228-.277.348-.297l1.051-.176a1.875 1.875 0 0 0 1.567-1.85v-1.144a1.875 1.875 0 0 0-1.567-1.85l-1.051-.176c-.12-.02-.26-.115-.348-.297a7.446 7.446 0 0 0-.57-.986.447.447 0 0 1-.03-.414l.828-.828a1.875 1.875 0 0 0 0-2.652l-.825-.825a1.875 1.875 0 0 0-2.652 0l-.828.828c-.08.08-.248.084-.414.03a7.493 7.493 0 0 0-1.45-.986c-.182-.088-.277-.228-.297-.348l-.176-1.051a1.875 1.875 0 0 0-1.85-1.567h-1.144ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
+           </svg>
+           <span className="text-[10px] font-bold uppercase tracking-tight">Ajustes</span>
+        </button>
+      </nav>
+
       {/* ── CONTEÚDO PRINCIPAL — offset do topbar no desktop ── */}
-      <main className="min-w-0 p-4 sm:p-6 lg:px-10 lg:py-16 pt-20">
+      <main className="min-w-0 px-2 pb-20 pt-14 sm:px-6 sm:pb-6 md:pt-14 lg:px-10 lg:pb-8 lg:pt-[80px]">
+        {/* Nova HomePage como a tela principal do dashboard */}
         {moduloAtual === 'dashboard' && (
+          <HomePage onNavigate={navegar} hasAccess={hasAccess} membroLogado={membroLogado} />
+        )}
+
+        {/* O OverviewDashboard (antigo Dashboard) pode ser acessado como um submenu da HomePage, se necessário. */}
+        {/* Por exemplo, se a HomePage tivesse um botão "Ver Dashboard de Indicadores" */}
+        {/* Por enquanto, o OverviewDashboard não é renderizado diretamente aqui. */}
+        {/* Se for preciso, podemos criar um submenu para ele dentro da HomePage ou de "Visão Geral" */}
+        {/* {moduloAtual === 'dashboard' && dashboardSubmenu === 'overview' && (
           <Dashboard
             pessoas={pessoas}
             celulas={celulas}
@@ -922,7 +801,7 @@ export default function App() {
             periodoConvertidos={periodoConvertidos}
             setPeriodoConvertidos={setPeriodoConvertidos}
           />
-        )}
+        )} */}
 
         {moduloAtual === 'pessoas' && (
           <PessoasModulo
@@ -944,6 +823,8 @@ export default function App() {
             onNavigate={(sub) => navegar('pessoas', sub)}
             abrirPessoasFiltradas={abrirPessoasFiltradas}
             membroLogado={membroLogado}
+            filtrosMobileAberto={filtrosPessoasAberto}
+            setFiltrosMobileAberto={setFiltrosPessoasAberto}
           />
         )}
 
@@ -966,7 +847,15 @@ export default function App() {
           />
         )}
 
-        {moduloAtual === 'financeiro' && <ModuloFinanceiro meses={meses} submenu={financeiroSubmenu} usuarioLogado={usuarioLogado} />}
+        {moduloAtual === 'financeiro' && (
+          <ModuloFinanceiro 
+            meses={meses} 
+            submenu={financeiroSubmenu} 
+            usuarioLogado={usuarioLogado} 
+            filtrosMobileAberto={filtrosFinanceiroAberto}
+            setFiltrosMobileAberto={setFiltrosFinanceiroAberto}
+          />
+        )}
 
         {moduloAtual === 'escolas' && escolasSubmenu !== 'ficha-aluno' && (
           <EscolasModulo 
@@ -1048,7 +937,7 @@ function UserAvatarImg({ usuarioLogado, membroLogado, tamanho = 'w-8 h-8' }) {
   // Gera cor determinística baseada no email
   const hash = email.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
   const cores = [
-    ['bg-[#055F6D]', 'text-white'],
+    ['bg-[#202046]', 'text-white'],
     ['bg-violet-600', 'text-white'],
     ['bg-amber-500', 'text-white'],
     ['bg-rose-500', 'text-white'],
@@ -1064,7 +953,7 @@ function UserAvatarImg({ usuarioLogado, membroLogado, tamanho = 'w-8 h-8' }) {
   );
 }
 
-function UserAvatarDropdown({ usuarioLogado, membroLogado, onSair }) {
+function UserAvatarDropdown({ usuarioLogado, membroLogado, onSair, onVerPerfil }) {
   const [aberto, setAberto] = useState(false);
   const meta = usuarioLogado?.user_metadata || {};
 
@@ -1112,8 +1001,20 @@ function UserAvatarDropdown({ usuarioLogado, membroLogado, onSair }) {
             )}
           </div>
 
-          {/* Ação de sair */}
-          <div className="p-2">
+          <div className="p-2 space-y-1">
+            {/* Link para o Perfil */}
+            <button
+              type="button"
+              onClick={() => { setAberto(false); onVerPerfil(); }}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-blue-100 hover:bg-white/10 text-xs font-semibold transition duration-150 group"
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Meu Perfil
+            </button>
+
+            {/* Ação de sair */}
             <button
               type="button"
               onClick={() => { setAberto(false); onSair(); }}
@@ -1184,24 +1085,29 @@ function DropdownItem({ ativo, onClick, icon, children }) {
   );
 }
 
-function MenuButton({ ativo, onClick, contador, icon, children }) {
+function MenuButton({ ativo, onClick, contador, icon, children, hasSubmenu, expanded, onToggle }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer ${
-        ativo ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-300 hover:text-white hover:bg-white/10'
+    <div className={`group flex flex-col w-full transition-all duration-200 ${expanded ? 'bg-white/5' : ''}`}>
+      <div className={`w-full flex items-center justify-between px-6 py-4 text-xl font-bold transition-all cursor-pointer ${ // Removida a borda inferior
+        ativo ? 'bg-[#1e3a8a] text-white' : 'text-slate-200 hover:bg-[#1e3a8a]/30 hover:text-white'
       }`}
     >
-      <span className="flex items-center gap-2.5">
-        {icon && <span className={`shrink-0 ${ativo ? 'opacity-90' : 'opacity-60'}`}>{icon}</span>}
-        {children}
-      </span>
-      {contador !== undefined && (
-        <span className={`text-[10px] px-2 py-0.5 rounded-full ${ativo ? 'bg-slate-200 text-slate-700' : 'bg-slate-900 text-slate-500'}`}>
-          {contador}
-        </span>
+      <button type="button" onClick={onClick} className="flex flex-1 items-center gap-4 text-left outline-none">
+        {icon && <span className={`shrink-0 scale-[1.1] ${ativo ? 'opacity-100' : 'opacity-60'}`}>{icon}</span>}
+        <span className="truncate tracking-tight">{children}</span>
+      </button>
+      {hasSubmenu && (
+        <button 
+          type="button" 
+          onClick={(e) => { e.stopPropagation(); onToggle(); }}
+          className={`p-2 ml-1 transition-all duration-300 outline-none ${expanded ? 'rotate-180' : ''} ${ativo ? 'text-white/70' : 'text-slate-500 hover:text-white'}`}
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
       )}
-    </button>
+      </div>
+    </div>
   );
 }

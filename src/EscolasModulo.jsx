@@ -477,7 +477,9 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
           -webkit-font-smoothing: antialiased;
         }
       `}</style>
-      <PageHeader titulo={getSubmenuTitle(submenu)} breadcrumb={breadcrumb} onNavigate={() => onNavigate('resumo')} />
+      <div className="hidden md:block">
+        <PageHeader titulo={getSubmenuTitle(submenu)} breadcrumb={breadcrumb} onNavigate={() => onNavigate('resumo')} />
+      </div>
 
       {submenu === 'resumo' && (
         <DashboardEscolas escolas={escolas} turmas={turmas} pessoas={pessoas} onNavigate={onNavigate} />
@@ -490,7 +492,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
           <Card className="p-0 overflow-hidden sticky top-24">
             <CardHeader 
               titulo="Novo Curso" 
-              className="!bg-slate-50 !border-[#055F6D]"
+              className="!bg-slate-50 !border-[#202046]"
             />
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
               <div>
@@ -499,7 +501,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                   type="text" required placeholder="Ex: Escola de Líderes..."
                   value={nome} 
                   onChange={e => setNome(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#055F6D]/20 outline-none" 
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#202046]/20 outline-none" 
                 />
               </div>
               
@@ -521,7 +523,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                       <input type="checkbox" 
                         checked={gestoresIds.includes(p.id)}
                         onChange={() => toggleGestor(p.id)}
-                        className="rounded text-[#055F6D] focus:ring-[#055F6D]" 
+                        className="rounded text-[#202046] focus:ring-[#202046]" 
                       />
                       <span className="text-xs text-slate-600 truncate">{p.nome}</span>
                     </label>
@@ -540,7 +542,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
 
               <div className="flex flex-col gap-2 pt-2">
                 <button type="submit" disabled={carregando}
-                  className="w-full py-2.5 rounded-xl bg-[#055F6D] hover:opacity-90 text-white text-sm font-bold transition shadow-md disabled:opacity-50">
+                  className="w-full py-2.5 rounded-xl bg-[#202046] hover:opacity-90 text-white text-sm font-bold transition shadow-md disabled:opacity-50">
                   {carregando ? 'Processando...' : '+ Criar Novo Curso'}
                 </button>
               </div>
@@ -591,7 +593,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                         <td className="text-right pr-6">
                           {podeEditar && (
                           <div className="flex justify-end gap-2">
-                            <button onClick={() => handleEditar(escola)} className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Curso">
+                            <button onClick={() => handleEditar(escola)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Curso">
                               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
@@ -656,7 +658,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
           <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start">
           {/* PAINEL LATERAL DE CADASTRO */}
           <Card className="p-0 overflow-hidden sticky top-24">
-            <CardHeader titulo="Nova Turma" className="!bg-slate-50 !border-[#055F6D]" />
+            <CardHeader titulo="Nova Turma" className="!bg-slate-50 !border-[#202046]" />
             <form onSubmit={handleCriarTurma} className="p-5 space-y-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Curso / Escola</label>
@@ -738,7 +740,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                           <p className="font-bold text-sm text-slate-700">{t.nome}</p>
                         </td>
                         <td>
-                          <p className="text-[10px] text-[#055F6D] uppercase font-bold">{t.escolas?.nome || 'Curso não vinculado'}</p>
+                          <p className="text-[10px] text-[#202046] uppercase font-bold">{t.escolas?.nome || 'Curso não vinculado'}</p>
                         </td>
                         <td className="text-xs text-slate-600">{t.horario}</td>
                         <td>
@@ -752,7 +754,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                         </td>
                         <td className="text-right pr-6">
                           <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => handleEditarTurma(t)} className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Turma">
+                            <button onClick={() => handleEditarTurma(t)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Turma">
                               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                               </svg>
@@ -837,7 +839,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
 
       {/* Modal de Edição (Apenas Edição) */}
       {isModalEdicaoAberto && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-2 py-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
               <div>
@@ -855,7 +857,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                     type="text" required
                     value={editNome} 
                     onChange={e => setEditNome(e.target.value)} 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#055F6D]/20 outline-none" 
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#202046]/20 outline-none" 
                   />
                 </div>
                 
@@ -899,7 +901,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                 <button type="button" onClick={() => setIsModalEdicaoAberto(false)} className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 rounded-2xl text-xs font-bold hover:bg-slate-50 transition cursor-pointer">
                   Cancelar
                 </button>
-                <button type="submit" disabled={carregando} className="flex-1 px-4 py-3 bg-[#055F6D] text-white rounded-2xl text-xs font-bold hover:opacity-90 transition shadow-lg shadow-teal-100 cursor-pointer">
+                <button type="submit" disabled={carregando} className="flex-1 px-4 py-3 bg-[#202046] text-white rounded-2xl text-xs font-bold hover:opacity-90 transition shadow-lg shadow-teal-100 cursor-pointer">
                   {carregando ? 'Salvando...' : '💾 Salvar Alterações'}
                 </button>
               </div>
@@ -910,7 +912,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
 
       {/* Modal de Edição Turma */}
       {isModalEdicaoTurmaAberto && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-2 py-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
               <div>
@@ -976,7 +978,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                 <button type="button" onClick={() => setIsModalEdicaoTurmaAberto(false)} className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 rounded-2xl text-xs font-bold hover:bg-slate-50 transition cursor-pointer">
                   Cancelar
                 </button>
-                <button type="submit" disabled={carregando} className="flex-1 px-4 py-3 bg-[#055F6D] text-white rounded-2xl text-xs font-bold hover:opacity-90 transition shadow-lg shadow-teal-100 cursor-pointer">
+                <button type="submit" disabled={carregando} className="flex-1 px-4 py-3 bg-[#202046] text-white rounded-2xl text-xs font-bold hover:opacity-90 transition shadow-lg shadow-teal-100 cursor-pointer">
                   {carregando ? 'Salvando...' : '💾 Salvar Alterações'}
                 </button>
               </div>
@@ -995,7 +997,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                   type="checkbox" 
                   checked={selectedMembrosParaAdicionar.includes(p.id)}
                   onChange={() => handleToggleMembroLista(p.id)}
-                  className="rounded text-[#055F6D] focus:ring-[#055F6D]"
+                  className="rounded text-[#202046] focus:ring-[#202046]"
                 />
                 <div className="flex items-center gap-2">
                   <Avatar pessoa={p} tamanho="w-8 h-8" />
@@ -1006,7 +1008,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
           </div>
           <div className="p-5 border-t bg-slate-50 flex gap-3">
             <button onClick={() => setIsModalAddAlunosAberto(false)} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold cursor-pointer">Cancelar</button>
-            <button onClick={() => handleAddAlunos(selectedMembrosParaAdicionar)} disabled={isAddingAlunos || selectedMembrosParaAdicionar.length === 0} className="flex-1 py-2.5 rounded-xl bg-[#055F6D] text-white text-xs font-bold disabled:opacity-50 cursor-pointer">
+            <button onClick={() => handleAddAlunos(selectedMembrosParaAdicionar)} disabled={isAddingAlunos || selectedMembrosParaAdicionar.length === 0} className="flex-1 py-2.5 rounded-xl bg-[#202046] text-white text-xs font-bold disabled:opacity-50 cursor-pointer">
               {isAddingAlunos ? 'Adicionando...' : `Adicionar Selecionados (${selectedMembrosParaAdicionar.length})`}
             </button>
           </div>
@@ -1030,7 +1032,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
             </div>
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={() => setIsModalAddDisciplinaAberto(false)} className="flex-1 py-2.5 rounded-xl border text-xs font-bold cursor-pointer">Cancelar</button>
-              <button type="submit" className="flex-1 py-2.5 rounded-xl bg-[#055F6D] text-white text-xs font-bold cursor-pointer">Salvar Disciplina</button>
+              <button type="submit" className="flex-1 py-2.5 rounded-xl bg-[#202046] text-white text-xs font-bold cursor-pointer">Salvar Disciplina</button>
             </div>
           </form>
         </ModalWrapper>
@@ -1063,7 +1065,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                 <h4 className="text-xs font-black text-slate-400 uppercase mb-3 tracking-widest">Chamada / Presença</h4>
                 <div className="space-y-2">
                   {alunosTurma.filter(a => a.status === 'ativo').map(a => (
-                    <div key={a.aluno_id} onClick={() => togglePresencaAula(a.aluno_id)} className="flex items-center justify-between p-2.5 rounded-lg bg-white border cursor-pointer hover:border-[#055F6D]/30 transition active:scale-[0.98] select-none">
+                    <div key={a.aluno_id} onClick={() => togglePresencaAula(a.aluno_id)} className="flex items-center justify-between p-2.5 rounded-lg bg-white border cursor-pointer hover:border-[#202046]/30 transition active:scale-[0.98] select-none">
                       <span className="text-xs font-bold text-slate-700">{a.alunos?.pessoas?.nome}</span>
                       <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${novaAulaPresencas[a.aluno_id] ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
                         {novaAulaPresencas[a.aluno_id] ? 'PRESENTE' : 'AUSENTE'}
@@ -1080,7 +1082,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
             </div>
             <div className="p-5 border-t bg-slate-50 flex gap-3 shrink-0">
               <button type="button" onClick={() => setIsModalAddAulaAberto(false)} className="flex-1 py-3 rounded-xl border border-slate-200 text-xs font-bold cursor-pointer">Cancelar</button>
-              <button type="submit" className="flex-1 py-3 rounded-xl bg-[#055F6D] text-white text-xs font-bold shadow-lg cursor-pointer">Finalizar e Salvar Aula</button>
+              <button type="submit" className="flex-1 py-3 rounded-xl bg-[#202046] text-white text-xs font-bold shadow-lg cursor-pointer">Finalizar e Salvar Aula</button>
             </div>
           </form>
         </ModalWrapper>
@@ -1152,9 +1154,9 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start animate-in fade-in slide-in-from-bottom-4 duration-300">
       {/* PAINEL LATERAL DE INFORMAÇÕES */}
-      <Card className="p-6 border-t-4 border-t-[#055F6D] lg:sticky lg:top-24">
+      <Card className="p-6 border-t-4 border-t-[#202046] lg:sticky lg:top-24">
         <div className="space-y-6">
-          <button onClick={onVoltar} className="text-[10px] font-black text-[#055F6D] uppercase hover:underline cursor-pointer">← Voltar para Lista</button>
+          <button onClick={onVoltar} className="text-[10px] font-black text-[#202046] uppercase hover:underline cursor-pointer">← Voltar para Lista</button>
           
           <div>
             <h2 className="text-2xl font-black text-slate-800 leading-tight">{turma?.nome || 'Turma'}</h2>
@@ -1175,7 +1177,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
-              <span className="text-xs font-bold text-[#055F6D] px-2.5 py-1 bg-teal-50 rounded-full border border-teal-100 inline-block">{turma?.status}</span>
+              <span className="text-xs font-bold text-[#202046] px-2.5 py-1 bg-teal-50 rounded-full border border-teal-100 inline-block">{turma?.status}</span>
             </div>
             <div className="text-right">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Alunos</p>
@@ -1199,7 +1201,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
             {
               id: 'alunos',
               label: 'Alunos',
-              cor: '#055F6D',
+              cor: '#202046',
               badge: alunos.length,
               icon: (
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -1281,7 +1283,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
               {/* Ações Rápidas - Alinhadas com as Abas */}
               <div className="pb-2 sm:pb-0 pr-2 shrink-0">
                 {abaAtiva === 'alunos' && (
-                  <button onClick={onAddAlunos} className="px-4 py-1.5 bg-[#055F6D] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-teal-900/10">+ Adicionar Alunos</button>
+                  <button onClick={onAddAlunos} className="px-4 py-1.5 bg-[#202046] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-teal-900/10">+ Adicionar Alunos</button>
                 )}
                 {abaAtiva === 'disciplinas' && (
                   <button onClick={onAddDisciplina} className="px-4 py-1.5 bg-[#6366f1] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-indigo-900/10">+ Incluir Disciplina</button>
@@ -1366,9 +1368,9 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                     disciplinas.map(d => (
                       <tr key={d.id}>
                         <td><span className="font-bold text-sm text-slate-700">{d.disciplinas?.nome}</span></td>
-                        <td><span className="text-xs font-bold text-[#055F6D]">{d.professores?.pessoas?.nome}</span></td>
+                        <td><span className="text-xs font-bold text-[#202046]">{d.professores?.pessoas?.nome}</span></td>
                         <td className="text-right pr-6 space-x-4">
-                          <button onClick={() => onEditDisciplina(d)} className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Disciplina">
+                          <button onClick={() => onEditDisciplina(d)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Disciplina">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
                           <button className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Remover Disciplina">
@@ -1408,7 +1410,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                     return (
                       <tr key={aula.id}>
                         <td className="font-bold text-slate-700 text-sm">{new Date(aula.data_aula).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
-                        <td><span className="text-[10px] font-black bg-blue-50 text-[#055F6D] px-2 py-0.5 rounded-full">{aula.turmas_disciplinas?.disciplinas?.nome}</span></td>
+                        <td><span className="text-[10px] font-black bg-blue-50 text-[#202046] px-2 py-0.5 rounded-full">{aula.turmas_disciplinas?.disciplinas?.nome}</span></td>
                         <td className="text-xs text-slate-500">{aula.conteudo_proposto}</td>
                         <td className="text-center">
                           <span className="text-[14px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100 uppercase tracking-tighter">
@@ -1416,7 +1418,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                           </span>
                         </td>
                         <td className="text-right pr-6 space-x-4">
-                          <button onClick={() => onEditAula(aula)} className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Ver/Editar Chamada">
+                          <button onClick={() => onEditAula(aula)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Ver/Editar Chamada">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
                           <button onClick={() => onExcluirAula(aula.id)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Excluir Aula">
@@ -1451,7 +1453,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                   </select>
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={gerarRelatorioFrequencia} className="px-6 py-2 bg-[#055F6D] text-white rounded-xl text-xs font-bold hover:opacity-90 transition">
+                  <button onClick={gerarRelatorioFrequencia} className="px-6 py-2 bg-[#202046] text-white rounded-xl text-xs font-bold hover:opacity-90 transition">
                     Gerar Frequência
                   </button>
                   <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm h-[38px]">
@@ -1459,7 +1461,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                     <button 
                       type="button"
                       onClick={() => setEsconderDiasSemRegistro(!esconderDiasSemRegistro)} 
-                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${!esconderDiasSemRegistro ? 'bg-[#055F6D]' : 'bg-slate-200'}`}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${!esconderDiasSemRegistro ? 'bg-[#202046]' : 'bg-slate-200'}`}
                     >
                       <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${!esconderDiasSemRegistro ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
@@ -1644,7 +1646,7 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
           </div>
         </Card>
         
-        <Card className="p-6 bg-gradient-to-br from-[#055F6D] to-[#0891b2] text-white">
+        <Card className="p-6 bg-gradient-to-br from-[#202046] to-[#0891b2] text-white">
           <h4 className="font-black uppercase tracking-widest text-[10px] opacity-70 mb-4">Dica de Gestão</h4>
           <p className="text-sm leading-relaxed font-medium">
             Acompanhe a taxa de <strong>Desistência</strong> para identificar cursos que podem precisar de reforço pedagógico ou mudança na abordagem de ensino.

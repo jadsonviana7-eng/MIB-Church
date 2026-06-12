@@ -533,10 +533,17 @@ export default function TelaLogin({ onEntrar }) {
 
         /* responsive */
         @media (max-width: 700px) {
-          .tl-card { grid-template-columns: 1fr; }
-          .tl-left  { min-height: 220px; padding: 2rem 1.5rem; }
-          .tl-right { padding: 2rem 1.5rem; }
+          .tl-root { align-items: flex-start; padding-top: 1rem; }
+          .tl-card { grid-template-columns: 1fr; max-width: 450px; }
+          .tl-left { min-height: 220px; padding: 3rem 1.5rem; align-items: center; text-align: center; }
+          .tl-logo-wrap { justify-content: center; width: 100%; }
+          .tl-logo-img { position: static; height: 90px; }
+          .tl-headline p { margin: 0.85rem auto 0; }
+          .tl-verse { border-left: none; border-top: 3px solid #2563eb; border-radius: 0 0 12px 12px; }
+          .tl-right { padding: 3rem 1.5rem; }
           .tl-headline h1 { font-size: 1.3rem; }
+          .tl-right-title, .tl-right-sub { text-align: center; }
+          .tl-actions-row { flex-direction: column; gap: 0.8rem; align-items: center; }
         }
       `}</style>
 

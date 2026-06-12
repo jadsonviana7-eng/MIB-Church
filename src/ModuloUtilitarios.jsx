@@ -38,10 +38,12 @@ export default function ModuloUtilitarios(props) {
   // Tela inicial de Utilitários (Dashboard de Ferramentas)
   return (
     <div className="space-y-6">
-      <PageHeader 
-        titulo="Utilitários" 
-        subtitulo="Ferramentas de apoio à gestão e operação da igreja." 
-      />
+      <div className="hidden md:block">
+        <PageHeader 
+          titulo="Utilitários" 
+          subtitulo="Ferramentas de apoio à gestão e operação da igreja." 
+        />
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {['admin', 'pastor', 'secretaria'].includes(membroLogado?.permissao) && (

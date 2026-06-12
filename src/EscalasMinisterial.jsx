@@ -671,7 +671,7 @@ export default function EscalasMinisterial() {
 
       {/* ── MODAL: VINCULAR MEMBROS ─────────────────────────────────────── */}
       {isModalEquipeAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-2 py-4 bg-slate-900/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between" style={{ background: cor.light }}>
               <div>
@@ -722,7 +722,7 @@ export default function EscalasMinisterial() {
 
       {/* ── MODAL: CRIAR NOVA ESCALA ────────────────────────────────────── */}
       {isModalNovaEscala && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-2 py-4 bg-slate-900/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh]">
             {/* Header do modal */}
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-emerald-50">

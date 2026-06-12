@@ -55,7 +55,7 @@ export default function CalculadoraTributos() {
   };
 
   return (
-    <div className="max-w-md mx-auto space-y-6" style={{ fontFamily: "'Roboto', sans-serif" }}>
+    <div className="max-w-full sm:max-w-md mx-auto space-y-6 px-2" style={{ fontFamily: "'Roboto', sans-serif" }}>
       <PageHeader titulo="Calculadora de Tributos" breadcrumb={['Utilitários', 'Calculadora']} />
 
       <div className="flex bg-slate-200 p-1.5 rounded-2xl gap-1 mb-2">

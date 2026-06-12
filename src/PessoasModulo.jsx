@@ -10,7 +10,8 @@ export default function PessoasModulo(props) {
     submenu, pessoas, pessoasFiltradas, filtros, alterarFiltro, limparFiltros,
     zonas, carregando, membroSelecionadoId, setMembroSelecionadoId, obterDados,
     cargosDisponiveis, atuacoesDisponiveis, escolaridadesDisponiveis, abrirPessoasFiltradas, membroLogado
-    , onNavigate
+    , onNavigate,
+    filtrosMobileAberto, setFiltrosMobileAberto
   } = props;
 
   const [mesSelecionado, setMesSelecionado] = useState(new Date().getMonth());
@@ -33,7 +34,9 @@ export default function PessoasModulo(props) {
   if (submenu === 'adicionar') {
     return (
       <div className="space-y-6">
-        <PageHeader titulo="Novo Cadastro" breadcrumb={['Pessoas', 'Novo Cadastro']} onNavigate={() => onNavigate('todos')} />
+        <div className="hidden md:block">
+          <PageHeader titulo="Novo Cadastro" breadcrumb={['Pessoas', 'Novo Cadastro']} onNavigate={() => onNavigate('todos')} />
+        </div>
         <FormularioCadastro
           onPessoaCadastrada={obterDados}
           listaPessoasExistentes={pessoas}
@@ -74,7 +77,9 @@ export default function PessoasModulo(props) {
 
   return (
     <>
-      <PageHeader titulo="Membros"/>
+      <div className="hidden md:block">
+        <PageHeader titulo="Membros"/>
+      </div>
       {carregando && <div className="text-sm font-medium text-[#2563eb] mb-4">Sincronizando dados...</div>}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5">
         <Card className="p-0">
@@ -92,15 +97,27 @@ export default function PessoasModulo(props) {
           />
           <TabelaPessoas pessoas={pessoasFiltradas} onSelecionar={setMembroSelecionadoId} />
         </Card>
-        <FiltrosPessoas 
-          filtros={filtros} 
-          alterarFiltro={alterarFiltro} 
-          limparFiltros={limparFiltros} 
-          zonas={zonas} 
-          cargosDisponiveis={cargosDisponiveis} 
-          atuacoesDisponiveis={atuacoesDisponiveis} 
-          escolaridadesDisponiveis={escolaridadesDisponiveis} 
-        />
+
+        {/* Drawer de Filtros para Mobile / Sidebar para Desktop */}
+        <div className={`${filtrosMobileAberto ? 'fixed inset-0 z-[60] flex items-end justify-center sm:items-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm' : 'hidden xl:block'} transition-all`}>
+          <div className={`${filtrosMobileAberto ? 'bg-white rounded-t-[32px] sm:rounded-3xl w-full max-w-md animate-in slide-in-from-bottom duration-300' : ''} overflow-hidden`}>
+            {filtrosMobileAberto && (
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Filtrar Membros</h4>
+                <button onClick={() => setFiltrosMobileAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400">✕</button>
+              </div>
+            )}
+            <FiltrosPessoas 
+              filtros={filtros} 
+              alterarFiltro={alterarFiltro} 
+              limparFiltros={limparFiltros} 
+              zonas={zonas} 
+              cargosDisponiveis={cargosDisponiveis} 
+              atuacoesDisponiveis={atuacoesDisponiveis} 
+              escolaridadesDisponiveis={escolaridadesDisponiveis} 
+            />
+          </div>
+        </div>
       </div>
     </>
   );
@@ -113,13 +130,13 @@ function TabelaPessoas({ pessoas, onSelecionar }) {
   return (
     <div className="overflow-x-auto">
       <table className="table-mib">
-        <thead>
-          <tr><th>Nome</th><th>Cargo / Função</th><th>Contato</th><th>Célula</th></tr>
+        <thead className="hidden md:table-header-group">
+          <tr><th>Nome</th><th className="hidden md:table-cell">Cargo / Função</th><th className="hidden md:table-cell">Contato</th><th className="hidden md:table-cell">Célula</th></tr>
         </thead>
         <tbody>
           {pessoas.map((p) => (
             <tr key={p.id} onClick={() => onSelecionar(p.id)} className="cursor-pointer">
-              <td>
+              <td className="py-3 md:py-2">
                 <div className="flex items-center gap-3">
                   <Avatar pessoa={p} tamanho="w-15  h-15" />
                   <div>
@@ -128,9 +145,9 @@ function TabelaPessoas({ pessoas, onSelecionar }) {
                   </div>
                 </div>
               </td>
-              <td><span className="text-xs px-2 py-0.5 rounded-lg bg-[var(--surface-muted)] border">{p.cargo || 'Membro'}</span></td>
-              <td className="text-xs text-[var(--text-muted)]">{p.telefone || '—'}</td>
-              <td><span className="text-xs font-semibold text-[#2563eb]">{p.celulas?.nome || '😢 Sem Célula'}</span></td>
+              <td className="hidden md:table-cell"><span className="text-xs px-2 py-0.5 rounded-lg bg-[var(--surface-muted)] border">{p.cargo || 'Membro'}</span></td>
+              <td className="hidden md:table-cell text-xs text-[var(--text-muted)]">{p.telefone || '—'}</td>
+              <td className="hidden md:table-cell"><span className="text-xs font-semibold text-[#2563eb]">{p.celulas?.nome || '😢 Sem Célula'}</span></td>
             </tr>
           ))}
         </tbody>
@@ -227,11 +244,11 @@ function InativosPessoas({ pessoas, onNavigate, obterDados }) {
       <Card className="p-0">
         <div className="overflow-x-auto">
           <table className="table-mib">
-            <thead>
+            <thead className="hidden md:table-header-group">
               <tr>
                 <th>Nome</th>
-                <th>Motivo da Inativação</th>
-                <th>Data</th>
+                <th className="hidden md:table-cell">Motivo da Inativação</th>
+                <th className="hidden md:table-cell">Data</th>
                 <th className="text-right pr-6">Ações</th>
               </tr>
             </thead>
@@ -242,13 +259,16 @@ function InativosPessoas({ pessoas, onNavigate, obterDados }) {
                 inativos.map(p => (
                   <tr key={p.id}>
                     <td>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 py-2 md:py-0">
                         <Avatar pessoa={p} tamanho="w-8 h-8" />
-                        <span className="font-bold text-slate-700">{p.nome}</span>
+                        <div>
+                          <span className="font-bold text-slate-700 block">{p.nome}</span>
+                          <span className="md:hidden text-[10px] text-slate-400 font-medium uppercase tracking-tight">{p.motivo_exclusao || 'Não informado'}</span>
+                        </div>
                       </div>
                     </td>
-                    <td className="text-sm text-slate-500">{p.motivo_exclusao || 'Não informado'}</td>
-                    <td className="text-xs text-slate-400">{new Date(p.updated_at).toLocaleDateString('pt-BR')}</td>
+                    <td className="hidden md:table-cell text-sm text-slate-500">{p.motivo_exclusao || 'Não informado'}</td>
+                    <td className="hidden md:table-cell text-xs text-slate-400">{new Date(p.updated_at).toLocaleDateString('pt-BR')}</td>
                     <td className="text-right pr-6">
                       <button 
                         onClick={() => handleReativar(p.id, p.nome)}
@@ -301,11 +321,11 @@ function AniversariantesPessoas({ pessoas, mesSelecionado, setMesSelecionado, on
   return (
     <div className="space-y-6">
       <PageHeader titulo="Aniversariantes" breadcrumb={['Pessoas', 'Aniversariantes']} onNavigate={() => onNavigate('todos')} />
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {meses.map((mes, index) => (
           <button key={mes} onClick={() => setMesSelecionado(index)} className={`rounded-2xl border p-4 text-left transition ${mesSelecionado === index ? 'bg-blue-600 text-white' : 'bg-white text-slate-700'}`}>
             <span className="block text-xs font-semibold uppercase opacity-70">{mes}</span>
-            <span className="block mt-2 text-2xl font-bold">{contagemMeses[index]}</span>
+            <span className="block mt-2 text-2xl font-bold text-center">{contagemMeses[index]}</span>
           </button>
         ))}
       </div>
@@ -367,19 +387,31 @@ function RelatoriosPessoas({ pessoas, zonas, abrirPessoasFiltradas, relatorioSel
 
   return (
     <div className="space-y-6">
-      <PageHeader titulo="Relatórios de Membresia" breadcrumb={breadcrumb} onNavigate={() => onNavigate('todos')} />
+      {/* PageHeader visível apenas em telas maiores que md */}
+      <div className="hidden md:block">
+        <PageHeader titulo="Relatórios de Membresia" breadcrumb={breadcrumb} onNavigate={() => onNavigate('todos')} />
+      </div>
       
       <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6 items-start">
         {/* Painel Lateral de Opções */}
         <Card className="p-0 h-fit">
           <CardHeader titulo="Opções de Relatório" subtitulo="Selecione o indicador desejado." />
-          <div className="p-4 space-y-2">
+          {/* Select para mobile */}
+          <div className="p-4 md:hidden">
+            <select
+              value={relatorioSelecionado}
+              onChange={(e) => setRelatorioSelecionado(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+            >
+              {botoes.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+          </div>
+          {/* Botões para desktop */}
+          <div className="p-4 space-y-2 hidden md:block">
             {botoes.map((b) => (
-              <button 
-                key={b} 
-                onClick={() => setRelatorioSelecionado(b)} 
-                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${relatorioSelecionado === b ? 'bg-[#2563eb] text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
-              >
+              <button key={b} onClick={() => setRelatorioSelecionado(b)} className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${relatorioSelecionado === b ? 'bg-[#2563eb] text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}>
                 {b}
               </button>
             ))}

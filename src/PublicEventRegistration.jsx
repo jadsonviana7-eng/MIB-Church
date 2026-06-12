@@ -116,7 +116,7 @@ export default function PublicEventRegistration() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 font-sans antialiased text-slate-900">
+    <div className="min-h-screen bg-slate-50 pt-0 pb-2 md:py-6 px-5 font-sans antialiased text-slate-900">
       <div className="max-w-3xl mx-auto space-y-8">
         {/* CAPA E INFO PRINCIPAL */}
         <Card className="p-0 overflow-hidden shadow-2xl border-none">

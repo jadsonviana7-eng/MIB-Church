@@ -609,12 +609,14 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
 
   return (
     <div className="agenda-root space-y-6">
-      <RobotoStyle />
-      <PageHeader
-        titulo="Agenda"
-        breadcrumb={['Agenda', submenu === 'calendario' ? 'Calendário' : 'Lista de Eventos']}
-        onNavigate={() => onNavigate('calendario')}
-      />
+      <RobotoStyle /> {/* Mantido para estilos internos */}
+      <div className="hidden md:block">
+        <PageHeader
+          titulo="Agenda"
+          breadcrumb={['Agenda', submenu === 'calendario' ? 'Calendário' : 'Lista de Eventos']}
+          onNavigate={() => onNavigate('calendario')}
+        />
+      </div>
 
       {/* ── CALENDÁRIO ── */}
       {submenu === 'calendario' && (
@@ -977,7 +979,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro }) {
 
       {/* MODAL DETALHES DO INSCRITO */}
       {modalInscrito.aberto && (
-        <div className="modal-overlay">
+        <div className="modal-overlay px-2 py-4">
           <div className="modal-box" style={{ maxWidth: 600 }}>
             <div className="p-6 border-b bg-slate-50 flex justify-between items-center">
               <h3 className="font-black text-slate-800 uppercase tracking-tight">Detalhes da Inscrição</h3>
@@ -1208,7 +1210,7 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
 
   return (
     <div className="agenda-root" style={{ maxWidth: 960, margin: '0 auto', paddingBottom: 60 }}>
-      <RobotoStyle />
+      <RobotoStyle /> {/* Mantido para estilos internos */}
 
       {/* topbar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -1550,7 +1552,7 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
 
         {/* MODAL CORTADOR (PALESTRANTES) */}
         {mostrarCortador && (
-          <div className="modal-overlay" style={{ background: 'rgba(15,23,42,0.85)' }}>
+          <div className="modal-overlay px-2 py-4" style={{ background: 'rgba(15,23,42,0.85)' }}>
             <div className="modal-box" style={{ maxWidth: 450 }}>
               <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                 <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Ajustar Foto do Palestrante</h3>

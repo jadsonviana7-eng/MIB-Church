@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { Avatar, DoughnutCard, CombinationCard, ColumnChart, Recentes, PageHeader, StatCard } from './ui';
-import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona } from './churchUtils'; // Importa meses
+import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona } from './churchUtils';
 
-export default function Dashboard({ pessoas, celulas, zonas, relatoriosCelula, indicadores, carregando, periodoConvertidos, setPeriodoConvertidos }) {
+export default function OverviewDashboard({ pessoas, celulas, zonas, relatoriosCelula, indicadores, carregando, periodoConvertidos, setPeriodoConvertidos }) {
   const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo'), [pessoas]);
 
   const zonasDados = useMemo(() => agrupamentoPor(pessoasAtivas, (p) => nomeZona(zonas, p.zona_id)), [pessoasAtivas, zonas]);

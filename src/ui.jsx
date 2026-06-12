@@ -88,7 +88,7 @@ export function CardHeader({ titulo, subtitulo, children, className = '' }) {
 export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hideLegend = false }) {
   const [activeIndex, setActiveIndex] = useState(-1);
   const entradas = Object.entries(dados).sort((a, b) => b[1] - a[1]);
-  const total = entradas.reduce((sum, [, valor]) => sum + valor, 0);
+  const total = entradas.reduce((sum, [, valor]) => sum + valor, 0); // Corrigido para somar corretamente
   const chartData = entradas.map(([name, value]) => ({ name, value }));
 
   const renderActiveShape = (props) => {
@@ -109,16 +109,16 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
   return (
     <Card className="p-0">
       <CardHeader titulo={titulo} />
-      <div className={`p-6 grid gap-16 items-center min-h-[340px] ${hideLegend ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[280px_1fr]'}`}>
-        <div className={`relative shrink-0 mx-auto ${hideLegend ? 'h-96 w-full max-w-[600px]' : 'h-84 w-84 lg:mx-0'}`}>
+      <div className={`p-6 grid gap-10 lg:gap-16 items-center min-h-[340px] ${hideLegend ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[280px_1fr]'}`}>
+        <div className={`relative shrink-0 mx-auto ${hideLegend ? 'h-64 w-full max-w-[450px]' : 'w-full h-72 lg:w-84 lg:h-84 lg:mx-0'}`}>
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
+            <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
               <Pie
                 activeIndex={activeIndex}
                 activeShape={renderActiveShape}
                 data={chartData}
-                innerRadius={hideLegend ? 100 : 70}
-                outerRadius={hideLegend ? 180 : 144}
+                innerRadius="65%"
+                outerRadius="100%"
                 paddingAngle={1}
                 dataKey="value"
                 startAngle={startAngle}
@@ -256,9 +256,9 @@ export function Recentes({ titulo, itens, render }) {
 
 export function PageHeader({ titulo, subtitulo, breadcrumb = [], onNavigate, children }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-      <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3">
-        <h2 className="mt-1 text-2xl sm:text-3xl font-semibold text-[var(--text-heading)] tracking-tight">{titulo}</h2>
+    <div className="mb-6 xl:mb-2 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between pt-0">
+      <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 pl-[30px] md:pl-0">
+        <h2 className="mt-0 text-2xl sm:text-3xl xl:text-[18px] font-semibold text-[var(--text-heading)] tracking-tight">{titulo}</h2>
         {breadcrumb.length > 0 && (
           <nav className="flex items-center gap-2 text-[11px] font-bold tracking-tight text-slate-400" aria-label="Breadcrumb">
             {breadcrumb.map((item, index) => {

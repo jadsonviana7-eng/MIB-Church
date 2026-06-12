@@ -3,13 +3,14 @@ import { supabase } from './supabaseClient';
 import { Card, CardHeader, PageHeader } from './ui';
 import { registrarLogFinanceiro } from './financeiroUtils';
 
-export default function CategoriasFinanceiras({ usuarioLogado }) {
+export default function CategoriasFinanceiras({ usuarioLogado, onVoltar }) {
   const [categorias, setCategorias] = useState([]);
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [tipo, setTipo] = useState('receita');
   const [carregando, setCarregando] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
+  const [abaAtivaMobile, setAbaAtivaMobile] = useState('receita');
 
   const carregarCategorias = async () => {
     setCarregando(true);
@@ -82,8 +83,10 @@ export default function CategoriasFinanceiras({ usuarioLogado }) {
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader titulo="Categorias Financeiras" subtitulo="Classifique suas receitas e despesas para relatórios mais precisos." breadcrumb={['Financeiro', 'Categorias']} />
+    <div className="space-y-6 mx-2">
+      <div className="hidden md:block">
+        <PageHeader titulo="Categorias Financeiras" subtitulo="Classifique suas receitas e despesas para relatórios mais precisos." breadcrumb={['Resumo', 'Categorias']} onNavigate={onVoltar} />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
         {/* Coluna Esquerda: Cadastro */}
@@ -99,7 +102,7 @@ export default function CategoriasFinanceiras({ usuarioLogado }) {
                 <input 
                   type="text" required placeholder="Ex: Dízimos, Aluguel..."
                   value={nome} onChange={e => setNome(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#055F6D]/20 outline-none" 
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#202046]/20 outline-none" 
                 />
               </div>
               <div>
@@ -107,7 +110,7 @@ export default function CategoriasFinanceiras({ usuarioLogado }) {
                 <input 
                   type="text" placeholder="Finalidade desta categoria..."
                   value={descricao} onChange={e => setDescricao(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#055F6D]/20 outline-none" 
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#202046]/20 outline-none" 
                 />
               </div>
               <div>
@@ -136,15 +139,41 @@ export default function CategoriasFinanceiras({ usuarioLogado }) {
         </div>
 
         {/* Coluna Direita: Listas */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-          <Card className="p-0">
-            <CardHeader titulo="Categorias de Receitas" className="!bg-emerald-50 !border-emerald-600" />
-            <TabelaSimples lista={categorias.filter(c => c.tipo === 'receita')} onEdit={prepararEdicao} onDelete={removerCategoria} cor="emerald" />
-          </Card>
-          <Card className="p-0">
-            <CardHeader titulo="Categorias de Despesas" className="!bg-rose-50 !border-rose-600" />
-            <TabelaSimples lista={categorias.filter(c => c.tipo === 'despesa')} onEdit={prepararEdicao} onDelete={removerCategoria} cor="rose" />
-          </Card>
+        <div className="space-y-4">
+          {/* Seletor de Abas Mobile */}
+          <div className="flex md:hidden bg-white p-1 rounded-2xl border border-slate-100 gap-1 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setAbaAtivaMobile('receita')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                abaAtivaMobile === 'receita' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+              Receitas
+            </button>
+            <button
+              type="button"
+              onClick={() => setAbaAtivaMobile('despesa')}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                abaAtivaMobile === 'despesa' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              Despesas
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+            <Card className={`p-0 ${abaAtivaMobile !== 'receita' ? 'hidden md:block' : 'block'}`}>
+              <CardHeader titulo="Categorias de Receitas" className="!bg-emerald-50 !border-emerald-600" />
+              <TabelaSimples lista={categorias.filter(c => c.tipo === 'receita')} onEdit={prepararEdicao} onDelete={removerCategoria} cor="emerald" />
+            </Card>
+            <Card className={`p-0 ${abaAtivaMobile !== 'despesa' ? 'hidden md:block' : 'block'}`}>
+              <CardHeader titulo="Categorias de Despesas" className="!bg-rose-50 !border-rose-600" />
+              <TabelaSimples lista={categorias.filter(c => c.tipo === 'despesa')} onEdit={prepararEdicao} onDelete={removerCategoria} cor="rose" />
+            </Card>
+          </div>
         </div>
       </div>
     </div>
@@ -166,7 +195,7 @@ function TabelaSimples({ lista, onEdit, onDelete, cor }) {
               </td>
               <td className="text-right pr-6">
                 <div className="flex justify-end gap-2">
-                  <button onClick={() => onEdit(cat)} className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Categoria">
+                  <button onClick={() => onEdit(cat)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Categoria">
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>

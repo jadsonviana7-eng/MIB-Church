@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 import { Card, CardHeader, PageHeader } from './ui';
 import { registrarLogFinanceiro } from './financeiroUtils';
 
-export default function ContasFinanceiras({ usuarioLogado }) {
+export default function ContasFinanceiras({ usuarioLogado, onVoltar }) {
   const [contas, setContas] = useState([]);
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -86,8 +86,10 @@ export default function ContasFinanceiras({ usuarioLogado }) {
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader titulo="Contas e Caixas" breadcrumb={['Financeiro', 'Contas e Caixas']} subtitulo="Gerencie as contas bancárias e caixas físicos da igreja." />
+    <div className="space-y-6 mx-2">
+      <div className="hidden md:block">
+        <PageHeader titulo="Contas e Caixas" breadcrumb={['Resumo', 'Contas e Caixas']} subtitulo="Gerencie as contas bancárias e caixas físicos da igreja." onNavigate={onVoltar} />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
         {/* Coluna Esquerda: Cadastro */}

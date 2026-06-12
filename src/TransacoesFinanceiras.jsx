@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { PageHeader, Card, CardHeader, SelectFiltro } from './ui';
 import { registrarLogFinanceiro } from './financeiroUtils';
+import { mascaraMoeda, desmascararMoeda } from './mascaras';
 
 export default function TransacoesFinanceiras({
   dataInicioFiltro, setDataInicioFiltro,
@@ -11,6 +12,8 @@ export default function TransacoesFinanceiras({
   contaFiltro, setContaFiltro,
   categoriaFiltro, setCategoriaFiltro,
   usuarioLogado,
+  filtrosMobileAberto, setFiltrosMobileAberto,
+  onVoltar,
 }) {
   const [modalTransacao, setModalTransacao] = useState({ aberto: false, tipo: 'receita', dados: null });
   const [calendarioAberto, setCalendarioAberto] = useState(false);
@@ -23,6 +26,24 @@ export default function TransacoesFinanceiras({
 
   const podeEditar = ['admin', 'tesouraria', 'financeiro'].includes(usuarioLogado?.perfil?.id || '');
 
+  // Lógica para o seletor de período simplificado (Mobile)
+  const labelPeriodoMobile = useMemo(() => {
+    if (!dataInicioFiltro) return 'Todo o período';
+    const d = new Date(dataInicioFiltro + 'T00:00:00');
+    return d.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+  }, [dataInicioFiltro]);
+
+  const mudarMesMobile = (offset) => {
+    const dataBase = dataInicioFiltro ? new Date(dataInicioFiltro + 'T00:00:00') : new Date();
+    const novaData = new Date(dataBase.getFullYear(), dataBase.getMonth() + offset, 1);
+    const y = novaData.getFullYear();
+    const m = String(novaData.getMonth() + 1).padStart(2, '0');
+    const ultimoDia = new Date(y, novaData.getMonth() + 1, 0).getDate();
+
+    setDataInicioFiltro(`${y}-${m}-01`);
+    setDataFimFiltro(`${y}-${m}-${String(ultimoDia).padStart(2, '0')}`);
+  };
+
   const abrirModal = (tipo, transacao = null) => {
     setModalTransacao({ aberto: true, tipo, dados: transacao });
   };
@@ -34,6 +55,12 @@ export default function TransacoesFinanceiras({
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
+  };
+
+  const formatarExibicao = (iso) => {
+    if (!iso) return '__/__/__';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y.slice(-2)}`;
   };
 
   // Fecha o calendário ao clicar fora
@@ -92,10 +119,10 @@ export default function TransacoesFinanceiras({
   const mesNome = viewDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
 
   const CalendarPopup = () => (
-    <div className="absolute top-full left-0 mt-2 z-[100] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 w-72 animate-in fade-in zoom-in duration-200">
+    <div className="absolute top-full right-0 mt-2 z-[100] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 w-72 animate-in fade-in zoom-in duration-200">
       <div className="flex items-center justify-between mb-4">
         <button 
-          type="button"
+          type="button" // Adicionado type="button" para evitar submit de formulário
           onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} 
           className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"
         >
@@ -103,7 +130,7 @@ export default function TransacoesFinanceiras({
         </button>
         <span className="text-sm font-normal text-slate-700">{mesNome}</span>
         <button 
-          type="button"
+          type="button" // Adicionado type="button"
           onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))} 
           className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"
         >
@@ -145,13 +172,15 @@ export default function TransacoesFinanceiras({
       
       <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between gap-2">
         <button 
-          onClick={() => { setDataInicioFiltro(''); setDataFimFiltro(''); setCalendarioAberto(false); }}
+          type="button" // Adicionado type="button"
+          onClick={() => { setDataInicioFiltro(''); setDataFimFiltro(''); setCalendarioAberto(false); }} 
           className="text-sm font-normal text-rose-500 hover:underline"
         >
           Limpar
         </button>
         <button 
-          onClick={() => setCalendarioAberto(false)}
+          type="button" // Adicionado type="button"
+          onClick={() => setCalendarioAberto(false)} 
           className="text-sm font-normal text-slate-400 hover:text-slate-600"
         >
           Fechar
@@ -324,12 +353,14 @@ export default function TransacoesFinanceiras({
   }, [tipoTransacaoFiltro, categoriasDisponiveis, categoriaFiltro, setCategoriaFiltro]);
 
   return (
-    <div className="space-y-6">
-      <PageHeader titulo="Transações Financeiras" breadcrumb={['Financeiro', 'Transações']} />
+    <div className="space-y-6 mx-1">
+      <div className="hidden md:block">
+        <PageHeader titulo="Transações Financeiras" breadcrumb={['Resumo', 'Transações']} onNavigate={onVoltar} />
+      </div>
 
-      {/* Seção de Filtros em Linha Única */}
+      {/* Seção de Filtros e Atalhos - Desktop */}
       <div className="space-y-4">
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="hidden md:flex flex-wrap items-end gap-3">
           <div className="min-w-[240px] relative datepicker-container">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Data da Movimentação</label>
             <div 
@@ -353,9 +384,9 @@ export default function TransacoesFinanceiras({
           <div className="flex-1 min-w-[140px]"><SelectFiltro label="Categoria" valor={categoriaFiltro} onChange={setCategoriaFiltro} opcoes={categoriasFiltradas.map(c => ({ valor: c.id, label: c.nome }))} /></div>
         </div>
 
-        {/* Atalhos de Período e Ações */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200">
-          <div className="flex flex-wrap gap-1.5">
+        {/* Atalhos de Período (Desktop) e Ações (Ambos) */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 md:border-t md:border-slate-200">
+          <div className="hidden md:flex flex-wrap gap-1.5">
             <BtnAtalho label="Hoje" onClick={() => setPeriodoRapido('hoje')} />
             <BtnAtalho label="Ontem" onClick={() => setPeriodoRapido('ontem')} />
             <BtnAtalho label="7 Dias" onClick={() => setPeriodoRapido('7dias')} />
@@ -366,18 +397,18 @@ export default function TransacoesFinanceiras({
           </div>
 
           {podeEditar && (
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2 w-full md:w-auto">
             <button 
               type="button" 
               onClick={() => abrirModal('receita')}
-              className="min-w-[140px] justify-center px-8 py-1.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition shadow-sm flex items-center gap-2"
+              className="flex-1 md:min-w-[140px] justify-center px-8 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition shadow-sm flex items-center gap-2"
             >
               <span className="text-base font-bold">+</span> Receita
             </button>
             <button 
               type="button" 
               onClick={() => abrirModal('despesa')}
-              className="min-w-[140px] justify-center px-8 py-1.5 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition shadow-sm flex items-center gap-2"
+              className="flex-1 md:min-w-[140px] justify-center px-8 py-2 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition shadow-sm flex items-center gap-2"
             >
               <span className="text-base font-bold">+</span> Despesa
             </button>
@@ -386,29 +417,118 @@ export default function TransacoesFinanceiras({
         </div>
       </div>
 
+      {/* Drawer de Filtros para Mobile */}
+      <div className={`${filtrosMobileAberto ? 'fixed inset-0 z-[60] flex items-end justify-center sm:items-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm' : 'hidden'} md:hidden transition-all`}>
+        <div className={`${filtrosMobileAberto ? 'bg-white rounded-t-[32px] sm:rounded-3xl w-full max-w-md animate-in slide-in-from-bottom duration-300' : ''} overflow-hidden`}>
+          {filtrosMobileAberto && (
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Filtrar Transações</h4>
+              <button onClick={() => setFiltrosMobileAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400">✕</button>
+            </div>
+          )}
+          <div className="p-6 space-y-5 overflow-y-auto max-h-[70vh]">
+            <div className="relative datepicker-container">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">Período</label>
+              <div 
+                onClick={() => setCalendarioAberto(!calendarioAberto)}
+                className={`flex items-center gap-3 px-3 py-2.5 bg-white border rounded-xl cursor-pointer transition-all shadow-sm group ${calendarioAberto ? 'border-[#1e3a8a] ring-2 ring-[#1e3a8a]/10' : 'border-slate-200 hover:border-slate-300'}`}
+              >
+                <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <div className="flex items-center gap-1.5 text-sm font-normal text-slate-700 tracking-tight">
+                  <span>{formatarDataExibicao(dataInicioFiltro)}</span>
+                  <span className="text-slate-300 font-medium">→</span>
+                  <span>{formatarExibicao(dataFimFiltro)}</span>
+                </div>
+              </div>
+              {calendarioAberto && <CalendarPopup />}
+            </div>
+
+            <SelectFiltro label="Tipo" valor={tipoTransacaoFiltro} onChange={setTipoTransacaoFiltro} opcoes={['Receita', 'Despesa', 'Transferência']} />
+            <SelectFiltro label="Status" valor={statusTransacaoFiltro} onChange={setStatusTransacaoFiltro} opcoes={['Pago', 'Pendente', 'Cancelado']} />
+            <SelectFiltro label="Conta" valor={contaFiltro} onChange={setContaFiltro} opcoes={contasDisponiveis.map(c => ({ valor: c.id, label: c.nome }))} />
+            <SelectFiltro label="Categoria" valor={categoriaFiltro} onChange={setCategoriaFiltro} opcoes={categoriasFiltradas.map(c => ({ valor: c.id, label: c.nome }))} />
+
+            <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-100">
+              <BtnAtalho label="Hoje" onClick={() => setPeriodoRapido('hoje')} />
+              <BtnAtalho label="7 Dias" onClick={() => setPeriodoRapido('7dias')} />
+              <BtnAtalho label="Mês Atual" onClick={() => setPeriodoRapido('mes_atual')} />
+              <BtnAtalho label="Limpar" onClick={() => setPeriodoRapido('limpar')} destaque />
+            </div>
+
+            <button 
+              onClick={() => setFiltrosMobileAberto(false)}
+              className="w-full py-4 bg-[#1e3a8a] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl mt-4 active:scale-[0.98] transition-all"
+            >
+              Aplicar Filtros
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Sumário de Transações (Baseado no filtro atual) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <img src="https://raw.githubusercontent.com/jadsonviana7-eng/Icones/refs/heads/main/Recebido.svg" alt="Recebido" className="w-10 h-10 shrink-0" />
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Recebido</p>
-            <p className="text-2xl font-black text-emerald-600">R$ {resumoMensal.recebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+      <div className="bg-white md:bg-transparent p-[5px] md:p-0 rounded-[16px] md:rounded-none border border-slate-100 md:border-none shadow-sm md:shadow-none mt-[-19px] md:mt-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-1 md:gap-4">
+          {/* Total Recebido */}
+          <div className="flex items-center gap-4 p-1 md:p-5 md:bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm">
+            <img src="https://raw.githubusercontent.com/jadsonviana7-eng/Icones/refs/heads/main/Recebido.svg" alt="Recebido" className="w-10 h-10 shrink-0" />
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Total Recebido</p>
+              <p className="text-xl md:text-2xl font-black text-emerald-600 leading-tight">R$ {resumoMensal.recebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </div>
+          </div>
+
+          <div className="md:hidden border-t border-slate-50 my-0.5 mx-2" />
+
+          {/* Total Pago */}
+          <div className="flex items-center gap-4 p-1 md:p-5 md:bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm">
+            <img src="https://raw.githubusercontent.com/jadsonviana7-eng/Icones/refs/heads/main/pago.svg" alt="Pago" className="w-10 h-10 shrink-0" />
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Total Pago</p>
+              <p className="text-xl md:text-2xl font-black text-rose-600 leading-tight">R$ {resumoMensal.pago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </div>
+          </div>
+
+          <div className="md:hidden border-t border-slate-50 my-0.5 mx-2" />
+
+          {/* Total a Pagar */}
+          <div className="flex items-center gap-4 p-1 md:p-5 md:bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm">
+            <img src="https://raw.githubusercontent.com/jadsonviana7-eng/Icones/refs/heads/main/a%20pagar.svg" alt="A Pagar" className="w-10 h-10 shrink-0" />
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Total a Pagar</p>
+              <p className="text-xl md:text-2xl font-black text-amber-500 leading-tight">R$ {resumoMensal.aPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </div>
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <img src="https://raw.githubusercontent.com/jadsonviana7-eng/Icones/refs/heads/main/pago.svg" alt="Pago" className="w-10 h-10 shrink-0" />
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total Pago</p>
-            <p className="text-2xl font-black text-rose-600">R$ {resumoMensal.pago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-          </div>
+      </div>
+
+      {/* Seletor de Período Mobile - Navegação Mês a Mês */}
+      <div className="sm:hidden flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mt-[-18px] mb-2">
+        <button
+          type="button"
+          onClick={() => mudarMesMobile(-1)}
+          className="p-2 bg-slate-50 rounded-xl border border-slate-100 text-slate-600 active:scale-90 transition-transform cursor-pointer"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <div className="text-center">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Mês de Referência</p>
+          <p className="text-sm font-black text-[#1e3a8a] capitalize">{labelPeriodoMobile}</p>
         </div>
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <img src="https://raw.githubusercontent.com/jadsonviana7-eng/Icones/refs/heads/main/a%20pagar.svg" alt="A Pagar" className="w-10 h-10 shrink-0" />
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Total a Pagar</p>
-            <p className="text-2xl font-black text-amber-500">R$ {resumoMensal.aPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-          </div>
-        </div>
+
+        <button
+          type="button"
+          onClick={() => mudarMesMobile(1)}
+          className="p-2 bg-slate-50 rounded-xl border border-slate-100 text-slate-600 active:scale-90 transition-transform cursor-pointer"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
 
       {/* Tabela de Transações Recentes Abaixo */}
@@ -419,7 +539,7 @@ export default function TransacoesFinanceiras({
         ) : transacoes.length === 0 ? (
           <div className="p-10 text-center text-sm text-slate-400">Nenhuma transação encontrada com os filtros.</div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto hidden sm:block"> {/* Tabela visível apenas em telas maiores */}
             <table className="table-mib">
               <thead>
                 <tr>
@@ -435,7 +555,7 @@ export default function TransacoesFinanceiras({
               </thead>
               <tbody>
                 {transacoes.map(t => {
-                  const tipoNormalizado = t.tipo?.toLowerCase() === 'receita' ? 'receita' : 'despesa';
+                  const tipoNormalizado = t.tipo?.toLowerCase();
                   return (
                     <tr key={t.id} onClick={() => podeEditar && abrirModal(tipoNormalizado, t)} className={`${podeEditar ? 'cursor-pointer hover:bg-slate-50' : ''} transition`}>
                     <td>{t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
@@ -464,9 +584,9 @@ export default function TransacoesFinanceiras({
                     <td className="text-right pr-6">
                       <div className="flex items-center justify-end gap-2">
                         {podeEditar ? (
-                          <>
+                          <> {/* Botões de editar e excluir ficam no modal, mas o ícone de editar na tabela ainda é útil */}
                         <span className="font-bold mr-2">{`R$ ${t.valor.toFixed(2)}`}</span>
-                        <button onClick={(e) => { e.stopPropagation(); abrirModal(tipoNormalizado, t); }} className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Lançamento">
+                        <button onClick={(e) => { e.stopPropagation(); abrirModal(tipoNormalizado, t); }} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Lançamento">
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
@@ -489,6 +609,56 @@ export default function TransacoesFinanceiras({
             </table>
           </div>
         )}
+
+            {/* Lista Compacta para Telas Pequenas */}
+            <div className="sm:hidden divide-y divide-slate-100">
+              {carregando ? (
+                <div className="p-10 text-center text-sm text-slate-400">Carregando transações...</div>
+              ) : transacoes.length === 0 ? (
+                <div className="p-10 text-center text-sm text-slate-400">Nenhuma transação encontrada com os filtros.</div>
+              ) : (
+                transacoes.map(t => {
+                  const tipoNormalizado = t.tipo?.toLowerCase();
+                  const valorColor = tipoNormalizado === 'receita' ? 'text-emerald-600' : 'text-rose-600';
+                  const statusColor = t.status === 'Pago' ? 'text-green-600' : t.status === 'Pendente' ? 'text-amber-600' : 'text-red-600';
+                  const statusBg = t.status === 'Pago' ? 'bg-green-50' : t.status === 'Pendente' ? 'bg-amber-50' : 'bg-red-50';
+
+                  return (
+                    <div 
+                      key={t.id} 
+                      onClick={() => podeEditar && abrirModal(tipoNormalizado, t)} 
+                      className={`${podeEditar ? 'cursor-pointer hover:bg-slate-50' : ''} p-4 flex items-center justify-between transition active:scale-[0.98]`}
+                    >
+                      <div className="flex flex-col flex-1 min-w-0 pr-2">
+                        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">{t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</p>
+                        <p className="text-sm font-black text-slate-800 leading-tight mt-1 truncate">{t.descricao}</p>
+                        {tipoNormalizado === 'receita' ? (
+                          <p className="text-[12px] text-slate-500 mt-1 truncate"> {t.contribuinte || '—'}</p>
+                        ) : (
+                          <p className="text-[12px] text-slate-500 mt-1 truncate"> {t.categoria || '—'}</p>
+                        )}
+                      </div>
+                      <div className="flex flex-col items-end shrink-0">
+                        <span className={`text-lg font-black ${valorColor}`}>
+                          {tipoNormalizado === 'receita' ? '+' : '-'} R$ {Number(t.valor).toFixed(2)}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mt-1 ${statusBg} ${statusColor}`}>
+                          {t.status}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Botão flutuante para adicionar transação em mobile */}
+            {podeEditar && (
+              <div className="fixed bottom-6 right-6 z-50 flex gap-3">
+                <button type="button" onClick={() => abrirModal('receita')} className="w-14 h-14 rounded-full bg-emerald-600 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all" title="Nova Receita">+</button>
+                <button type="button" onClick={() => abrirModal('despesa')} className="w-14 h-14 rounded-full bg-rose-600 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all" title="Nova Despesa">—</button>
+              </div>
+            )}
       </Card>
 
       {modalTransacao.aberto && (
@@ -513,7 +683,7 @@ export default function TransacoesFinanceiras({
 export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pessoas, onSucesso, pessoaIdInicial = '', transacaoParaEditar = null, usuarioLogado }) {
   const [data, setData] = useState(transacaoParaEditar?.data || new Date().toISOString().split('T')[0]);
   const [descricao, setDescricao] = useState(transacaoParaEditar?.descricao || '');
-  const [valor, setValor] = useState(transacaoParaEditar?.valor || '');
+  const [valor, setValor] = useState(transacaoParaEditar?.valor ? mascaraMoeda(transacaoParaEditar.valor * 100) : '');
   const [status, setStatus] = useState(transacaoParaEditar?.status?.toLowerCase() || 'pago'); // 'pago' ou 'pendente'
   const [pessoaId, setPessoaId] = useState(transacaoParaEditar?.pessoa_id || pessoaIdInicial);
   const [categoriaId, setCategoriaId] = useState(transacaoParaEditar?.categoria_id || '');
@@ -564,7 +734,7 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
     const payloadBase = {
       tipo,
       descricao: descricao.trim(),
-      valor: parseFloat(valor),
+      valor: desmascararMoeda(valor) || 0,
       status: (tipoLancamento === 'repetido' && !transacaoParaEditar) ? 'pendente' : status,
       pessoa_id: pessoaId || null,
       categoria_id: categoriaId || null,
@@ -631,13 +801,13 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
   }
 
   // Definição das variáveis de estilo dinâmico que estavam causando erros de referência
-  const corBtn = tipo === 'receita' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700';
-  const corShadow = tipo === 'receita' ? 'shadow-emerald-200' : 'shadow-rose-200';
+  const corBtnSalvar = 'bg-emerald-600 hover:bg-emerald-700'; // Sempre verde para salvar
+  const corShadowSalvar = 'shadow-emerald-200';
   const corHeader = tipo === 'receita' ? 'bg-emerald-50/30' : 'bg-rose-50/30';
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[98vh] sm:max-h-[95vh]">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 sm:p-4">
+      <div className="bg-white rounded-none sm:rounded-3xl border-none sm:border sm:border-slate-200 shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[95vh]">
         <div className={`p-3 sm:p-4 border-b border-slate-100 flex items-center justify-between ${corHeader}`}>
           <div>
             <h3 className="font-bold text-slate-900 text-sm sm:text-base uppercase tracking-tight">{transacaoParaEditar ? 'Editar' : 'Nova'} {tipo}</h3>
@@ -654,11 +824,11 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
             </div>
             <div className="sm:col-span-6">
               <label className="block text-sm font-bold text-slate-500 mb-1">Descrição</label>
-              <input type="text" required placeholder="Ex: Oferta de domingo, Manutenção..." value={descricao} onChange={e => setDescricao(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#055F6D]/20 outline-none" />
+              <input type="text" required placeholder="Ex: Oferta de domingo, Manutenção..." value={descricao} onChange={e => setDescricao(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#202046]/20 outline-none" />
             </div>
             <div className="sm:col-span-3">
               <label className="block text-sm font-bold text-slate-500 mb-1">Valor (R$)</label>
-              <input type="number" step="0.01" required placeholder="0,00" value={valor} onChange={e => setValor(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:ring-2 focus:ring-[#055F6D]/20 outline-none" />
+              <input type="text" required placeholder="R$ 0,00" value={valor} onChange={e => setValor(mascaraMoeda(e.target.value))} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:ring-2 focus:ring-[#202046]/20 outline-none" />
             </div>
           </div>
 
@@ -708,7 +878,7 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-            <div className="sm:col-span-5">
+            <div className="sm:col-span-4">
               <label className="block text-sm font-bold text-slate-500 mb-1">{tipo === 'despesa' ? 'Pago à' : 'Membro'}</label>
               <select value={pessoaId} onChange={e => setPessoaId(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm font-normal bg-white outline-none">
                 <option value="">Selecione um membro (opcional)</option>
@@ -722,7 +892,7 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
                 {categorias.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
             </div>
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-3">
               <label className="block text-sm font-bold text-slate-500 mb-1">Conta / Caixa</label>
               <select required value={contaId} onChange={e => setContaId(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm font-normal bg-white outline-none">
                 <option value="">Selecione...</option>
@@ -734,10 +904,10 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
               <button 
                 type="button" 
                 onClick={() => setStatus(status === 'pago' ? 'pendente' : 'pago')}
-                className={`w-full py-2 rounded-xl border text-sm font-bold transition flex items-center justify-center gap-2 ${
+                className={`w-full py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition flex items-center justify-center gap-2 shadow-xs ${
                   status === 'pago' 
-                    ? `bg-${corPrincipal}-600 border-${corPrincipal}-600 text-white shadow-md shadow-${corPrincipal}-200` 
-                    : 'bg-amber-500 border-amber-500 text-white shadow-md shadow-amber-200'
+                    ? `bg-emerald-600 border-emerald-600 text-white shadow-emerald-200` // Verde para Pago
+                    : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600' // Discreto para Pendente
                 }`}
               >
                 {status === 'pago' ? '✓' : '○'} {labelStatus}
@@ -756,15 +926,23 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
             />
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-end gap-3">
+          <div className="pt-1 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-end gap-3">
             {transacaoParaEditar && (
               <button
                 type="button"
                 onClick={handleExcluir}
                 disabled={enviando}
-                className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition sm:mr-auto order-3 sm:order-first"
+                className="
+                  fixed bottom-6 left-6 w-14 h-14 rounded-full bg-white border border-rose-100 shadow-2xl z-[120] 
+                  sm:static sm:w-auto sm:h-auto sm:p-2 sm:rounded-xl sm:bg-transparent sm:border-transparent sm:shadow-none
+                  text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition sm:mr-auto order-3 sm:order-first 
+                  flex items-center justify-center gap-0
+                "
               >
-                🗑️ Excluir Registro
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                <span className="hidden sm:inline">Excluir Registro</span>
               </button>
             )}
 
@@ -772,10 +950,9 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
             <button 
               type="submit" 
               disabled={enviando}
-              className={`
-                fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-[120] 
+              className={`fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-[120] 
                 sm:static sm:w-auto sm:h-auto sm:px-10 sm:py-2.5 sm:rounded-2xl sm:shadow-lg
-                ${corBtn} text-white text-sm font-bold transition ${corShadow} disabled:opacity-50 order-1 sm:order-1
+                ${corBtnSalvar} text-white text-sm font-bold transition ${corShadowSalvar} disabled:opacity-50 order-1 sm:order-1
               `}
             >
               {enviando ? (

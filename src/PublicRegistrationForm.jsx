@@ -168,7 +168,6 @@ export default function PublicRegistrationForm() {
 
     if (fotoFinalBlob) {
       try {
-        // Usar um ID único para o arquivo, já que não temos um pessoaId ainda
         urlFotoPublica = await uploadImagemCelula(fotoFinalBlob, `publico-${Date.now()}`);
       } catch (error) {
         console.error('Erro ao fazer upload da foto:', error);
@@ -196,8 +195,6 @@ export default function PublicRegistrationForm() {
       bairro,
       cidade,
       estado,
-      // Para cadastros públicos, o status inicial pode ser 'pendente' ou 'ativo'
-      // Vamos usar 'ativo' para simplificar, mas 'pendente' seria mais seguro para revisão
       cargo_sugerido: cargoSugerido.trim() || null,
       celula_sugerida: celulaSugerida.trim() || null,
       zona_sugerida: zonaSugerida.trim() || null,
@@ -208,8 +205,7 @@ export default function PublicRegistrationForm() {
       conjuge_sugerido: conjugeSugerido.trim() || null,
       filhos_sugeridos: filhosSugeridos.trim() || null,
       status: 'ativo',
-      tipo_membro: 'frequentador', // Ou 'membro_publico' para diferenciar
-      // Outros campos específicos da igreja (celula_id, cargo, etc.) não são preenchidos aqui
+      tipo_membro: 'frequentador',
     };
 
     try {
@@ -221,7 +217,6 @@ export default function PublicRegistrationForm() {
       } else {
         setMensagem('🎉 Seu cadastro foi enviado com sucesso! Agradecemos seu interesse.');
         setSucesso(true);
-        // Limpar formulário após sucesso
         setNome(''); setGenero(''); setDataNascimento(''); setEstadoCivil('Solteiro(a)');
         setCpf(''); setRg(''); setEscolaridade(''); setProfissao('');
         setEmail(''); setTelefone(''); setCep(''); setEndereco(''); setNumero('');
@@ -248,7 +243,7 @@ export default function PublicRegistrationForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8 px-4">
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center pt-0 pb-2 md:py-4 px-5">
       {mostrarCortador && (
         <div className="fixed inset-0 bg-slate-950/80 z-50 flex flex-col items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
@@ -299,14 +294,12 @@ export default function PublicRegistrationForm() {
           ) : (
             <img src="/logo-mib-mundau.png" alt="Logo da Igreja" className="h-30 mx-auto object-contain" />
           )}
-          {/*<h1 className="text-2xl font-bold text-gray-800">{dadosIgreja?.nome_igreja || 'Nome da Igreja'}</h1>*/}
           {dadosIgreja?.endereco && (
             <p className="text-sm text-gray-600 mt-1">{dadosIgreja.endereco}</p>
           )}
           {dadosIgreja?.cnpj && (
             <p className="text-sm text-gray-600 font-semibold">CNPJ: {mascaraCNPJ(dadosIgreja.cnpj)}</p>
           )}
-          {/* Mantendo o telefone, pois é um contato direto */}
           <p className="text-sm text-gray-600">{mascaraTelefone(dadosIgreja?.telefone) || 'contato:'}</p>
           <h1 className="text-2xl font-bold text-gray-800 mt-4">Cadastro de Membro</h1>
           <p className="text-xs text-gray-400 mt-1">
@@ -332,7 +325,6 @@ export default function PublicRegistrationForm() {
             <div className="flex-1 w-full text-center sm:text-left">
               <label className="block text-sm font-bold text-gray-700 mb-1">Insira Sua Foto de Perfil</label>
               <input type="file" accept="image/*" onChange={onFileChange} className="text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
-              {/*<p className="text-xs text-gray-400 mt-1">Opcional, mas ajuda na identificação.</p>*/}
             </div>
           </div>
 

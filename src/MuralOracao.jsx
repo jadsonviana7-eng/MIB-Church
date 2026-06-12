@@ -61,7 +61,7 @@ export default function MuralOracao() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-6 px-2">
       <PageHeader 
         titulo="Mural de Orações" 
         breadcrumb={['Admin', 'Oração']} 

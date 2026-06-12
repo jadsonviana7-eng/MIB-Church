@@ -6,6 +6,7 @@ import SidebarVinculos from './SidebarVinculos';
 import { ModalLancarTransacao } from './TransacoesFinanceiras';
 import {
   mascaraCPF,
+  mascaraCNPJ,
   mascaraTelefone,
   mascaraCEP,
   mascaraDataBR,
@@ -35,6 +36,64 @@ const MODULOS_SISTEMA = [
   { modulo: 'Utilitários', blocos: ['Escalas Ministerial', 'Relatório Semanal', 'Calculadora de Tributos', 'Teste de Temperamento', 'Pedido de Oração', 'Mural de Orações'] },
   { modulo: 'Configurações', blocos: ['Listas auxiliares', 'Preferências do sistema'] },
 ];
+
+// Importar MenuIcons do icons.jsx para reutilizar SVGs
+import { MenuIcons } from './icons';
+import './DetalhesMembro.css';
+
+// Mapeamento de ícones para as abas
+const TabIcons = {
+  informacoes: (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  ), // Ícone de pessoas
+  adicionais: (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  ), // Ícone de adição
+  escola: (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+    </svg>
+  ), // Ícone de escolas
+  frequencia: (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+      <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  ), // Ícone de calendário
+  financeiro: (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+  ), // Ícone de finanças
+  permissoes: (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  ), // Ícone de configurações/permissões
+  caderneta: (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+    </svg>
+  ), // Ícone de caderneta (documento)
+  faltas: (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+    </svg>
+  ), // Ícone de proibido/falta
+  crescimento: (
+    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+      <line x1="6" y1="20" x2="6" y2="14"/>
+    </svg>
+  ), // Ícone de gráfico de barras
+};
 
 function vinculosPermissaoMembro(membro) {
   // Prioriza permissões manuais se existirem no JSONB
@@ -488,20 +547,20 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
   const dynamicAbas = useMemo(() => {
     if (isStudentCadernetaView) {
       return [
-        { id: 'informacoes', label: 'Informações Pessoais' },
-        { id: 'caderneta', label: 'Caderneta Escolar' },
-        { id: 'faltas', label: 'Registro de Faltas' },
-        { id: 'crescimento', label: 'Avaliação de Crescimento' },
+        { id: 'informacoes', label: 'Informações Pessoais', icon: TabIcons.informacoes },
+        { id: 'caderneta', label: 'Caderneta Escolar', icon: TabIcons.caderneta },
+        { id: 'faltas', label: 'Registro de Faltas', icon: TabIcons.faltas },
+        { id: 'crescimento', label: 'Avaliação de Crescimento', icon: TabIcons.crescimento },
       ];
     }
     const list = [
-      { id: 'informacoes', label: 'Informações' },
-      { id: 'adicionais', label: 'Informações Adicionais' },
-      { id: 'escola', label: 'Escola' },
-      { id: 'frequencia', label: 'Frequência' },
-      { id: 'financeiro', label: 'Financeiro' },
+      { id: 'informacoes', label: 'Informações', icon: TabIcons.informacoes },
+      { id: 'adicionais', label: 'Informações Adicionais', icon: TabIcons.adicionais },
+      { id: 'escola', label: 'Escola', icon: TabIcons.escola },
+      { id: 'frequencia', label: 'Frequência', icon: TabIcons.frequencia },
+      { id: 'financeiro', label: 'Financeiro', icon: TabIcons.financeiro },
     ];
-    if (!isMembro) list.push({ id: 'permissoes', label: 'Permissões' });
+    if (!isMembro) list.push({ id: 'permissoes', label: 'Permissões', icon: TabIcons.permissoes });
     return list;
   }, [isStudentCadernetaView, isMembro]);
 
@@ -810,7 +869,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
   const dis = !modoEdicao;
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-5 max-w-[1600px] mx-auto px-2 md:px-4">
       {modalExclusaoAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50">
           <div className="bg-white rounded-2xl border shadow-xl w-full max-w-md p-5 space-y-4">
@@ -833,7 +892,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
         </div>
       )}
 
-      {mostrarCortador && (
+      {mostrarCortador && ( // Modal de recorte de imagem
         <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
             <div className="p-4 border-b border-[var(--border)]">
@@ -849,10 +908,8 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
           </div>
         </div>
       )}
-
-      <Card className="p-0 w-full">
-        <div className="card-body-full flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-          <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start w-full">
+      <div className="member-header flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
+          <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start w-full">
             <div className="relative shrink-0 w-28 h-28 rounded-2xl border-2 border-[var(--border)] overflow-hidden bg-[var(--surface-muted)] shadow-sm">
               {fotoExibir ? (
                 <img src={fotoExibir} alt={nome} className="w-full h-full object-cover" />
@@ -868,25 +925,32 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
             </div>
 
             <div className="flex-1 text-center sm:text-left min-w-0">
-              <div className="flex items-center justify-center sm:justify-start gap-2 text-[11px] font-bold tracking-tight text-slate-400 mb-1">
+              <div className="hidden sm:flex items-center justify-start gap-2 text-[11px] font-bold tracking-tight text-slate-400 mb-1">
                 <button type="button" onClick={() => onFechar()} className="hover:text-slate-600">Pessoas</button>
-                <span className="text-slate-300">/</span>
+                <span className="text-slate-200">/</span>
                 <span className="text-[#055F6D]">Ficha</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-semibold text-[var(--text-heading)] tracking-tight leading-tight">{nome}</h1>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+              <h1 className="text-2xl sm:text-4xl font-semibold text-[var(--text-heading)] tracking-tight leading-tight">{nome}</h1>
+              
+              {/* Info Detalhada: Oculta em mobile (hidden), visível em telas pequenas+ (sm:grid) */}
+              <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm mt-4">
                 <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Zona de moradia</span> <span className="font-medium text-[var(--text-heading)]">{nomeZona}</span></p>
                 <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Célula</span> 
                   <span className="font-medium text-[#055F6D]">
                     {nomeCelula} 
-                    {celulaId && (
-                      <span className="ml-2 text-[9px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded border border-teal-100 font-black">MEMBRO ATIVO</span>
-                    )}
                   </span>
                 </p>
                 <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Cargo</span> <span className="font-medium text-[var(--text-heading)] capitalize">{cargo || 'Membro'}</span></p>
                 <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Telefone</span> <span className="font-medium text-[var(--text-heading)]">{telefone || '—'}</span></p>
                 <p className="sm:col-span-2"><span className="text-[var(--text-muted)]">Endereço:</span> <span className="font-medium text-[var(--text-heading)]">{enderecoCompleto}</span></p>
+              </div>
+
+              {/* Status Minimalista: Visível apenas em mobile (sm:hidden) */}
+              <div className="flex flex-wrap justify-center gap-2 mt-2 sm:hidden">
+                {celulaId && (
+                  <span className="text-[9px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded border border-teal-100 font-black uppercase">Ativo</span>
+                )}
+                <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 font-bold capitalize">{cargo || 'Membro'}</span>
               </div>
             </div>
           </div>
@@ -895,11 +959,31 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
             {!modoEdicao ? (
               <>
                 {['admin', 'pastor', 'secretaria'].includes(membroLogado?.permissao) && (
-                  <button type="button" onClick={() => setModoEdicao(true)} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl">✏️ Editar</button>
+                  <button 
+                    type="button" 
+                    onClick={() => setModoEdicao(true)} 
+                    className="flex items-center justify-center gap-2 bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-xs font-semibold p-2.5 sm:px-4 sm:py-2 rounded-xl transition shadow-sm"
+                    title="Editar Membro"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg> 
+                    <span className="hidden sm:block">Editar</span>
+                  </button>
                 )}
                 {['admin', 'pastor'].includes(membroLogado?.permissao) && (
                   <>
-                    <button type="button" onClick={() => setModalExclusaoAberto(true)} className="px-2 text-[11px] font-semibold text-slate-400 hover:text-amber-600 transition-colors">Inativar</button>
+                    <button 
+                      type="button" 
+                      onClick={() => setModalExclusaoAberto(true)} 
+                      className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold p-2.5 sm:px-4 sm:py-2 rounded-xl transition shadow-sm"
+                      title="Inativar Membro"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                      </svg>
+                      <span className="hidden sm:block">Inativar</span>
+                    </button>
                     <button type="button" onClick={handleExcluirPermanente} className="px-2 text-slate-400 hover:text-rose-600 transition-colors" title="Excluir Permanentemente">
                       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -914,29 +998,31 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
             )}
           </div>
         </div>
-      </Card>
-
-      <div className="flex flex-col lg:flex-row gap-6 items-start w-full mt-4">
-      <Card className="p-0 flex-1 min-w-0 w-full">
-        <nav className="tabs-nav" aria-label="Abas da ficha"> {/* Use dynamicAbas here */}
+      <div className="ficha-layout">
+        <nav className="tabs-sidebar" aria-label="Abas da ficha">
           {dynamicAbas.map((aba) => (
             <button
               key={aba.id}
               type="button"
               onClick={() => setAbaAtiva(aba.id)}
-              className={`tab-btn ${abaAtiva === aba.id ? 'tabs-active' : ''}`} // Corrected class name
+              className={`tab-item flex items-center gap-3 px-4 py-3 text-xs font-semibold transition-all whitespace-nowrap ${
+                abaAtiva === aba.id 
+                  ? 'tab-item-active' 
+                  : 'tab-item-inactive'
+              }`}
             >
-              {aba.label}
+              <span className="tab-icon shrink-0">{aba.icon}</span>
+              <span className="tab-label">{aba.label}</span>
             </button>
           ))}
         </nav>
-
-        <form onSubmit={handleSalvarEdicao} className="card-body-full">
+        <div className="ficha-body">
+        <form onSubmit={handleSalvarEdicao} className="ficha-content w-full space-y-4">
           {abaAtiva === 'informacoes' && (
             <div className="space-y-4">
-              <Card className="p-0">
-                <CardHeader titulo="Dados Pessoais" />
-                <div className="card-body-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="section-group">
+                <h3 className="section-title">Dados Pessoais</h3>
+                <div className="section-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   <CampoInput label="Nome completo" value={nome} onChange={setNome} disabled={dis} />
                   <CampoInput label="Gênero" value={genero} onChange={setGenero} disabled={dis} />
                   {!dis ? (
@@ -987,11 +1073,11 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                     <CampoLinha label="Status" valor={status} />
                   )}
                 </div>
-              </Card>
+              </div>
 
-              <Card className="p-0">
-                <CardHeader titulo="Endereço" />
-                <div className="card-body-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="section-group">
+                <h3 className="section-title">Endereço</h3>
+                <div className="section-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <CampoInput label="CEP" value={cep} onChange={setCep} disabled={dis} mask={mascaraCEP} />
                   <CampoInput label="Logradouro" value={endereco} onChange={setEndereco} disabled={dis} />
                   <CampoInput label="Número" value={numero} onChange={setNumero} disabled={dis} />
@@ -999,11 +1085,11 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                   <CampoInput label="Cidade" value={cidade} onChange={setCidade} disabled={dis} />
                   <CampoInput label="UF" value={estado} onChange={setEstado} disabled={dis} />
                 </div>
-              </Card>
+              </div>
 
-              <Card className="p-0">
-                <CardHeader titulo="Vida na Igreja" />
-                <div className="card-body-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="section-group">
+                <h3 className="section-title">Vida na Igreja</h3>
+                <div className="section-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {!dis ? (
                     <>
                       <div>
@@ -1047,11 +1133,11 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                     <CampoLinha label="Batizado nas águas" valor={batizadoAguas ? 'Sim' : 'Não'} />
                   )}
                 </div>
-              </Card>
+              </div>
 
-              <Card className="p-0">
-                <CardHeader titulo="Vínculo Familiar" />
-                <div className="card-body-full space-y-3">
+              <div className="section-group">
+                <h3 className="section-title">Vínculo Familiar</h3>
+                <div className="section-body space-y-3">
                   {!dis ? (
                     <>
                       <div>
@@ -1092,16 +1178,16 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                     </>
                   )}
                 </div>
-              </Card>
+              </div>
             </div>
           )}
 
           {abaAtiva === 'adicionais' && !isStudentCadernetaView && (
             <div className="space-y-6">
               {/* Novo Ambiente: Perfil Comportamental */}
-              <Card className="p-0">
-                <CardHeader titulo="Perfil Comportamental" subtitulo="Valores numéricos baseados no teste de perfil (0 a 100)." />
-                <div className="card-body-full grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="section-group">
+                <div><h3 className="section-title">Perfil Comportamental</h3><p className="section-subtitle">Valores numéricos baseados no teste de perfil (0 a 100).</p></div>
+                <div className="section-body grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center gap-3 p-3 rounded-xl border border-blue-100 bg-blue-50/30">
                     <span className="text-xl">🦅</span>
                     <span className="font-bold text-slate-700 text-sm flex-1">Águia</span>
@@ -1155,12 +1241,12 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                     />
                   </div>
                 </div>
-              </Card>
+              </div>
 
               {/* Novo Ambiente: Personalidade (Temperamentos) */}
-              <Card className="p-0">
-                <CardHeader titulo="Personalidade" subtitulo="Temperamentos baseados no último teste realizado (Escala 7-35)." />
-                <div className="card-body-full">
+              <div className="section-group">
+                <div><h3 className="section-title">Personalidade</h3><p className="section-subtitle">Temperamentos baseados no último teste realizado (Escala 7-35).</p></div>
+                <div className="section-body">
                   {testePersonalidade ? (
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1197,12 +1283,12 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                     <p className="text-sm text-slate-400 italic py-4 text-center">Nenhum teste de personalidade registrado para este membro.</p>
                   )}
                 </div>
-              </Card>
+              </div>
 
               {/* Novo Ambiente: Atividade Cerebral */}
-              <Card className="p-0">
-                <CardHeader titulo="Atividade Cerebral" subtitulo="Valores numéricos para os quadrantes cerebrais (0 a 100)." />
-                <div className="card-body-full flex flex-col items-center justify-center gap-3">
+              <div className="section-group">
+                <div><h3 className="section-title">Atividade Cerebral</h3><p className="section-subtitle">Valores numéricos para os quadrantes cerebrais (0 a 100).</p></div>
+                <div className="section-body flex flex-col items-center justify-center gap-3">
                   {/* Pensante (Topo) */}
                   <div className="flex flex-col items-center gap-2 w-full max-w-xs">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pensante</span>
@@ -1271,12 +1357,12 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                     </div>
                   </div>
                 </div>
-              </Card>
+              </div>
 
               {/* Novo Ambiente: Área de Atuação */}
-              <Card className="p-0">
-                <CardHeader titulo="Área de Atuação" subtitulo="Selecione os ministérios e departamentos onde o membro serve ou tem aptidão." />
-                <div className="card-body-full">
+              <div className="section-group">
+                <div><h3 className="section-title">Área de Atuação</h3><p className="section-subtitle">Selecione os ministérios e departamentos onde o membro serve ou tem aptidão.</p></div>
+                <div className="section-body">
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {atuacoes.map((a) => {
                       const selecionado = Array.isArray(atuacao) && atuacao.includes(a.nome);
@@ -1309,11 +1395,11 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                     )}
                   </div>
                 </div>
-              </Card>
+              </div>
 
-              <Card className="p-0">
-                <CardHeader titulo="Observações Acadêmicas e Perfil" />
-                <div className="card-body-full grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="section-group">
+                <h3 className="section-title">Observações Acadêmicas e Perfil</h3>
+                <div className="section-body grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Avaliações da Escola de Discípulos</label>
                     <textarea disabled={dis} value={avaliacaoEscola} onChange={(e) => setAvaliacaoEscola(e.target.value)} rows={4} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" placeholder="Registros de avaliação, módulos concluídos..." />
@@ -1323,15 +1409,15 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                     <textarea disabled={dis} value={atividadeCerebral} onChange={(e) => setAtividadeCerebral(e.target.value)} rows={3} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" />
                   </div>
                 </div>
-              </Card>
+              </div>
             </div>
           )}
 
           {abaAtiva === 'escola' && !isStudentCadernetaView && (
             <div className="space-y-6">
-              <Card className="p-0">
-                <CardHeader titulo="Matrículas Ativas" subtitulo="Cursos e turmas que o membro está frequentando." />
-                <div className="card-body-full">
+              <div className="section-group">
+                <div><h3 className="section-title">Matrículas Ativas</h3><p className="section-subtitle">Cursos e turmas que o membro está frequentando.</p></div>
+                <div className="section-body">
                   {matriculasMembro.length === 0 ? (
                     <p className="text-sm text-slate-400 italic">Este membro não possui matrículas ativas.</p>
                   ) : (
@@ -1359,11 +1445,11 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                     </div>
                   )}
                 </div>
-              </Card>
+              </div>
 
-              <Card className="p-0">
-                <CardHeader titulo="Nova Matrícula" subtitulo="Vincular membro a uma turma aberta." />
-                <div className="card-body-full">
+              <div className="section-group">
+                <div><h3 className="section-title">Nova Matrícula</h3><p className="section-subtitle">Vincular membro a uma turma aberta.</p></div>
+                <div className="section-body">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {turmasDisponiveis
                       .filter(t => !matriculasMembro.some(m => m.turmas?.id === t.id))
@@ -1381,14 +1467,14 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                       ))}
                   </div>
                 </div>
-              </Card>
+              </div>
             </div>
           )}
 
           {abaAtiva === 'frequencia' && (
-            <Card className="p-0">
-              <CardHeader titulo="Minha Frequência na Célula" subtitulo="Histórico de presença nos encontros de célula." />
-              <div className="card-body-full">
+            <div className="section-group">
+              <div><h3 className="section-title">Minha Frequência na Célula</h3><p className="section-subtitle">Histórico de presença nos encontros de célula.</p></div>
+              <div className="section-body">
                 {carregandoPresenca ? (
                   <p className="text-sm text-slate-400 italic">Carregando histórico...</p>
                 ) : historicoPresenca.length === 0 ? (
@@ -1420,7 +1506,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                   </div>
                 )}
               </div>
-            </Card>
+            </div>
           )}
 
           {abaAtiva === 'financeiro' && !isStudentCadernetaView && (
@@ -1478,9 +1564,9 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
           )}
 
           {abaAtiva === 'caderneta' && (
-            <Card className="p-0">
-              <CardHeader titulo="Caderneta Escolar" subtitulo="Notas e desempenho do aluno nos módulos do curso." />
-                  <div className="card-body-full">
+            <div className="section-group">
+              <div><h3 className="section-title">Caderneta Escolar</h3><p className="section-subtitle">Notas e desempenho do aluno nos módulos do curso.</p></div>
+                  <div className="section-body">
                 {carregandoAcademicos ? (
                   <p className="text-sm text-slate-400 italic">Carregando caderneta...</p>
                 ) : cadernetaDados?.modulos?.length === 0 ? (
@@ -1529,13 +1615,13 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                       </div>
                 )}
               </div>
-            </Card>
+            </div>
           )}
 
           {abaAtiva === 'faltas' && (
-            <Card className="p-0">
-              <CardHeader titulo="Registro de Faltas" subtitulo="Controle de ausências do aluno por módulo." />
-              <div className="card-body-full space-y-4">
+            <div className="section-group">
+              <div><h3 className="section-title">Registro de Faltas</h3><p className="section-subtitle">Controle de ausências do aluno por módulo.</p></div>
+              <div className="section-body space-y-4">
                 {carregandoAcademicos ? (
                   <p className="text-sm text-slate-400 italic">Carregando faltas...</p>
                 ) : faltasDados?.modulos?.length === 0 ? (
@@ -1579,13 +1665,13 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                   </>
                 )}
               </div>
-            </Card>
+            </div>
           )}
 
           {abaAtiva === 'crescimento' && (
-            <Card className="p-0">
-              <CardHeader titulo="Avaliação de Crescimento" subtitulo="Observações sobre o desenvolvimento do aluno na escola." />
-              <div className="card-body-full space-y-4">
+            <div className="section-group">
+              <div><h3 className="section-title">Avaliação de Crescimento</h3><p className="section-subtitle">Observações sobre o desenvolvimento do aluno na escola.</p></div>
+              <div className="section-body space-y-4">
                 {carregandoAcademicos ? (
                   <p className="text-sm text-slate-400 italic">Carregando avaliação...</p>
                 ) : (
@@ -1602,16 +1688,16 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                   </div>
                 )}
               </div>
-            </Card>
+            </div>
           )}
 
           {abaAtiva === 'permissoes' && !isStudentCadernetaView && !isMembro && (
-            <Card className="p-0">
+            <div className="section-group">
               <CardHeader
                 titulo="Permissões"
                 subtitulo={`Módulos vinculados ao perfil ${permissao || cargo || 'membro'}.`}
               />
-              <div className="card-body-full space-y-3">
+              <div className="section-body space-y-3">
               {!dis && (
                 <AcessoSistemaPanel
                   membro={membro}
@@ -1716,7 +1802,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                 </table>
               </div>
               </div>
-            </Card>
+            </div>
           )}
 
           {modoEdicao && (
@@ -1733,7 +1819,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                 <button
                   type="submit"
                   disabled={salvando}
-                  className="btn-primary text-xs font-semibold px-6 py-2.5 rounded-xl disabled:opacity-50 shadow-xl flex items-center gap-2 ring-2 ring-[var(--brand)] ring-offset-2 transition"
+                  className="flex items-center gap-2 bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-xs font-semibold px-6 py-2.5 rounded-xl disabled:opacity-50 shadow-xl transition"
                 >
                   {salvando ? (
                     <>
@@ -1741,7 +1827,12 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                       Salvando...
                     </>
                   ) : (
-                    <>💾 Salvar Alterações</>
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      Salvar Alterações
+                    </>
                   )}
                 </button>
               </div>
@@ -1750,14 +1841,16 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
             </>
           )}
         </form>
-      </Card>
-      <SidebarVinculos
-        pessoaId={pessoaId}
-        pessoaData={membro}
-        matriculasEscolares={matriculasMembro}
-        listaPessoas={listaPessoas}
-        onAbrirMembro={onFechar ? (id) => { onFechar(); setTimeout(() => onDadosAtualizados?.(id), 50); } : undefined}
-      />
+        <div className="vinculos-sidebar hidden lg:block">
+          <SidebarVinculos
+            pessoaId={pessoaId}
+            pessoaData={membro}
+            matriculasEscolares={matriculasMembro}
+            listaPessoas={listaPessoas}
+            onAbrirMembro={onFechar ? (id) => { onFechar(); setTimeout(() => onDadosAtualizados?.(id), 50); } : undefined}
+          />
+        </div>
+        </div>
       </div>
 
       {isModalReceitaAberto && (
@@ -1774,7 +1867,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
           }}
         />
       )}
-    </div>
+      </div>
   );
 }
 
@@ -1850,7 +1943,7 @@ function AcessoSistemaPanel({
           </p>
         )}
       </div>
-    </div>
+      </div>
   );
 }
 

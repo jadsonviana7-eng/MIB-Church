@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import { mascaraMoeda, desmascararMoeda } from './mascaras';
 
 function TelaRelatorio() {
   const [celulas, setCelulas] = useState([]);
@@ -8,7 +9,7 @@ function TelaRelatorio() {
   const [presencas, setPresencas] = useState({});
   const [dataReuniao, setDataReuniao] = useState(new Date().toISOString().split('T')[0]);
   const [visitantes, setVisitantes] = useState(0);
-  const [oferta, setOferta] = useState(0);
+  const [oferta, setOferta] = useState('');
   const [obs, setObs] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [mensagem, setMensagem] = useState('');
@@ -32,7 +33,7 @@ function TelaRelatorio() {
       if (data) {
         setMembros(data);
         const listaInicial = {};
-        data.forEach(m => listaInicial[m.id] = true);
+        data.forEach(m => listaInicial[m.id] = false);
         setPresencas(listaInicial);
       }
     }
@@ -52,7 +53,7 @@ function TelaRelatorio() {
     try {
       const { data: relatorioCriado, error: erroRelatorio } = await supabase
         .from('relatorios_celula')
-        .insert([{ celula_id: celulaSelecionada, data_reuniao: dataReuniao, visitantes_presentes: Number(visitantes), oferta: Number(oferta), observacoes: obs }])
+        .insert([{ celula_id: celulaSelecionada, data_reuniao: dataReuniao, visitantes_presentes: Number(visitantes), oferta: desmascararMoeda(oferta) || 0, observacoes: obs }])
         .select().single();
 
       if (erroRelatorio) throw erroRelatorio;
@@ -74,7 +75,7 @@ function TelaRelatorio() {
   }
 
   return (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-xl w-full">
+  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-full sm:max-w-xl w-full px-2">
     <h2 className="text-xl font-bold text-slate-800 mb-5">Lançar Encontro de Célula</h2>
     
     <form onSubmit={enviarRelatorio} className="space-y-5">
@@ -143,15 +144,12 @@ function TelaRelatorio() {
         <div>
           <label className="block text-sm font-semibold text-slate-600 mb-1">Oferta (R$)</label>
           <div className="relative">
-            <span className="absolute left-3 top-2 text-slate-400 text-sm">R$</span>
             <input 
-              type="number" 
-              step="0.01" 
-              min="0" 
+              type="text" 
               value={oferta} 
-              onChange={e => setOferta(e.target.value)} 
-              className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800" 
-              placeholder="0,00"
+              onChange={e => setOferta(mascaraMoeda(e.target.value))} 
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white text-slate-800" 
+              placeholder="R$ 0,00"
             />
           </div>
         </div>

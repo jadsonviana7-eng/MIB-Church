@@ -237,7 +237,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
   );
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-xs relative">
+    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-xs relative mx-2">
       
       {mostrarCortador && (
         <div className="fixed inset-0 bg-slate-950/80 z-50 flex flex-col items-center justify-center p-4">
@@ -281,11 +281,35 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
         </div>
       )}
 
-      <div className="flex border-b border-slate-100 mb-5 gap-2 pb-1 overflow-x-auto">
-        <button type="button" onClick={() => setSecaoAtual('pessoal')} className={`text-xs font-bold pb-2 px-1 transition shrink-0 ${secaoAtual === 'pessoal' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-400'}`}>1. Dados Pessoais</button>
-        <button type="button" onClick={() => setSecaoAtual('endereco')} className={`text-xs font-bold pb-2 px-1 transition shrink-0 ${secaoAtual === 'endereco' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-400'}`}>2. Endereço</button>
-        <button type="button" onClick={() => setSecaoAtual('igreja')} className={`text-xs font-bold pb-2 px-1 transition shrink-0 ${secaoAtual === 'igreja' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-400'}`}>3. Na Igreja</button>
-        <button type="button" onClick={() => setSecaoAtual('familia')} className={`text-xs font-bold pb-2 px-1 transition shrink-0 ${secaoAtual === 'familia' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-400'}`}>4. Família / Filhos</button>
+      <div className="flex border-b border-slate-100 mb-5 pb-1 overflow-x-auto scrollbar-hide">
+        {[
+          { id: 'pessoal', label: 'Dados Pessoais', icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg> },
+          { id: 'endereco', label: 'Endereço', icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+          { id: 'igreja', label: 'Na Igreja', icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"> <path d="M11.584 2.376a.75.75 0 0 1 .832 0l9 6a.75.75 0 1 1-.832 1.248L12 3.901 3.416 9.624a.75.75 0 0 1-.832-1.248l9-6Z" />
+            <path fillRule="evenodd" d="M20.25 10.332v9.918H21a.75.75 0 0 1 0 1.5H3a.75.75 0 0 1 0-1.5h.75v-9.918a.75.75 0 0 1 .634-.74A49.109 49.109 0 0 1 12 9c2.59 0 5.134.202 7.616.592a.75.75 0 0 1 .634.74Zm-7.5 2.418a.75.75 0 0 0-1.5 0v6.75a.75.75 0 0 0 1.5 0v-6.75Zm3-.75a.75.75 0 0 1 .75.75v6.75a.75.75 0 0 1-1.5 0v-6.75a.75.75 0 0 1 .75-.75ZM9 12.75a.75.75 0 0 0-1.5 0v6.75a.75.75 0 0 0 1.5 0v-6.75Z" clipRule="evenodd" />
+            <path d="M12 7.875a1.125 1.125 0 1 0 0-2.25 1.125 1.125 0 0 0 0 2.25Z" />
+          </svg> },
+          { id: 'familia', label: 'Família', icon: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg> },
+        ].map((step, idx) => {
+          const isAtivo = secaoAtual === step.id;
+          return (
+            <button
+              key={step.id}
+              type="button"
+              onClick={() => setSecaoAtual(step.id)}
+              className={`flex-1 flex items-center justify-center gap-2 pb-2.5 transition-all shrink-0 border-b-2 cursor-pointer ${
+                isAtivo ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-500'
+              }`}
+            >
+              <span className={`transition-transform ${isAtivo ? 'scale-110' : 'scale-100'}`}>
+                {step.icon}
+              </span>
+              <span className="hidden md:inline text-[11px] font-black uppercase tracking-wider">
+                {idx + 1}. {step.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       <form onSubmit={handleSalvarFichaCompleta} className="space-y-4">

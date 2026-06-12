@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient';
 import { Card, CardHeader, AvatarCelula, PageHeader, Avatar, SelectFiltro, uploadImagemCelula } from './ui';
 import { nomePessoa, nomeZona, valorOfertaRelatorio, agrupamentoPor } from './churchUtils';
 import { extrairMetadadosReuniao, montarObservacoesComMetadados } from './reuniaoHelpers';
+import { mascaraMoeda, desmascararMoeda } from './mascaras';
 import ModalEditarCelula from './ModalEditarCelula';
 import ModalExcluirCelula from './ModalExcluirCelula';
 import ModalLancarReuniao from './ModalLancarReuniao';
@@ -70,7 +71,9 @@ export default function CelulasModulo({
   if (submenu === 'adicionar') {
     return (
       <>
-        <PageHeader titulo="Adicionar Nova Célula" subtitulo="Cadastro da célula com liderança, agenda, endereço, zona e anotações." />
+        <div className="hidden md:block">
+          <PageHeader titulo="Adicionar Nova Célula" subtitulo="Cadastro da célula com liderança, agenda, endereço, zona e anotações." />
+        </div>
         <FormularioCelula onCelulaCadastrada={obterDados} />
       </>
     );
@@ -103,7 +106,6 @@ export default function CelulasModulo({
 
   return (
     <>
-      <PageHeader titulo="Células" />
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5">
         <Card className="p-0">
           <CardHeader
@@ -114,7 +116,7 @@ export default function CelulasModulo({
           ) : (
             <div className="overflow-x-auto">
               <table className="table-mib">
-                <thead>
+                <thead className="hidden md:table-header-group">
                   <tr>
                     <th>Célula</th>
                     <th>Líder</th>
@@ -133,14 +135,16 @@ export default function CelulasModulo({
                         className="cursor-pointer"
                       >
                         <td>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3 py-3 md:py-2">
                             <AvatarCelula celula={celula} />
-                            <span className="font-semibold text-[var(--text-heading)]">{celula.nome}</span>
+                            <div>
+                              <span className="font-semibold text-[var(--text-heading)] block">{celula.nome}</span>
+                              <span className="md:hidden text-[var(--text-muted)] text-xs">{nomePessoa(pessoas, celula.lider_id)}</span>
+                            </div>
                           </div>
                         </td>
-                        <td>{nomePessoa(pessoas, celula.lider_id)}</td>
-                        <td className="text-[var(--text-muted)]">{celula.dia_semana || 'Sem dia'} · {celula.horario || '—'}</td>
-                        <td><span className="text-xs font-semibold text-[#2563eb]">{membros.length} vinculados</span></td>
+                        <td className="hidden md:table-cell">{nomePessoa(pessoas, celula.lider_id)}</td>
+                        <td className="hidden md:table-cell text-[var(--text-muted)]">{celula.dia_semana || 'Sem dia'} · {celula.horario || '—'}</td>
                         <td className="text-right pr-6">
                           {!isMembro && (
                             <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
@@ -228,15 +232,19 @@ function ReunioesCelulas({ celulas, pessoas, relatoriosCelula, obterDados, onVol
 
   return (
     <>
-      <PageHeader titulo="Reuniões realizadas" breadcrumb={['Células', 'Reuniões']} onNavigate={onVoltar} subtitulo="Histórico de encontros cadastrados pelas células.">
-        <button type="button" onClick={() => setModalAberto(true)} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl">
-          + Adicionar Reunião
-        </button>
-      </PageHeader>
+      {/* PageHeader visível apenas em telas maiores que md */}
+      <div className="hidden md:block">
+        <PageHeader titulo="Reuniões realizadas" breadcrumb={['Células', 'Reuniões']} onNavigate={onVoltar} subtitulo="Histórico de encontros cadastrados pelas células.">
+          <button type="button" onClick={() => setModalAberto(true)} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl">
+            + Adicionar Reunião
+          </button>
+        </PageHeader>
+      </div>
       <Card className="p-0 overflow-hidden">
         <CardHeader titulo={`${relatoriosCelula.length} reuniões no histórico`} />
         <div className="overflow-x-auto max-h-[70vh]">
-          <table className="table-mib">
+          {/* TABELA - Visível em Desktop */}
+          <table className="table-mib hidden md:table">
             <thead>
               <tr>
                 <th>Data</th>
@@ -291,6 +299,51 @@ function ReunioesCelulas({ celulas, pessoas, relatoriosCelula, obterDados, onVol
               )}
             </tbody>
           </table>
+
+          {/* LISTA COMPACTA - Visível apenas em Mobile */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {relatoriosCelula.length === 0 ? (
+              <p className="p-10 text-center text-sm text-[var(--text-muted)] italic">Nenhuma reunião cadastrada.</p>
+            ) : (
+              relatoriosCelula.map((r) => (
+                <div
+                  key={r.id}
+                  onClick={() => onVerReuniao(r)}
+                  className="p-4 flex items-center justify-between hover:bg-slate-50 transition active:scale-[0.98] cursor-pointer"
+                >
+                  <div className="flex items-center justify-between flex-1 pr-4">
+                    <div className="flex flex-col">
+                      <p className="text-sm font-black text-slate-800 tracking-tight">
+                        {r.data_reuniao ? new Date(`${r.data_reuniao}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
+                      </p>
+                      <p className="text-xs text-slate-500 font-bold uppercase mt-0.5">
+                        {r.celulas?.nome || 'Célula'}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <div className="flex flex-col items-center">
+                        <span className="text-[20px] font-black text-blue-600 leading-none">{r.presencas_relatorio?.[0]?.count || 0}</span>
+                        <span className="text-[10px] font-black uppercase text-blue-600 mt-1">Membros</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <span className="text-[20px] font-black text-amber-600 leading-none">{Number(r.visitantes_presentes || 0)}</span>
+                        <span className="text-[10px] font-black uppercase text-amber-600 mt-1">Visitantes</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                    <button 
+                      onClick={(e) => handleExcluirReuniao(e, r.id)}
+                      className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </Card>
       {modalAberto && (
@@ -736,40 +789,71 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
 
   return (
     <div className="space-y-6">
-      <PageHeader 
-        titulo="Relatórios de Células" 
-        breadcrumb={['Células', 'Relatórios']} 
-        onNavigate={() => onNavigate('lista')} 
-      />
+      
 
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 items-start">
         {/* PAINEL LATERAL DE FILTROS */}
         <aside className="space-y-4 lg:sticky lg:top-24">
           <Card className="p-0 overflow-hidden shadow-sm">
             <CardHeader titulo="Menu de Relatórios" />
-            <div className="p-2 space-y-1">
-              {categoriasRelatorios.map(cat => (
-                <div key={cat.id} className="space-y-1">
-                  <div className={`px-3 py-2 text-[18px] font-black uppercase ${tipoAtivo === cat.id ? 'text-[#055F6D]' : 'text-slate-400'}`}>
-                    {cat.label}
-                  </div>
-                  {cat.itens.map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => { setTipoAtivo(cat.id); setSubTipoAtivo(item.id); }}
-                      className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${subTipoAtivo === item.id ? 'bg-[#055F6D] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'}`}
-                    >
-                      {item.label}
-                      <span className={`transition-transform group-hover:translate-x-1 ${subTipoAtivo === item.id ? 'opacity-100' : 'opacity-0'}`}>→</span>
-                    </button>
-                  ))}
-                  <div className="h-2" />
-                </div>
+          {/* Select para mobile */}
+          <div className="p-4 md:hidden">
+            <select
+              value={tipoAtivo}
+              onChange={(e) => {
+                const newTipo = e.target.value;
+                setTipoAtivo(newTipo);
+                // Encontra o primeiro item do novo tipo para definir como subTipoAtivo
+                const categoria = categoriasRelatorios.find(cat => cat.id === newTipo);
+                if (categoria && categoria.itens.length > 0) {
+                  setSubTipoAtivo(categoria.itens[0].id);
+                } else {
+                  setSubTipoAtivo(''); // Limpa se não houver itens
+                }
+              }}
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+            >
+              {categoriasRelatorios.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.label}</option>
               ))}
-            </div>
+            </select>
+            {/* Sub-select para mobile */}
+            {tipoAtivo && categoriasRelatorios.find(cat => cat.id === tipoAtivo)?.itens.length > 0 && (
+              <select
+                value={subTipoAtivo}
+                onChange={(e) => setSubTipoAtivo(e.target.value)}
+                className="w-full px-3 py-2 mt-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+              >
+                {categoriasRelatorios.find(cat => cat.id === tipoAtivo)?.itens.map(item => (
+                  <option key={item.id} value={item.id}>{item.label}</option>
+                ))}
+              </select>
+            )}
+          </div>
+          {/* Botões para desktop */}
+          <div className="p-4 space-y-4 hidden md:block">
+            {categoriasRelatorios.map(cat => (
+              <div key={cat.id} className="space-y-1">
+                <div className={`px-3 py-2 text-[18px] font-black uppercase ${tipoAtivo === cat.id ? 'text-[#055F6D]' : 'text-slate-400'}`}>
+                  {cat.label}
+                </div>
+                {cat.itens.map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => { setTipoAtivo(cat.id); setSubTipoAtivo(item.id); }}
+                    className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${subTipoAtivo === item.id ? 'bg-[#055F6D] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'}`}
+                  >
+                    {item.label}
+                    <span className={`transition-transform group-hover:translate-x-1 ${subTipoAtivo === item.id ? 'opacity-100' : 'opacity-0'}`}>→</span>
+                  </button>
+                ))}
+                <div className="h-2" />
+              </div>
+            ))}
+          </div>
           </Card>
 
-          <Card className="p-5 bg-gradient-to-br from-[#055F6D] to-[#044a56] text-white">
+          <Card className="p-5 bg-gradient-to-br from-[#055F6D] to-[#044a56] text-blue">
             <h4 className="text-xs font-black uppercase tracking-widest opacity-80 mb-2">Resumo Rápido</h4>
             <div className="space-y-3">
               <div className="flex justify-between items-baseline">
@@ -993,8 +1077,8 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
   // Estados de Controle Geral e Membros
   const [pessoasSelecionadas, setPessoasSelecionadas] = useState([]);
   const [salvandoModal, setSalvandoModal] = useState(false);
-  const [excluindoId, setExcluindoId] = useState(null);
-  const [listaAberta, setListaAberta] = useState(true);
+  const [excluindoId, setExcluindoId] = useState(null); // Estado para controlar o ID da pessoa sendo excluída
+  const [abaAtiva, setAbaAtiva] = useState('informacoes');
   const [isModalAberto, setIsModalAberto] = useState(false);
   const [isModalReuniaoAberto, setIsModalReuniaoAberto] = useState(false);
   const [imagemPreview, setImagemPreview] = useState('');
@@ -1002,6 +1086,13 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
   const [salvandoImagem, setSalvandoImagem] = useState(false);
 
   const isMembro = membroLogado?.permissao === 'membro';
+
+  // Define a aba inicial como 'membros' se for desktop
+  useEffect(() => {
+    if (window.innerWidth >= 1024) { // Considerando 1024px como breakpoint para desktop
+      setAbaAtiva('membros');
+    }
+  }, []);
 
   // Declara membros antes de usar no useEffect
   const membros = useMemo(() => {
@@ -1114,15 +1205,37 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
   }
 
   return (
-    <>
-      <PageHeader titulo={celula.nome} breadcrumb={breadcrumb} onNavigate={onFechar}>
-        <button type="button" onClick={onFechar} className="px-4 py-2 rounded-xl btn-primary text-xs font-semibold">Voltar</button>
-      </PageHeader>
+    <div className="celula-detalhes-root">
+      <style>{`
+        .celula-detalhes-root, .celula-detalhes-root * { 
+          font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important; 
+          -webkit-font-smoothing: antialiased;
+        }
+      `}</style>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-5">
+      {/* Cabeçalho da Página: Visível apenas no Desktop */}
+      <div className="hidden xl:block">
+        <PageHeader titulo={celula.nome} breadcrumb={breadcrumb} onNavigate={onFechar}>
+          <button type="button" onClick={onFechar} className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-semibold">Voltar</button>
+        </PageHeader>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-0 xl:gap-5">
         <aside className="space-y-4">
           <Card className="p-0 overflow-hidden shadow-sm">
             <div className="relative h-48 w-full bg-slate-100 border-b border-slate-100">
+              {/* BOTÃO VOLTAR NA CAPA: Apenas em telas pequenas para economizar espaço */}
+              <button 
+                type="button" 
+                onClick={onFechar} 
+                className="xl:hidden absolute top-4 left-4 z-20 bg-[#1e3a8a] text-white p-2 rounded-xl shadow-lg hover:bg-[#1e40af] transition-all cursor-pointer group"
+                title="Voltar para a lista"
+              >
+                <svg className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+
               {imagemPreview || celula.imagem_url ? (
                 <img
                   src={imagemPreview || celula.imagem_url}
@@ -1166,6 +1279,7 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
               )}
             </div>
 
+            {/* FOTO DO LÍDER RESTAURADA (OVERLAY) */}
             <div className="relative px-5 pb-5">
               <div className="-mt-12 flex items-end gap-3">
                 <div className="p-1 bg-white rounded-2xl shadow-xl border border-slate-100">
@@ -1192,216 +1306,335 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
             )}
           </Card>
 
-          <Card className="p-0">
-            <CardHeader titulo="Liderança" />
-            <div className="p-5 space-y-3 text-sm">
-              <InfoLinha label="Co-Lider" valor={nomePessoa(pessoas, celula.co_lider_id)} />
-              <InfoLinha label="Auxiliar" valor={nomePessoa(pessoas, celula.auxiliar_id)} />
-            </div>
-          </Card>
-
-          <Card className="p-0">
-            <CardHeader titulo="Agenda e Local" />
-            <div className="p-5 space-y-3 text-sm">
-              <InfoLinha label="Dia da Semana" valor={celula.dia_semana || 'Nao informado'} />
-              <InfoLinha label="Horario" valor={celula.horario || 'Nao informado'} />
-              <InfoLinha label="Zona" valor={nomeZona(zonas, celula.zona_id)} />
-              <InfoLinha label="Bairro" valor={celula.bairro || 'Nao informado'} />
-              <InfoLinha label="Endereco" valor={`${celula.endereco || ''}, ${celula.numero || ''}`} />
-            </div>
-          </Card>
+          {/* Cards de Liderança e Agenda: Fixos na lateral apenas no Desktop */}
+          <div className="hidden xl:block space-y-4">
+            <Card className="p-0">
+              <CardHeader titulo="Liderança" />
+              <div className="p-5 space-y-3 text-sm">
+                <InfoLinha label="Líder Principal" valor={lider?.nome || 'Líder não definido'} />
+                <InfoLinha label="Co-Líder" valor={nomePessoa(pessoas, celula.co_lider_id)} />
+                <InfoLinha label="Auxiliar" valor={nomePessoa(pessoas, celula.auxiliar_id)} />
+              </div>
+            </Card>
+            <Card className="p-0">
+              <CardHeader titulo="Agenda e Local" />
+              <div className="p-5 space-y-3 text-sm">
+                <InfoLinha label="Dia da Semana" valor={celula.dia_semana || 'Nao informado'} />
+                <InfoLinha label="Horario" valor={celula.horario || 'Nao informado'} />
+                <InfoLinha label="Zona" valor={nomeZona(zonas, celula.zona_id)} />
+                <InfoLinha label="Bairro" valor={celula.bairro || 'Nao informado'} />
+                <InfoLinha label="Endereco" valor={`${celula.endereco || ''}, ${celula.numero || ''}`} />
+              </div>
+            </Card>
+          </div>
         </aside>
 
-        <section className="space-y-5">
-          <Card className="p-0">
-            <CardHeader
-              titulo={(
-                <span className="flex items-center gap-2 cursor-pointer" onClick={() => setListaAberta(!listaAberta)} onKeyDown={() => {}} role="button" tabIndex={0}>
-                  Pessoas na Célula
-                  <span className="text-xs bg-blue-50 text-[#2563eb] px-2 py-0.5 rounded-full font-medium">{membros.length}</span>
-                  <span className="text-[var(--text-muted)] text-xs font-normal">{listaAberta ? '▲' : '▼'}</span>
-                </span>
-              )}
-              subtitulo="Gerenciamento de membros vinculados diretamente."
-              children={!isMembro && pessoasDisponiveis.length > 0 ? (
-                <button type="button" onClick={() => setIsModalAberto(true)} className="btn-primary text-xs font-semibold px-3 py-1.5 rounded-xl shrink-0 whitespace-nowrap">
-                  + Adicionar Pessoas
-                </button>
-              ) : null}
-            />
+        <section className="space-y-5 xl:space-y-5">
+          {/* NAVEGAÇÃO POR ABAS COM ÍCONES PROFISSIONAIS */}
+          <div className="flex items-center justify-between border-b border-slate-100 bg-white px-2 pt-2 gap-3 rounded-t-2xl shadow-sm">
+            <div className="w-full flex overflow-x-auto scrollbar-hide justify-between xl:gap-1">
+              {[
+                {
+                  id: 'informacoes',
+                  label: 'Informações',
+                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>,
+                  cor: '#055F6D',
+                  badge: null,
+                  mobileOnly: true // Marcamos para ocultar no desktop
+                },
+                { 
+                  id: 'membros', 
+                  label: 'Membros', 
+                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>, 
+                  cor: '#2563eb', 
+                  badge: membros.length 
+                },
+                { 
+                  id: 'reunioes', 
+                  label: 'Reuniões', 
+                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>, 
+                  cor: '#055F6D', 
+                  badge: relatorios.length 
+                },
+                { 
+                  id: 'filhas', 
+                  label: 'Gerações', 
+                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>, 
+                  cor: '#8b5cf6', 
+                  badge: celulasFilhas.length 
+                },
+              ].map((tab) => {
+                const isAtivo = abaAtiva === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setAbaAtiva(tab.id)}
+                    className={`flex-1 flex items-center justify-center py-3 rounded-t-xl text-[11px] font-black uppercase tracking-wider transition-all shrink-0 border-b-2 cursor-pointer xl:justify-center xl:gap-1.5 xl:px-4 xl:py-2.5 xl:font-['Roboto']
+                      ${tab.mobileOnly ? 'xl:hidden' : ''} ${
+                      isAtivo ? 'bg-slate-50 text-slate-900' : 'text-slate-400 border-transparent hover:text-slate-600 hover:bg-slate-50/50'
+                    }`}
+                    style={{ borderBottomColor: isAtivo ? tab.cor : 'transparent' }}
+                  >
+                    <span style={{ color: isAtivo ? tab.cor : undefined }} className="scale-[2.2] xl:scale-100">{tab.icon}</span>
+                    <span className="hidden xl:block">{tab.label}</span>
+                    <span className={`hidden xl:inline-block text-[9px] font-black px-1.5 py-0.5 rounded-full ml-0.5 sm:ml-1 ${isAtivo ? 'text-white' : 'bg-slate-100 text-slate-400'}`} style={isAtivo ? { backgroundColor: tab.cor } : {}}>
+                      {tab.badge}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-            {listaAberta && (
-              <div className="p-4 border-t border-[var(--border)] max-h-96 overflow-y-auto space-y-3">
-                {membros.length === 0 ? (
-                  <p className="p-5 text-sm text-[var(--text-muted)] italic">Nenhum membro vinculado a esta célula ainda.</p>
+          </div>
+
+          {/* Botões de Ação (abaixo das abas, full-width em mobile) */}
+          <div className="px-2 sm:px-0">
+            {abaAtiva === 'membros' && !isMembro && (
+              <button type="button" onClick={() => setIsModalAberto(true)} className="w-full sm:w-auto px-4 py-2 bg-[#2563eb] text-white rounded-xl text-xs font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">
+                + Vincular Pessoas
+              </button>
+            )}
+            {abaAtiva === 'reunioes' && !isMembro && (
+              <button type="button" onClick={() => setIsModalReuniaoAberto(true)} className="w-full sm:w-auto px-4 py-2 bg-[#055F6D] text-white rounded-xl text-xs font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">
+                📅 Nova Reunião
+              </button>
+            )}
+          </div>
+
+          {abaAtiva === 'informacoes' && (
+            <div className="xl:hidden space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <Card className="p-0">
+                <CardHeader titulo="Liderança" />
+                <div className="p-5 space-y-3 text-sm">
+                  <InfoLinha label="Líder Principal" valor={lider?.nome || 'Líder não definido'} />
+                  <InfoLinha label="Co-Líder" valor={nomePessoa(pessoas, celula.co_lider_id)} />
+                  <InfoLinha label="Auxiliar" valor={nomePessoa(pessoas, celula.auxiliar_id)} />
+                </div>
+              </Card>
+              <Card className="p-0">
+                <CardHeader titulo="Agenda e Local" />
+                <div className="p-5 space-y-3 text-sm">
+                  <InfoLinha label="Dia da Semana" valor={celula.dia_semana || 'Nao informado'} />
+                  <InfoLinha label="Horario" valor={celula.horario || 'Nao informado'} />
+                  <InfoLinha label="Zona" valor={nomeZona(zonas, celula.zona_id)} />
+                  <InfoLinha label="Bairro" valor={celula.bairro || 'Nao informado'} />
+                  <InfoLinha label="Endereco" valor={`${celula.endereco || ''}, ${celula.numero || ''}`} />
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {abaAtiva === 'membros' && (
+            <Card className="p-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="p-1 border-t border-[var(--border)] lg:max-h-none lg:overflow-y-visible">
+                  {membros.length === 0 ? (
+                    <p className="p-10 text-center text-sm text-[var(--text-muted)] italic">Nenhum membro vinculado a esta célula ainda.</p>
+                  ) : (
+                    <table className="table-mib">
+                      <thead className="hidden md:table-header-group">
+                        <tr>
+                          <th>Membro</th>
+                          <th>Função</th>
+                          {!isMembro && <th className="text-right">Ação</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {membros.map((membro) => (
+                          <tr key={membro.id} className="group">
+                            <td>
+                              <div className="flex items-center gap-3">
+                                <Avatar pessoa={membro} tamanho="w-8 h-8" />
+                                <span className="font-medium text-[var(--text-heading)] text-sm">{membro.nome}</span>
+                              </div>
+                            </td>
+                            <td className="hidden md:table-cell text-[var(--text-muted)] text-xs">{membro.cargo || 'Membro'}</td>
+                            {!isMembro && (
+                              <td className="text-right pr-6">
+                              <button
+                                type="button"
+                                disabled={excluindoId === membro.id}
+                                onClick={() => handleRemoverPessoa(membro.id, membro.nome)}
+                                className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer disabled:opacity-50"
+                                title="Remover da célula"
+                              >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+            </Card>
+          )}
+
+          {abaAtiva === 'reunioes' && (
+            <Card className="p-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="max-h-[60vh] overflow-y-auto">
+                {relatorios.length === 0 ? (
+                  <p className="p-10 text-center text-sm text-[var(--text-muted)] italic">Nenhum relatório enviado para esta célula.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    {/* LISTA EM TABELA - Visível apenas em Desktop/Tablet */}
+                    <table className="table-mib hidden md:table">
+                      <thead>
+                        <tr>
+                          <th>Data</th>
+                          <th>Membros</th>
+                          <th>Visitantes</th>
+                          <th>Oferta</th>
+                          {!isMembro && <th className="text-right">Ação</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {relatorios.map((relatorio) => (
+                          <tr
+                            key={relatorio.id}
+                            onClick={() => onVerReuniao(relatorio)}
+                            className="hover:bg-slate-50 cursor-pointer transition"
+                          >
+                            <td className="font-medium text-[var(--text-heading)]">
+                              {relatorio.data_reuniao ? new Date(`${relatorio.data_reuniao}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
+                            </td>
+                            <td>
+                              <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 text-xs font-medium">
+                                {relatorio.presencas_relatorio?.[0]?.count || 0} 
+                              </span>
+                            </td>
+                            <td>
+                              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-medium">
+                                {Number(relatorio.visitantes_presentes || 0)}
+                              </span>
+                            </td>
+                            <td className="text-[var(--text-primary)]">
+                              R$ {valorOfertaRelatorio(relatorio).toFixed(2)}
+                            </td>
+                            {!isMembro && (
+                              <td className="text-right pr-6">
+                              <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  title="Visualizar e Editar"
+                                  onClick={(e) => { e.stopPropagation(); onVerReuniao(relatorio); }}
+                                  className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
+                                >
+                                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                                <button
+                                  type="button"
+                                  title="Excluir Reunião"
+                                  onClick={(e) => handleExcluirReuniao(e, relatorio.id)}
+                                  className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
+                                >
+                                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    {/* LISTA COMPACTA - Visível apenas em Mobile */}
+                    <div className="md:hidden divide-y divide-slate-100 border-t border-slate-50">
+                      {relatorios.map((relatorio) => (
+                        <div
+                          key={relatorio.id}
+                          onClick={() => onVerReuniao(relatorio)}
+                          className="p-4 flex items-center justify-between hover:bg-slate-50 transition active:scale-[0.98] cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between flex-1 pr-4"> 
+                            <div className="flex flex-col"> {/* Agrupa data e tema verticalmente */}
+                              <p className="text-sm font-black text-slate-800 tracking-tight">
+                                {relatorio.data_reuniao ? new Date(`${relatorio.data_reuniao}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
+                              </p>
+                              <p className="text-xs text-slate-500 mt-1">
+                                {extrairMetadadosReuniao(relatorio.observacoes).tema || 'Sem tema'}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-6"> {/* Membros e Visitantes à direita */}
+                              <div className="flex flex-col items-center">
+                                <span className="text-[20px] font-black text-blue-600 leading-none">{relatorio.presencas_relatorio?.[0]?.count || 0}</span>
+                                <span className="text-[10px] font-black uppercase text-blue-600 mt-1">Membros</span>
+                              </div>
+                              <div className="flex flex-col items-center">
+                                <span className="text-[20px] font-black text-amber-600 leading-none">{Number(relatorio.visitantes_presentes || 0)}</span>
+                                <span className="text-[10px] font-black uppercase text-amber-600 mt-1">Visitantes</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                            {!isMembro && (
+                              <>
+                                <button 
+                                  type="button" 
+                                  onClick={(e) => handleExcluirReuniao(e, relatorio.id)}
+                                  className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition"
+                                >
+                                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
+
+          {abaAtiva === 'filhas' && (
+            <Card className="p-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="overflow-x-auto border-t border-[var(--border)]">
+                {celulasFilhas.length === 0 ? (
+                  <p className="p-10 text-center text-sm text-[var(--text-muted)] italic">Nenhuma célula filha vinculada.</p>
                 ) : (
                   <table className="table-mib">
                     <thead>
                       <tr>
-                        <th>Membro</th>
-                        <th>Função</th>
-                        {!isMembro && <th className="text-right">Ação</th>}
+                        <th>Célula</th>
+                        <th>Líder</th>
+                        <th>Agenda</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {membros.map((membro) => (
-                        <tr key={membro.id} className="group">
+                      {celulasFilhas.map((filha) => (
+                        <tr 
+                          key={filha.id} 
+                          onClick={() => setCelulaSelecionadaId(filha.id)}
+                          className="cursor-pointer hover:bg-slate-50 transition"
+                        >
                           <td>
                             <div className="flex items-center gap-3">
-                              <Avatar pessoa={membro} tamanho="w-8 h-8" />
-                              <span className="font-medium text-[var(--text-heading)] text-sm">{membro.nome}</span>
+                              <AvatarCelula celula={filha} />
+                              <span className="font-semibold text-sm text-slate-700">{filha.nome}</span>
                             </div>
                           </td>
-                          <td className="text-[var(--text-muted)] text-xs">{membro.cargo || 'Membro'}</td>
-                          {!isMembro && (
-                            <td className="text-right pr-6">
-                            <button
-                              type="button"
-                              disabled={excluindoId === membro.id}
-                              onClick={() => handleRemoverPessoa(membro.id, membro.nome)}
-                              className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer disabled:opacity-50"
-                              title="Remover da célula"
-                            >
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
+                          <td className="text-xs text-slate-500">{nomePessoa(pessoas, filha.lider_id)}</td>
+                          <td className="text-xs text-slate-400">
+                            {filha.dia_semana || '—'} · {filha.horario || '—'}
                           </td>
-                          )}
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 )}
               </div>
-            )}
-          </Card>
-
-          <Card className="p-0">
-            <CardHeader
-              titulo="Histórico de reuniões"
-              subtitulo="Relatórios de encontros anteriores desta célula."
-              children={!isMembro && (
-                <button type="button" onClick={() => setIsModalReuniaoAberto(true)} className="btn-primary text-xs font-semibold px-3 py-1.5 rounded-xl shrink-0 whitespace-nowrap">
-                  📅 Nova Reunião
-                </button>
-              )}
-            />
-
-            <div className="max-h-80 overflow-y-auto">
-              {relatorios.length === 0 ? (
-                <p className="p-5 text-sm text-[var(--text-muted)] italic">Nenhum relatório enviado para esta célula.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="table-mib">
-                    <thead>
-                      <tr>
-                        <th>Data</th>
-                        <th>Membros</th>
-                        <th>Visitantes</th>
-                        <th>Oferta</th>
-                        {!isMembro && <th className="text-right">Ação</th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {relatorios.map((relatorio) => (
-                        <tr
-                          key={relatorio.id}
-                          onClick={() => onVerReuniao(relatorio)}
-                          className="hover:bg-slate-50 cursor-pointer transition"
-                        >
-                          <td className="font-medium text-[var(--text-heading)]">
-                            {relatorio.data_reuniao ? new Date(`${relatorio.data_reuniao}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
-                          </td>
-                          <td>
-                            <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 text-xs font-medium">
-                              {relatorio.presencas_relatorio?.[0]?.count || 0} 
-                            </span>
-                          </td>
-                          <td>
-                            <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-medium">
-                              {Number(relatorio.visitantes_presentes || 0)}
-                            </span>
-                          </td>
-                          <td className="text-[var(--text-primary)]">
-                            R$ {valorOfertaRelatorio(relatorio).toFixed(2)}
-                          </td>
-                          {!isMembro && (
-                            <td className="text-right pr-6">
-                            <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                type="button"
-                                title="Visualizar e Editar"
-                                onClick={(e) => { e.stopPropagation(); onVerReuniao(relatorio); }}
-                                className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
-                              >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              </button>
-                              <button
-                                type="button"
-                                title="Excluir Reunião"
-                                onClick={(e) => handleExcluirReuniao(e, relatorio.id)}
-                                className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
-                              >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
-                          </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </Card>
-
-          <Card className="p-0">
-            <CardHeader 
-              titulo="Células Filhas (Gerações)" 
-              subtitulo={`${celulasFilhas.length} novas células multiplicadas a partir desta.`}
-            />
-            <div className="overflow-x-auto border-t border-[var(--border)]">
-              {celulasFilhas.length === 0 ? (
-                <p className="p-5 text-sm text-[var(--text-muted)] italic">Nenhuma célula filha vinculada.</p>
-              ) : (
-                <table className="table-mib">
-                  <thead>
-                    <tr>
-                      <th>Célula</th>
-                      <th>Líder</th>
-                      <th>Agenda</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {celulasFilhas.map((filha) => (
-                      <tr 
-                        key={filha.id} 
-                        onClick={() => setCelulaSelecionadaId(filha.id)}
-                        className="cursor-pointer hover:bg-slate-50 transition"
-                      >
-                        <td>
-                          <div className="flex items-center gap-3">
-                            <AvatarCelula celula={filha} />
-                            <span className="font-semibold text-sm text-slate-700">{filha.nome}</span>
-                          </div>
-                        </td>
-                        <td className="text-xs text-slate-500">{nomePessoa(pessoas, filha.lider_id)}</td>
-                        <td className="text-xs text-slate-400">
-                          {filha.dia_semana || '—'} · {filha.horario || '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </Card>
+            </Card>
+          )}
         </section>
       </div>
 
@@ -1455,13 +1688,13 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
         />
       )}
 
-    </>
+    </div>
   );
 }
 
 function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
   const [editData, setEditData] = useState(reuniao.data_reuniao || '');
-  const [editOferta, setEditOferta] = useState(valorOfertaRelatorio(reuniao));
+  const [editOferta, setEditOferta] = useState(reuniao?.oferta ? mascaraMoeda(Number(reuniao.oferta) * 100) : '');
   const [editTema, setEditTema] = useState('');
   const [editObservacoes, setEditObservacoes] = useState('');
   const [editPresencas, setEditPresencas] = useState({});
@@ -1474,11 +1707,12 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
     setEditTema(tema);
     setEditObservacoes(observacao);
     setEditNomesVisitantes(nomesVisitantes);
+    setEditOferta(reuniao.oferta ? mascaraMoeda(Number(reuniao.oferta) * 100) : '');
 
     async function buscarPresencas() {
       const { data } = await supabase.from('presencas_relatorio').select('pessoa_id').eq('relatorio_id', reuniao.id);
       const pres = {};
-      membros.forEach(m => pres[m.id] = data?.some(p => p.pessoa_id === m.id) ?? true);
+      membros.forEach(m => pres[m.id] = data?.some(p => p.pessoa_id === m.id) ?? false);
       setEditPresencas(pres);
     }
     buscarPresencas();
@@ -1494,7 +1728,7 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
         .update({
           data_reuniao: editData,
           visitantes_presentes: editNomesVisitantes.length,
-          oferta: Number(editOferta) || 0,
+          oferta: desmascararMoeda(editOferta) || 0,
           observacoes: observacoesFinal,
         })
         .eq('id', reuniao.id);
@@ -1520,8 +1754,16 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
 
   const handleAdicionarVisitanteEdicao = () => {
     if (!editNovoVisitante.trim()) return;
-    setEditNomesVisitantes(prev => [...prev, editNovoVisitante.trim()]);
-    setEditNovoVisitante('');
+    const nomes = editNovoVisitante.split(',')
+      .map(n => {
+        const trimmed = n.trim();
+        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase(); // Capitaliza o primeiro e o resto em minúsculas
+      })
+      .filter(n => n !== "");
+    if (nomes.length > 0) {
+      setEditNomesVisitantes(prev => [...prev, ...nomes]);
+      setEditNovoVisitante('');
+    }
   };
 
   const togglePresencaEdicao = (id) => {
@@ -1577,12 +1819,10 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
                   <div>
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Valor da Oferta (R$)</label>
                     <input
-                      type="number"
-                      step="0.01"
-                      min="0"
+                      type="text"
                       value={editOferta}
-                      onChange={(e) => setEditOferta(e.target.value)}
-                      placeholder="0.00"
+                      onChange={(e) => setEditOferta(mascaraMoeda(e.target.value))}
+                      placeholder="R$ 0,00"
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                   </div>
@@ -1605,13 +1845,7 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
                         placeholder="Digite o nome completo do visitante"
                         className="flex-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-800 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                       />
-                      <button
-                        type="button"
-                        onClick={handleAdicionarVisitanteEdicao}
-                        className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-3 py-1.5 rounded-xl transition shrink-0"
-                      >
-                        + Adicionar
-                      </button>
+                      <button type="button" onClick={handleAdicionarVisitanteEdicao} className="btn-primary text-xs px-3 rounded-xl cursor-pointer">+</button>
                     </div>
                   </div>
 
@@ -1628,56 +1862,49 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lista de Presença dos Membros</label>
-                  <div className="border border-slate-100 rounded-xl divide-y divide-slate-50 max-h-40 overflow-y-auto p-2 bg-slate-50/50">
+                  <div className="space-y-2 sm:space-y-0">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Chamada da Célula</label>
+                    <div className="sm:border sm:border-slate-100 sm:rounded-2xl sm:p-2 sm:bg-slate-50/30 sm:space-y-1">
                     {membros.length === 0 ? (
                       <p className="text-xs text-slate-400 italic p-2">Nenhum membro vinculado para fazer a chamada.</p>
                     ) : (
                       membros.map((m) => {
                         const isPresente = !!editPresencas[m.id];
                         return (
-                          <div
-                            key={m.id}
-                            onClick={() => togglePresencaEdicao(m.id)}
-                            className="flex items-center justify-between py-2 px-3 hover:bg-white rounded-lg cursor-pointer transition select-none"
+                          <div key={m.id} 
+                            onClick={() => togglePresencaEdicao(m.id)} 
+                            className="mb-1 bg-white border border-slate-100 rounded-xl p-3 shadow-sm
+                                       flex items-center justify-between cursor-pointer transition active:scale-[0.98] select-none
+                                       sm:mb-0 sm:bg-transparent sm:border-transparent sm:shadow-none sm:p-2 sm:hover:bg-white sm:hover:shadow-sm sm:hover:border-slate-100"
                           >
-                            <span className="text-xs font-semibold text-slate-800">{m.nome}</span>
-                            <span className={`text-[10px] font-bold px-2 py-1 rounded-md tracking-wider ${isPresente ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
-                              {isPresente ? '✅ PRESENTE' : '❌ AUSENTE'}
-                            </span>
+                            <div className="flex items-center gap-3">
+                              <Avatar pessoa={m} tamanho="w-8 h-8" />
+                              <span className="text-sm font-bold text-slate-700">{m.nome}</span>
+                            </div>
+                            <input 
+                              type="checkbox" 
+                              checked={isPresente} 
+                              readOnly
+                              className="w-5 h-5 rounded-md border-slate-300 text-[#055F6D] focus:ring-[#055F6D]/20 cursor-pointer"
+                            />
                           </div>
                         );
                       })
                     )}
                   </div>
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Observações / Testemunhos</label>
-                  <textarea
-                    value={editObservacoes}
-                    onChange={(e) => setEditObservacoes(e.target.value)}
-                    rows="2"
-                    placeholder="Escreva como foi o mover de Deus na célula, decisões..."
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
+                  <label className="block text-xs font-medium mb-1">Observações</label>
+                  <textarea value={editObservacoes} onChange={(e) => setEditObservacoes(e.target.value)} rows={2} className="w-full px-3 py-2 border rounded-xl text-sm" />
                 </div>
 
               </div>
 
-              <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={onFechar}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 rounded-xl transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={salvandoEdicao}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition disabled:bg-slate-300 shadow-sm flex items-center gap-1 cursor-pointer"
-                >
+              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-end gap-2 shrink-0">
+                <button type="button" onClick={onFechar} className="px-4 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-600 font-semibold hover:bg-slate-100 transition cursor-pointer">Cancelar</button>
+                <button type="submit" disabled={salvandoEdicao} className="btn-primary text-xs font-semibold px-5 py-2 rounded-xl disabled:opacity-50 transition shadow-sm cursor-pointer">
                   {salvandoEdicao ? 'Salvando...' : '💾 Salvar Alterações'}
                 </button>
               </div>

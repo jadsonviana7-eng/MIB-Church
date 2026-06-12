@@ -84,20 +84,23 @@ export default function SidebarVinculos({ pessoaId, pessoaData, matriculasEscola
             const nomeIns = normalizar(extrairCampo(dados, ['nome', 'nome completo', 'participante'], ['nome', 'completo', 'participante'], ['celula', 'lider', 'pai', 'mae', 'sobrenome']));
 
             const bateEmail = !!(emailMembro && emailIns && emailIns === emailMembro);
-            
-            // Comparação inteligente de nomes
+
+            // Comparação de nome por palavras significativas (ignora preposições)
             const palavrasIgnoradas = new Set(['da', 'de', 'do', 'dos', 'das', 'e']);
             const getPalavras = (str) => str.split(' ').filter(p => p.length > 1 && !palavrasIgnoradas.has(p));
-            const pMembro = getPalavras(nomeMembro);
-            const pIns = getPalavras(nomeIns);
+            const pMembro = getPalavras(nomeMembro || '');
+            const pIns    = getPalavras(nomeIns || '');
+
+            // Regras: primeiro nome DEVE coincidir + ao menos 70% das palavras significativas batem
+            const primeiroNomeBate = pMembro[0] && pIns[0] && pMembro[0] === pIns[0];
             const coincidentes = pMembro.filter(p => pIns.includes(p));
-            
-            // Bate se e-mail coincide OU se o nome tem match parcial forte OU se um contém o outro
-            const bateNome = !!(nomeMembro && nomeIns && (
-              (pMembro.length >= 2 && pIns.length >= 2 && coincidentes.length >= Math.min(2, Math.floor(pMembro.length * 0.6))) ||
-              (nomeMembro.includes(nomeIns) && nomeIns.length > 5) ||
-              (nomeIns.includes(nomeMembro) && nomeMembro.length > 5)
-            ));
+            const percentual = pMembro.length > 0 ? coincidentes.length / pMembro.length : 0;
+            const bateNome = !!(
+              nomeMembro && nomeIns &&
+              pMembro.length >= 2 && pIns.length >= 2 &&
+              primeiroNomeBate &&
+              percentual >= 0.7
+            );
 
             return bateEmail || bateNome;
           });

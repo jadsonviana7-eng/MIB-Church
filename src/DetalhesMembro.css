@@ -1,0 +1,162 @@
+/* ── Member Header ── */
+.member-header {
+  padding: 1.5rem 1.75rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 0px solid #e2e8f0;
+  margin-bottom: 0;
+}
+
+/* ── Ficha Layout: coluna (tabs em cima, body embaixo) ── */
+.ficha-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  min-height: 60vh;
+}
+
+/* ── Tabs Bar ── */
+.tabs-sidebar {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  width: 100%;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 4px;
+  gap: 2px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  margin: 0 0 1rem 0;
+}
+
+.tabs-sidebar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Ficha Body: form + sidebar ── */
+.ficha-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 1rem;
+}
+
+/* Mobile */
+@media (max-width: 1023px) {
+  .ficha-content {
+    padding: 1rem 0;
+  }
+  .vinculos-sidebar {
+    display: none !important;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .ficha-body {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .tabs-sidebar {
+    margin-bottom: 1rem;
+  }
+  .ficha-content {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+  }
+  .vinculos-sidebar {
+    display: block !important;
+    width: 300px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 1rem;
+    align-self: flex-start;
+  }
+}
+
+/* ── Tab Items ── */
+.tab-item {
+  flex: 1;
+  border-radius: 10px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.5rem 0.5rem;
+  white-space: nowrap;
+  min-width: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab-item-active {
+  background: #055F6D;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(5,95,109,0.18);
+}
+
+.tab-item-inactive {
+  color: #64748b;
+}
+
+.tab-item-inactive:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Mobile: ícone em cima do label */
+@media (max-width: 1023px) {
+  .tab-item {
+    flex-direction: column;
+    gap: 3px;
+    padding: 0.4rem 0.25rem;
+  }
+  .tab-label { font-size: 0px; }
+  .tab-icon svg { width: 20px; height: 20px; }
+}
+
+/* Desktop: ícone ao lado do label */
+@media (min-width: 1024px) {
+  .tab-item {
+    flex-direction: row;
+    padding: 0.5rem 0.75rem;
+    gap: 6px;
+  }
+  .tab-label { font-size: 12px; font-weight: 600; }
+}
+
+/* ── Section Groups ── */
+.section-group {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 0px solid #e8edf2;
+  overflow: hidden;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  margin: 0;
+}
+
+.section-subtitle {
+  font-size: 11px;
+  color: #94a3b8;
+  padding: 0 1.25rem 0.5rem;
+  margin: 0;
+}
+
+.section-body {
+  padding: 1rem 1.25rem 1.25rem;
+}

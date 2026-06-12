@@ -117,7 +117,7 @@ export default function TelaConfiguracoes({ onFechar }) {
   }
 
   return (
-    <div className="w-full max-w-3xl space-y-4">
+    <div className="w-full max-w-full sm:max-w-3xl space-y-4 px-2">
       <PageHeader titulo="Configurações" subtitulo="Dados institucionais, zonas geográficas e campos de atuação.">
         <button type="button" onClick={onFechar} className="px-4 py-2 rounded-xl border border-[var(--border)] text-xs font-medium">Fechar</button>
       </PageHeader>

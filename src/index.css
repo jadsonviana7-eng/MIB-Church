@@ -3,15 +3,15 @@
 @import "tailwindcss";
 
 :root {
-  --brand: #0f5b67;
+  --brand: #202046;
   --brand-light: #e6f3f5;
-  --brand-dark: #083f49;
-  --brand-strong: #123c69;
-  --accent: #0d9488;
+  --brand-dark: #2F2F80;
+  --brand-strong: #383874;
+  --accent: #292991;
   --accent-soft: #ccfbf1;
   --warning: #f59e0b;
   --danger: #dc2626;
-  --success: #16a34a;
+  --success: #1643a3;
   --surface: #ffffff;
   --surface-muted: #f4f7fa;
   --surface-header: #e9eef3;
@@ -90,7 +90,7 @@ textarea:focus-visible {
 
 .card-header {
   background: var(--surface-header);
-  border-bottom: 2px solid #004fff;
+  border-bottom: 2px solid #2626B8;
   padding: 0.875rem 1.25rem;
 }
 
@@ -124,7 +124,7 @@ textarea:focus-visible {
 }
 
 .table-mib tbody tr:hover {
-  background: rgb(5 95 109 / 4%);
+  background: rgb(32 32 70 / 4%);
 }
 
 .table-mib tbody td {
@@ -179,7 +179,7 @@ textarea:focus-visible {
 
 .tab-btn.tabs-active {
   color: var(--brand);
-  border-bottom-color: #004fff;
+  border-bottom-color: #2626B8;
   font-weight: 600;
 }
 

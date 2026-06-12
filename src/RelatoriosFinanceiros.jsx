@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { PageHeader, Card, CardHeader, Avatar } from './ui';
 
-export default function RelatoriosFinanceiros() {
+export default function RelatoriosFinanceiros({ onVoltar }) {
   // Estados dos Filtros
   const [dataInicio, setDataInicio] = useState(() => {
     const d = new Date();
@@ -227,9 +227,11 @@ export default function RelatoriosFinanceiros() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mx-2">
       <div className="print:hidden">
-        <PageHeader titulo="Relatórios Financeiros" breadcrumb={['Financeiro', 'Relatórios']} />
+        <div className="hidden md:block">
+          <PageHeader titulo="Relatórios Financeiros" breadcrumb={['Resumo', 'Relatórios']} onNavigate={onVoltar} />
+        </div>
       </div>
       
       {/* 1. Elementos de Filtros (Sem Card) */}

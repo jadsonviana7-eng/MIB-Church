@@ -28,7 +28,7 @@ function TelaHistorico() {
   }, []);
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-4xl w-full">
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-full sm:max-w-4xl w-full px-2">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Histórico de Reuniões</h2>

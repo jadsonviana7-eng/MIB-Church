@@ -144,6 +144,17 @@ CREATE TABLE IF NOT EXISTS relatorios_celula (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- Formas de Pagamento Disponíveis (Com suporte a Carnê)
+CREATE TABLE IF NOT EXISTS formas_pagamento_disponiveis (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  nome TEXT NOT NULL UNIQUE,
+  descricao TEXT,
+  permite_parcelamento BOOLEAN DEFAULT false,
+  max_parcelas INT DEFAULT 1,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
 -- Transações Financeiras
 CREATE TABLE IF NOT EXISTS transacoes_financeiras (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,

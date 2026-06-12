@@ -14,6 +14,8 @@ export default function TelaConfiguracoes({ onFechar }) {
   const [novaZona, setNovaZona] = useState('');
   const [novaAtuacao, setNovaAtuacao] = useState('');
   const [carregando, setCarregando] = useState(false);
+  const [formasPagamentoDisponiveis, setFormasPagamentoDisponiveis] = useState([]);
+  const [novaFormaPagamento, setNovaFormaPagamento] = useState('');
 
   const [nomeIgreja, setNomeIgreja] = useState('');
   const [cnpj, setCnpj] = useState('');
@@ -43,6 +45,11 @@ export default function TelaConfiguracoes({ onFechar }) {
           setTelefone(mascaraTelefone(igr.telefone || ''));
         setEmailContato(igr.email_contato || '');
         setLogoUrl(igr.logo_url || '');
+      }
+      const { data: listFormasPagamento, error: erroFormasPagamento } = await supabase.from('formas_pagamento_disponiveis').select('*').order('nome');
+      if (erroFormasPagamento) console.warn('Tabela "formas_pagamento_disponiveis" não encontrada. Veja DATABASE_SCHEMA.md');
+      if (listFormasPagamento) {
+        setFormasPagamentoDisponiveis(listFormasPagamento);
       }
     } catch (err) {
       console.error('Erro ao carregar configurações:', err);
@@ -116,6 +123,26 @@ export default function TelaConfiguracoes({ onFechar }) {
     await carregarDadosConfiguracao();
   }
 
+  async function handleAdicionarFormaPagamento(e) {
+    e.preventDefault();
+    if (!novaFormaPagamento.trim()) return;
+    setCarregando(true);
+    const { error } = await supabase.from('formas_pagamento_disponiveis').insert([{ nome: novaFormaPagamento.trim() }]);
+    if (!error) {
+      setNovaFormaPagamento('');
+      await carregarDadosConfiguracao();
+    } else {
+      window.alert('Erro: ' + error.message);
+    }
+    setCarregando(false);
+  }
+
+  async function handleExcluirFormaPagamento(id) {
+    if (!window.confirm('Excluir esta forma de pagamento?')) return;
+    await supabase.from('formas_pagamento_disponiveis').delete().eq('id', id);
+    await carregarDadosConfiguracao();
+  }
+
   return (
     <div className="w-full max-w-full sm:max-w-3xl space-y-4 px-2">
       <PageHeader titulo="Configurações" subtitulo="Dados institucionais, zonas geográficas e campos de atuação.">
@@ -178,6 +205,22 @@ export default function TelaConfiguracoes({ onFechar }) {
             <div key={a.id} className="px-4 py-2.5 flex justify-between items-center text-sm">
               <span>{a.nome}</span>
               <button type="button" onClick={() => handleExcluirAtuacao(a.id)} className="text-xs text-rose-600">Excluir</button>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="p-0">
+        <CardHeader titulo="Formas de pagamento" subtitulo="Opções disponíveis para eventos pagos." />
+        <form onSubmit={handleAdicionarFormaPagamento} className="card-body-full border-b border-[var(--border)] flex gap-2">
+          <input type="text" placeholder="Ex: Boleto, Transferência Bancária..." value={novaFormaPagamento} onChange={(e) => setNovaFormaPagamento(e.target.value)} className="flex-1 px-3 py-2 border rounded-xl text-sm" disabled={carregando} />
+          <button type="submit" disabled={carregando || !novaFormaPagamento.trim()} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl shrink-0">+ Inserir forma</button>
+        </form>
+        <div className="divide-y divide-[var(--border)] max-h-48 overflow-y-auto">
+          {formasPagamentoDisponiveis.length === 0 ? <p className="p-4 text-xs text-[var(--text-muted)]">Nenhuma forma de pagamento cadastrada.</p> : formasPagamentoDisponiveis.map((f) => (
+            <div key={f.id} className="px-4 py-2.5 flex justify-between items-center text-sm">
+              <span>{f.nome}</span>
+              <button type="button" onClick={() => handleExcluirFormaPagamento(f.id)} className="text-xs text-rose-600">Excluir</button>
             </div>
           ))}
         </div>

@@ -1,9 +1,7 @@
 import React from 'react';
 import { PageHeader } from './ui';
 import EscalasMinisterial from './EscalasMinisterial';
-import RelatorioSemanal from './RelatorioSemanal';
-import CalculadoraTributos from './CalculadoraTributos';
-import QuizPersonalidade from './QuizPersonalidade';
+import CarneGenerator from './CarneGenerator';
 import PedidoOracao from './PedidoOracao';
 import MuralOracao from './MuralOracao';
 
@@ -21,6 +19,10 @@ export default function ModuloUtilitarios(props) {
 
   if (submenu === 'calculadora') {
     return <CalculadoraTributos />;
+  }
+
+  if (submenu === 'carne-generator') {
+    return <CarneGenerator />;
   }
 
   if (submenu === 'quiz') {
@@ -134,6 +136,25 @@ export default function ModuloUtilitarios(props) {
             <div className="mt-4 text-rose-600 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
               Ver Mural 
               <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </div>
+          </button>
+        )}
+
+        {/* Gerador de Carnê: Apenas para Admin e Pastor */}
+        {['admin', 'pastor'].includes(membroLogado?.permissao) && (
+          <button 
+            onClick={() => onNavigate('carne-generator')}
+            className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all text-left group"
+          >
+            <div className="w-14 h-14 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+              📄
+            </div>
+            <h3 className="font-bold text-slate-800 text-lg">Gerador de Carnê</h3>
+            <p className="text-slate-500 text-sm mt-1 leading-relaxed">
+              Crie carnês de pagamento personalizados para eventos ou contribuições.
+            </p>
+            <div className="mt-4 text-orange-600 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+              Abrir Gerador <span className="group-hover:translate-x-1 transition-transform">→</span>
             </div>
           </button>
         )}

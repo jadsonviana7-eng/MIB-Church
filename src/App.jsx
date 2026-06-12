@@ -108,7 +108,7 @@ export default function App() {
       if (modulo === 'Utilitários') {
         if (!bloco) return true;
         return !['Relatório Semanal', 'Mural de Orações'].includes(bloco);
-      }
+      } else if (bloco === 'Gerador de Carnê') return false; // Membros não acessam gerador de carnê
       if (modulo === 'Pessoas') {
         if (!bloco) return true;
         // Membros podem ver a listagem e aniversariantes (o RLS do banco filtrará os dados)
@@ -122,7 +122,7 @@ export default function App() {
     }
 
     if (p === 'pastor') {
-      return true; // Pastor visualiza todos os módulos e submenus
+      return true; // Pastor visualiza todos os módulos e submenus, incluindo Gerador de Carnê
     }
     
     if (p === 'secretaria' && ['Pessoas', 'Células', 'Utilitários', 'Agenda'].includes(modulo)) return true;
@@ -245,7 +245,8 @@ export default function App() {
     ['escalas', 'Escalas Ministerial'], 
     ['relatorio-semanal', 'Relatório Semanal'],
     ['calculadora', 'Calculadora de Tributos'],
-    ['quiz', 'Teste de Temperamento'],
+    ['quiz', 'Teste de Temperamento'], 
+    ['carne-generator', 'Gerador de Carnê'], // New item
     ['pedido-oracao', 'Pedido de Oração'],
     ['mural-oracao', 'Mural de Orações']
   ].filter(([id, label]) => hasAccess('Utilitários', label)), [hasAccess]);

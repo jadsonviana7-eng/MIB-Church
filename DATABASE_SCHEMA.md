@@ -62,6 +62,8 @@ CREATE TABLE zonas_moradia (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   nome TEXT NOT NULL UNIQUE,
   descricao TEXT,
+  permite_parcelamento BOOLEAN DEFAULT false,
+  max_parcelas INT DEFAULT 1,
   created_at TIMESTAMP DEFAULT now(),
   updated_at TIMESTAMP DEFAULT now()
 );

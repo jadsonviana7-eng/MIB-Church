@@ -311,13 +311,17 @@ const Icon = {
   ChevL:     () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
   ChevR:     () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
   Close:     () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  Edit:      () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
   Check:     () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
   Image:     () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
   User:      () => <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   MapPin:    () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
   ChevDown:  () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>,
   PlusCircle:() => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>,
+  ChevUp:    () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>,
+  Link:      () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
+  FileText:  () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+  Printer:   () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 0-2-2v-5a2 2 0 0 0 2-2h16a2 2 0 0 0 2 2v5a2 2 0 0 0-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
+  Edit:      () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
 };
 
 /* ─── helpers ─────────────────────────────────────────────────────────────── */
@@ -679,17 +683,23 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
                           <p className="ag-horiz-sub">{ev.subtitulo || ev.descricao || 'Sem descrição definida.'}</p>
                         </div>
                         <div className="ag-horiz-footer">
-                          <div className="flex items-center gap-4 text-[11px] font-bold text-slate-400 uppercase tracking-tight">
+                          <div className="flex items-center gap-2 sm:gap-4 text-[11px] font-bold text-slate-400 uppercase tracking-tight overflow-hidden">
                             <span className="flex items-center gap-1.5">
                               <Icon.Calendar /> 
                               {ev.data_inicio ? 
                                 `${ev.data_inicio.split('T')[0].split('-').reverse().join('/')}` : '—'}
                             </span>
-                            {ev.local_nome && <span className="flex items-center gap-1.5"><Icon.MapPin /> {ev.local_nome}</span>}
+                            {ev.local_nome && <span className="hidden sm:flex items-center gap-1.5 truncate"><Icon.MapPin /> {ev.local_nome}</span>}
                           </div>
-                          <button className="btn-ghost" style={{ padding: '6px 12px', fontSize: 11, background: 'var(--blue-50)', color: 'var(--blue-900)', border: 'none' }} onClick={(e) => { e.stopPropagation(); window.open(`${window.location.origin}/inscricao-evento/${ev.id}`, '_blank'); }}>
-                            Ficha de Inscrição ➔
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button className="btn-ghost" style={{ padding: '4px 10px', fontSize: 10, background: 'var(--blue-50)', color: 'var(--blue-900)', border: 'none', fontWeight: 'bold', minHeight: '34px' }} onClick={(e) => { e.stopPropagation(); window.open(`${window.location.origin}/inscricao-evento/${ev.id}`, '_blank'); }}>
+                              <div className="sm:hidden text-center leading-tight flex flex-col justify-center">
+                                <span>Ficha de</span>
+                                <span>Inscrição</span>
+                              </div>
+                              <span className="hidden sm:inline">Ficha de Inscrição</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -846,10 +856,48 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro }) {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center justify-between">
-        <button className="btn-ghost" onClick={onVoltar}><Icon.Back /> Voltar para lista</button>
-        <div className="flex gap-2">
-          <button className="btn-ghost" onClick={() => window.print()}>🖨️ Imprimir Lista</button>
-          <button className="btn-primary" onClick={onEditar}>✏️ Editar Evento</button>
+        <button className="btn-ghost !rounded-md text-xs sm:text-sm p-2 sm:px-4 sm:py-2" onClick={onVoltar}>
+          <Icon.Back /> 
+          <span className="hidden sm:inline">Voltar para lista</span>
+          <span className="sm:hidden">Voltar</span>
+        </button>
+        <div className="flex items-center justify-end gap-1 sm:gap-2">
+          <button
+            className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2" 
+            onClick={() => {
+              const url = `${window.location.origin}/inscricao-evento/${evento.id}`;
+              navigator.clipboard.writeText(url);
+              alert('Link do formulário copiado!');
+            }}
+            title="Copiar Link"
+          >
+            <Icon.Link />
+            <span className="hidden sm:inline ml-1">Copiar Link</span>
+          </button>
+          <button 
+            className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2" 
+            onClick={() => window.open(`${window.location.origin}/inscricao-evento/${evento.id}`, '_blank')}
+            title="Ver Form"
+          >
+            <Icon.FileText />
+            <span className="hidden sm:inline ml-1">Ver Form</span>
+          </button>
+          <button 
+            className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2" 
+            onClick={() => window.print()}
+            title="Imprimir Lista"
+          >
+            <Icon.Printer />
+            <span className="hidden sm:inline ml-1">Imprimir Lista</span>
+          </button>
+          <button 
+            className="btn-primary !rounded-md p-2.5 sm:px-4 sm:py-2" 
+            onClick={onEditar} 
+            title="Editar Evento"
+          >
+            <Icon.Edit />
+            <span className="hidden sm:inline ml-1">Editar Evento</span>
+          </button>
         </div>
       </div>
 
@@ -1053,6 +1101,8 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
   const [tipoValor, setTipoValor] = useState(eventoParaEditar?.valor_tipo || 'gratuito');
   const [vagas, setVagas] = useState(eventoParaEditar?.vagas || 0);
   const [valor, setValor] = useState(eventoParaEditar?.valor || 0);
+  const [valorTransporte, setValorTransporte] = useState(eventoParaEditar?.valor_transporte || 0);
+  const [formasDisponiveis, setFormasDisponiveis] = useState([]);
   const [formasPagamento, setFormasPagamento] = useState(eventoParaEditar?.formas_pagamento || []);
   const [programacao, setProgramacao] = useState(eventoParaEditar?.programacao || []);
   const [camposInscricao, setCamposInscricao] = useState(eventoParaEditar?.campos_inscricao || []);
@@ -1060,6 +1110,12 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
   const [localNome, setLocalNome] = useState(eventoParaEditar?.local_nome || '');
   const [localUrl, setLocalUrl] = useState(eventoParaEditar?.local_url || '');
   const [palestrantes, setPalestrantes] = useState(eventoParaEditar?.palestrantes || []);
+  // Estados para o Modal de Nova Forma de Pagamento
+  const [isModalNovaFormaAberta, setIsModalNovaFormaAberta] = useState(false);
+  const [novaFormaNome, setNovaFormaNome] = useState('');
+  const [novaFormaDesc, setNovaFormaDesc] = useState('');
+  const [novaFormaIsCarne, setNovaFormaIsCarne] = useState(false);
+  const [novaFormaMaxParcelas, setNovaFormaMaxParcelas] = useState(1);
 
   // Estados para Recorte de Fotos (Palestrantes)
   const [imageSrc, setImageSrc] = useState(null);
@@ -1071,9 +1127,59 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
 
   const canSave = useMemo(() => titulo.trim() !== '' && dataIni && dataFim, [titulo, dataIni, dataFim]);
 
+  const carregarFormasDisponiveis = useCallback(async () => {
+    const { data } = await supabase.from('formas_pagamento_disponiveis').select('*').order('nome');
+    if (data) {
+      setFormasDisponiveis(data);
+    } else {
+      setFormasDisponiveis([
+        { nome: 'Em espécie', permite_parcelamento: false }, 
+        { nome: 'Via Pix', permite_parcelamento: false }, 
+        { nome: 'Cartão de crédito', permite_parcelamento: true, max_parcelas: 12 }, 
+        { nome: 'Local do evento', permite_parcelamento: false }
+      ]);
+    }
+  }, []);
+
+  useEffect(() => {
+    carregarFormasDisponiveis();
+  }, [carregarFormasDisponiveis]);
+
   const onCropComplete = useCallback((_, pixels) => {
     setCroppedAreaPixels(pixels);
   }, []);
+
+  const handleAddNovaFormaGlobal = () => {
+    setNovaFormaNome('');
+    setNovaFormaDesc('');
+    setNovaFormaIsCarne(false);
+    setNovaFormaMaxParcelas(1);
+    setIsModalNovaFormaAberta(true);
+  };
+
+  const handleSalvarNovaForma = async (e) => {
+    e.preventDefault();
+    if (!novaFormaNome.trim()) return;
+
+    setEnviando(true);
+    try {
+      const { error } = await supabase.from('formas_pagamento_disponiveis').insert([{
+        nome: novaFormaNome.trim(),
+        descricao: novaFormaDesc.trim(),
+        permite_parcelamento: novaFormaIsCarne,
+        max_parcelas: novaFormaIsCarne ? novaFormaMaxParcelas : 1
+      }]);
+
+      if (error) throw error;
+      
+      await carregarFormasDisponiveis();
+      setIsModalNovaFormaAberta(false);
+    } catch (err) {
+      alert("Erro ao criar forma de pagamento: " + err.message);
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   const criarImagemRecortada = async () => {
     try {
@@ -1155,6 +1261,7 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
         titulo, subtitulo, data_inicio: dataIni, data_fim: dataFim,
         receber_notificacoes: notifEmail, email_notificacao: emailAlerta,
         valor_tipo: tipoValor, vagas: Number(vagas), valor: Number(valor),
+        valor_transporte: Number(valorTransporte),
         formas_pagamento: formasPagamento,
         programacao, campos_inscricao: camposInscricao,
         detalhes_ricos: detalhes, local_nome: localNome, local_url: localUrl,
@@ -1207,6 +1314,24 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
   const tipoTemOpcoes = (tipo) => ['checkbox', 'radio', 'seleção'].includes(tipo);
   const tipoEhTexto = (tipo) => tipo === 'texto';
   const tipoEhArea = (tipo) => tipo === 'área de texto';
+
+  const handleMoveCampoUp = (index) => {
+    if (index === 0) return;
+    const newCampos = [...camposInscricao];
+    const [movedItem] = newCampos.splice(index, 1);
+    newCampos.splice(index - 1, 0, movedItem);
+    setCamposInscricao(newCampos);
+  };
+
+  const handleMoveCampoDown = (index) => {
+    if (index === camposInscricao.length - 1) return;
+    const newCampos = [...camposInscricao];
+    const [movedItem] = newCampos.splice(index, 1);
+    newCampos.splice(index + 1, 0, movedItem);
+    setCamposInscricao(newCampos);
+  };
+
+
 
   return (
     <div className="agenda-root" style={{ maxWidth: 960, margin: '0 auto', paddingBottom: 60 }}>
@@ -1288,35 +1413,78 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                 <button className={`tab-btn ${tipoValor === 'pago' ? 'active' : ''}`} onClick={() => setTipoValor('pago')}>Pago</button>
               </div>
             </Campo>
-            <InputField label="Quantidade de Vagas" type="number" value={vagas} onChange={setVagas} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <InputField label="Quantidade de Vagas" type="number" value={vagas} onChange={setVagas} />
+              {tipoValor === 'pago' && <InputField label="Valor Base (R$)" type="number" value={valor} onChange={setValor} placeholder="0,00" />}
+            </div>
             {tipoValor === 'pago' && (
-              <InputField label="Valor da Inscrição (R$)" type="number" value={valor} onChange={setValor} placeholder="0,00" />
+              <InputField label="Valor do Transporte (Opcional R$)" type="number" value={valorTransporte} onChange={setValorTransporte} placeholder="0,00" />
             )}
             {tipoValor === 'pago' && (
               <div style={{ background: '#eff6ff', borderRadius: 12, border: '1.5px solid #bfdbfe', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <span className="campo-label" style={{ color: '#2563eb' }}>Formas de Pagamento</span>
-                {['Em espécie', 'Via Pix', 'Cartão de crédito', 'Local do evento'].map(f => (
-                  <div key={f}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className="campo-label" style={{ color: '#2563eb', marginBottom: 0 }}>Formas de Pagamento Aceitas</span>
+                  <button type="button" onClick={handleAddNovaFormaGlobal} className="btn-ghost" style={{ fontSize: 10, padding: '4px 10px', color: '#1e3a8a', background: '#fff' }}>
+                    + Novo Tipo
+                  </button>
+                </div>
+                
+                {formasDisponiveis.map(f => {
+                  const nomeForma = typeof f === 'object' ? f.nome : f;
+                  return (
+                  <div key={nomeForma} style={{ background: '#fff', padding: '10px 12px', borderRadius: 10, border: '1px solid #dbeafe' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={formasPagamento.some(i => i.tipo === f)}
+                      <input type="checkbox" checked={formasPagamento.some(i => i.tipo === nomeForma)}
                         onChange={e => e.target.checked
-                          ? setFormasPagamento([...formasPagamento, { tipo: f, instrucao: '' }])
-                          : setFormasPagamento(formasPagamento.filter(x => x.tipo !== f))}
+                          ? setFormasPagamento([...formasPagamento, { tipo: nomeForma, instrucao: '', permite_parcelas: f.permite_parcelamento, max_parcelas: f.max_parcelas }])
+                          : setFormasPagamento(formasPagamento.filter(x => x.tipo !== nomeForma))}
                         style={{ accentColor: '#1e3a8a', width: 14, height: 14 }} />
-                      <span style={{ fontSize: 13, fontWeight: 500, color: '#1e40af' }}>{f}</span>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: '#1e40af' }}>
+                        {nomeForma}
+                        {f.permite_parcelamento && <span style={{ fontSize: 10, marginLeft: 6, opacity: 0.6 }}>(Carnê/Parcelado até {f.max_parcelas}x)</span>}
+                      </span>
                     </label>
-                    {formasPagamento.some(i => i.tipo === f) && (
-                      <textarea
-                        placeholder={`Instruções para ${f}...`}
-                        value={formasPagamento.find(x => x.tipo === f)?.instrucao || ''}
-                        onChange={e => setFormasPagamento(formasPagamento.map(x => x.tipo === f ? { ...x, instrucao: e.target.value } : x))}
-                        className="campo-input"
-                        style={{ marginTop: 8, resize: 'none' }}
-                        rows="2"
-                      />
+                    {formasPagamento.some(i => i.tipo === nomeForma) && (
+                      <div style={{ marginTop: 8 }}>
+                        {nomeForma.toLowerCase().includes('cartão') ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 uppercase">URL da Plataforma (Link de Pagamento)</label>
+                              <input
+                                type="url"
+                                placeholder="https://pagamento.com/seu-link"
+                                value={formasPagamento.find(x => x.tipo === nomeForma)?.link_pagamento || ''}
+                                onChange={e => setFormasPagamento(formasPagamento.map(x => x.tipo === nomeForma ? { ...x, link_pagamento: e.target.value } : x))}
+                                className="campo-input"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 uppercase">Instruções Adicionais</label>
+                              <textarea 
+                                placeholder="Ex: Após o pagamento, envie o comprovante..."
+                                value={formasPagamento.find(x => x.tipo === nomeForma)?.instrucao || ''}
+                                onChange={e => setFormasPagamento(formasPagamento.map(x => x.tipo === nomeForma ? { ...x, instrucao: e.target.value } : x))}
+                                className="campo-input" 
+                                style={{ resize: 'none' }}
+                                rows="2"
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <textarea 
+                            placeholder={`Instruções para ${nomeForma} (Ex: Chave Pix ou dados bancários)...`}
+                            value={formasPagamento.find(x => x.tipo === nomeForma)?.instrucao || ''}
+                            onChange={e => setFormasPagamento(formasPagamento.map(x => x.tipo === nomeForma ? { ...x, instrucao: e.target.value } : x))}
+                            className="campo-input" 
+                            style={{ resize: 'none' }}
+                            rows="2"
+                          />
+                        )}
+                      </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1366,10 +1534,18 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
             {camposInscricao.length === 0 && (
               <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: 13 }}>Nenhum campo adicionado. Clique em "Inserir Campo" para começar.</div>
             )}
-            {camposInscricao.map((c, idx) => (
+            {camposInscricao.map((c, idx) => ( // Changed to use map directly
               <div key={c.id} style={{ background: '#f8fafc', border: '1.5px solid #e8edf5', borderRadius: 12, padding: 16 }}>
-                {/* linha superior: nome, obrigatório, tipo, excluir */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 160px 34px', gap: 12, alignItems: 'end' }}>
+                {/* linha superior: ordenação, nome, obrigatório, tipo, excluir */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 110px 160px auto', gap: 12, alignItems: 'end' }}>
+                  {/* Controles de Ordenação */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 2 }}>
+                    <button type="button" className="btn-icon" style={{ height: 22, width: 30, borderRadius: 6 }} 
+                      onClick={() => handleMoveCampoUp(idx)} disabled={idx === 0} title="Mover para cima"><Icon.ChevUp /></button>
+                    <button type="button" className="btn-icon" style={{ height: 22, width: 30, borderRadius: 6 }} 
+                      onClick={() => handleMoveCampoDown(idx)} disabled={idx === camposInscricao.length - 1} title="Mover para baixo"><Icon.ChevDown /></button>
+                  </div>
+
                   <InputField
                     label="Nome do Campo"
                     value={c.nome}
@@ -1575,6 +1751,41 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                 <button type="button" onClick={() => setMostrarCortador(false)} className="btn-ghost flex-1">Cancelar</button>
                 <button type="button" onClick={criarImagemRecortada} className="btn-primary flex-1 justify-center">Confirmar Recorte</button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL CRIAR NOVA FORMA DE PAGAMENTO */}
+        {isModalNovaFormaAberta && (
+          <div className="modal-overlay px-2 py-4">
+            <div className="modal-box" style={{ maxWidth: 450 }}>
+              <div className="p-6 border-b bg-slate-50 flex justify-between items-center">
+                <div>
+                  <h3 className="font-black text-slate-800 uppercase tracking-tight text-sm">Nova Forma de Pagamento</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Configuração Global</p>
+                </div>
+                <button type="button" className="btn-icon" onClick={() => setIsModalNovaFormaAberta(false)}><Icon.Close /></button>
+              </div>
+              <form onSubmit={handleSalvarNovaForma} className="p-6 space-y-4">
+                <InputField label="Nome da Forma" value={novaFormaNome} onChange={setNovaFormaNome} placeholder="Ex: Carnê, Boleto..." required />
+                <Campo label="Tipo de Recebimento">
+                  <div className="toggle-group">
+                    <button type="button" className={`toggle-btn ${!novaFormaIsCarne ? 'active' : ''}`} onClick={() => setNovaFormaIsCarne(false)}>À Vista</button>
+                    <button type="button" className={`toggle-btn ${novaFormaIsCarne ? 'active' : ''}`} onClick={() => setNovaFormaIsCarne(true)}>Carnê / Parcelado</button>
+                  </div>
+                </Campo>
+                {novaFormaIsCarne && (
+                  <InputField label="Máximo de Parcelas" type="number" value={novaFormaMaxParcelas} onChange={setNovaFormaMaxParcelas} />
+                )}
+                <InputField label="Descrição Interna" value={novaFormaDesc} onChange={setNovaFormaDesc} placeholder="Notas sobre esta forma..." />
+                
+                <div className="flex gap-2 pt-2">
+                  <button type="button" className="btn-ghost flex-1" onClick={() => setIsModalNovaFormaAberta(false)}>Cancelar</button>
+                  <button type="submit" disabled={enviando} className="btn-primary flex-1 justify-center">
+                    {enviando ? 'Criando...' : 'Salvar Tipo'}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}

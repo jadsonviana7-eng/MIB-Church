@@ -97,7 +97,9 @@ export default function PublicEventRegistration() {
             ...respostas,
             "Valor Total": formatarMoeda(valorTotal),
             "Inclui Transporte": incluirTransporte ? `Sim (${formatarMoeda(evento.valor_transporte)})` : "Não",
-            "Forma de Pagamento": detalhesPagamento
+            "Forma de Pagamento": detalhesPagamento,
+            "parcelas": parcelas[metodoPagamentoSelecionado] || 1,
+            "parcelas_pagas": []
           },
           status_pagamento: evento.valor_tipo === 'gratuito' ? 'pago' : 'pendente'
         }]);

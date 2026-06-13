@@ -40,6 +40,8 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
   const [turmaHorario, setTurmaHorario] = useState('Não definido');
   const [turmaStatus, setTurmaStatus] = useState('Preparando turma');
   const [turmaDescricao, setTurmaDescricao] = useState('');
+  const [mostrarFormNovaTurma, setMostrarFormNovaTurma] = useState(false);
+  const [mostrarFormNovoCurso, setMostrarFormNovoCurso] = useState(false);
 
   // Estados Edição Turmas
   const [editTurmaCursoId, setEditTurmaCursoId] = useState('');
@@ -490,10 +492,26 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
           {/* PAINEL LATERAL DE CADASTRO */}
           {podeEditar && (
           <Card className="p-0 overflow-hidden sticky top-24">
-            <CardHeader 
-              titulo="Novo Curso" 
-              className="!bg-slate-50 !border-[#202046]"
-            />
+            <div className="hidden md:block">
+              <CardHeader 
+                titulo="Novo Curso" 
+                className="!bg-slate-50 !border-[#202046]"
+              />
+            </div>
+
+            {/* Mobile: botão que expande o formulário (pushdown) */}
+            <button
+              type="button"
+              onClick={() => setMostrarFormNovoCurso(v => !v)}
+              className="md:hidden w-full flex items-center justify-between p-4 font-bold text-sm text-[#202046] bg-slate-50"
+            >
+              + Criar Novo Curso
+              <svg className={`w-4 h-4 transition-transform ${mostrarFormNovoCurso ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <div className={`${mostrarFormNovoCurso ? 'block' : 'hidden'} md:block`}>
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nome do Curso</label>
@@ -547,20 +565,21 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                 </button>
               </div>
             </form>
+            </div>
           </Card>
           )}
 
           {/* LISTA DE CURSOS EM TABELA */}
-          <Card className={`p-0 overflow-hidden ${!podeEditar ? 'col-span-full' : ''}`}>
-            <CardHeader titulo="Cursos Cadastrados" />
+          <Card className={`p-5 overflow-hidden ${!podeEditar ? 'col-span-full' : ''}`}>
+            <div className="hidden md:block"><CardHeader titulo="Cursos Cadastrados" /></div>
             <div className="overflow-x-auto">
               <table className="table-mib">
                 <thead>
                   <tr>
                     <th>Curso / Descrição</th>
-                    <th>Gestores</th>
-                    <th className="text-center">Início</th>
-                    <th className="text-right pr-6">Ações</th>
+                    <th className="hidden sm:table-cell">Gestores</th>
+                    <th className="text-center hidden sm:table-cell">Início</th>
+                    <th className="text-right pr-2 sm:pr-6">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -573,9 +592,9 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                       <tr key={escola.id}>
                         <td className="py-3">
                           <p className="font-bold text-sm text-slate-700">{escola.nome}</p>
-                          <p className="text-[11px] text-slate-400 line-clamp-1 max-w-[250px]">{escola.descricao || 'Sem descrição'}</p>
+                          <p className="text-[11px] text-slate-400 line-clamp-1 max-w-[180px] sm:max-w-[250px]">{escola.descricao || 'Sem descrição'}</p>
                         </td>
-                        <td>
+                        <td className="hidden sm:table-cell">
                           <div className="flex flex-wrap gap-1">
                             {escola.gestores_ids?.map(gid => {
                               const p = pessoas.find(item => item.id === gid);
@@ -587,10 +606,10 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                             })}
                           </div>
                         </td>
-                        <td className="text-center text-xs text-slate-500">
+                        <td className="text-center text-xs text-slate-500 hidden sm:table-cell">
                           {new Date(escola.data_criacao).toLocaleDateString()}
                         </td>
-                        <td className="text-right pr-6">
+                        <td className="text-right pr-2 sm:pr-6">
                           {podeEditar && (
                           <div className="flex justify-end gap-2">
                             <button onClick={() => handleEditar(escola)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Curso">
@@ -656,10 +675,34 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
           <div className="p-10 text-center animate-pulse text-slate-400">Buscando dados da turma...</div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start">
+          {/* Voltar (somente mobile) */}
+          <button
+            type="button"
+            onClick={() => onNavigate('resumo')}
+            className="md:hidden col-span-full -mb-2 text-[10px] font-black text-[#202046] uppercase hover:underline cursor-pointer text-left"
+          >
+            ← Voltar
+          </button>
+
           {/* PAINEL LATERAL DE CADASTRO */}
-          <Card className="p-0 overflow-hidden sticky top-24">
-            <CardHeader titulo="Nova Turma" className="!bg-slate-50 !border-[#202046]" />
-            <form onSubmit={handleCriarTurma} className="p-5 space-y-4">
+          <Card className="p-0 overflow-hidden sticky top-24 col-span-full lg:col-span-1">
+            {/* Mobile: botão que expande o formulário (pushdown) */}
+            <button
+              type="button"
+              onClick={() => setMostrarFormNovaTurma(v => !v)}
+              className="md:hidden w-full flex items-center justify-between p-4 font-bold text-sm text-[#202046] bg-slate-50"
+            >
+              + Adicionar Turma
+              <svg className={`w-4 h-4 transition-transform ${mostrarFormNovaTurma ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <div className={`${mostrarFormNovaTurma ? 'block' : 'hidden'} md:block`}>
+              <div className="hidden md:block">
+                <CardHeader titulo="Nova Turma" className="!bg-slate-50 !border-[#202046]" />
+              </div>
+              <form onSubmit={handleCriarTurma} className="p-5 space-y-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Curso / Escola</label>
                 <select 
@@ -713,21 +756,22 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
               <button type="submit" disabled={carregando} className="w-full py-2.5 rounded-xl bg-[#055F6D] hover:opacity-90 text-white text-sm font-bold transition shadow-md disabled:opacity-50">
                 {carregando ? 'Processando...' : '+ Criar Nova Turma'}
               </button>
-            </form>
+              </form>
+            </div>
           </Card>
 
           {/* LISTA EM TABELA */}
-          <Card className="p-0 overflow-hidden">
-            <CardHeader titulo="Turmas Ativas" />
+          <Card className="p-0 overflow-hidden col-span-full lg:col-span-1">
+            <div className="hidden md:block"><CardHeader titulo="Turmas Ativas" /></div>
             <div className="overflow-x-auto">
               <table className="table-mib">
                 <thead>
                   <tr>
                     <th>Turma</th>
-                    <th>Curso</th>
-                    <th>Horário</th>
+                    <th className="hidden sm:table-cell">Curso</th>
+                    <th className="hidden sm:table-cell">Horário</th>
                     <th>Status</th>
-                    <th className="text-right pr-6">Ações</th>
+                    <th className="text-right pr-2 sm:pr-6">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -738,11 +782,12 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                       <tr key={t.id} onClick={() => handleAbrirTurma(t.id)} className="cursor-pointer">
                         <td>
                           <p className="font-bold text-sm text-slate-700">{t.nome}</p>
+                          <p className="text-[10px] text-[#202046] uppercase font-bold sm:hidden">{t.escolas?.nome || 'Curso não vinculado'}</p>
                         </td>
-                        <td>
+                        <td className="hidden sm:table-cell">
                           <p className="text-[10px] text-[#202046] uppercase font-bold">{t.escolas?.nome || 'Curso não vinculado'}</p>
                         </td>
-                        <td className="text-xs text-slate-600">{t.horario}</td>
+                        <td className="text-xs text-slate-600 hidden sm:table-cell">{t.horario}</td>
                         <td>
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
                             t.status === 'Em andamento' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
@@ -752,7 +797,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                             {t.status}
                           </span>
                         </td>
-                        <td className="text-right pr-6">
+                        <td className="text-right pr-2 sm:pr-6">
                           <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
                             <button onClick={() => handleEditarTurma(t)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Turma">
                               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -779,7 +824,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
 
       {submenu === 'disciplinas' && (
         <Card className="p-6">
-          <CardHeader titulo="Gestão de Disciplinas" />
+          <div className="hidden md:block"><CardHeader titulo="Gestão de Disciplinas" /></div>
           <p className="text-sm text-slate-600">
             Cadastre e organize as disciplinas oferecidas pelas escolas da igreja.
           </p>
@@ -789,7 +834,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
 
       {submenu === 'professores' && (
         <Card className="p-6">
-          <CardHeader titulo="Cadastro de Professores" />
+          <div className="hidden md:block"><CardHeader titulo="Cadastro de Professores" /></div>
           <p className="text-sm text-slate-600">
             Gerencie os professores, seus dados e as disciplinas que lecionam.
           </p>
@@ -799,7 +844,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
 
       {submenu === 'alunos' && (
         <Card className="p-6">
-          <CardHeader titulo="Cadastro de Alunos" />
+          <div className="hidden md:block"><CardHeader titulo="Cadastro de Alunos" /></div>
           <p className="text-sm text-slate-600">
             Mantenha o registro dos alunos, suas turmas e histórico.
           </p>
@@ -809,7 +854,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
 
       {submenu === 'aulas' && (
         <Card className="p-6">
-          <CardHeader titulo="Programação de Aulas" />
+          <div className="hidden md:block"><CardHeader titulo="Programação de Aulas" /></div>
           <p className="text-sm text-slate-600">
             Organize o calendário e a programação das aulas.
           </p>
@@ -819,7 +864,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
 
       {submenu === 'avaliacoes' && (
         <Card className="p-6">
-          <CardHeader titulo="Registro de Avaliações" />
+          <div className="hidden md:block"><CardHeader titulo="Registro de Avaliações" /></div>
           <p className="text-sm text-slate-600">
             Registre e acompanhe as avaliações e o desempenho dos alunos.
           </p>
@@ -829,7 +874,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
 
       {submenu === 'inscricoes' && (
         <Card className="p-6">
-          <CardHeader titulo="Formulários de Inscrição Pública" />
+          <div className="hidden md:block"><CardHeader titulo="Formulários de Inscrição Pública" /></div>
           <p className="text-sm text-slate-600">
             Crie e gerencie formulários de inscrição para novos alunos.
           </p>
@@ -1061,23 +1106,33 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
                 <input type="text" required value={novaAulaAssunto} onChange={e => setNovaAulaAssunto(e.target.value)} className="w-full px-3 py-2 border rounded-xl" placeholder="Ex: Introdução ao Pentateuco" />
               </div>
               
-              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                <h4 className="text-xs font-black text-slate-400 uppercase mb-3 tracking-widest">Chamada / Presença</h4>
-                <div className="space-y-2">
-                  {alunosTurma.filter(a => a.status === 'ativo').map(a => (
-                    <div key={a.aluno_id} onClick={() => togglePresencaAula(a.aluno_id)} className="flex items-center justify-between p-2.5 rounded-lg bg-white border cursor-pointer hover:border-[#202046]/30 transition active:scale-[0.98] select-none">
-                      <span className="text-xs font-bold text-slate-700">{a.alunos?.pessoas?.nome}</span>
-                      <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${novaAulaPresencas[a.aluno_id] ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                        {novaAulaPresencas[a.aluno_id] ? 'PRESENTE' : 'AUSENTE'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Observações</label>
                 <textarea rows="2" value={novaAulaDesc} onChange={e => setNovaAulaDesc(e.target.value)} className="w-full px-3 py-2 border rounded-xl resize-none" placeholder="Relato do professor sobre a aula ministrada..." />
+              </div>
+
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                <h4 className="text-xs font-black text-slate-400 uppercase mb-3 tracking-widest">Chamada / Presença</h4>
+                <div className="space-y-2">
+                  {alunosTurma.filter(a => a.status === 'ativo').map(a => {
+                    const presente = !!novaAulaPresencas[a.aluno_id];
+                    return (
+                      <div key={a.aluno_id} className="flex items-center justify-between p-2.5 rounded-lg bg-white border transition select-none">
+                        <span className="text-xs font-bold text-slate-700">{a.alunos?.pessoas?.nome}</span>
+                        <button
+                          type="button"
+                          onClick={() => togglePresencaAula(a.aluno_id)}
+                          className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${presente ? 'bg-emerald-500' : 'bg-rose-400'}`}
+                          title={presente ? 'Presente' : 'Ausente'}
+                        >
+                          <span className={`pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out text-[9px] font-black ${presente ? 'translate-x-6 text-emerald-600' : 'translate-x-0 text-rose-500'}`}>
+                            {presente ? 'P' : 'A'}
+                          </span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
             <div className="p-5 border-t bg-slate-50 flex gap-3 shrink-0">
@@ -1153,51 +1208,30 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start animate-in fade-in slide-in-from-bottom-4 duration-300">
-      {/* PAINEL LATERAL DE INFORMAÇÕES */}
-      <Card className="p-6 border-t-4 border-t-[#202046] lg:sticky lg:top-24">
-        <div className="space-y-6">
-          <button onClick={onVoltar} className="text-[10px] font-black text-[#202046] uppercase hover:underline cursor-pointer">← Voltar para Lista</button>
-          
-          <div>
-            <h2 className="text-2xl font-black text-slate-800 leading-tight">{turma?.nome || 'Turma'}</h2>
-            <p className="text-sm text-slate-500 font-medium mt-1">{turma?.escolas?.nome}</p>
-          </div>
+      {/* Voltar (somente mobile) */}
+      <button onClick={onVoltar} className="sm:hidden col-span-full -mb-2 text-[10px] font-black text-[#202046] uppercase hover:underline cursor-pointer text-left">← Voltar para Lista</button>
 
-          <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-100">
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ano Letivo</p>
-              <p className="text-sm font-bold text-slate-700">{turma?.ano_letivo || '---'}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Horário</p>
-              <p className="text-sm font-bold text-slate-700">{turma?.horario || 'Não definido'}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
-              <span className="text-xs font-bold text-[#202046] px-2.5 py-1 bg-teal-50 rounded-full border border-teal-100 inline-block">{turma?.status}</span>
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Alunos</p>
-              <p className="text-2xl font-black text-slate-800 leading-none">{alunos?.length || 0}</p>
-            </div>
-          </div>
-
-          {turma?.descricao && (
-            <div className="pt-4 border-t border-slate-100">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Sobre a Turma</p>
-              <p className="text-xs text-slate-600 leading-relaxed italic">{turma?.descricao}</p>
-            </div>
-          )}
-        </div>
+      {/* PAINEL LATERAL DE INFORMAÇÕES (oculto no mobile, vira aba "Informações") */}
+      <Card className="hidden sm:block p-4 sm:p-6 border-t-4 border-t-[#202046] lg:sticky lg:top-24">
+        <InfoTurma turma={turma} alunos={alunos} onVoltar={onVoltar} />
       </Card>
 
       <div className="space-y-6">
         {/* NAVEGAÇÃO DE ABAS E AÇÕES */}
         {(() => {
           const tabConfig = [
+            {
+              id: 'info',
+              label: 'Informações',
+              cor: '#0ea5e9',
+              badge: null,
+              mobileOnly: true,
+              icon: (
+                <svg className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                </svg>
+              ),
+            },
             {
               id: 'alunos',
               label: 'Alunos',
@@ -1245,8 +1279,8 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
           ];
 
           return (
-            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-2 pt-2 gap-3 rounded-t-2xl">
-              <div className="flex overflow-x-auto gap-1 scrollbar-hide">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 bg-slate-50/60 px-2 pt-2 gap-2 sm:gap-3 rounded-t-2xl">
+              <div className="flex w-full sm:w-auto overflow-x-auto gap-1 scrollbar-hide -mx-2 px-2 sm:mx-0 sm:px-0">
                 {tabConfig.map((tab) => {
                   const isAtivo = abaAtiva === tab.id;
                   return (
@@ -1254,18 +1288,21 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                       key={tab.id}
                       type="button"
                       onClick={() => setAbaAtiva(tab.id)}
-                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-t-xl text-[11px] font-black whitespace-nowrap transition-all shrink-0 border-b-2 cursor-pointer ${
+                      className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2 rounded-t-xl text-[11px] font-black whitespace-nowrap transition-all shrink-0 border-b-2 cursor-pointer ${
+                        tab.mobileOnly ? 'sm:hidden' : ''
+                      } ${
                         isAtivo
                           ? 'bg-white text-slate-900 shadow-sm'
                           : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-white/60'
                       }`}
                       style={{ borderBottomColor: isAtivo ? tab.cor : 'transparent' }}
+                      title={tab.label}
                     >
-                      <span style={{ color: isAtivo ? tab.cor : undefined }}>{tab.icon}</span>
-                      {tab.label}
+                      <span className="[&_svg]:w-8 [&_svg]:h-8 sm:[&_svg]:w-3.5 sm:[&_svg]:h-3.5" style={{ color: isAtivo ? tab.cor : undefined }}>{tab.icon}</span>
+                      <span className="hidden sm:inline">{tab.label}</span>
                       {tab.badge !== null && (
                         <span
-                        className="text-[9px] font-black px-1.5 py-0.5 rounded-full ml-0.5"
+                        className="hidden sm:inline text-[9px] font-black px-1.5 py-0.5 rounded-full ml-0.5"
                           style={
                             isAtivo
                               ? { backgroundColor: tab.cor, color: 'white' }
@@ -1281,15 +1318,15 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
               </div>
 
               {/* Ações Rápidas - Alinhadas com as Abas */}
-              <div className="pb-2 sm:pb-0 pr-2 shrink-0">
+              <div className="pb-2 sm:pb-0 px-1 sm:pr-2 shrink-0">
                 {abaAtiva === 'alunos' && (
-                  <button onClick={onAddAlunos} className="px-4 py-1.5 bg-[#202046] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-teal-900/10">+ Adicionar Alunos</button>
+                  <button onClick={onAddAlunos} className="w-full sm:w-auto px-4 py-1.5 bg-[#202046] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-teal-900/10">+ Adicionar Alunos</button>
                 )}
                 {abaAtiva === 'disciplinas' && (
-                  <button onClick={onAddDisciplina} className="px-4 py-1.5 bg-[#6366f1] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-indigo-900/10">+ Incluir Disciplina</button>
+                  <button onClick={onAddDisciplina} className="w-full sm:w-auto px-4 py-1.5 bg-[#6366f1] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-indigo-900/10">+ Incluir Disciplina</button>
                 )}
                 {abaAtiva === 'aulas' && (
-                  <button onClick={onAddAula} className="px-4 py-1.5 bg-[#f59e0b] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-amber-900/10">📅 Lançar Aula / Presença</button>
+                  <button onClick={onAddAula} className="w-full sm:w-auto px-4 py-1.5 bg-[#f59e0b] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-amber-900/10">📅 Lançar Aula / Presença</button>
                 )}
               </div>
             </div>
@@ -1297,11 +1334,17 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
         })()}
 
         {/* CONTEÚDO DAS ABAS */}
+        {abaAtiva === 'info' && (
+          <Card className="sm:hidden p-4 border-t-4 border-t-[#0ea5e9]">
+            <InfoTurma turma={turma} alunos={alunos} onVoltar={onVoltar} />
+          </Card>
+        )}
+
         {abaAtiva === 'alunos' && (
           <div className="space-y-4">
           <Card className="p-0 overflow-hidden">
             <table className="table-mib">
-              <thead><tr><th>Aluno</th><th>Status na Turma</th><th>Matrícula</th><th className="text-right pr-6">Ações</th></tr></thead>
+              <thead><tr><th>Aluno</th><th>Status na Turma</th><th className="hidden sm:table-cell">Matrícula</th><th className="text-right pr-2 sm:pr-6">Ações</th></tr></thead>
               <tbody>
                 {alunos.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhum aluno matriculado nesta turma.</td></tr> : 
                   alunos.map(a => (
@@ -1316,8 +1359,8 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                           {a.status}
                         </span>
                       </td>
-                      <td className="font-mono text-xs text-slate-400">{a.alunos?.matricula || '---'}</td>
-                      <td className="text-right pr-6">
+                      <td className="font-mono text-xs text-slate-400 hidden sm:table-cell">{a.alunos?.matricula || '---'}</td>
+                      <td className="text-right pr-2 sm:pr-6">
                         <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
                           <button 
                             onClick={() => onUpdateStatusAluno(a.id, a.status === 'ativo' ? 'desistente' : 'ativo')}
@@ -1358,7 +1401,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                   <tr>
                     <th>Disciplina</th>
                     <th>Professor</th>
-                    <th className="text-right pr-6">Ações</th>
+                    <th className="text-right pr-2 sm:pr-6">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1369,7 +1412,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                       <tr key={d.id}>
                         <td><span className="font-bold text-sm text-slate-700">{d.disciplinas?.nome}</span></td>
                         <td><span className="text-xs font-bold text-[#202046]">{d.professores?.pessoas?.nome}</span></td>
-                        <td className="text-right pr-6 space-x-4">
+                        <td className="text-right pr-2 sm:pr-6 space-x-2 sm:space-x-4">
                           <button onClick={() => onEditDisciplina(d)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Disciplina">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
@@ -1393,14 +1436,13 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
               <thead>
                 <tr>
                   <th>Data</th>
-                  <th>Disciplina</th>
-                  <th>Assunto</th>
+                  <th className="hidden sm:table-cell">Assunto</th>
                   <th className="text-center">Presenças</th>
-                  <th className="text-right pr-6">Ações</th>
+                  <th className="text-right pr-2 sm:pr-6">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {aulas.length === 0 ? <tr><td colSpan="5" className="p-10 text-center text-slate-400 italic">Nenhuma aula registrada ainda.</td></tr> : 
+                {aulas.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhuma aula registrada ainda.</td></tr> : 
                   aulas.map(aula => {
                     // Garantia de processamento do JSON de presenças
                     let pObj = aula.presencas || {};
@@ -1409,21 +1451,29 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
 
                     return (
                       <tr key={aula.id}>
-                        <td className="font-bold text-slate-700 text-sm">{new Date(aula.data_aula).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</td>
-                        <td><span className="text-[10px] font-black bg-blue-50 text-[#202046] px-2 py-0.5 rounded-full">{aula.turmas_disciplinas?.disciplinas?.nome}</span></td>
-                        <td className="text-xs text-slate-500">{aula.conteudo_proposto}</td>
+                        <td className="font-bold text-slate-700 text-sm">
+                          {new Date(aula.data_aula).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                          {aula.conteudo_proposto && (
+                            <div className="sm:hidden mt-1">
+                              <span className="block text-xs text-slate-500">{aula.conteudo_proposto}</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="text-xs text-slate-500 hidden sm:table-cell">{aula.conteudo_proposto}</td>
                         <td className="text-center">
                           <span className="text-[14px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100 uppercase tracking-tighter">
                             {presentesCount}
                           </span>
                         </td>
-                        <td className="text-right pr-6 space-x-4">
+                        <td className="text-right pr-2 sm:pr-6">
+                          <div className="flex items-center justify-end gap-2 sm:gap-4">
                           <button onClick={() => onEditAula(aula)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Ver/Editar Chamada">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                           </button>
                           <button onClick={() => onExcluirAula(aula.id)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Excluir Aula">
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -1439,24 +1489,24 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
           <div className="space-y-6">
             {/* PAINEL DE FILTROS DA FREQUÊNCIA */}
             <Card className="p-4 bg-slate-50 border-slate-200">
-              <div className="flex flex-wrap items-end gap-4">
-                <div className="flex-1 min-w-[150px]">
+              <div className="flex flex-wrap items-end gap-3 sm:gap-4">
+                <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Mês</label>
                   <select value={mesFrequencia} onChange={e => setMesFrequencia(e.target.value)} className="w-full px-3 py-2 border rounded-xl bg-white text-sm">
                     {mesesNomes.map((m, i) => <option key={i} value={i}>{m}</option>)}
                   </select>
                 </div>
-                <div className="flex-1 min-w-[120px]">
+                <div className="flex-1 min-w-[90px] sm:min-w-[120px]">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Ano</label>
                   <select value={anoFrequencia} onChange={e => setAnoFrequencia(e.target.value)} className="w-full px-3 py-2 border rounded-xl bg-white text-sm">
                     {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={gerarRelatorioFrequencia} className="px-6 py-2 bg-[#202046] text-white rounded-xl text-xs font-bold hover:opacity-90 transition">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <button onClick={gerarRelatorioFrequencia} className="px-6 py-2 bg-[#202046] text-white rounded-xl text-xs font-bold hover:opacity-90 transition w-full sm:w-auto">
                     Gerar Frequência
                   </button>
-                  <div className="flex items-center gap-3 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm h-[38px]">
+                  <div className="flex items-center justify-between sm:justify-start gap-3 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm h-[38px]">
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Exibir dias vazios</span>
                     <button 
                       type="button"
@@ -1477,17 +1527,17 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                   <table className="table-mib">
                     <thead>
                       <tr className="bg-slate-50">
-                        <th className="sticky left-0 bg-slate-50 z-10">Aluno</th>
+                        <th className="sticky left-0 bg-slate-50 z-10 min-w-[120px] sm:min-w-[160px]">Aluno</th>
                         {/* Gerar colunas para os dias */}
                         {(esconderDiasSemRegistro ? relatorioFrequencia.diasComAula : Array.from({length: 31}, (_, i) => i + 1)).map(dia => (
-                          <th key={dia} className="text-center w-8 min-w-[32px] px-1">{dia}</th>
+                          <th key={dia} className="text-center w-7 sm:w-8 min-w-[28px] sm:min-w-[32px] px-0.5 sm:px-1">{dia}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {relatorioFrequencia.dados.map((row, idx) => (
                         <tr key={idx}>
-                          <td className="sticky left-0 bg-white z-10 font-medium text-slate-700 text-xs border-r">{row.nome}</td>
+                          <td className="sticky left-0 bg-white z-10 font-medium text-slate-700 text-xs border-r min-w-[120px] sm:min-w-[160px] truncate">{row.nome}</td>
                           {(esconderDiasSemRegistro ? relatorioFrequencia.diasComAula : Array.from({length: 31}, (_, i) => i + 1)).map(dia => {
                             const status = row.presencas[dia];
                             return (
@@ -1582,30 +1632,50 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
     <div className="space-y-6">
       {/* LINHA 1: INDICADORES RÁPIDOS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          label="Total de Alunos" 
-          valor={stats.totalAlunos} 
-          detalhe="Alunos únicos" 
-          icone={<span className="text-2xl">🎓</span>}
-        />
-        <StatCard 
-          label="Cursos" 
-          valor={escolas.length} 
-          detalhe="Escolas ativas" 
-          icone={<span className="text-2xl">🏫</span>}
-        />
-        <StatCard 
-          label="Turmas" 
-          valor={turmas.filter(t => t.status === 'Em andamento').length} 
-          detalhe="Em andamento" 
-          icone={<span className="text-2xl">👥</span>}
-        />
-        <StatCard 
-          label="Matrículas" 
-          valor={stats.totalMatriculas} 
-          detalhe="Total acumulado" 
-          icone={<span className="text-2xl">📝</span>}
-        />
+        <div className="h-32 sm:h-28">
+          <StatCard 
+            label="Total de Alunos" 
+            valor={stats.totalAlunos} 
+            detalhe="Alunos únicos" 
+            icone={<span className="text-2xl">🎓</span>}
+            className="h-full flex flex-col"
+          />
+        </div>
+        <div
+          onClick={() => onNavigate('cursos')}
+          className="h-32 sm:h-28 cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          title="Ir para Cursos"
+        >
+          <StatCard 
+            label="Cursos" 
+            valor={escolas.length} 
+            detalhe="Escolas ativas" 
+            icone={<span className="text-2xl">🏫</span>}
+            className="h-full flex flex-col"
+          />
+        </div>
+        <div
+          onClick={() => onNavigate('turmas')}
+          className="h-32 sm:h-28 cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          title="Ir para Turmas"
+        >
+          <StatCard 
+            label="Turmas" 
+            valor={turmas.filter(t => t.status === 'Em andamento').length} 
+            detalhe="Em andamento" 
+            icone={<span className="text-2xl">👥</span>}
+            className="h-full flex flex-col"
+          />
+        </div>
+        <div className="h-32 sm:h-28">
+          <StatCard 
+            label="Matrículas" 
+            valor={stats.totalMatriculas} 
+            detalhe="Total acumulado" 
+            icone={<span className="text-2xl">📝</span>}
+            className="h-full flex flex-col"
+          />
+        </div>
       </div>
 
       {/* LINHA 2: MATRÍCULAS POR CURSO E STATUS */}
@@ -1623,7 +1693,7 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
       {/* LINHA 4: RANKINGS E SUGESTÕES */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_350px] gap-6">
         <Card className="p-0">
-          <CardHeader titulo="Ranking de Cursos por Engajamento" subtitulo="Baseado no volume de matrículas ativas." />
+          <div className="hidden md:block"><CardHeader titulo="Ranking de Cursos por Engajamento" subtitulo="Baseado no volume de matrículas ativas." /></div>
           <div className="overflow-x-auto">
             <table className="table-mib">
               <thead>
@@ -1658,11 +1728,53 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
   );
 }
 
+function InfoTurma({ turma, alunos, onVoltar }) {
+  return (
+    <div className="space-y-6">
+      <button onClick={onVoltar} className="hidden sm:block text-[10px] font-black text-[#202046] uppercase hover:underline cursor-pointer">← Voltar para Lista</button>
+
+      <div>
+        <h2 className="text-2xl font-black text-slate-800 leading-tight">{turma?.nome || 'Turma'}</h2>
+        <p className="text-sm text-slate-500 font-medium mt-1">{turma?.escolas?.nome}</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-100">
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ano Letivo</p>
+          <p className="text-sm font-bold text-slate-700">{turma?.ano_letivo || '---'}</p>
+        </div>
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Horário</p>
+          <p className="text-sm font-bold text-slate-700">{turma?.horario || 'Não definido'}</p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
+          <span className="text-xs font-bold text-[#202046] px-2.5 py-1 bg-teal-50 rounded-full border border-teal-100 inline-block">{turma?.status}</span>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Alunos</p>
+          <p className="text-2xl font-black text-slate-800 leading-none">{alunos?.length || 0}</p>
+        </div>
+      </div>
+
+      {turma?.descricao && (
+        <div className="pt-4 border-t border-slate-100">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Sobre a Turma</p>
+          <p className="text-xs text-slate-600 leading-relaxed italic">{turma?.descricao}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ModalWrapper({ titulo, children, onFechar }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh] self-end sm:self-center">
+        <div className="p-4 sm:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
           <h3 className="font-black text-slate-800 text-lg uppercase tracking-tight">{titulo}</h3>
           <button onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border text-slate-400 hover:text-rose-500 transition cursor-pointer">✕</button>
         </div>

@@ -58,7 +58,7 @@ export function Card({ children, className = '', style = {} }) {
 
 export function CardHeader({ titulo, subtitulo, children, className = '' }) {
   return (
-    <div 
+    <div
       className={`card-header flex flex-wrap items-center justify-between gap-3 border-b border-[#0095ff]/15 ${className}`.trim()}
       style={{ fontFamily: "'Roboto', sans-serif" }}
     >
@@ -85,7 +85,7 @@ export function CardHeader({ titulo, subtitulo, children, className = '' }) {
   );
 }
 
-export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hideLegend = false }) {
+export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hideLegend = false, hideHeaderOnMobile = false }) {
   const [activeIndex, setActiveIndex] = useState(-1);
   const entradas = Object.entries(dados).sort((a, b) => b[1] - a[1]);
   const total = entradas.reduce((sum, [, valor]) => sum + valor, 0); // Corrigido para somar corretamente
@@ -108,7 +108,7 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
 
   return (
     <Card className="p-0">
-      <CardHeader titulo={titulo} />
+      <CardHeader titulo={titulo} hideOnMobile={hideHeaderOnMobile} />
       <div className={`p-6 grid gap-10 lg:gap-16 items-center min-h-[340px] ${hideLegend ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[280px_1fr]'}`}>
         <div className={`relative shrink-0 mx-auto ${hideLegend ? 'h-64 w-full max-w-[450px]' : 'w-full h-72 lg:w-84 lg:h-84 lg:mx-0'}`}>
           <ResponsiveContainer width="100%" height="100%">
@@ -161,7 +161,7 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
   );
 }
 
-export function CombinationCard({ titulo, dados, periodo, setPeriodo }) {
+export function CombinationCard({ titulo, dados, periodo, setPeriodo, hideHeaderOnMobile = false }) {
   const entradas = Object.entries(dados);
   const chartData = entradas.map(([name, value]) => ({ name, value }));
 
@@ -169,6 +169,7 @@ export function CombinationCard({ titulo, dados, periodo, setPeriodo }) {
     <Card className="p-0">
       <CardHeader
         titulo={titulo}
+        hideOnMobile={hideHeaderOnMobile}
         children={(
           <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] bg-white cursor-pointer">
             <option value="semana">Semana</option>
@@ -201,12 +202,12 @@ export function CombinationCard({ titulo, dados, periodo, setPeriodo }) {
   );
 }
 
-export function ColumnChart({ titulo, dados }) {
+export function ColumnChart({ titulo, dados, hideHeaderOnMobile = false }) {
   const chartData = Object.entries(dados).map(([name, value]) => ({ name, value }));
 
   return (
     <Card className="p-0">
-      <CardHeader titulo={titulo} />
+      <CardHeader titulo={titulo} hideOnMobile={hideHeaderOnMobile} />
       <div className="p-6 h-80">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>

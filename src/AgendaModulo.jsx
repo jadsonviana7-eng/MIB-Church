@@ -4,6 +4,8 @@ import Cropper from 'react-easy-crop';
 import { PageHeader, Card, CardHeader, Avatar, uploadImagemCelula, StatCard } from './ui';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useEditor, EditorContent } from '@tiptap/react';
+import LeitorQRCodeEvento from './LeitorQRCodeEvento';
+import CarneGenerator from './CarneGenerator';
 import StarterKit from '@tiptap/starter-kit';
 import DetalhesMembro from './DetalhesMembro';
 import Underline from '@tiptap/extension-underline';
@@ -531,6 +533,13 @@ function QuillEditorDetalhes({ value, onChange }) {
   );
 }
 
+// Helper global para encontrar valores no JSON dinâmico das inscrições
+const findInJsonGlobal = (obj, query) => {
+  if (!obj) return null;
+  const key = Object.keys(obj).find(k => k.toLowerCase().includes(query.toLowerCase()));
+  return key ? obj[key] : null;
+};
+
 /* ─── Main Export ─────────────────────────────────────────────────────────── */
 export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoas = [] }) {
   const [eventos, setEventos] = useState([]);
@@ -538,6 +547,8 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
   const [carregando, setCarregando] = useState(false);
   const [modalEvento, setModalEvento] = useState({ aberto: false, dados: null });
   const [view, setView] = useState('lista'); // 'lista', 'form', 'dashboard'
+  const [subView, setSubView] = useState(null); 
+  const [inscritoParaCarne, setInscritoParaCarne] = useState(null);
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [membroParaVerId, setMembroParaVerId] = useState(null);
 
@@ -607,6 +618,27 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
         onFechar={() => setMembroParaVerId(null)} 
         listaPessoas={pessoas}
         membroLogado={membroLogado}
+      />
+    );
+  }
+
+  // Leitor de QR Code para baixa de parcelas/inscrições do evento
+  if (subView === 'leitor') {
+    return (
+      <LeitorQRCodeEvento
+        eventoId={eventoSelecionado?.id}
+        onVoltar={() => setSubView(null)}
+      />
+    );
+  }
+
+  // Gerador de carnê para o inscrito selecionado
+  if (subView === 'carne') {
+    return (
+      <CarneGenerator
+        pessoaIdInicial={inscritoParaCarne?.pessoaId}
+        inscricaoIdInicial={inscritoParaCarne?.inscricaoId}
+        onVoltar={() => { setSubView(null); setInscritoParaCarne(null); }}
       />
     );
   }
@@ -719,9 +751,12 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
             <DashboardEvento 
               evento={eventoSelecionado} 
               pessoas={pessoas}
+              membroLogado={membroLogado}
               onVoltar={() => { setView('lista'); setEventoSelecionado(null); }}
               onEditar={() => setView('form')}
               onVerMembro={setMembroParaVerId}
+              onAbrirLeitor={() => setSubView('leitor')}
+              onGerarCarne={(dados) => { setInscritoParaCarne(dados); setSubView('carne'); }}
             />
           )
         }[view]
@@ -786,7 +821,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
 }
 
 /* ─── DashboardEvento ──────────────────────────────────────────────────────── */
-function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro }) {
+function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onAbrirLeitor, onGerarCarne, membroLogado }) {
   const [inscritos, setInscritos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modalInscrito, setModalInscrito] = useState({ aberto: false, dados: null });
@@ -809,18 +844,30 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro }) {
 
   // Cálculos de Indicadores para o Dashboard
   const stats = useMemo(() => {
-    const confirmados = inscritos.filter(i => i.status_pagamento === 'pago').length;
-    const pendentes = inscritos.filter(i => i.status_pagamento === 'pendente' || !i.status_pagamento).length;
-    const cancelados = inscritos.filter(i => i.status_pagamento === 'cancelado').length;
-    
+    let confirmados = 0;
+    let pendentes = 0;
+    let cancelados = 0;
+    let totalArrecadado = 0;
+
+    inscritos.forEach(i => {
+      const dados = i.dados_inscricao || {};
+      const incluiTransporte = findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
+      const valorTransporte = incluiTransporte ? (Number(evento.valor_transporte) || 0) : 0;
+      const valorInscricaoReal = (Number(evento.valor) || 0) + valorTransporte;
+
+      const totalParcelas = Number(findInJsonGlobal(dados, 'parcelas')) || 1;
+      const pagas = dados.parcelas_pagas || [];
+
+      if (i.status_pagamento === 'pago') { confirmados++; totalArrecadado += valorInscricaoReal; }
+      else if (i.status_pagamento === 'cancelado') { cancelados++; }
+      else { pendentes++; if (pagas.length > 0) totalArrecadado += (valorInscricaoReal / totalParcelas) * pagas.length; }
+    });
+
     // Vagas ocupadas (considerando pagos e pendentes como reserva de vaga)
     const ocupadas = confirmados + pendentes;
     const disponiveis = evento.vagas ? Math.max(0, evento.vagas - ocupadas) : '∞';
     
-    // Total recebido (apenas dos confirmados)
-    const totalRecebido = confirmados * (Number(evento.valor) || 0);
-
-    return { confirmados, pendentes, cancelados, disponiveis, totalRecebido };
+    return { confirmados, pendentes, cancelados, disponiveis, totalRecebido: totalArrecadado };
   }, [inscritos, evento]);
 
   // Processamento de dados para o gráfico de linha (Inscrições por dia)
@@ -834,13 +881,6 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro }) {
     return Object.entries(grupos).map(([name, value]) => ({ name, value }));
   }, [inscritos]);
 
-  // Helper para encontrar valores no JSON dinâmico
-  const findInJson = (obj, query) => {
-    if (!obj) return null;
-    const key = Object.keys(obj).find(k => k.toLowerCase().includes(query.toLowerCase()));
-    return key ? obj[key] : null;
-  };
-
   const formatarDataHoraExibicao = (iso) => {
     if (!iso) return '—';
     const [data, hora] = iso.split('T');
@@ -849,19 +889,91 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro }) {
   };
 
   const handleUpdateStatus = async (id, novoStatus) => {
-    const { error } = await supabase.from('agenda_inscricoes').update({ status_pagamento: novoStatus }).eq('id', id);
-    if (!error) { carregarInscritos(); setModalInscrito({ aberto: false, dados: null }); }
+    const insc = inscritos.find(i => i.id === id);
+    const dados = insc?.dados_inscricao || {};
+    const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || 1;
+    
+    const patch = { status_pagamento: novoStatus };
+    if (novoStatus === 'pago' && totalParc > 1) {
+      patch.dados_inscricao = { ...dados, parcelas_pagas: Array.from({ length: totalParc }, (_, i) => i + 1) };
+    }
+
+    const { error } = await supabase.from('agenda_inscricoes').update(patch).eq('id', id);
+    if (!error) { 
+      setInscritos(prev => prev.map(ins => ins.id === id ? { ...ins, ...patch } : ins));
+      setModalInscrito({ aberto: false, dados: null }); 
+    }
+  };
+
+  const handleToggleParcela = async (num) => {
+    const insc = modalInscrito.dados;
+    if (!insc) return;
+
+    const dados = insc.dados_inscricao || {};
+    const pagas = dados.parcelas_pagas || [];
+    const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || 1;
+
+    const novasPagas = pagas.includes(num)
+      ? pagas.filter(p => p !== num)
+      : [...pagas, num].sort((a, b) => Number(a) - Number(b));
+
+    const novoStatus = novasPagas.length >= totalParc ? 'pago' : 'pendente';
+
+    const { error } = await supabase
+      .from('agenda_inscricoes')
+      .update({
+        status_pagamento: novoStatus,
+        dados_inscricao: { ...dados, parcelas_pagas: novasPagas }
+      })
+      .eq('id', insc.id);
+
+    if (!error) {
+      const novosDadosInscricao = { ...dados, parcelas_pagas: novasPagas };
+      setInscritos(prev => prev.map(item => item.id === insc.id ? { ...item, status_pagamento: novoStatus, dados_inscricao: novosDadosInscricao } : item));
+      setModalInscrito(prev => ({ ...prev, dados: { ...prev.dados, status_pagamento: novoStatus, dados_inscricao: novosDadosInscricao } }));
+    }
+  };
+
+  const handleExcluirInscricao = async (e, id) => {
+    e.stopPropagation();
+    if (!window.confirm("Deseja realmente excluir esta inscrição? Esta ação não pode ser desfeita.")) return;
+    
+    // Adicionamos .select() para validar se a linha foi realmente removida no servidor
+    const { data, error } = await supabase.from('agenda_inscricoes').delete().eq('id', id).select();
+    
+    if (!error && data && data.length > 0) {
+      setInscritos(prev => prev.filter(ins => ins.id !== id));
+      if (modalInscrito.dados?.id === id) setModalInscrito({ aberto: false, dados: null });
+    } else if (!error && (!data || data.length === 0)) {
+      alert("A exclusão falhou no servidor. Isso geralmente acontece porque não existe uma política (RLS) que permita o seu perfil excluir registros nesta tabela.");
+    } else {
+      alert("Erro ao excluir: " + error.message);
+    }
   };
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-y-4">
         <button className="btn-ghost !rounded-md text-xs sm:text-sm p-2 sm:px-4 sm:py-2" onClick={onVoltar}>
           <Icon.Back /> 
           <span className="hidden sm:inline">Voltar para lista</span>
           <span className="sm:hidden">Voltar</span>
         </button>
-        <div className="flex items-center justify-end gap-1 sm:gap-2">
+        <div className="flex items-center justify-end gap-1 sm:gap-2 flex-wrap">
+          {['admin', 'pastor', 'tesouraria', 'financeiro', 'secretaria'].includes(membroLogado?.permissao) && (
+          <button
+            className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2 text-blue-600 border-blue-200 bg-blue-50 font-bold" 
+            onClick={onAbrirLeitor}
+            title="Leitor de Baixa (QR)"
+          >
+            <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.0} stroke="currentColor" className="size-6">
+  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
+  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" />
+</svg>
+
+            <span className="hidden sm:inline ml-1">Leitor de Baixa (QR)</span>
+          </button>
+          )}
           <button
             className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2" 
             onClick={() => {
@@ -985,43 +1097,105 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro }) {
           <span className="badge" style={{ background: '#eff6ff', color: '#1e3a8a' }}>{inscritos.length} registros</span>
         </div>
         <div style={{ overflowX: 'auto' }}>
-          <table className="ag-table">
-            <thead>
-              <tr><th>Data</th><th>Participante</th><th>E-mail / Telefone</th><th style={{ textAlign: 'right' }}>Status</th></tr>
-            </thead>
-            <tbody>
-              {carregando ? (
-                <tr><td colSpan="4" className="text-center py-10 animate-pulse text-slate-400">Processando lista...</td></tr>
-              ) : inscritos.length === 0 ? (
-                <tr><td colSpan="4" className="text-center py-24 text-slate-400 italic">Nenhuma inscrição realizada para este evento.</td></tr>
-              ) : inscritos.map(i => {
-                const nome = findInJson(i.dados_inscricao, 'nome') || findInJson(i.dados_inscricao, 'completo') || 'Participante';
-                const rawPhone = findInJson(i.dados_inscricao, 'telefone') || findInJson(i.dados_inscricao, 'celular') || findInJson(i.dados_inscricao, 'whatsapp') || findInJson(i.dados_inscricao, 'contato');
-                const email = findInJson(i.dados_inscricao, 'email');
-                const contato = rawPhone ? mascaraTelefone(rawPhone) : (email || '—');
+          {carregando ? (
+            <div className="text-center py-10 animate-pulse text-slate-400">Processando lista...</div>
+          ) : inscritos.length === 0 ? (
+            <div className="text-center py-24 text-slate-400 italic">Nenhuma inscrição realizada para este evento.</div>
+          ) : (
+            <>
+              {/* Tabela Desktop (sm+) */}
+              <table className="ag-table hidden sm:table">
+                <thead>
+                  <tr><th>Data</th><th>Participante</th><th>E-mail / Telefone</th><th style={{ textAlign: 'right' }}>Status</th><th style={{ textAlign: 'right', paddingRight: '24px' }}>Ações</th></tr>
+                </thead>
+                <tbody>
+                  {inscritos.map(i => {
+                    const nome = findInJsonGlobal(i.dados_inscricao, 'nome') || findInJsonGlobal(i.dados_inscricao, 'completo') || 'Participante';
+                    const rawPhone = findInJsonGlobal(i.dados_inscricao, 'telefone') || findInJsonGlobal(i.dados_inscricao, 'celular') || findInJsonGlobal(i.dados_inscricao, 'whatsapp') || findInJsonGlobal(i.dados_inscricao, 'contato');
+                    const email = findInJsonGlobal(i.dados_inscricao, 'email');
+                    const contato = rawPhone ? mascaraTelefone(rawPhone) : (email || '—');
+                    const membroFound = pessoas.find(p => (email && p.email?.toLowerCase() === email.toLowerCase()) || (nome && p.nome?.toLowerCase() === nome.toLowerCase()));
+                    const totalParcelas = Number(findInJsonGlobal(i.dados_inscricao, 'parcelas')) || 1;
+                    const pagas = i.dados_inscricao?.parcelas_pagas || [];
 
-                const membroFound = pessoas.find(p => 
-                  (email && p.email?.toLowerCase() === email.toLowerCase()) || 
-                  (nome && p.nome?.toLowerCase() === nome.toLowerCase())
-                );
+                    return (
+                      <tr key={i.id} className="cursor-pointer hover:bg-slate-50 transition" onClick={() => setModalInscrito({ aberto: true, dados: i })}>
+                        <td className="text-xs font-bold text-slate-400">{new Date(i.created_at).toLocaleDateString('pt-BR')}</td>
+                        <td className="font-bold text-slate-700">
+                          {nome} {membroFound && <span className="ml-2 text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 font-black">MEMBRO</span>}
+                        </td>
+                        <td className="text-xs text-slate-500">{contato}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          {i.status_pagamento === 'pago' ? (
+                            <span className="badge bg-emerald-50 text-emerald-700">pago</span>
+                          ) : i.status_pagamento === 'cancelado' ? (
+                            <span className="badge bg-rose-50 text-rose-700">cancelado</span>
+                          ) : (totalParcelas > 1 && pagas.length > 0) ? (
+                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 whitespace-nowrap">
+                              {pagas.length}/{totalParcelas} Parc.
+                            </span>
+                          ) : (
+                            <span className="badge bg-amber-50 text-amber-700">pendente</span>
+                          )}
+                        </td>
+                        <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                          <button 
+                            onClick={(e) => handleExcluirInscricao(e, i.id)}
+                            className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
+                            title="Excluir Inscrição"
+                          >
+                            <Icon.Trash />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
 
-                return (
-                  <tr key={i.id} className="cursor-pointer hover:bg-slate-50 transition" onClick={() => setModalInscrito({ aberto: true, dados: i })}>
-                    <td className="text-xs font-bold text-slate-400">{new Date(i.created_at).toLocaleDateString('pt-BR')}</td>
-                    <td className="font-bold text-slate-700">
-                      {nome} {membroFound && <span className="ml-2 text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 font-black">MEMBRO</span>}
-                    </td>
-                    <td className="text-xs text-slate-500">{contato}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      <span className={`badge ${i.status_pagamento === 'pago' ? 'bg-emerald-50 text-emerald-700' : i.status_pagamento === 'cancelado' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>
-                        {i.status_pagamento || 'pendente'}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+              {/* Lista Mobile (max-sm) */}
+              <div className="sm:hidden divide-y divide-slate-100">
+                {inscritos.map(i => {
+                  const nome = findInJsonGlobal(i.dados_inscricao, 'nome') || findInJsonGlobal(i.dados_inscricao, 'completo') || 'Participante';
+                  const email = findInJsonGlobal(i.dados_inscricao, 'email');
+                  const rawPhone = findInJsonGlobal(i.dados_inscricao, 'telefone') || findInJsonGlobal(i.dados_inscricao, 'celular') || findInJsonGlobal(i.dados_inscricao, 'whatsapp') || findInJsonGlobal(i.dados_inscricao, 'contato');
+                  const contato = rawPhone ? mascaraTelefone(rawPhone) : (email || '—');
+                  const membroFound = pessoas.find(p => (email && p.email?.toLowerCase() === email.toLowerCase()) || (nome && p.nome?.toLowerCase() === nome.toLowerCase()));
+                  const totalParcelas = Number(findInJsonGlobal(i.dados_inscricao, 'parcelas')) || 1;
+                  const pagas = i.dados_inscricao?.parcelas_pagas || [];
+
+                  return (
+                    <div key={i.id} className="p-4 flex flex-col gap-2 active:bg-slate-50 transition" onClick={() => setModalInscrito({ aberto: true, dados: i })}>
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(i.created_at).toLocaleDateString('pt-BR')}</span>
+                        <div className="flex items-center gap-2">
+                          {i.status_pagamento === 'pago' ? (
+                            <span className="badge bg-emerald-50 text-emerald-700">pago</span>
+                          ) : i.status_pagamento === 'cancelado' ? (
+                            <span className="badge bg-rose-50 text-rose-700">cancelado</span>
+                          ) : (totalParcelas > 1 && pagas.length > 0) ? (
+                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 whitespace-nowrap">
+                              {pagas.length}/{totalParcelas} Parc.
+                            </span>
+                          ) : (
+                            <span className="badge bg-amber-50 text-amber-700">pendente</span>
+                          )}
+                          <button 
+                            onClick={(e) => handleExcluirInscricao(e, i.id)}
+                            className="p-1.5 text-rose-500 active:scale-95 cursor-pointer"
+                          >
+                            <Icon.Trash />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="font-bold text-slate-800 leading-tight">{nome} {membroFound && <span className="ml-1 text-[8px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 font-black">MEMBRO</span>}</p>
+                      <p className="text-xs text-slate-500 font-medium truncate">{contato}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -1049,8 +1223,8 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro }) {
 
               {/* Vínculo com Membro */}
               {(() => {
-                const email = findInJson(modalInscrito.dados.dados_inscricao, 'email');
-                const nome = findInJson(modalInscrito.dados.dados_inscricao, 'nome');
+                const email = findInJsonGlobal(modalInscrito.dados.dados_inscricao, 'email');
+                const nome = findInJsonGlobal(modalInscrito.dados.dados_inscricao, 'nome');
                 const membro = pessoas.find(p => (email && p.email?.toLowerCase() === email.toLowerCase()) || (nome && p.nome?.toLowerCase() === nome.toLowerCase()));
                 
                 if (membro) {
@@ -1068,6 +1242,44 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro }) {
                   );
                 }
                 return null;
+              })()}
+
+              {/* Controle de Parcelas Manuais */}
+              {(() => {
+                const dados = modalInscrito.dados.dados_inscricao;
+                const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || 1;
+                if (totalParc <= 1) return null;
+                
+                const incluiTransporte = findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
+                const valorTransporte = incluiTransporte ? (Number(evento.valor_transporte) || 0) : 0;
+                const valorTotal = (Number(evento.valor) || 0) + valorTransporte;
+                
+                const pagas = dados.parcelas_pagas || [];
+                const valorPago = (valorTotal / totalParc) * pagas.length;
+                const saldoDevedor = valorTotal - valorPago;
+
+                return (
+                  <div className="pt-4 border-t space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Controle de Parcelas</p>
+                      <div className="flex gap-3">
+                        <span className="text-[10px] font-bold text-emerald-600">Pago: R$ {valorPago.toFixed(2)}</span>
+                        <span className="text-[10px] font-bold text-rose-500">Saldo: R$ {saldoDevedor.toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {Array.from({ length: totalParc }, (_, i) => i + 1).map(num => {
+                        const isPago = pagas.includes(num);
+                        return (
+                          <button key={num} onClick={() => handleToggleParcela(num)} className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${isPago ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-400'}`}>
+                            {num}ª Parcela {isPago ? '✓' : ''}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
               })()}
 
               <div className="pt-4 border-t space-y-3">

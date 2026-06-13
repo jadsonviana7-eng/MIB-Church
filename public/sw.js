@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'mib-church-v1';
+const CACHE_VERSION = 'mib-church-v2.2';
 const APP_SHELL = [
   '/',
   '/index.html',

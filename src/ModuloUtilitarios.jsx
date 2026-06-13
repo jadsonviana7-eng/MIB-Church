@@ -2,6 +2,10 @@ import React from 'react';
 import { PageHeader } from './ui';
 import EscalasMinisterial from './EscalasMinisterial';
 import CarneGenerator from './CarneGenerator';
+import LeitorQRCode from './LeitorQRCode';
+import RelatorioSemanal from './RelatorioSemanal';
+import CalculadoraTributos from './CalculadoraTributos';
+import QuizPersonalidade from './QuizPersonalidade';
 import PedidoOracao from './PedidoOracao';
 import MuralOracao from './MuralOracao';
 
@@ -23,6 +27,10 @@ export default function ModuloUtilitarios(props) {
 
   if (submenu === 'carne-generator') {
     return <CarneGenerator />;
+  }
+
+  if (submenu === 'leitor-carne') {
+    return <LeitorQRCode onVoltar={() => onNavigate('resumo')} />;
   }
 
   if (submenu === 'quiz') {
@@ -67,6 +75,24 @@ export default function ModuloUtilitarios(props) {
           </button>
         )}
 
+        {/* Leitor de QR Code: Admin e Tesouraria */}
+        {['admin', 'pastor', 'tesouraria', 'financeiro'].includes(membroLogado?.permissao) && (
+          <button 
+            onClick={() => onNavigate('leitor-carne')}
+            className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all text-left group"
+          >
+            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+              🔍
+            </div>
+            <h3 className="font-bold text-slate-800 text-lg">Leitor de Carnê</h3>
+            <p className="text-slate-500 text-sm mt-1 leading-relaxed">
+              Dê baixa automática em pagamentos escaneando o QR Code da parcela.
+            </p>
+            <div className="mt-4 text-blue-600 text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+              Abrir Câmera <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </div>
+          </button>
+        )}
         {/* Escalas: Mostrar se for líder/admin OU se o membro tiver vínculo */}
         {(membroLogado?.permissao !== 'membro' || temVinculoEscala) && (
           <button 

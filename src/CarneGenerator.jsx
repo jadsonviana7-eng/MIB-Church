@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import QRCode from 'qrcode';
 import { supabase } from './supabaseClient';
 import { mascaraCPF } from './mascaras';
 
@@ -166,16 +167,24 @@ function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
             </div>
           </div>
 
-          {/* Visto / data de pagamento */}
-          <div className="grid grid-cols-2 gap-2 mt-2">
+          {/* Visto / data de pagamento / QR Code */}
+          <div className="grid grid-cols-2 gap-2 mt-2 items-center">
             <div>
               <p className="font-semibold">Visto do Operador</p>
               <div className="h-6 border-b border-gray-400 mt-1" />
-            </div>
-            <div>
-              <p className="font-semibold">Pago em</p>
+              <p className="font-semibold mt-1">Pago em</p>
               <p>_____ / _____ / __________</p>
             </div>
+            {parcela.qrCodeDataUrl && (
+              <div className="flex flex-col items-center justify-self-end text-center">
+                <img
+                  src={parcela.qrCodeDataUrl}
+                  alt={`QR Code parcela ${parcela.parcelaLabel}`}
+                  className="w-16 h-16 sm:w-14 sm:h-14 print:w-14 print:h-14"
+                />
+                <p className="text-[8px] text-gray-500 mt-0.5">Escaneie para dar baixa</p>
+              </div>
+            )}
           </div>
 
           {/* Título / Pedido / Sacado */}
@@ -205,7 +214,7 @@ function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
 // ============================================================
 // Componente principal
 // ============================================================
-export default function CarneGenerator({ pessoaIdInicial = null }) {
+export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInicial = null, onVoltar = null }) {
   const [dadosCliente, setDadosCliente] = useState({
     nome: '',
     cpfCnpj: '',
@@ -338,8 +347,68 @@ export default function CarneGenerator({ pessoaIdInicial = null }) {
     });
   }
 
-  // Geração das parcelas (replica MDcarne.Copia + JogaInformaçõesNoCarne)
-  const parcelas = useMemo(() => {
+  // ── Vínculo com inscrição de evento (para baixa via QR Code) ──
+  const [inscricaoId, setInscricaoId] = useState(inscricaoIdInicial);
+  const [inscricaoSelecionada, setInscricaoSelecionada] = useState(null);
+  const [buscaInscricao, setBuscaInscricao] = useState('');
+  const [resultadosInscricao, setResultadosInscricao] = useState([]);
+
+  // Busca inscrições em eventos (para vincular o carnê e habilitar baixa via QR)
+  useEffect(() => {
+    if (!buscaInscricao || buscaInscricao.length < 2) {
+      setResultadosInscricao([]);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      const { data, error } = await supabase
+        .from('agenda_inscricoes')
+        .select('id, dados_inscricao, agenda_eventos(titulo)')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (!error && data) {
+        const termo = buscaInscricao.toLowerCase();
+        const filtrados = data.filter((insc) => {
+          const nome = (insc.dados_inscricao?.nome || insc.dados_inscricao?.['Nome Completo'] || '')
+            .toString()
+            .toLowerCase();
+          const evento = (insc.agenda_eventos?.titulo || '').toLowerCase();
+          return nome.includes(termo) || evento.includes(termo);
+        });
+        setResultadosInscricao(filtrados.slice(0, 10));
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [buscaInscricao]);
+
+  // Se um inscricaoId inicial foi passado via prop, carrega os dados básicos
+  useEffect(() => {
+    if (!inscricaoIdInicial) return;
+    (async () => {
+      const { data } = await supabase
+        .from('agenda_inscricoes')
+        .select('id, dados_inscricao, agenda_eventos(titulo)')
+        .eq('id', inscricaoIdInicial)
+        .single();
+      if (data) {
+        setInscricaoId(data.id);
+        setInscricaoSelecionada(data);
+      }
+    })();
+  }, [inscricaoIdInicial]);
+
+  function selecionarInscricao(insc) {
+    setInscricaoId(insc.id);
+    setInscricaoSelecionada(insc);
+    setBuscaInscricao('');
+    setResultadosInscricao([]);
+  }
+
+  function removerVinculoInscricao() {
+    setInscricaoId(null);
+    setInscricaoSelecionada(null);
+  }
+
+  const parcelasBase = useMemo(() => {
     if (!dadosVenda.vencimentoPrimeiraParcela || !dadosVenda.quantidadeParcelas) return [];
     return gerarParcelas({
       vencimentoInicial: dadosVenda.vencimentoPrimeiraParcela,
@@ -347,8 +416,45 @@ export default function CarneGenerator({ pessoaIdInicial = null }) {
       valorParcela: dadosVenda.valorParcela,
       descontos: dadosVenda.descontos,
       acrescimos: dadosVenda.acrescimos,
-    });
-  }, [dadosVenda]);
+    }).map((p) => ({
+      ...p,
+      // Código embutido no QR: EVENTO|<inscricaoId>|<parcelaNum>
+      // Compatível com LeitorQRCodeEvento, que dá baixa em agenda_inscricoes.dados_inscricao.parcelas_pagas
+      codigo: inscricaoId ? `EVENTO|${inscricaoId}|${p.numero}` : null,
+    }));
+  }, [dadosVenda, inscricaoId]);
+
+  // Gera os QR Codes (data URL) para cada parcela vinculada a uma inscrição
+  const [parcelas, setParcelas] = useState([]);
+
+  useEffect(() => {
+    let cancelado = false;
+    (async () => {
+      if (!parcelasBase.length) {
+        setParcelas([]);
+        return;
+      }
+      if (!inscricaoId) {
+        setParcelas(parcelasBase);
+        return;
+      }
+      const comQr = await Promise.all(
+        parcelasBase.map(async (p) => {
+          try {
+            const qrCodeDataUrl = await QRCode.toDataURL(p.codigo, { width: 120, margin: 1 });
+            return { ...p, qrCodeDataUrl };
+          } catch (err) {
+            console.error('Erro ao gerar QR Code:', err);
+            return p;
+          }
+        })
+      );
+      if (!cancelado) setParcelas(comQr);
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [parcelasBase, inscricaoId]);
 
   const valorTotal = useMemo(
     () => parcelas.reduce((acc, p) => acc + p.valorPago, 0),
@@ -379,6 +485,15 @@ export default function CarneGenerator({ pessoaIdInicial = null }) {
       <div className="max-w-5xl mx-auto p-3 sm:p-6 space-y-6 print:p-0">
         {/* Cabeçalho */}
         <header className="print:hidden">
+          {onVoltar && (
+            <button
+              type="button"
+              onClick={onVoltar}
+              className="text-sm font-semibold text-slate-500 hover:text-slate-700 mb-2"
+            >
+              ← Voltar
+            </button>
+          )}
           <h1 className="text-2xl font-bold text-slate-900">Gerador de Carnê de Pagamento</h1>
           <p className="text-sm text-slate-500">
             Baseado no modelo "Carnê - Congresso Nacional MIB". Preencha os dados abaixo e clique em
@@ -436,6 +551,65 @@ export default function CarneGenerator({ pessoaIdInicial = null }) {
           )}
 
           {carregandoMembro && <p className="text-xs text-slate-400">Carregando dados do membro...</p>}
+        </div>
+
+        {/* Vínculo com inscrição de evento (habilita baixa por QR Code) */}
+        <div className="bg-white border border-slate-200 rounded-lg p-4 print:hidden space-y-2">
+          <h2 className="font-semibold text-slate-700">Baixa por QR Code (opcional)</h2>
+          <p className="text-xs text-slate-500">
+            Vincule este carnê a uma inscrição de evento para gerar um QR Code em cada parcela. O QR
+            pode ser lido em "Leitor QR" para dar baixa automática no pagamento.
+          </p>
+
+          {inscricaoSelecionada ? (
+            <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
+              <div className="text-sm">
+                <p className="font-semibold text-slate-800">
+                  {inscricaoSelecionada.dados_inscricao?.nome ||
+                    inscricaoSelecionada.dados_inscricao?.['Nome Completo'] ||
+                    'Inscrição'}
+                </p>
+                <p className="text-xs text-slate-500">
+                  Evento: {inscricaoSelecionada.agenda_eventos?.titulo || '—'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={removerVinculoInscricao}
+                className="text-xs font-semibold text-emerald-700 hover:text-emerald-900"
+              >
+                Remover vínculo
+              </button>
+            </div>
+          ) : (
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar inscrição por nome ou evento..."
+                className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={buscaInscricao}
+                onChange={(e) => setBuscaInscricao(e.target.value)}
+              />
+              {resultadosInscricao.length > 0 && (
+                <ul className="absolute z-10 left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-56 overflow-y-auto">
+                  {resultadosInscricao.map((insc) => (
+                    <li key={insc.id}>
+                      <button
+                        type="button"
+                        onClick={() => selecionarInscricao(insc)}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 flex justify-between"
+                      >
+                        <span>
+                          {insc.dados_inscricao?.nome || insc.dados_inscricao?.['Nome Completo'] || 'Sem nome'}
+                        </span>
+                        <span className="text-xs text-slate-400">{insc.agenda_eventos?.titulo}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
 
 

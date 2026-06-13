@@ -7,17 +7,17 @@
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#f4f7fa",
-  "theme_color": "#0f5b67",
+  "theme_color": "#1E3A8A",
   "categories": ["productivity", "utilities"],
   "icons": [
     {
-      "src": "/logo-mib-mundau.png",
+      "src": "/logo-betesda-inicio.png",
       "sizes": "192x192 512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/logo-mib-mundau.png",
+      "src": "/logo-betesda-inicio.png",
       "sizes": "192x192 512x512",
       "type": "image/png",
       "purpose": "maskable"

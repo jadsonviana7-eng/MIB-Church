@@ -1,5 +1,6 @@
 import React from 'react';
 import { PageHeader } from './ui';
+import { MenuIcons } from './icons';
 import EscalasMinisterial from './EscalasMinisterial';
 import CarneGenerator from './CarneGenerator';
 import LeitorQRCode from './LeitorQRCode';

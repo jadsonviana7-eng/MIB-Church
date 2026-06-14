@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { supabase } from './supabaseClient';
 import { mascaraCPF, mascaraTelefone, mascaraCEP } from './mascaras';
 import './CarneGenerator.css';
+import { baixarCartaoPNG, baixarCartaoPDF, baixarCartoesPDF } from './cartaoDigital';
 
 // ============================================================
 // Util: formatação de data e moeda
@@ -533,6 +534,53 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
     window.print();
   }
 
+  // Monta o objeto "igreja" no formato esperado por cartaoDigital.js
+  function montarIgrejaParaCartao() {
+    return {
+      nome_igreja: dadosCedente.nome,
+      endereco: dadosCedente.endereco,
+      bairro: dadosCedente.bairro,
+      cidade: dadosCedente.cidade,
+      estado: dadosCedente.estado,
+      telefone: dadosCedente.telefoneCelular || dadosCedente.telefoneFixo,
+      email_contato: dadosCedente.email,
+    };
+  }
+
+  function montarDadosCartaoParcela(parcela) {
+    return {
+      igreja: montarIgrejaParaCartao(),
+      evento: inscricaoSelecionada?.agenda_eventos?.titulo || 'Pagamento',
+      nome: dadosCliente.nome,
+      cpf: dadosCliente.cpfCnpj,
+      valor: parcela.valorPago,
+      parcelaNum: parcela.numero,
+      totalParcelas: parcela.total,
+      vencimento: parcela.vencimento,
+      pago: false,
+      codigoQr: parcela.codigo,
+    };
+  }
+
+  async function handleBaixarCartaoPNG(parcela) {
+    if (!parcela.codigo) return;
+    const nomeArquivo = `cartao_${(dadosCliente.nome || 'participante').replace(/\s+/g, '_').toLowerCase()}_parcela${parcela.numero}.png`;
+    await baixarCartaoPNG(montarDadosCartaoParcela(parcela), nomeArquivo);
+  }
+
+  async function handleBaixarCartaoPDF(parcela) {
+    if (!parcela.codigo) return;
+    const nomeArquivo = `cartao_${(dadosCliente.nome || 'participante').replace(/\s+/g, '_').toLowerCase()}_parcela${parcela.numero}.pdf`;
+    await baixarCartaoPDF(montarDadosCartaoParcela(parcela), nomeArquivo);
+  }
+
+  async function handleBaixarTodosCartoesPDF() {
+    const elegiveis = parcelas.filter((p) => p.codigo);
+    if (!elegiveis.length) return;
+    const nomeArquivo = `cartoes_${(dadosCliente.nome || 'participante').replace(/\s+/g, '_').toLowerCase()}.pdf`;
+    await baixarCartoesPDF(elegiveis.map(montarDadosCartaoParcela), nomeArquivo);
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <div className="carne-print-page max-w-5xl mx-auto p-3 sm:p-6 space-y-6 print:p-0 print:max-w-none">
@@ -981,6 +1029,58 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
               {parcelas.length} parcela(s) de R$ {formatCurrency(dadosVenda.valorParcela)} — Total: R${' '}
               {formatCurrency(valorTotal)}
             </p>
+          </div>
+        )}
+
+        {/* Cartões Digitais (substituto do carnê físico) */}
+        {parcelas.length > 0 && (
+          <div className="bg-white border border-slate-200 rounded-lg p-4 print:hidden space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h2 className="font-semibold text-slate-700">Cartões Digitais</h2>
+                <p className="text-xs text-slate-500">
+                  {inscricaoId
+                    ? 'Envie por WhatsApp/e-mail no lugar do carnê impresso. Cada cartão tem o QR Code da parcela.'
+                    : 'Vincule uma inscrição de evento (acima) para habilitar a geração dos cartões com QR Code.'}
+                </p>
+              </div>
+              {inscricaoId && (
+                <button
+                  type="button"
+                  onClick={handleBaixarTodosCartoesPDF}
+                  className="px-4 py-2 bg-[#202046] text-white rounded-xl text-xs font-bold hover:opacity-90 transition shrink-0"
+                >
+                  Baixar Todos (PDF)
+                </button>
+              )}
+            </div>
+
+            {inscricaoId && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {parcelas.map((parcela) => (
+                  <div key={parcela.numero} className="border border-slate-200 rounded-xl p-2 flex flex-col items-center gap-1.5 text-center">
+                    <span className="text-xs font-bold text-slate-700">Parcela {parcela.parcelaLabel}</span>
+                    <span className="text-[11px] text-slate-400">R$ {formatCurrency(parcela.valorPago)}</span>
+                    <div className="flex gap-1 w-full">
+                      <button
+                        type="button"
+                        onClick={() => handleBaixarCartaoPNG(parcela)}
+                        className="flex-1 px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition"
+                      >
+                        PNG
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleBaixarCartaoPDF(parcela)}
+                        className="flex-1 px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition"
+                      >
+                        PDF
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { jsPDF } from 'jspdf';
+import { baixarCartaoPNG, baixarCartaoPDF } from './cartaoDigital';
 import { supabase } from './supabaseClient';
 import { Card, PageHeader } from './ui';
 
@@ -136,8 +137,9 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
         type: 'success',
       });
 
-      // Monta os dados do recibo para gerar o PDF
+      // Monta os dados do recibo/cartão para gerar PDF/PNG
       setRecibo({
+        inscricaoId,
         evento: inscricao.agenda_eventos?.titulo || 'Evento',
         nome: dados.nome || dados['Nome Completo'] || 'Participante',
         cpf: dados.cpf || dados['CPF'] || '',
@@ -146,6 +148,8 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
         totalParcelas: totalParcelasConfiguradas,
         ehParcela,
         statusPagamento: novoStatusPg,
+        vencimento: dados.vencimento || dados[`vencimento_${parcelaNum}`] || null,
+        codigoQr: `EVENTO|${inscricaoId}|${parcelaNum}`,
         data: new Date(),
       });
 
@@ -163,10 +167,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
     iniciarCamera();
   }
 
-  async function gerarReciboPDF() {
-    if (!recibo) return;
-
-    // Busca os dados da igreja para o cabeçalho do recibo
+  async function buscarDadosIgreja() {
     let igreja = { nome_igreja: 'Igreja', endereco: '', bairro: '', cidade: '', estado: '', telefone: '', email_contato: '' };
     try {
       const { data } = await supabase.from('dados_igreja').select('*').eq('id', 1).single();
@@ -174,6 +175,14 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
     } catch (e) {
       // segue com valores padrão
     }
+    return igreja;
+  }
+
+  async function gerarReciboPDF() {
+    if (!recibo) return;
+
+    // Busca os dados da igreja para o cabeçalho do recibo
+    const igreja = await buscarDadosIgreja();
 
     const doc = new jsPDF({ unit: 'mm', format: 'a5' });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -247,6 +256,36 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
     doc.save(nomeArquivo);
   }
 
+  async function montarDadosCartao() {
+    const igreja = await buscarDadosIgreja();
+    return {
+      igreja,
+      evento: recibo.evento,
+      nome: recibo.nome,
+      cpf: recibo.cpf,
+      valor: recibo.valor,
+      parcelaNum: recibo.parcelaNum,
+      totalParcelas: recibo.totalParcelas,
+      vencimento: recibo.vencimento,
+      pago: true,
+      codigoQr: recibo.codigoQr,
+    };
+  }
+
+  async function handleBaixarCartaoPNG() {
+    if (!recibo) return;
+    const dadosCartao = await montarDadosCartao();
+    const nomeArquivo = `cartao_${recibo.nome.replace(/\s+/g, '_').toLowerCase()}_parcela${recibo.parcelaNum}.png`;
+    await baixarCartaoPNG(dadosCartao, nomeArquivo);
+  }
+
+  async function handleBaixarCartaoPDF() {
+    if (!recibo) return;
+    const dadosCartao = await montarDadosCartao();
+    const nomeArquivo = `cartao_${recibo.nome.replace(/\s+/g, '_').toLowerCase()}_parcela${recibo.parcelaNum}.pdf`;
+    await baixarCartaoPDF(dadosCartao, nomeArquivo);
+  }
+
   return (
     <div className="space-y-6 max-w-xl mx-auto p-4">
       <PageHeader titulo="Baixa de Evento (QR)" onNavigate={onVoltar} />
@@ -302,6 +341,29 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
               </svg>
               Baixar Recibo (PDF)
             </button>
+          )}
+
+          {recibo && (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={handleBaixarCartaoPNG}
+                className="py-4 bg-[#202046] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all cursor-pointer hover:opacity-90 flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Cartão (PNG)
+              </button>
+              <button
+                onClick={handleBaixarCartaoPDF}
+                className="py-4 bg-[#202046] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all cursor-pointer hover:opacity-90 flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m-9 8h12a2 2 0 002-2V8a2 2 0 00-2-2h-3.5a1 1 0 01-.8-.4L13.2 4H10a1 1 0 00-.8.4L7.5 6H6a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                Cartão (PDF)
+              </button>
+            </div>
           )}
 
           {status.type && status.type !== 'info' && (

@@ -377,3 +377,17 @@ export function StatCard({ label, valor, detalhe, icone, className = "" }) {
     </Card>
   );
 }
+
+export function ModalWrapper({ titulo, children, onFechar }) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh] self-end sm:self-center">
+        <div className="p-4 sm:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+          <h3 className="font-black text-slate-800 text-lg uppercase tracking-tight">{titulo}</h3>
+          <button onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border text-slate-400 hover:text-rose-500 transition cursor-pointer">✕</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}

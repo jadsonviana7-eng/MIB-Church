@@ -864,3 +864,23 @@ DROP POLICY IF EXISTS "Lideres e Pastores atualizam status" ON pedidos_oracao;
 CREATE POLICY "Lideres e Pastores atualizam status" ON pedidos_oracao 
 FOR UPDATE TO authenticated 
 USING (public.get_user_permission() IN ('admin', 'pastor', 'lider-celula'));
+
+-- 12. TABELA DE MURAL DE AVISOS
+CREATE TABLE IF NOT EXISTS mural_avisos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    titulo TEXT NOT NULL,
+    subtitulo TEXT,
+    imagem_url TEXT,
+    conteudo_html TEXT,
+    formato TEXT DEFAULT 'retrato', -- 'retrato', 'paisagem', 'quadrado'
+    link_externo TEXT, -- URL para onde o usuário será levado ao clicar
+    prioridade INTEGER DEFAULT 0, -- Para ordenar avisos importantes no topo
+    ativo BOOLEAN DEFAULT TRUE,
+    data_expiracao DATE, -- Opcional: o aviso some automaticamente após esta data
+    criado_por uuid REFERENCES pessoas(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+ALTER TABLE mural_avisos ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Leitura pública de avisos" ON mural_avisos FOR SELECT TO public USING (ativo = true);
+CREATE POLICY "Admin gerencia mural" ON mural_avisos FOR ALL TO authenticated USING (public.get_user_permission() IN ('admin', 'pastor', 'secretaria'));

@@ -324,9 +324,10 @@ const Icon = {
   FileText:  () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
   Printer:   () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 0-2-2v-5a2 2 0 0 0 2-2h16a2 2 0 0 0 2 2v5a2 2 0 0 0-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
   Edit:      () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  Mural:     () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>,
 };
 
-/* ─── helpers ─────────────────────────────────────────────────────────────── */
+/* ─── Helpers ─────────────────────────────────────────────────────────────── */
 function Campo({ label, children }) {
   return (
     <div className="space-y-1" style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -551,7 +552,6 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
   const [inscritoParaCarne, setInscritoParaCarne] = useState(null);
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [membroParaVerId, setMembroParaVerId] = useState(null);
-  const [refreshInscritosKey, setRefreshInscritosKey] = useState(0);
 
   const podeEditar = ['admin', 'pastor', 'secretaria'].includes(membroLogado?.permissao);
 
@@ -629,7 +629,6 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
       <LeitorQRCodeEvento
         eventoId={eventoSelecionado?.id}
         onVoltar={() => setSubView(null)}
-        onBaixaRealizada={() => setRefreshInscritosKey(k => k + 1)}
       />
     );
   }
@@ -759,7 +758,6 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
               onVerMembro={setMembroParaVerId}
               onAbrirLeitor={() => setSubView('leitor')}
               onGerarCarne={(dados) => { setInscritoParaCarne(dados); setSubView('carne'); }}
-              refreshKey={refreshInscritosKey}
             />
           )
         }[view]
@@ -819,12 +817,307 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
           </div>
         </div>
       )}
+
+      {/* ── MURAL DE AVISOS ── */}
+      {submenu === 'mural' && (
+        <GerenciadorMural 
+          onVoltar={() => onNavigate('calendario')} 
+          membroLogado={membroLogado}
+        />
+      )}
+
+    </div>
+  );
+}
+
+/* ─── Gerenciador de Mural ────────────────────────────────────────────────── */
+function GerenciadorMural({ onVoltar, membroLogado }) {
+  const [avisos, setAvisos] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+  const [editando, setEditando] = useState(null);
+  const [view, setView] = useState('lista'); // 'lista' ou 'form'
+
+  const carregarAvisos = useCallback(async () => {
+    setCarregando(true);
+    try {
+      const { data } = await supabase.from('mural_avisos').select('*').order('created_at', { ascending: false });
+      setAvisos(data || []);
+    } catch (err) { console.error(err); }
+    finally { setCarregando(false); }
+  }, []);
+
+  useEffect(() => { carregarAvisos(); }, [carregarAvisos]);
+
+  const handleExcluir = async (id) => {
+    if (!window.confirm("Remover este aviso do mural?")) return;
+    await supabase.from('mural_avisos').delete().eq('id', id);
+    carregarAvisos();
+  };
+
+  if (view === 'form') {
+    return (
+      <FormularioAviso 
+        aviso={editando} 
+        onSucesso={() => { setView('lista'); setEditando(null); carregarAvisos(); }} 
+        onCancelar={() => { setView('lista'); setEditando(null); }}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
+            <Icon.Mural />
+          </div>
+          <div>
+            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight leading-tight">Gerenciar Mural</h2>
+            <p className="text-[10px] text-slate-400 font-bold uppercase">Anúncios da Página Inicial</p>
+          </div>
+        </div>
+        <button className="btn-primary" onClick={() => { setEditando(null); setView('form'); }}>
+          <Icon.Plus /> Novo Aviso
+        </button>
+      </div>
+
+      <Card className="p-0 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="ag-table">
+            <thead>
+              <tr>
+                <th>Aviso</th>
+                <th>Status</th>
+                <th>Prioridade</th>
+                <th className="text-right pr-6">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {carregando ? (
+                <tr><td colSpan="4" className="text-center py-10 animate-pulse">Carregando mural...</td></tr>
+              ) : avisos.length === 0 ? (
+                <tr><td colSpan="4" className="text-center py-16 text-slate-400 italic">Nenhum aviso cadastrado no momento.</td></tr>
+              ) : (
+                avisos.map(av => (
+                  <tr key={av.id}>
+                    <td className="py-3">
+                      <div className="flex items-center gap-3">
+                        {av.imagem_url && <img src={av.imagem_url} className="w-12 h-12 rounded-lg object-cover border border-slate-100" alt="" />}
+                        <div>
+                          <p className="font-bold text-slate-800">{av.titulo}</p>
+                          <p className="text-xs text-slate-500 line-clamp-1">{av.subtitulo || 'Sem subtítulo'}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`badge ${av.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
+                        {av.ativo ? 'Visível' : 'Oculto'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="text-xs font-bold text-slate-500">{av.prioridade || 0}</span>
+                    </td>
+                    <td className="text-right pr-6 space-x-2">
+                      <button className="btn-icon" onClick={() => { setEditando(av); setView('form'); }}><Icon.Edit /></button>
+                      <button className="btn-icon danger" onClick={() => handleExcluir(av.id)}><Icon.Trash /></button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function FormularioAviso({ aviso, onSucesso, onCancelar }) {
+  const [titulo, setTitulo] = useState(aviso?.titulo || '');
+  const [subtitulo, setSubtitulo] = useState(aviso?.subtitulo || '');
+  const [prioridade, setPrioridade] = useState(aviso?.prioridade || 0);
+  const [dataExp, setDataExp] = useState(aviso?.data_expiracao || '');
+  const [linkExterno, setLinkExterno] = useState(aviso?.link_externo || '');
+  const [ativo, setAtivo] = useState(aviso?.ativo ?? true);
+  const [formato, setFormato] = useState(aviso?.formato || 'retrato');
+  const [conteudo, setConteudo] = useState(aviso?.conteudo_html || '');
+  const [imagemPreview, setImagemPreview] = useState(aviso?.imagem_url || '');
+  const [imagemFile, setImagemFile] = useState(null);
+  const [imageSrc, setImageSrc] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [mostrarCortador, setMostrarCortador] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+
+  const onCropComplete = useCallback((_, pixels) => {
+    setCroppedAreaPixels(pixels);
+  }, []);
+
+  const aspect = formato === 'retrato' ? 4 / 5 : formato === 'paisagem' ? 16 / 9 : 1;
+
+  const criarImagemRecortadaAviso = async () => {
+    try {
+      const image = new Image();
+      image.src = imageSrc;
+      await new Promise((resolve) => (image.onload = resolve));
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = croppedAreaPixels.width;
+      canvas.height = croppedAreaPixels.height;
+      ctx.drawImage(
+        image,
+        croppedAreaPixels.x,
+        croppedAreaPixels.y,
+        croppedAreaPixels.width,
+        croppedAreaPixels.height,
+        0,
+        0,
+        croppedAreaPixels.width,
+        croppedAreaPixels.height
+      );
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        setImagemFile(blob);
+        setImagemPreview(URL.createObjectURL(blob));
+        setMostrarCortador(false);
+      }, 'image/jpeg');
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  async function handleSalvar() {
+    setEnviando(true);
+    try {
+      let url = imagemPreview;
+      if (imagemFile) url = await uploadImagemCelula(imagemFile, 'mural');
+
+      const payload = {
+        titulo, subtitulo, ativo, prioridade, formato, link_externo: linkExterno, conteudo_html: conteudo,
+        data_expiracao: dataExp || null,
+        imagem_url: url
+      };
+
+      if (aviso?.id) {
+        await supabase.from('mural_avisos').update(payload).eq('id', aviso.id);
+      } else {
+        await supabase.from('mural_avisos').insert([payload]);
+      }
+      onSucesso();
+    } catch (err) { alert(err.message); }
+    finally { setEnviando(false); }
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+        <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">
+          {aviso ? 'Editar Aviso' : 'Novo Aviso'}
+        </h2>
+        <div className="flex gap-2">
+          <button className="btn-ghost" onClick={onCancelar}>Cancelar</button>
+          <button className="btn-primary" onClick={handleSalvar} disabled={enviando || !titulo}>
+            {enviando ? 'Salvando...' : 'Publicar no Mural'}
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-4">
+          <Card className="p-6 space-y-4">
+            <InputField label="Título do Aviso *" value={titulo} onChange={setTitulo} placeholder="Ex: Grande Vigília de Adoração" />
+            <InputField label="Subtítulo / Chamada" value={subtitulo} onChange={setSubtitulo} placeholder="Ex: Nesta sexta-feira, às 22h" />
+            <InputField label="Link de Destino (Opcional)" value={linkExterno} onChange={setLinkExterno} placeholder="https://exemplo.com/inscricao" />
+            <div className="grid grid-cols-2 gap-4">
+              <InputField label="Data de Expiração" type="date" value={dataExp} onChange={setDataExp} />
+              <Campo label="Prioridade (0-10)">
+                <input type="number" value={prioridade} onChange={e => setPrioridade(parseInt(e.target.value))} className="campo-input" />
+              </Campo>
+            </div>
+          </Card>
+          <div className="ag-card">
+            <label className="campo-label">Descrição Detalhada (Opcional)</label>
+            <QuillEditorDetalhes value={conteudo} onChange={setConteudo} />
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Card className="p-0 overflow-hidden">
+            <CardHeader titulo="Imagem do Cartaz" />
+            <div className="p-4 border-b border-slate-50">
+              <Campo label="Formato do Cartaz">
+                <div className="tab-bar">
+                  <button type="button" className={`tab-btn ${formato === 'retrato' ? 'active' : ''}`} onClick={() => setFormato('retrato')}>Retrato (4:5)</button>
+                  <button type="button" className={`tab-btn ${formato === 'paisagem' ? 'active' : ''}`} onClick={() => setFormato('paisagem')}>Paisagem</button>
+                  <button type="button" className={`tab-btn ${formato === 'quadrado' ? 'active' : ''}`} onClick={() => setFormato('quadrado')}>1:1</button>
+                </div>
+              </Campo>
+            </div>
+            <div className="p-4 space-y-4">
+              <div 
+                className="bg-slate-100 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden relative group"
+                style={{ aspectRatio: aspect }}
+              >
+                {imagemPreview ? (
+                  <img src={imagemPreview} className="w-full h-full object-cover" alt="" />
+                ) : (
+                  <div className="text-center p-6 text-slate-400">
+                    <Icon.Image />
+                    <p className="text-[10px] font-bold uppercase mt-2">Fazer Upload</p>
+                  </div>
+                )}
+                <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
+                  const f = e.target.files[0];
+                  if (f) {
+                    const reader = new FileReader();
+                    reader.addEventListener('load', () => {
+                      setImageSrc(reader.result);
+                      setMostrarCortador(true);
+                    });
+                    reader.readAsDataURL(f);
+                  }
+                }} />
+              </div>
+              <p className="text-[9px] text-slate-400 text-center uppercase font-bold tracking-widest">
+                {formato === 'retrato' ? 'Ideal para artes verticais' : formato === 'paisagem' ? 'Ideal para fotos amplas' : 'Formato padrão Instagram'}
+              </p>
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {mostrarCortador && (
+        <div className="modal-overlay px-2 py-4" style={{ zIndex: 200 }}>
+          <div className="modal-box" style={{ maxWidth: 500 }}>
+            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Ajustar Cartaz</h3>
+              <button type="button" className="btn-icon" onClick={() => setMostrarCortador(false)}><Icon.Close /></button>
+            </div>
+            <div className="relative h-80 w-full bg-slate-900">
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={aspect}
+                onCropChange={setCrop}
+                onCropComplete={onCropComplete}
+                onZoomChange={setZoom}
+              />
+            </div>
+            <div className="p-4 bg-slate-50 flex gap-2">
+              <button type="button" onClick={() => setMostrarCortador(false)} className="btn-ghost flex-1">Cancelar</button>
+              <button type="button" onClick={criarImagemRecortadaAviso} className="btn-primary flex-1 justify-center">Confirmar Recorte</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 /* ─── DashboardEvento ──────────────────────────────────────────────────────── */
-function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onAbrirLeitor, onGerarCarne, membroLogado, refreshKey }) {
+function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onAbrirLeitor, onGerarCarne, membroLogado }) {
   const [inscritos, setInscritos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modalInscrito, setModalInscrito] = useState({ aberto: false, dados: null });
@@ -843,7 +1136,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
       finally { setCarregando(false); }
     }
     carregarInscritos();
-  }, [evento.id, refreshKey]);
+  }, [evento.id]);
 
   // Cálculos de Indicadores para o Dashboard
   const stats = useMemo(() => {
@@ -1297,6 +1590,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
           </div>
         </div>
       )}
+
     </div>
   );
 }

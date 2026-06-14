@@ -83,6 +83,14 @@ export default function App() {
     return pessoas.find(p => p.email?.toLowerCase() === usuarioLogado.email.toLowerCase());
   }, [usuarioLogado, pessoas]);
 
+  // Indica se o membro logado possui alguma atuação/ministério vinculado
+  // (usado para liberar o acesso a "Escalas Ministeriais" mesmo para membros comuns)
+  const temVinculoEscala = useMemo(() => {
+    if (!membroLogado) return false;
+    const atuacoes = membroLogado.atuacoes || membroLogado.ministerios || [];
+    return Array.isArray(atuacoes) ? atuacoes.length > 0 : Boolean(atuacoes);
+  }, [membroLogado]);
+
   /**
    * Verifica se o membro logado tem acesso a um módulo ou bloco específico.
    */
@@ -107,8 +115,9 @@ export default function App() {
       if (modulo === 'Agenda') return true;
       if (modulo === 'Utilitários') {
         if (!bloco) return true;
-        return !['Relatório Semanal', 'Mural de Orações'].includes(bloco);
-      } else if (bloco === 'Gerador de Carnê') return false; // Membros não acessam gerador de carnê
+        // Membros não acessam o Gerador de Carnê, Relatório Semanal nem Mural de Orações
+        return !['Relatório Semanal', 'Mural de Orações', 'Gerador de Carnê'].includes(bloco);
+      }
       if (modulo === 'Pessoas') {
         if (!bloco) return true;
         // Membros podem ver a listagem e aniversariantes (o RLS do banco filtrará os dados)
@@ -125,8 +134,18 @@ export default function App() {
       return true; // Pastor visualiza todos os módulos e submenus, incluindo Gerador de Carnê
     }
     
-    if (p === 'secretaria' && ['Pessoas', 'Células', 'Utilitários', 'Agenda'].includes(modulo)) return true;
-    if ((p === 'tesouraria' || p === 'financeiro') && ['Financeiro', 'Pessoas', 'Utilitários', 'Agenda'].includes(modulo)) return true;
+    if (p === 'secretaria' && ['Pessoas', 'Células', 'Utilitários', 'Agenda'].includes(modulo)) {
+      if (modulo === 'Utilitários' && bloco) {
+        return !['Gerador de Carnê', 'Leitor de Carnê'].includes(bloco);
+      }
+      return true;
+    }
+    if ((p === 'tesouraria' || p === 'financeiro') && ['Financeiro', 'Pessoas', 'Utilitários', 'Agenda'].includes(modulo)) {
+      if (modulo === 'Utilitários' && bloco) {
+        return bloco !== 'Gerador de Carnê';
+      }
+      return true;
+    }
     if (p === 'lider-celula' || p === 'supervisor') {
       if (modulo === 'Agenda') return true;
       if (modulo === 'Pessoas') {
@@ -136,7 +155,8 @@ export default function App() {
         return !bloco || ['Lista de células', 'Reuniões'].includes(bloco);
       }
       if (modulo === 'Utilitários') {
-        return !bloco || bloco !== 'Relatório Semanal';
+        if (!bloco) return true;
+        return !['Relatório Semanal', 'Gerador de Carnê', 'Leitor de Carnê'].includes(bloco);
       }
       return false;
     }
@@ -239,6 +259,7 @@ export default function App() {
   const submenusAgenda = useMemo(() => [
     ['calendario', 'Calendário'],
     ['eventos', 'Eventos'],
+    ['mural', 'Mural de Avisos'],
   ].filter(([id, label]) => hasAccess('Agenda', label)), [hasAccess]);
 
   const submenusUtilitarios = useMemo(() => [
@@ -248,6 +269,7 @@ export default function App() {
     ['calculadora', 'Calculadora de Tributos'],
     ['quiz', 'Teste de Temperamento'], 
     ['carne-generator', 'Gerador de Carnê'], // New item
+    ['leitor-carne', 'Leitor de Carnê'],
     ['pedido-oracao', 'Pedido de Oração'],
     ['mural-oracao', 'Mural de Orações']
   ].filter(([id, label]) => hasAccess('Utilitários', label)), [hasAccess]);
@@ -906,6 +928,7 @@ export default function App() {
             onNavigate={(sub) => navegar('utilitarios', sub)}
             usuarioLogado={usuarioLogado}
             membroLogado={membroLogado}
+            temVinculoEscala={temVinculoEscala}
           />
         )}
 

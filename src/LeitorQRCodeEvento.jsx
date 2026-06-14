@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
+import { jsPDF } from 'jspdf';
 import { supabase } from './supabaseClient';
 import { Card, PageHeader } from './ui';
 
@@ -7,6 +8,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
   const [status, setStatus] = useState({ loading: false, msg: '', type: '' });
   const [cameraAtiva, setCameraAtiva] = useState(false);
   const [erroCamera, setErroCamera] = useState('');
+  const [recibo, setRecibo] = useState(null);
 
   const html5QrCodeRef = useRef(null);
   const processandoRef = useRef(false);
@@ -96,6 +98,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
 
       // 2. Verifica se esta parcela específica já consta como paga
       if (parcelasPagas.includes(parcelaNum)) {
+        setRecibo(null);
         setStatus({
           loading: false,
           msg: `A parcela ${parcelaNum} de ${dados.nome || 'participante'} já foi baixada anteriormente.`,
@@ -122,22 +125,126 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
 
       if (errorUpdate) throw errorUpdate;
 
+      // Tenta identificar o valor pago (parcela ou valor total/à vista)
+      const valorEntry = Object.entries(dados).find(([k]) => k.toLowerCase().includes('valor'));
+      const valorPago = valorEntry ? Number(valorEntry[1]) || 0 : 0;
+      const ehParcela = totalParcelasConfiguradas > 1;
+
       setStatus({
         loading: false,
         msg: `✅ Baixa realizada! Parcela ${parcelaNum} de "${inscricao.agenda_eventos.titulo}" confirmada para ${dados.nome || 'Participante'}.`,
         type: 'success',
       });
 
+      // Monta os dados do recibo para gerar o PDF
+      setRecibo({
+        evento: inscricao.agenda_eventos?.titulo || 'Evento',
+        nome: dados.nome || dados['Nome Completo'] || 'Participante',
+        cpf: dados.cpf || dados['CPF'] || '',
+        valor: valorPago,
+        parcelaNum,
+        totalParcelas: totalParcelasConfiguradas,
+        ehParcela,
+        statusPagamento: novoStatusPg,
+        data: new Date(),
+      });
+
       // Notifica o componente pai (ex: DashboardEvento) para recarregar os dados
       if (onBaixaRealizada) onBaixaRealizada();
     } catch (err) {
+      setRecibo(null);
       setStatus({ loading: false, msg: 'Erro: ' + err.message, type: 'error' });
     }
   }
 
   function handleProximaLeitura() {
     setStatus({ loading: false, msg: '', type: '' });
+    setRecibo(null);
     iniciarCamera();
+  }
+
+  async function gerarReciboPDF() {
+    if (!recibo) return;
+
+    // Busca os dados da igreja para o cabeçalho do recibo
+    let igreja = { nome_igreja: 'Igreja', endereco: '', bairro: '', cidade: '', estado: '', telefone: '', email_contato: '' };
+    try {
+      const { data } = await supabase.from('dados_igreja').select('*').eq('id', 1).single();
+      if (data) igreja = data;
+    } catch (e) {
+      // segue com valores padrão
+    }
+
+    const doc = new jsPDF({ unit: 'mm', format: 'a5' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const marginX = 14;
+    let y = 18;
+
+    // Cabeçalho
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text((igreja.nome_igreja || 'Igreja').toUpperCase(), pageWidth / 2, y, { align: 'center' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    y += 5;
+    const enderecoIgreja = [igreja.endereco, igreja.bairro, igreja.cidade, igreja.estado].filter(Boolean).join(', ');
+    if (enderecoIgreja) {
+      doc.text(enderecoIgreja, pageWidth / 2, y, { align: 'center' });
+      y += 4;
+    }
+    const contatoIgreja = [igreja.telefone, igreja.email_contato].filter(Boolean).join(' • ');
+    if (contatoIgreja) {
+      doc.text(contatoIgreja, pageWidth / 2, y, { align: 'center' });
+      y += 4;
+    }
+
+    y += 4;
+    doc.setLineWidth(0.3);
+    doc.line(marginX, y, pageWidth - marginX, y);
+    y += 8;
+
+    // Título
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('RECIBO DE PAGAMENTO', pageWidth / 2, y, { align: 'center' });
+    y += 10;
+
+    // Corpo
+    doc.setFontSize(10);
+    const linha = (label, valor) => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${label}:`, marginX, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(String(valor || '—'), marginX + 32, y);
+      y += 7;
+    };
+
+    linha('Evento', recibo.evento);
+    linha('Participante', recibo.nome);
+    if (recibo.cpf) linha('CPF', recibo.cpf);
+    linha(
+      'Referente a',
+      recibo.ehParcela ? `Parcela ${recibo.parcelaNum}/${recibo.totalParcelas}` : 'Pagamento Integral (à vista)'
+    );
+    linha('Valor Pago', `R$ ${recibo.valor.toFixed(2)}`);
+    linha('Data do Pagamento', recibo.data.toLocaleDateString('pt-BR'));
+    linha(
+      'Situação',
+      recibo.statusPagamento === 'pago' ? 'Inscrição totalmente paga' : `Pendente (${recibo.totalParcelas - 1} parcela(s) restante(s))`
+    );
+
+    y += 6;
+    doc.setLineWidth(0.2);
+    doc.line(marginX, y, pageWidth - marginX, y);
+    y += 8;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Este recibo confirma o pagamento acima descrito.', pageWidth / 2, y, { align: 'center' });
+
+    const nomeArquivo = `recibo_${recibo.nome.replace(/\s+/g, '_').toLowerCase()}_parcela${recibo.parcelaNum}.pdf`;
+    doc.save(nomeArquivo);
   }
 
   return (
@@ -183,6 +290,18 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
             >
               {status.msg}
             </div>
+          )}
+
+          {recibo && (
+            <button
+              onClick={gerarReciboPDF}
+              className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all cursor-pointer hover:opacity-90 flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m-9 8h12a2 2 0 002-2V8a2 2 0 00-2-2h-3.5a1 1 0 01-.8-.4L13.2 4H10a1 1 0 00-.8.4L7.5 6H6a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              Baixar Recibo (PDF)
+            </button>
           )}
 
           {status.type && status.type !== 'info' && (

@@ -807,25 +807,27 @@ export default function App() {
       <main className="min-w-0 px-2 pb-20 pt-14 sm:px-6 sm:pb-6 md:pt-14 lg:px-10 lg:pb-8 lg:pt-[80px]">
         {/* Nova HomePage como a tela principal do dashboard */}
         {moduloAtual === 'dashboard' && (
-          <HomePage onNavigate={navegar} hasAccess={hasAccess} membroLogado={membroLogado} />
-        )}
+          <>
+            {/* Mobile: Exibe os cartões de navegação rápida */}
+            <div className="md:hidden">
+              <HomePage onNavigate={navegar} hasAccess={hasAccess} membroLogado={membroLogado} />
+            </div>
 
-        {/* O OverviewDashboard (antigo Dashboard) pode ser acessado como um submenu da HomePage, se necessário. */}
-        {/* Por exemplo, se a HomePage tivesse um botão "Ver Dashboard de Indicadores" */}
-        {/* Por enquanto, o OverviewDashboard não é renderizado diretamente aqui. */}
-        {/* Se for preciso, podemos criar um submenu para ele dentro da HomePage ou de "Visão Geral" */}
-        {/* {moduloAtual === 'dashboard' && dashboardSubmenu === 'overview' && (
-          <Dashboard
-            pessoas={pessoas}
-            celulas={celulas}
-            zonas={zonas}
-            relatoriosCelula={relatoriosCelula}
-            indicadores={indicadores}
-            carregando={carregando}
-            periodoConvertidos={periodoConvertidos}
-            setPeriodoConvertidos={setPeriodoConvertidos}
-          />
-        )} */}
+            {/* Desktop: Exibe os indicadores estatísticos (Dashboard de outrora) */}
+            <div className="hidden md:block">
+              <OverviewDashboard
+                pessoas={pessoas}
+                celulas={celulas}
+                zonas={zonas}
+                relatoriosCelula={relatoriosCelula}
+                indicadores={indicadores}
+                carregando={carregando}
+                periodoConvertidos={periodoConvertidos}
+                setPeriodoConvertidos={setPeriodoConvertidos}
+              />
+            </div>
+          </>
+        )}
 
         {moduloAtual === 'pessoas' && (
           <PessoasModulo

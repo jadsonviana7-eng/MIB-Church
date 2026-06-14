@@ -227,6 +227,12 @@ export const MenuIcons = {
     </svg>
   ),
   // Submenus Utilitários
+  'u-resumo': (
+    <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+  ),
   'u-escalas': (
     <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 11l19-9-9 19-2-8-8-2z"/>
@@ -291,7 +297,7 @@ export const submenuIconKey = {
   escolas: { resumo: 'e-resumo', cursos: 'e-cursos', turmas: 'e-turmas', disciplinas: 'e-disciplinas', professores: 'e-professores', alunos: 'e-alunos', aulas: 'e-aulas', avaliacoes: 'e-avaliacoes', 'ficha-aluno': 'e-ficha-aluno', inscricoes: 'e-inscricoes' },
   agenda: { calendario: 'a-calendario', eventos: 'a-eventos' },
   utilitarios: { 
-    escalas: 'u-escalas', 'relatorio-semanal': 'u-relatorio-semanal', calculadora: 'u-calculadora',
+    resumo: 'u-resumo', escalas: 'u-escalas', 'relatorio-semanal': 'u-relatorio-semanal', calculadora: 'u-calculadora',
     quiz: 'u-quiz', 'pedido-oracao': 'u-pedido-oracao', 'mural-oracao': 'u-mural-oracao'
     , 'carne-generator': 'u-carne-generator'
   },

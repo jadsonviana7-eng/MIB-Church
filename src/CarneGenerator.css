@@ -1,0 +1,11 @@
+/* Configuração de página para impressão do Carnê */
+@media print {
+  @page {
+    size: A4;
+    margin: 8mm;
+  }
+
+  .carne-print-page {
+    max-width: none !important;
+  }
+}

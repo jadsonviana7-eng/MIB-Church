@@ -54,16 +54,23 @@ CREATE TABLE IF NOT EXISTS dados_igreja (
   id INT PRIMARY KEY DEFAULT 1,
   nome_igreja TEXT,
   cnpj TEXT,
-  endereco TEXT,
+  endereco TEXT, -- Logradouro/Rua
+  numero TEXT,
+  bairro TEXT,
+  cidade TEXT,
+  estado TEXT,
+  cep TEXT,
   telefone TEXT,
   email_contato TEXT,
   logo_url TEXT,
+  carne_instrucoes TEXT,
+  carne_local_pagamento TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   CONSTRAINT singleton_row CHECK (id = 1)
 );
 
-INSERT INTO dados_igreja (id, nome_igreja) VALUES (1, 'MIB Church') ON CONFLICT (id) DO NOTHING;
+INSERT INTO dados_igreja (id, nome_igreja) VALUES (1, 'Igreja MIB Church') ON CONFLICT (id) DO NOTHING;
 ```
 
 ## 2️⃣ Tabelas Principais (Pessoas e Células)

@@ -52,7 +52,7 @@ export default function App() {
   const [financeiroSubmenu, setFinanceiroSubmenu] = useState('resumo');
   const [escolasSubmenu, setEscolasSubmenu] = useState('resumo'); // Novo estado para o submenu de Escolas
   const [agendaSubmenu, setAgendaSubmenu] = useState('calendario');
-  const [utilitariosSubmenu, setUtilitariosSubmenu] = useState('escalas');
+  const [utilitariosSubmenu, setUtilitariosSubmenu] = useState('resumo');
   const [filtrosFinanceiroAberto, setFiltrosFinanceiroAberto] = useState(false); // Novo estado para filtros financeiros mobile
   const [pessoas, setPessoas] = useState([]);
   const [filtrosPessoasAberto, setFiltrosPessoasAberto] = useState(false);
@@ -242,6 +242,7 @@ export default function App() {
   ].filter(([id, label]) => hasAccess('Agenda', label)), [hasAccess]);
 
   const submenusUtilitarios = useMemo(() => [
+    ['resumo', 'Visão Geral'],
     ['escalas', 'Escalas Ministerial'], 
     ['relatorio-semanal', 'Relatório Semanal'],
     ['calculadora', 'Calculadora de Tributos'],

@@ -551,6 +551,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
   const [inscritoParaCarne, setInscritoParaCarne] = useState(null);
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [membroParaVerId, setMembroParaVerId] = useState(null);
+  const [refreshInscritosKey, setRefreshInscritosKey] = useState(0);
 
   const podeEditar = ['admin', 'pastor', 'secretaria'].includes(membroLogado?.permissao);
 
@@ -628,6 +629,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
       <LeitorQRCodeEvento
         eventoId={eventoSelecionado?.id}
         onVoltar={() => setSubView(null)}
+        onBaixaRealizada={() => setRefreshInscritosKey(k => k + 1)}
       />
     );
   }
@@ -757,6 +759,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
               onVerMembro={setMembroParaVerId}
               onAbrirLeitor={() => setSubView('leitor')}
               onGerarCarne={(dados) => { setInscritoParaCarne(dados); setSubView('carne'); }}
+              refreshKey={refreshInscritosKey}
             />
           )
         }[view]
@@ -821,7 +824,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
 }
 
 /* ─── DashboardEvento ──────────────────────────────────────────────────────── */
-function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onAbrirLeitor, onGerarCarne, membroLogado }) {
+function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onAbrirLeitor, onGerarCarne, membroLogado, refreshKey }) {
   const [inscritos, setInscritos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modalInscrito, setModalInscrito] = useState({ aberto: false, dados: null });
@@ -840,7 +843,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
       finally { setCarregando(false); }
     }
     carregarInscritos();
-  }, [evento.id]);
+  }, [evento.id, refreshKey]);
 
   // Cálculos de Indicadores para o Dashboard
   const stats = useMemo(() => {

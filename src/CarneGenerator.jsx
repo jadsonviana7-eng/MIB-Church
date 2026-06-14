@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import QRCode from 'qrcode';
 import { supabase } from './supabaseClient';
-import { mascaraCPF } from './mascaras';
+import { mascaraCPF, mascaraTelefone, mascaraCEP } from './mascaras';
+import './CarneGenerator.css';
 
 // ============================================================
 // Util: formatação de data e moeda
@@ -70,15 +71,15 @@ function gerarParcelas({ vencimentoInicial, quantidadeParcelas, valorParcela, de
 // ============================================================
 function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 border border-gray-800 text-[11px] sm:text-[10px] leading-tight font-mono bg-white text-black print:grid-cols-2 print:text-[10px]">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 border border-gray-800 text-[11px] sm:text-[10px] leading-tight font-mono bg-white text-black print:grid-cols-2 print:text-[8px] print:leading-[1.15]">
       {[0, 1].map((lado) => (
         <div
           key={lado}
-          className={`p-2 flex flex-col gap-1 ${lado === 0 ? 'sm:border-r border-dashed border-gray-400 border-b sm:border-b-0 print:border-b-0' : ''}`}
+          className={`p-2 print:p-1.5 flex flex-col gap-1 print:gap-0.5 ${lado === 0 ? 'sm:border-r border-dashed border-gray-400 border-b sm:border-b-0 print:border-b-0' : ''}`}
         >
           {/* Cabeçalho */}
           {lado === 0 && (
-            <div className="text-center mb-1">
+            <div className="text-center mb-1 print:mb-0.5">
               <p className="font-bold text-xs uppercase">{dadosCedente.nome}</p>
               <p className="text-[9px]">
                 {dadosCedente.endereco} {dadosCedente.bairro} {dadosCedente.cidade} {dadosCedente.estado}{' '}
@@ -93,7 +94,7 @@ function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
           )}
 
           {/* Vencimento e local de pagamento */}
-          <div className="grid grid-cols-2 gap-2 border-t border-gray-300 pt-1">
+          <div className="grid grid-cols-2 gap-2 print:gap-1 border-t border-gray-300 print:border-gray-400 pt-1 print:pt-0.5">
             <div>
               <p className="font-semibold">Vencimento</p>
               <p>{formatDate(parcela.vencimento)}</p>
@@ -107,7 +108,7 @@ function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
           </div>
 
           {/* Valor do documento */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 print:gap-1">
             <div>
               <p className="font-semibold">(=) Valor do Documento</p>
               <p>R$ {formatCurrency(parcela.valorDocumento)}</p>
@@ -121,7 +122,7 @@ function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
           </div>
 
           {/* Nº Parcela */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 print:gap-1">
             <div>
               <p className="font-semibold">Nº Parcela/Total Parc.</p>
               <p>{parcela.parcelaLabel}</p>
@@ -138,7 +139,7 @@ function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
           </div>
 
           {/* Descontos */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 print:gap-1">
             <div>
               <p className="font-semibold">(-) Descontos</p>
               <p>{parcela.descontos ? `R$ ${formatCurrency(parcela.descontos)}` : ''}</p>
@@ -146,7 +147,7 @@ function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
           </div>
 
           {/* Acréscimos / Instruções */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 print:gap-1">
             <div>
               <p className="font-semibold">(+) Acréscimos</p>
               <p>{parcela.acrescimos ? `R$ ${formatCurrency(parcela.acrescimos)}` : ''}</p>
@@ -160,7 +161,7 @@ function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
           </div>
 
           {/* Valor pago */}
-          <div className="grid grid-cols-2 gap-2 border-t border-gray-300 pt-1">
+          <div className="grid grid-cols-2 gap-2 print:gap-1 border-t border-gray-300 print:border-gray-400 pt-1 print:pt-0.5">
             <div>
               <p className="font-semibold">(=) Valor Pago</p>
               <p>R$ {formatCurrency(parcela.valorPago)}</p>
@@ -168,11 +169,11 @@ function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
           </div>
 
           {/* Visto / data de pagamento / QR Code */}
-          <div className="grid grid-cols-2 gap-2 mt-2 items-center">
+          <div className="grid grid-cols-2 gap-2 print:gap-1 mt-2 print:mt-0.5 items-center">
             <div>
               <p className="font-semibold">Visto do Operador</p>
-              <div className="h-6 border-b border-gray-400 mt-1" />
-              <p className="font-semibold mt-1">Pago em</p>
+              <div className="h-6 print:h-3 border-b border-gray-400 mt-1 print:mt-0.5" />
+              <p className="font-semibold mt-1 print:mt-0.5">Pago em</p>
               <p>_____ / _____ / __________</p>
             </div>
             {parcela.qrCodeDataUrl && (
@@ -180,15 +181,15 @@ function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
                 <img
                   src={parcela.qrCodeDataUrl}
                   alt={`QR Code parcela ${parcela.parcelaLabel}`}
-                  className="w-16 h-16 sm:w-14 sm:h-14 print:w-14 print:h-14"
+                  className="w-16 h-16 sm:w-14 sm:h-14 print:w-10 print:h-10"
                 />
-                <p className="text-[8px] text-gray-500 mt-0.5">Escaneie para dar baixa</p>
+                <p className="text-[8px] print:text-[6px] text-gray-500 mt-0.5">Escaneie para dar baixa</p>
               </div>
             )}
           </div>
 
           {/* Título / Pedido / Sacado */}
-          <div className="border-t border-gray-300 pt-1 mt-1 space-y-0.5">
+          <div className="border-t border-gray-300 print:border-gray-400 pt-1 print:pt-0.5 mt-1 print:mt-0.5 space-y-0.5 print:space-y-0">
             <p>
               <span className="font-semibold">Título:</span> {dadosVenda.titulo}
               <span className="font-semibold ml-3">Pedido:</span> {dadosVenda.numeroVenda}
@@ -214,7 +215,7 @@ function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
 // ============================================================
 // Componente principal
 // ============================================================
-export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInicial = null, onVoltar = null }) {
+export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInicial = null }) {
   const [dadosCliente, setDadosCliente] = useState({
     nome: '',
     cpfCnpj: '',
@@ -228,18 +229,18 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
   });
 
   const [dadosCedente, setDadosCedente] = useState({
-    nome: 'CONGRESSO NACIONAL MIB - 2025',
-    endereco: 'RUA TAVARES BASTOS, S/N',
-    bairro: 'CENTRO',
-    cidade: 'UNIÃO DOS PALMARES',
-    estado: 'AL',
-    cep: '57800-000',
+    nome: '',
+    endereco: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+    cep: '',
     numeroRua: '',
     complemento: '',
     telefoneFixo: '',
-    telefoneCelular: '(82) 98107-2903',
-    email: 'aurianaviana12@gmail.com',
-    localPagamento: 'PAGAVEL SOMENTE EM MÃOS DO RESPONSÁVEL OU *VIA PIX.',
+    telefoneCelular: '',
+    email: '',
+    localPagamento: '',
   });
 
   const [dadosVenda, setDadosVenda] = useState({
@@ -251,11 +252,36 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
     quantidadeParcelas: 4,
     descontos: 0,
     acrescimos: 0,
-    instrucoes:
-      'PAGAMENTO VIA PIX - CHAVE: aurianaviana12@gmail.com (Enviar comprovante do PIX através do WhatsApp ou e-mail acima, no cabeçalho deste boleto.)',
+    instrucoes: '',
   });
 
   const [erro, setErro] = useState('');
+  const [salvandoPadrao, setSalvandoPadrao] = useState(false);
+
+  const handleSalvarComoPadrao = async () => {
+    setSalvandoPadrao(true);
+    try {
+      const { error } = await supabase.from('dados_igreja').update({
+        nome_igreja: dadosCedente.nome,
+        endereco: dadosCedente.endereco,
+        numero: dadosCedente.numeroRua,
+        bairro: dadosCedente.bairro,
+        cidade: dadosCedente.cidade,
+        estado: dadosCedente.estado,
+        cep: dadosCedente.cep,
+        telefone: dadosCedente.telefoneCelular,
+        email_contato: dadosCedente.email,
+        carne_instrucoes: dadosVenda.instrucoes,
+        carne_local_pagamento: dadosCedente.localPagamento
+      }).eq('id', 1);
+      if (error) throw error;
+      window.alert('Configurações do Cedente e Instruções salvas como padrão!');
+    } catch (err) {
+      alert('Erro ao salvar padrões: ' + err.message);
+    } finally {
+      setSalvandoPadrao(false);
+    }
+  };
 
   // ── Busca de membros (Supabase) ──────────────────────────
   const [pessoaSelecionadaId, setPessoaSelecionadaId] = useState(pessoaIdInicial);
@@ -263,6 +289,33 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
   const [resultadosBusca, setResultadosBusca] = useState([]);
   const [carregandoMembro, setCarregandoMembro] = useState(false);
   const [membroSelecionado, setMembroSelecionado] = useState(null);
+
+  // Carrega configurações automáticas do Emissor (Cedente)
+  useEffect(() => {
+    async function carregarConfiguracoesPadrao() {
+      const { data, error } = await supabase.from('dados_igreja').select('*').eq('id', 1).single();
+      if (!error && data) {
+        setDadosCedente({
+          nome: (data.nome_igreja || '').toUpperCase(),
+          endereco: (data.endereco || '').toUpperCase(),
+          numeroRua: data.numero || '',
+          bairro: (data.bairro || '').toUpperCase(),
+          cidade: (data.cidade || '').toUpperCase(),
+          estado: (data.estado || '').toUpperCase(),
+          cep: data.cep || '',
+          email: data.email_contato || '',
+          telefoneCelular: data.telefone || '',
+          localPagamento: data.carne_local_pagamento || 'PAGÁVEL NA SECRETARIA DA IGREJA'
+        });
+        
+        setDadosVenda(prev => ({
+          ...prev,
+          instrucoes: data.carne_instrucoes || ''
+        }));
+      }
+    }
+    carregarConfiguracoesPadrao();
+  }, []);
 
   // Busca incremental por nome (debounced)
   useEffect(() => {
@@ -482,18 +535,9 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
-      <div className="max-w-5xl mx-auto p-3 sm:p-6 space-y-6 print:p-0">
+      <div className="carne-print-page max-w-5xl mx-auto p-3 sm:p-6 space-y-6 print:p-0 print:max-w-none">
         {/* Cabeçalho */}
         <header className="print:hidden">
-          {onVoltar && (
-            <button
-              type="button"
-              onClick={onVoltar}
-              className="text-sm font-semibold text-slate-500 hover:text-slate-700 mb-2"
-            >
-              ← Voltar
-            </button>
-          )}
           <h1 className="text-2xl font-bold text-slate-900">Gerador de Carnê de Pagamento</h1>
           <p className="text-sm text-slate-500">
             Baseado no modelo "Carnê - Congresso Nacional MIB". Preencha os dados abaixo e clique em
@@ -634,7 +678,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                 type="text"
                 className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={dadosCliente.cpfCnpj}
-                onChange={(e) => setDadosCliente((d) => ({ ...d, cpfCnpj: e.target.value }))}
+                onChange={(e) => setDadosCliente((d) => ({ ...d, cpfCnpj: mascaraCPF(e.target.value) }))}
               />
             </div>
 
@@ -685,7 +729,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                   type="text"
                   className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={dadosCliente.cep}
-                  onChange={(e) => setDadosCliente((d) => ({ ...d, cep: e.target.value }))}
+                  onChange={(e) => setDadosCliente((d) => ({ ...d, cep: mascaraCEP(e.target.value) }))}
                 />
               </div>
             </div>
@@ -837,7 +881,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                   type="text"
                   className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={dadosCedente.telefoneCelular}
-                  onChange={(e) => setDadosCedente((d) => ({ ...d, telefoneCelular: e.target.value }))}
+                  onChange={(e) => setDadosCedente((d) => ({ ...d, telefoneCelular: mascaraTelefone(e.target.value) }))}
                 />
               </div>
             </div>
@@ -881,7 +925,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                     type="text"
                     className="w-24 sm:w-28 border border-slate-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={dadosCedente.cep}
-                    onChange={(e) => setDadosCedente((d) => ({ ...d, cep: e.target.value }))}
+                    onChange={(e) => setDadosCedente((d) => ({ ...d, cep: mascaraCEP(e.target.value) }))}
                   />
                 </div>
               </div>
@@ -913,6 +957,14 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
             </button>
             <button
               type="button"
+              onClick={handleSalvarComoPadrao}
+              disabled={salvandoPadrao}
+              className="bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2 rounded transition w-full sm:w-auto flex items-center justify-center gap-2"
+            >
+              {salvandoPadrao ? 'Salvando...' : '💾 Salvar como Padrão'}
+            </button>
+            <button
+              type="button"
               onClick={handlePrint}
               className="bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold px-4 py-2 rounded transition w-full sm:w-auto"
             >
@@ -934,15 +986,21 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
 
         {/* Carnê gerado */}
         {parcelas.length > 0 && (
-          <div className="space-y-4">
-            {parcelas.map((parcela) => (
-              <CupomCarne
+          <div className="space-y-4 print:space-y-0">
+            {parcelas.map((parcela, idx) => (
+              <div
                 key={parcela.numero}
-                dadosCedente={dadosCedente}
-                dadosCliente={dadosCliente}
-                dadosVenda={dadosVenda}
-                parcela={parcela}
-              />
+                className={`print:break-inside-avoid print:mb-4 ${
+                  (idx + 1) % 3 === 0 && idx !== parcelas.length - 1 ? 'print:break-after-page' : ''
+                }`}
+              >
+                <CupomCarne
+                  dadosCedente={dadosCedente}
+                  dadosCliente={dadosCliente}
+                  dadosVenda={dadosVenda}
+                  parcela={parcela}
+                />
+              </div>
             ))}
           </div>
         )}

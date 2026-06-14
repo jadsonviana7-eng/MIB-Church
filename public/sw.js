@@ -4,7 +4,7 @@ const APP_SHELL = [
   '/index.html',
   '/manifest.webmanifest',
   '/favicon.svg',
-  '/logo-mib-mundau.png',
+  '/logo-betesda-inicio.png',
   '/logo-betesda-mundau.png'
 ];
 

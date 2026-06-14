@@ -1632,48 +1632,48 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
     <div className="space-y-6">
       {/* LINHA 1: INDICADORES RÁPIDOS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="h-32 sm:h-28">
+        <div className="h-30 sm:h-40">
           <StatCard 
             label="Total de Alunos" 
             valor={stats.totalAlunos} 
             detalhe="Alunos únicos" 
-            icone={<span className="text-2xl">🎓</span>}
-            className="h-full flex flex-col"
+            icone={<span className="text-4xl">🎓</span>}
+            className="h-full justify-center items-center text-center"
           />
         </div>
         <div
           onClick={() => onNavigate('cursos')}
-          className="h-32 sm:h-28 cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          className="h-30 sm:h-40 cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
           title="Ir para Cursos"
         >
           <StatCard 
             label="Cursos" 
             valor={escolas.length} 
             detalhe="Escolas ativas" 
-            icone={<span className="text-2xl">🏫</span>}
-            className="h-full flex flex-col"
+            icone={<span className="text-4xl">🏫</span>}
+            className="h-full justify-center items-center text-center"
           />
         </div>
         <div
           onClick={() => onNavigate('turmas')}
-          className="h-32 sm:h-28 cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          className="h-30 sm:h-40 cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
           title="Ir para Turmas"
         >
           <StatCard 
             label="Turmas" 
             valor={turmas.filter(t => t.status === 'Em andamento').length} 
             detalhe="Em andamento" 
-            icone={<span className="text-2xl">👥</span>}
-            className="h-full flex flex-col"
+            icone={<span className="text-4xl">👥</span>}
+            className="h-full justify-center items-center text-center"
           />
         </div>
-        <div className="h-32 sm:h-28">
+        <div className="h-30 sm:h-40">
           <StatCard 
             label="Matrículas" 
             valor={stats.totalMatriculas} 
             detalhe="Total acumulado" 
-            icone={<span className="text-2xl">📝</span>}
-            className="h-full flex flex-col"
+            icone={<span className="text-4xl">📝</span>}
+            className="h-full justify-center items-center text-center"
           />
         </div>
       </div>

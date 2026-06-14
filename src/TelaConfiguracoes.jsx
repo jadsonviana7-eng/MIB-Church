@@ -20,9 +20,16 @@ export default function TelaConfiguracoes({ onFechar }) {
   const [nomeIgreja, setNomeIgreja] = useState('');
   const [cnpj, setCnpj] = useState('');
   const [endereco, setEndereco] = useState('');
+  const [numero, setNumero] = useState('');
+  const [bairro, setBairro] = useState('');
+  const [cidade, setCidade] = useState('');
+  const [estado, setEstado] = useState('');
+  const [cep, setCep] = useState('');
   const [telefone, setTelefone] = useState('');
   const [emailContato, setEmailContato] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const [carneInstrucoes, setCarneInstrucoes] = useState('');
+  const [carneLocalPagamento, setCarneLocalPagamento] = useState('');
   const [salvandoIgreja, setSalvandoIgreja] = useState(false);
 
   async function carregarDadosConfiguracao() {
@@ -42,9 +49,16 @@ export default function TelaConfiguracoes({ onFechar }) {
         setNomeIgreja(igr.nome_igreja || '');
           setCnpj(mascaraCNPJ(igr.cnpj || ''));
         setEndereco(igr.endereco || '');
+        setNumero(igr.numero || '');
+        setBairro(igr.bairro || '');
+        setCidade(igr.cidade || '');
+        setEstado(igr.estado || '');
+        setCep(igr.cep || '');
           setTelefone(mascaraTelefone(igr.telefone || ''));
         setEmailContato(igr.email_contato || '');
         setLogoUrl(igr.logo_url || '');
+        setCarneInstrucoes(igr.carne_instrucoes || '');
+        setCarneLocalPagamento(igr.carne_local_pagamento || '');
       }
       const { data: listFormasPagamento, error: erroFormasPagamento } = await supabase.from('formas_pagamento_disponiveis').select('*').order('nome');
       if (erroFormasPagamento) console.warn('Tabela "formas_pagamento_disponiveis" não encontrada. Veja DATABASE_SCHEMA.md');
@@ -70,9 +84,16 @@ export default function TelaConfiguracoes({ onFechar }) {
         nome_igreja: nomeIgreja.trim(),
         cnpj: desmascararCNPJ(cnpj),
         endereco: endereco.trim(),
+        numero: numero.trim(),
+        bairro: bairro.trim(),
+        cidade: cidade.trim(),
+        estado: estado.trim(),
+        cep: cep.trim(),
         telefone: desmascararTelefone(telefone),
         email_contato: emailContato.trim(),
         logo_url: logoUrl.trim(),
+        carne_instrucoes: carneInstrucoes.trim(),
+        carne_local_pagamento: carneLocalPagamento.trim(),
       }).eq('id', 1);
       if (error) throw error;
       window.alert('Dados da igreja atualizados.');
@@ -171,9 +192,27 @@ export default function TelaConfiguracoes({ onFechar }) {
           </div>
           <input type="email" placeholder="E-mail de contato" value={emailContato} onChange={(e) => setEmailContato(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
           <input type="url" placeholder="URL da logo (opcional)" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
-          <input type="text" placeholder="Endereço sede" value={endereco} onChange={(e) => setEndereco(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <input type="text" placeholder="Endereço / Logradouro" value={endereco} onChange={(e) => setEndereco(e.target.value)} className="sm:col-span-9 px-3 py-2 border rounded-xl text-sm" />
+            <input type="text" placeholder="Nº" value={numero} onChange={(e) => setNumero(e.target.value)} className="sm:col-span-3 px-3 py-2 border rounded-xl text-sm" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <input type="text" placeholder="Bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} className="px-3 py-2 border rounded-xl text-sm" />
+            <input type="text" placeholder="Cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} className="px-3 py-2 border rounded-xl text-sm" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <input type="text" placeholder="Estado (UF)" maxLength={2} value={estado} onChange={(e) => setEstado(e.target.value.toUpperCase())} className="px-3 py-2 border rounded-xl text-sm" />
+            <input type="text" placeholder="CEP" value={cep} onChange={(e) => setCep(e.target.value)} className="px-3 py-2 border rounded-xl text-sm" />
+          </div>
+
+          <div className="pt-4 border-t border-slate-100">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Configurações do Carnê</h4>
+            <textarea placeholder="Instruções padrão (Ex: Pagamento via PIX, regras de multa...)" value={carneInstrucoes} onChange={(e) => setCarneInstrucoes(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm mb-3 resize-none" rows="3" />
+            <input type="text" placeholder="Local de pagamento padrão" value={carneLocalPagamento} onChange={(e) => setCarneLocalPagamento(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
+          </div>
+
           <button type="submit" disabled={salvandoIgreja} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl ml-auto block">
-            {salvandoIgreja ? 'Salvando...' : 'Salvar igreja'}
+            {salvandoIgreja ? 'Salvando...' : '💾 Salvar Configurações (Igreja e Carnê)'}
           </button>
         </form>
       </Card>

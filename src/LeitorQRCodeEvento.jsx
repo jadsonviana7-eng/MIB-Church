@@ -29,9 +29,8 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
         if (estado === 2) {
           await instancia.stop();
         }
-        instancia.clear();
       } catch (e) {
-        // Câmera já parada/limpa
+        // Câmera já parada
       }
     }
     setCameraAtiva(false);
@@ -147,12 +146,14 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
 
       <Card className="p-0 overflow-hidden shadow-2xl border-none">
         <div className="p-6 space-y-4">
-          <div id="reader-evento" className="overflow-hidden rounded-2xl border-2 border-slate-100 bg-slate-50 min-h-[280px] flex items-center justify-center">
+          <div className="relative">
+            <div id="reader-evento" className="overflow-hidden rounded-2xl border-2 border-slate-100 bg-slate-50 min-h-[280px]"></div>
+
             {!cameraAtiva && !status.msg && (
               <button
                 type="button"
                 onClick={iniciarCamera}
-                className="flex flex-col items-center gap-3 px-6 py-10 text-slate-500 hover:text-[#202046] transition cursor-pointer"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 py-10 text-slate-500 hover:text-[#202046] transition cursor-pointer"
               >
                 <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h4M3 4v4M21 4a1 1 0 00-1-1h-4M21 4v4M3 20a1 1 0 001 1h4M3 20v-4M21 20a1 1 0 01-1 1h-4M21 20v-4M7 9h2v2H7V9zm0 6h2v2H7v-2zm6-6h4v4h-4V9zm0 8h2v2h-2v-2zm4-2h2v2h-2v-2z" />

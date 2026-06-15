@@ -178,12 +178,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
     return igreja;
   }
 
-  async function gerarReciboPDF() {
-    if (!recibo) return;
-
-    // Busca os dados da igreja para o cabeçalho do recibo
-    const igreja = await buscarDadosIgreja();
-
+  function montarDocRecibo(igreja) {
     const doc = new jsPDF({ unit: 'mm', format: 'a5' });
     const pageWidth = doc.internal.pageSize.getWidth();
     const marginX = 14;
@@ -252,8 +247,155 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
     doc.setFont('helvetica', 'italic');
     doc.text('Este recibo confirma o pagamento acima descrito.', pageWidth / 2, y, { align: 'center' });
 
+    return doc;
+  }
+
+  async function gerarReciboPDFBlob() {
+    const igreja = await buscarDadosIgreja();
+    const doc = montarDocRecibo(igreja);
+    return doc.output('blob');
+  }
+
+  // Renderiza o recibo em alta resolução para envio/visualização como imagem
+  async function gerarReciboPNGBlob() {
+    const igreja = await buscarDadosIgreja();
+
+    // A5 = 148mm x 210mm. Renderiza em alta resolução (~360dpi)
+    const DPI = 360;
+    const MM_TO_PX = DPI / 25.4;
+    const pageWidthMm = 148;
+    const pageHeightMm = 210;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(pageWidthMm * MM_TO_PX);
+    canvas.height = Math.round(pageHeightMm * MM_TO_PX);
+    const ctx = canvas.getContext('2d');
+
+    const mm = (v) => v * MM_TO_PX; // converte mm -> px no canvas
+    const pt = (v) => v * MM_TO_PX * 0.3528; // converte pt -> px (1pt = 0.3528mm)
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign = 'center';
+
+    const marginX = mm(14);
+    let y = mm(18);
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = `bold ${pt(14)}px Helvetica, Arial, sans-serif`;
+    ctx.fillText((igreja.nome_igreja || 'Igreja').toUpperCase(), canvas.width / 2, y);
+
+    ctx.font = `${pt(8)}px Helvetica, Arial, sans-serif`;
+    ctx.fillStyle = '#64748b';
+    y += mm(5);
+    const enderecoIgreja = [igreja.endereco, igreja.bairro, igreja.cidade, igreja.estado].filter(Boolean).join(', ');
+    if (enderecoIgreja) {
+      ctx.fillText(enderecoIgreja, canvas.width / 2, y);
+      y += mm(4);
+    }
+    const contatoIgreja = [igreja.telefone, igreja.email_contato].filter(Boolean).join(' • ');
+    if (contatoIgreja) {
+      ctx.fillText(contatoIgreja, canvas.width / 2, y);
+      y += mm(4);
+    }
+
+    y += mm(4);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = mm(0.3);
+    ctx.beginPath();
+    ctx.moveTo(marginX, y);
+    ctx.lineTo(canvas.width - marginX, y);
+    ctx.stroke();
+    y += mm(8);
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = `bold ${pt(13)}px Helvetica, Arial, sans-serif`;
+    ctx.fillText('RECIBO DE PAGAMENTO', canvas.width / 2, y);
+    y += mm(10);
+
+    ctx.textAlign = 'left';
+    const linha = (label, valor) => {
+      ctx.font = `bold ${pt(10)}px Helvetica, Arial, sans-serif`;
+      ctx.fillStyle = '#64748b';
+      ctx.fillText(`${label}:`, marginX, y);
+      ctx.font = `${pt(10)}px Helvetica, Arial, sans-serif`;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(String(valor || '—'), marginX + mm(32), y);
+      y += mm(7);
+    };
+
+    linha('Evento', recibo.evento);
+    linha('Participante', recibo.nome);
+    if (recibo.cpf) linha('CPF', recibo.cpf);
+    linha(
+      'Referente a',
+      recibo.ehParcela ? `Parcela ${recibo.parcelaNum}/${recibo.totalParcelas}` : 'Pagamento Integral (à vista)'
+    );
+    linha('Valor Pago', `R$ ${recibo.valor.toFixed(2)}`);
+    linha('Data do Pagamento', recibo.data.toLocaleDateString('pt-BR'));
+    linha(
+      'Situação',
+      recibo.statusPagamento === 'pago' ? 'Inscrição totalmente paga' : `Pendente (${recibo.totalParcelas - 1} parcela(s) restante(s))`
+    );
+
+    y += mm(6);
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.beginPath();
+    ctx.moveTo(marginX, y);
+    ctx.lineTo(canvas.width - marginX, y);
+    ctx.stroke();
+    y += mm(8);
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = `italic ${pt(9)}px Helvetica, Arial, sans-serif`;
+    ctx.fillText('Este recibo confirma o pagamento acima descrito.', canvas.width / 2, y);
+
+    return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+  }
+
+  function baixarBlob(blob, nomeArquivo) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nomeArquivo;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Compartilha o arquivo via menu nativo (WhatsApp, e-mail, etc.) com fallback para download
+  async function compartilharOuBaixar(blob, nomeArquivo, mimeType, tituloShare) {
+    try {
+      const file = new File([blob], nomeArquivo, { type: mimeType });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: tituloShare,
+          text: tituloShare,
+        });
+        return;
+      }
+    } catch (err) {
+      // Se o usuário cancelar o compartilhamento, não faz nada
+      if (err?.name === 'AbortError') return;
+      console.warn('Compartilhamento não suportado, baixando arquivo:', err);
+    }
+    // Fallback: download direto
+    baixarBlob(blob, nomeArquivo);
+  }
+
+  async function handleEnviarReciboPDF() {
+    if (!recibo) return;
+    const blob = await gerarReciboPDFBlob();
     const nomeArquivo = `recibo_${recibo.nome.replace(/\s+/g, '_').toLowerCase()}_parcela${recibo.parcelaNum}.pdf`;
-    doc.save(nomeArquivo);
+    await compartilharOuBaixar(blob, nomeArquivo, 'application/pdf', `Recibo - ${recibo.evento}`);
+  }
+
+  async function handleEnviarReciboPNG() {
+    if (!recibo) return;
+    const blob = await gerarReciboPNGBlob();
+    const nomeArquivo = `recibo_${recibo.nome.replace(/\s+/g, '_').toLowerCase()}_parcela${recibo.parcelaNum}.png`;
+    await compartilharOuBaixar(blob, nomeArquivo, 'image/png', `Recibo - ${recibo.evento}`);
   }
 
   async function montarDadosCartao() {
@@ -332,15 +474,34 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
           )}
 
           {recibo && (
-            <button
-              onClick={gerarReciboPDF}
-              className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all cursor-pointer hover:opacity-90 flex items-center justify-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m-9 8h12a2 2 0 002-2V8a2 2 0 00-2-2h-3.5a1 1 0 01-.8-.4L13.2 4H10a1 1 0 00-.8.4L7.5 6H6a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              Baixar Recibo (PDF)
-            </button>
+            <div className="space-y-2">
+              <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 text-center">
+                Enviar Recibo (WhatsApp, e-mail, etc.)
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={handleEnviarReciboPDF}
+                  className="py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all cursor-pointer hover:opacity-90 flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342A8.997 8.997 0 0021 12c0-4.97-4.03-9-9-9s-9 4.03-9 9c0 1.563.402 3.033 1.107 4.314L3 21l4.686-1.107A8.96 8.96 0 008.684 13.342z" />
+                  </svg>
+                  Recibo (PDF)
+                </button>
+                <button
+                  onClick={handleEnviarReciboPNG}
+                  className="py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all cursor-pointer hover:opacity-90 flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342A8.997 8.997 0 0021 12c0-4.97-4.03-9-9-9s-9 4.03-9 9c0 1.563.402 3.033 1.107 4.314L3 21l4.686-1.107A8.96 8.96 0 008.684 13.342z" />
+                  </svg>
+                  Recibo (Imagem)
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-400 text-center">
+                Em celulares, abre o menu de compartilhamento nativo. Em outros casos, o arquivo será baixado.
+              </p>
+            </div>
           )}
 
           {recibo && (

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PageHeader, Card } from './ui';
 
+import { mascaraMoeda, desmascararMoeda, soNumeros } from './mascaras';
 const VERSICULOS = [
   '"Honra ao Senhor com os teus bens e com as primícias de toda a tua renda." (Provérbios 3:9)',
   '"Cada um dê conforme determinou em seu coração, pois Deus ama quem dá com alegria." (2 Coríntios 9:7)',
@@ -21,8 +22,8 @@ export default function CalculadoraTributos() {
   }, []);
 
   // Lógica de Tributos
-  const resultados = useMemo(() => {
-    const v = parseFloat(valorInput) || 0;
+  const resultados = useMemo(() => { // Desmascara o valor antes de calcular
+    const v = desmascararMoeda(valorInput) || 0;
     if (v === 0) return null;
 
     const primicia = Math.ceil(v / 30);
@@ -55,10 +56,10 @@ export default function CalculadoraTributos() {
   };
 
   return (
-    <div className="max-w-full sm:max-w-md mx-auto space-y-6 px-2" style={{ fontFamily: "'Roboto', sans-serif" }}>
+    <div className="max-w-full sm:max-w-md lg:max-w-4xl mx-auto space-y-6 px-2" style={{ fontFamily: "'Roboto', sans-serif" }}>
       <PageHeader titulo="Calculadora de Tributos" breadcrumb={['Utilitários', 'Calculadora']} />
 
-      <div className="flex bg-slate-200 p-1.5 rounded-2xl gap-1 mb-2">
+      <div className="flex bg-slate-200 p-1.5 rounded-2xl gap-1 mb-2 lg:max-w-md lg:mx-auto">
         <button 
           onClick={() => setAbaAtiva('tributos')}
           className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all duration-300 ${abaAtiva === 'tributos' ? 'bg-[#1e3a8a] text-white shadow-lg' : 'text-slate-600 hover:bg-slate-100'}`}
@@ -75,42 +76,49 @@ export default function CalculadoraTributos() {
 
       {abaAtiva === 'tributos' ? (
         <div className="p-8 !bg-slate-900 border border-slate-800 shadow-2xl rounded-[40px] text-white overflow-hidden">
-          <div className="space-y-6 relative z-10">
-            <div className="text-center">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 block">Valor a Calcular</label>
-              <div className="relative group">
-                <span className="absolute left-6 top-1/2 -translate-y-1/2 text-rose-500/40 font-black text-xl group-focus-within:text-rose-500 transition-colors">R$</span>
-                <input 
-                  type="number"
-                  placeholder="0"
-                  value={valorInput}
-                  onChange={(e) => setValorInput(e.target.value)}
-                  className="w-full !bg-black/40 border-2 border-white/5 rounded-[30px] p-6 text-center text-4xl font-black text-rose-500 outline-none focus:border-sky-500/30 transition-all"
-                />
+          <div className="relative z-10 lg:grid lg:grid-cols-2 lg:gap-12 lg:items-start">
+            <div className="space-y-6">
+              <div className="text-center lg:text-left">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 block">Valor a Calcular</label>
+                <div className="relative group">
+                  <span className="absolute left-6 top-1/2 -translate-y-1/2 text-rose-500/40 font-black text-xl group-focus-within:text-rose-500 transition-colors"></span>
+                  <input 
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder="0,00"
+                    value={mascaraMoeda(valorInput)}
+                    onChange={(e) => setValorInput(soNumeros(e.target.value))}
+                    className="w-full !bg-black/60 border-2 border-white/5 rounded-[30px] p-6 text-center lg:text-left lg:pl-16 leading-none font-black text-rose-500 outline-none focus:border-sky-500/30 transition-all"
+                    style={{ fontSize: 'clamp(40px, 15vw, 40px)', height: 'auto', minHeight: '1.2em' }}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-sky-600 to-blue-800 rounded-[20px] p-6 text-center shadow-xl shadow-blue-950/40 border border-white/10">
+                <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] mb-1">Investimento no Reino</p>
+                <p className="text-4xl font-black text-white tracking-tighter">{formatBRL(resultados?.total || 0)}</p>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-sky-600 to-blue-800 rounded-[35px] p-6 text-center shadow-xl shadow-blue-950/40 border border-white/10">
-              <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] mb-1">Investimento no Reino</p>
-              <p className="text-4xl font-black text-white tracking-tighter">{formatBRL(resultados?.total || 0)}</p>
-            </div>
+            <div className="mt-6 lg:mt-0 space-y-4">
+              <div className="grid grid-cols-1 gap-2">
+                <ResultRow label="Primícia" value={resultados?.primicia || 0} />
+                <ResultRow label="Dízimo" value={resultados?.dizimo || 0} />
+                <ResultRow label="Socorro" value={resultados?.socorro || 0} />
+                <ResultRow label="Gratidão" value={resultados?.gratidao || 0} />
+                <ResultRow label="Semeadura" value={resultados?.semeadura || 0} />
+                <ResultRow label="Israel" value={resultados?.israel || 0} />
+              </div>
 
-            <div className="grid grid-cols-1 gap-2">
-              <ResultRow label="Primícia" value={resultados?.primicia || 0} />
-              <ResultRow label="Dízimo" value={resultados?.dizimo || 0} />
-              <ResultRow label="Socorro" value={resultados?.socorro || 0} />
-              <ResultRow label="Gratidão" value={resultados?.gratidao || 0} />
-              <ResultRow label="Semeadura" value={resultados?.semeadura || 0} />
-              <ResultRow label="Israel" value={resultados?.israel || 0} />
-            </div>
-
-            <div className="pt-6 border-t border-white/10 text-center italic text-sky-400 text-[11px] px-6 leading-relaxed font-medium">
-              {versiculo}
+              <div className="pt-6 border-t border-white/10 text-center lg:text-right italic text-sky-400 text-[11px] lg:px-0 leading-relaxed font-medium">
+                {versiculo}
+              </div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="p-8 !bg-slate-900 border border-slate-800 shadow-2xl rounded-[40px] text-white">
+        <div className="p-8 !bg-slate-900 border border-slate-800 shadow-2xl rounded-[40px] text-white lg:max-w-md lg:mx-auto">
           <div className="space-y-6 relative z-10">
             <div className="bg-black/40 rounded-[30px] p-6 border-2 border-white/5 text-right overflow-hidden shadow-inner">
               <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Resultado</div>

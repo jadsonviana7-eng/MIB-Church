@@ -81,7 +81,7 @@ export default function CalculadoraTributos() {
               <div className="text-center lg:text-left">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-3 block">Valor a Calcular</label>
                 <div className="relative group">
-                  <span className="absolute left-6 top-1/2 -translate-y-1/2 text-rose-500/40 font-black text-xl group-focus-within:text-rose-500 transition-colors"></span>
+                  <span className="absolute left-6 top-1/2 -translate-y-1/2 text-rose-500/40 font-black text-xl group-focus-within:text-rose-500 transition-colors">R$</span>
                   <input 
                     type="text"
                     inputMode="numeric"
@@ -90,12 +90,12 @@ export default function CalculadoraTributos() {
                     value={mascaraMoeda(valorInput)}
                     onChange={(e) => setValorInput(soNumeros(e.target.value))}
                     className="w-full !bg-black/60 border-2 border-white/5 rounded-[30px] p-6 text-center lg:text-left lg:pl-16 leading-none font-black text-rose-500 outline-none focus:border-sky-500/30 transition-all"
-                    style={{ fontSize: 'clamp(40px, 15vw, 40px)', height: 'auto', minHeight: '1.2em' }}
+                    style={{ fontSize: 'clamp(60px, 15vw, 150px)', height: 'auto', minHeight: '1.2em' }}
                   />
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-sky-600 to-blue-800 rounded-[20px] p-6 text-center shadow-xl shadow-blue-950/40 border border-white/10">
+              <div className="bg-gradient-to-br from-sky-600 to-blue-800 rounded-[35px] p-6 text-center shadow-xl shadow-blue-950/40 border border-white/10">
                 <p className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] mb-1">Investimento no Reino</p>
                 <p className="text-4xl font-black text-white tracking-tighter">{formatBRL(resultados?.total || 0)}</p>
               </div>

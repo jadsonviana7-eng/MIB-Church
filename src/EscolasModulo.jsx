@@ -187,7 +187,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
   };
 
   const handleExcluir = async (id) => {
-    if (!window.confirm('Deseja realmente excluir este curso? Todas as turmas vinculadas serão afetadas.')) return;
+    if (!(await window.confirmModal('Excluir Curso', 'Deseja realmente excluir este curso? Todas as turmas vinculadas serão afetadas.'))) return;
     const { error } = await supabase.from('escolas').delete().eq('id', id);
     if (error) alert('Erro ao excluir: ' + error.message);
     else carregarEscolas();
@@ -273,7 +273,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
   };
 
   const handleExcluirTurma = async (id) => {
-    if (!window.confirm('Excluir esta turma permanentemente?')) return;
+    if (!(await window.confirmModal('Excluir Turma', 'Excluir esta turma permanentemente?'))) return;
     const { error } = await supabase.from('turmas').delete().eq('id', id);
     if (error) alert('Erro ao excluir: ' + error.message);
     else carregarTurmas();
@@ -415,7 +415,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
   };
 
   const handleExcluirAula = async (id) => {
-    if (!window.confirm("Deseja realmente excluir este registro de aula?")) return;
+    if (!(await window.confirmModal('Excluir Aula', 'Deseja realmente excluir este registro de aula?'))) return;
     const { error } = await supabase.from('aulas').delete().eq('id', id);
     if (error) alert("Erro ao excluir aula: " + error.message);
     else carregarDadosTurma(turmaSelecionadaId);

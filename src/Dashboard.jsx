@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { Avatar, DoughnutCard, CombinationCard, ColumnChart, Recentes, PageHeader, StatCard } from './ui';
 import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona } from './churchUtils'; // Importa meses
+import PainelAprovacoes from './PainelAprovacoes';
 
-export default function Dashboard({ pessoas, celulas, zonas, relatoriosCelula, indicadores, carregando, periodoConvertidos, setPeriodoConvertidos }) {
+export default function Dashboard({ pessoas, celulas, zonas, relatoriosCelula, indicadores, carregando, periodoConvertidos, setPeriodoConvertidos, onVerMembro }) {
   const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo'), [pessoas]);
 
   const zonasDados = useMemo(() => agrupamentoPor(pessoasAtivas, (p) => nomeZona(zonas, p.zona_id)), [pessoasAtivas, zonas]);
@@ -36,7 +37,7 @@ export default function Dashboard({ pessoas, celulas, zonas, relatoriosCelula, i
   }, [pessoas]);
 
   return (
-    <div className="space-y-6">
+    <div className="h-full overflow-y-auto p-4 sm:p-6 space-y-6 scrollbar-hide">
       <div className="hidden md:block">
         <PageHeader titulo="Visão Geral" />
       </div>
@@ -69,12 +70,14 @@ export default function Dashboard({ pessoas, celulas, zonas, relatoriosCelula, i
         />
       </div>
 
+      <PainelAprovacoes pessoas={pessoas} />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <DoughnutCard titulo="Distribuição por Zona" dados={zonasDados} />
         <DoughnutCard titulo="Faixa Etária (Membros)" dados={faixasDados} />
         <CombinationCard titulo="Novos convertidos" dados={novosConvertidos} periodo={periodoConvertidos} setPeriodo={setPeriodoConvertidos} />
         <DoughnutCard titulo="Faixa etária das células" dados={faixasCelulas} />
-        <ColumnChart titulo="Aniversariantes por mês" dados={aniversariosDados} />
+        <ColumnChart titulo="Aniversariantes por mês" dados={aniversariosDados} hideLegend={true} />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

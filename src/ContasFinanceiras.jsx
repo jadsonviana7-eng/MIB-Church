@@ -59,7 +59,7 @@ export default function ContasFinanceiras({ usuarioLogado, onVoltar }) {
   };
 
   const removerConta = async (id) => {
-    if (!window.confirm('Excluir esta conta permanentemente?')) return;
+    if (!(await window.confirmModal('Excluir Conta', 'Excluir esta conta permanentemente?'))) return;
     setCarregando(true);
     try {
       const { error } = await supabase.from('contas_financeiras').delete().eq('id', id);

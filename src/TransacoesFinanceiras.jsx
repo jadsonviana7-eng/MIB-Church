@@ -262,7 +262,7 @@ export default function TransacoesFinanceiras({
 
   const handleQuickDelete = async (e, t) => {
     e.stopPropagation();
-    if (!window.confirm('Tem certeza que deseja excluir este lançamento permanentemente?')) return;
+    if (!(await window.confirmModal('Excluir Lançamento', 'Tem certeza que deseja excluir este lançamento permanentemente?'))) return;
     try {
       const { error } = await supabase
         .from('transacoes_financeiras')
@@ -705,7 +705,7 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
 
   async function handleExcluir() {
     if (!transacaoParaEditar?.id) return;
-    if (!window.confirm('Tem certeza que deseja excluir este lançamento permanentemente?')) return;
+    if (!(await window.confirmModal('Excluir Lançamento', 'Tem certeza que deseja excluir este lançamento permanentemente?'))) return;
 
     setEnviando(true);
     try {

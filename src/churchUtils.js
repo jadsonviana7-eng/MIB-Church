@@ -20,7 +20,7 @@ export const faixasEtarias = [
   { id: 'idosos', nome: 'Idosos (60+)', curto: 'Idosos' },
 ];
 
-export function faixaDaIdade(dataNascimento) {
+export function calcularIdade(dataNascimento) {
   if (!dataNascimento) return null;
   const hoje = new Date();
   const nascimento = new Date(dataNascimento);
@@ -29,6 +29,12 @@ export function faixaDaIdade(dataNascimento) {
   if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
     idade--;
   }
+  return idade;
+}
+
+export function faixaDaIdade(dataNascimento) {
+  const idade = calcularIdade(dataNascimento);
+  if (idade === null) return null;
 
   if (idade >= 0 && idade <= 11) return 'criancas';
   if (idade >= 12 && idade <= 17) return 'adolescentes';

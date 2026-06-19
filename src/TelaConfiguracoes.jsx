@@ -133,13 +133,13 @@ export default function TelaConfiguracoes({ onFechar }) {
   }
 
   async function handleExcluirZona(id) {
-    if (!window.confirm('Excluir esta zona?')) return;
+    if (!(await window.confirmModal('Excluir Zona', 'Excluir esta zona?'))) return;
     await supabase.from('zonas_moradia').delete().eq('id', id);
     await carregarDadosConfiguracao();
   }
 
   async function handleExcluirAtuacao(id) {
-    if (!window.confirm('Excluir esta atuação?')) return;
+    if (!(await window.confirmModal('Excluir Atuação', 'Excluir esta atuação?'))) return;
     await supabase.from('atuacoes').delete().eq('id', id);
     await carregarDadosConfiguracao();
   }
@@ -159,7 +159,7 @@ export default function TelaConfiguracoes({ onFechar }) {
   }
 
   async function handleExcluirFormaPagamento(id) {
-    if (!window.confirm('Excluir esta forma de pagamento?')) return;
+    if (!(await window.confirmModal('Excluir Forma de Pagamento', 'Excluir esta forma de pagamento?'))) return;
     await supabase.from('formas_pagamento_disponiveis').delete().eq('id', id);
     await carregarDadosConfiguracao();
   }

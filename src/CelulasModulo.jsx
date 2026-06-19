@@ -220,7 +220,7 @@ function ReunioesCelulas({ celulas, pessoas, relatoriosCelula, obterDados, onVol
 
   async function handleExcluirReuniao(e, id) {
     e.stopPropagation();
-    if (!window.confirm('Tem certeza que deseja excluir este relatório de reunião?')) return;
+    if (!(await window.confirmModal('Excluir Relatório', 'Tem certeza que deseja excluir este relatório de reunião?'))) return;
     try {
       const { error } = await supabase.from('relatorios_celula').delete().eq('id', id);
       if (error) throw error;
@@ -707,26 +707,35 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
           })()}
         </svg>
 
-        {/* Legenda */}
-        <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-1 px-2">
-          {entradas.map(([label, valor], i) => {
-            const cor = chartColorsRelatorio[i % chartColorsRelatorio.length];
-            const isHover = categoriaHover === label;
-            return (
-              <button
-                key={label}
-                type="button"
-                onMouseEnter={() => setCategoriaHover(label)}
-                onMouseLeave={() => setCategoriaHover(null)}
-                className="flex items-center gap-1.5 transition-opacity"
-                style={{ opacity: categoriaHover && !isHover ? 0.4 : 1 }}
-              >
-                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: cor }} />
-                <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wide">{label}</span>
-                <span className="text-[10px] font-black" style={{ color: cor }}>{valor}</span>
-              </button>
-            );
-          })}
+        {/* Legenda em Formato de Tabela */}
+        <div className="w-full mt-6 border-t border-slate-100 pt-2">
+          <table className="w-full text-[10px]">
+            <tbody>
+              {entradas.map(([label, valor], i) => {
+                const cor = chartColorsRelatorio[i % chartColorsRelatorio.length];
+                const isHover = categoriaHover === label;
+                const pct = total > 0 ? ((valor / total) * 100).toFixed(0) : 0;
+                
+                return (
+                  <tr 
+                    key={label} 
+                    className={`transition-all border-b border-slate-50 last:border-0 hover:bg-slate-50 cursor-pointer ${isHover ? 'bg-slate-50' : ''}`}
+                    onMouseEnter={() => setCategoriaHover(label)}
+                    onMouseLeave={() => setCategoriaHover(null)}
+                  >
+                    <td className="py-2 pl-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cor }} />
+                        <span className="font-bold text-slate-600 uppercase tracking-wide">{label}</span>
+                      </div>
+                    </td>
+                    <td className="py-2 text-right font-black text-slate-700">{valor}</td>
+                    <td className="py-2 text-right pr-2 text-slate-400 font-bold w-12">{pct}%</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
     );
@@ -1112,7 +1121,7 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
 
   async function handleExcluirReuniao(e, id) {
     e.stopPropagation();
-    if (!window.confirm('Tem certeza que deseja excluir este relatório de reunião?')) return;
+    if (!(await window.confirmModal('Excluir Relatório', 'Tem certeza que deseja excluir este relatório de reunião?'))) return;
     try {
       const { error } = await supabase.from('relatorios_celula').delete().eq('id', id);
       if (error) throw error;
@@ -1153,7 +1162,7 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
   };
 
   async function handleRemoverPessoa(pessoaId, nomePessoa) {
-    if (!window.confirm(`Tem certeza que deseja remover ${nomePessoa} desta célula?`)) return;
+    if (!(await window.confirmModal('Remover Membro', `Tem certeza que deseja remover ${nomePessoa} desta célula?`))) return;
     setExcluindoId(pessoaId);
     try {
       const { error } = await supabase.from('pessoas').update({ celula_id: null }).eq('id', pessoaId);

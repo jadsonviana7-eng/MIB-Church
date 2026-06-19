@@ -1,13 +1,15 @@
 -- ==============================================================
 -- ROW LEVEL SECURITY (RLS) - POLÍTICAS POR PERFIL
 -- ==============================================================
--- Perfis: admin, pastores, líderes de célula, membros
+-- Perfis: admin, pastor, lider, membro
 -- Banco de dados: MIB Church (Supabase)
 --
 -- EXECUÇÃO:
 -- 1. SQL Editor do Supabase
 -- 2. Cole este arquivo inteiro
 -- 3. Execute
+-- 4. Se as tabelas do módulo ministerial não existirem, execute o script
+--    de criação de tabelas ministeriais primeiro.
 -- ==============================================================
 
 -- ============================================
@@ -15,6 +17,26 @@
 -- ============================================
 
 -- Tabela: reunioes_celula
+-- Tabela de Eventos para as escalas
+CREATE TABLE IF NOT EXISTS public.eventos_ministeriais (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    titulo TEXT NOT NULL,
+    descricao TEXT,
+    local TEXT,
+    data_evento TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Tabela de Escalas (quem está escalado para qual evento/função)
+CREATE TABLE IF NOT EXISTS public.escalas (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    evento_id UUID REFERENCES public.eventos_ministeriais(id) ON DELETE CASCADE NOT NULL,
+    pessoa_id UUID REFERENCES public.pessoas(id) ON DELETE CASCADE NOT NULL,
+    ministerio_id UUID REFERENCES public.ministerios(id) ON DELETE CASCADE NOT NULL,
+    funcao_id UUID REFERENCES public.ministerio_funcoes(id) ON DELETE SET NULL,
+    status TEXT DEFAULT 'pendente', -- pendente, confirmado, recusado
+    created_at TIMESTAMPTZ DEFAULT now()
+);
 CREATE TABLE IF NOT EXISTS public.reunioes_celula (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   celula_id uuid NOT NULL REFERENCES public.celulas(id) ON DELETE CASCADE,
@@ -91,6 +113,8 @@ ALTER TABLE public.relatorios_reuniao ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.contas_financeiras ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categorias_financeiras ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.transacoes_financeiras ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.eventos_ministeriais ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.escalas ENABLE ROW LEVEL SECURITY;
 
 -- ============================================
 -- 2. FUNÇÃO AUXILIAR: GET_PERFIL_USUARIO
@@ -511,6 +535,51 @@ CREATE POLICY "categorias_financeiras_deny_lider_membro" ON public.categorias_fi
   FOR ALL
   TO authenticated
   USING (false);
+
+-- ============================================
+-- POLÍTICAS PARA O MÓDULO DE ESCALAS
+-- ============================================
+
+-- Tabela: eventos_ministeriais
+DROP POLICY IF EXISTS "eventos_ministeriais_select_all" ON public.eventos_ministeriais;
+DROP POLICY IF EXISTS "eventos_ministeriais_manage_staff" ON public.eventos_ministeriais;
+
+-- Qualquer usuário logado pode ver os eventos.
+CREATE POLICY "eventos_ministeriais_select_all" ON public.eventos_ministeriais
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Apenas admin, pastor e líder podem gerenciar (criar, editar, excluir).
+CREATE POLICY "eventos_ministeriais_manage_staff" ON public.eventos_ministeriais
+  FOR ALL
+  TO authenticated
+  USING (public.get_perfil_usuario() IN ('admin', 'pastor', 'lider'))
+  WITH CHECK (public.get_perfil_usuario() IN ('admin', 'pastor', 'lider'));
+
+-- Tabela: escalas
+DROP POLICY IF EXISTS "escalas_select_all" ON public.escalas;
+DROP POLICY IF EXISTS "escalas_manage_staff" ON public.escalas;
+DROP POLICY IF EXISTS "escalas_update_proprio" ON public.escalas;
+
+-- Qualquer usuário logado pode ver as escalas.
+CREATE POLICY "escalas_select_all" ON public.escalas
+  FOR SELECT
+  TO authenticated
+  USING (true);
+
+-- Apenas admin, pastor e líder podem criar e excluir escalados.
+CREATE POLICY "escalas_manage_staff" ON public.escalas
+  FOR INSERT, DELETE
+  TO authenticated
+  USING (public.get_perfil_usuario() IN ('admin', 'pastor', 'lider'))
+  WITH CHECK (public.get_perfil_usuario() IN ('admin', 'pastor', 'lider'));
+
+-- O próprio membro pode atualizar o status da sua escala (confirmar/recusar).
+CREATE POLICY "escalas_update_proprio" ON public.escalas
+  FOR UPDATE
+  TO authenticated
+  USING (pessoa_id = public.get_id_usuario());
 
 -- ============================================
 -- RESUMO DAS PERMISSÕES

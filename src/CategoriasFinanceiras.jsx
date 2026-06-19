@@ -61,7 +61,7 @@ export default function CategoriasFinanceiras({ usuarioLogado, onVoltar }) {
   };
 
   const removerCategoria = async (id) => {
-    if (!window.confirm('Excluir esta categoria permanentemente?')) return;
+    if (!(await window.confirmModal('Excluir Categoria', 'Excluir esta categoria permanentemente?'))) return;
     try {
       const cat = categorias.find(c => c.id === id);
       const { error } = await supabase.from('categorias_financeiras').delete().eq('id', id);

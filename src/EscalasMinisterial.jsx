@@ -79,16 +79,16 @@ const exportStyles = `
   .export-list { flex: 1; border-radius: 36px; padding: 22px 20px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
   .export-list-title { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; opacity: 0.45; padding: 0 8px 6px; border-bottom: 1px solid rgba(0,0,0,0.08); margin-bottom: 4px; }
   
-  .export-item { border-radius: 22px; padding: 18px 22px; display: grid; grid-template-columns: 100px 1fr; align-items: center; gap: 14px; min-height: 100px; }
-  .export-date { text-align: center; padding-right: 14px; border-right: 1.5px solid rgba(0,0,0,0.1); flex-shrink: 0; }
-  .export-date-day { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.5; }
-  .export-date-num { font-size: 58px; font-weight: 900; line-height: 0.95; margin-top: 2px; }
+  .export-item { border-radius: 22px; padding: 18px 22px; display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 0; min-height: 110px; }
+  .export-date { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-right: 22px; border-right: 2px solid rgba(0,0,0,0.12); align-self: stretch; flex-shrink: 0; }
+  .export-date-day { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.5; margin-bottom: 2px; }
+  .export-date-num { font-size: 60px; font-weight: 900; line-height: 1; }
   
-  .export-roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; padding-left: 18px; }
-  .export-role-box { display: flex; flex-direction: column; gap: 2px; padding-left: 12px; border-left: 2px solid rgba(0,0,0,0.1); }
-  .export-role-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.45; }
-  .export-role-name { font-size: 20px; font-weight: 900; line-height: 1.1; color: #111; overflow-wrap: break-word; }
-  .export-role-empty { font-size: 18px; font-weight: 700; opacity: 0.25; }
+  .export-roles { display: flex; flex-wrap: wrap; gap: 0; padding-left: 22px; align-items: center; width: 100%; }
+  .export-role-box { display: flex; flex-direction: column; gap: 4px; padding: 10px 16px 10px 12px; border-left: 2.5px solid rgba(0,0,0,0.08); min-width: 200px; flex: 1; }
+  .export-role-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.4; }
+  .export-role-name { font-size: 22px; font-weight: 900; line-height: 1.1; color: #111; overflow-wrap: break-word; word-break: break-word; }
+  .export-role-empty { font-size: 20px; font-weight: 700; opacity: 0.2; }
 
   .export-footer { display: flex; align-items: center; justify-content: center; padding: 28px 0 8px; flex-shrink: 0; }
   .export-footer-logo { height: 100px; object-fit: contain; }
@@ -114,6 +114,18 @@ export default function EscalasMinisterial() {
   const [status, setStatus] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [mostrarPreview, setMostrarPreview] = useState(false);
+
+  // Modal de configurações mobile (bottom sheet)
+  const [isModalConfigAberto, setIsModalConfigAberto] = useState(false);
+
+  // Edição inline de cores da escala atual
+  const [editCores, setEditCores] = useState({ corBg: '', corAccent: '' });
+
+  // Sincroniza editCores sempre que o tipo muda
+  useEffect(() => {
+    const c = configEscalas[tipo]?.cor;
+    if (c) setEditCores({ corBg: c.bg, corAccent: c.accent });
+  }, [tipo, configEscalas]);
 
   // Modal: Vincular membros
   const [isModalEquipeAberto, setIsModalEquipeAberto] = useState(false);
@@ -255,90 +267,116 @@ export default function EscalasMinisterial() {
     const container = document.createElement('div');
     try {
       const p = paleta;
-      container.style.cssText = 'position:fixed;left:-9999px;top:0;';
-      const styleTag = document.createElement('style');
-      styleTag.innerHTML = exportStyles;
-      container.appendChild(styleTag);
+      container.style.cssText = 'position:fixed;left:-9999px;top:0;width:1080px;';
+      document.body.appendChild(container);
 
       const totalCultos = diasEscala.length;
-      const domsCount = diasEscala.filter(d => d.semana === 0).length;
-      const quiCount = diasEscala.filter(d => d.semana === 4).length;
+      const domsCount  = diasEscala.filter(d => d.semana === 0).length;
+      const quiCount   = diasEscala.filter(d => d.semana === 4).length;
       const outrosCount = totalCultos - domsCount - quiCount;
-
       const cargos = configEscalas[tipo]?.cargos || [];
 
+      // ── helpers de estilo inline ──────────────────────────────────────
+      const S = {
+        page:      `box-sizing:border-box;width:1080px;height:1920px;padding:48px;font-family:'Montserrat',Arial,sans-serif;display:flex;flex-direction:column;gap:18px;background:linear-gradient(150deg,${p.bgA} 0%,${p.bgB} 55%,${p.bgC} 100%);`,
+        header:    `box-sizing:border-box;border-radius:36px;padding:42px 40px 36px;display:flex;flex-direction:column;align-items:flex-start;gap:18px;overflow:hidden;background:${p.panel}CC;`,
+        badge:     `box-sizing:border-box;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:0.18em;padding:6px 18px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;background:${p.bgA};color:${p.panel};`,
+        titleRow:  `box-sizing:border-box;display:flex;flex-direction:column;gap:4px;width:100%;`,
+        kicker:    `box-sizing:border-box;font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.65;color:${p.accent};`,
+        title:     `box-sizing:border-box;font-size:88px;font-weight:900;line-height:0.9;letter-spacing:-2px;color:${p.ink};`,
+        stats:     `box-sizing:border-box;display:flex;gap:12px;width:100%;margin-top:4px;`,
+        statCard:  `box-sizing:border-box;flex:1;padding:16px 20px;border-radius:20px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(0,0,0,0.12);`,
+        statLabel: `box-sizing:border-box;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;opacity:0.55;color:${p.ink};`,
+        statValue: `box-sizing:border-box;font-size:34px;font-weight:900;line-height:1;color:${p.ink};`,
+        list:      `box-sizing:border-box;flex:1;border-radius:36px;padding:22px 20px;display:flex;flex-direction:column;gap:10px;overflow:hidden;background:${p.panel}CC;`,
+        listTitle: `box-sizing:border-box;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:0.15em;opacity:0.45;padding:0 8px 8px;border-bottom:1px solid rgba(0,0,0,0.08);margin-bottom:4px;color:${p.ink};`,
+        item:      `box-sizing:border-box;border-radius:22px;padding:0;display:flex;flex-direction:row;align-items:stretch;min-height:110px;background:rgba(255,255,255,0.90);overflow:hidden;`,
+        dateCol:   `box-sizing:border-box;width:120px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 20px;border-right:2px solid rgba(0,0,0,0.10);`,
+        dateDay:   `box-sizing:border-box;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;opacity:0.45;margin-bottom:4px;color:${p.accent};`,
+        dateNum:   `box-sizing:border-box;font-size:62px;font-weight:900;line-height:1;color:${p.ink};`,
+        rolesRow:  `box-sizing:border-box;flex:1;display:flex;flex-direction:row;align-items:stretch;padding:0;`,
+        roleBox:   `box-sizing:border-box;flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:18px 20px;border-right:1px solid rgba(0,0,0,0.06);`,
+        roleBoxLast:`box-sizing:border-box;flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:18px 20px;`,
+        roleLabel: `box-sizing:border-box;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.10em;opacity:0.40;color:${p.accent};`,
+        roleName:  `box-sizing:border-box;font-size:22px;font-weight:900;line-height:1.1;color:#111;word-break:break-word;`,
+        roleEmpty: `box-sizing:border-box;font-size:20px;font-weight:700;opacity:0.20;color:#111;`,
+        footer:    `box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:20px 0 4px;flex-shrink:0;`,
+        footerImg: `height:100px;object-fit:contain;`,
+      };
+
+      // ── stats HTML ────────────────────────────────────────────────────
       const statsHTML = [
-        `<div class="export-stat-card" style="background:rgba(0,0,0,0.12)">
-          <div class="export-stat-label" style="color:${p.ink}">Cultos</div>
-          <div class="export-stat-value" style="color:${p.ink}">${totalCultos}</div>
-        </div>`,
-        domsCount > 0 ? `<div class="export-stat-card" style="background:rgba(0,0,0,0.12)">
-          <div class="export-stat-label" style="color:${p.ink}">Domingos</div>
-          <div class="export-stat-value" style="color:${p.ink}">${domsCount}</div>
-        </div>` : '',
-        quiCount > 0 ? `<div class="export-stat-card" style="background:rgba(0,0,0,0.12)">
-          <div class="export-stat-label" style="color:${p.ink}">Quintas</div>
-          <div class="export-stat-value" style="color:${p.ink}">${quiCount}</div>
-        </div>` : '',
-        outrosCount > 0 ? `<div class="export-stat-card" style="background:rgba(0,0,0,0.12)">
-          <div class="export-stat-label" style="color:${p.ink}">Outros</div>
-          <div class="export-stat-value" style="color:${p.ink}">${outrosCount}</div>
-        </div>` : '',
-      ].join('');
+        { label: 'Cultos', val: totalCultos },
+        domsCount  > 0 ? { label: 'Domingos', val: domsCount  } : null,
+        quiCount   > 0 ? { label: 'Quintas',  val: quiCount   } : null,
+        outrosCount > 0 ? { label: 'Outros',  val: outrosCount } : null,
+      ].filter(Boolean).map(s =>
+        `<div style="${S.statCard}"><div style="${S.statLabel}">${s.label}</div><div style="${S.statValue}">${s.val}</div></div>`
+      ).join('');
 
+      // ── icon HTML ─────────────────────────────────────────────────────
       const iconHtml = configEscalas[tipo]?.iconUrl
-        ? `<img src="${configEscalas[tipo].iconUrl}" style="width:28px;height:28px;object-fit:contain;vertical-align:middle;" />`
-        : (configEscalas[tipo]?.iconSvg ? `<span style="width:24px;height:24px;display:inline-block;vertical-align:middle;color:${p.accent}">${configEscalas[tipo].iconSvg}</span>` : '');
+        ? `<img src="${configEscalas[tipo].iconUrl}" style="width:26px;height:26px;object-fit:contain;" />`
+        : configEscalas[tipo]?.iconSvg
+          ? `<span style="width:24px;height:24px;display:inline-block;">${configEscalas[tipo].iconSvg}</span>`
+          : '';
 
+      // ── itens HTML — cada cargo ocupa 1 coluna flex de largura igual ──
       const itensHTML = diasEscala.map(culto => {
         const atribuicoes = dadosEscala[culto.id] || {};
         const rolesHTML = cargos.map((cargo, idx) => {
           const pId = atribuicoes[idx];
           const pessoa = equipe.find(pp => pp.id === pId);
           const partes = pessoa ? pessoa.nome.trim().split(' ') : [];
-          const nomeCurto = partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1]}` : (partes[0] || '');
-          return `<div class="export-role-box">
-            <div class="export-role-label" style="color:${p.accent}">${cargo}</div>
+          const nomeCurto = partes.length > 1
+            ? `${partes[0]} ${partes[partes.length - 1]}`
+            : (partes[0] || '');
+          const boxStyle = idx < cargos.length - 1 ? S.roleBox : S.roleBoxLast;
+          return `<div style="${boxStyle}">
+            <div style="${S.roleLabel}">${cargo}</div>
             ${nomeCurto
-              ? `<div class="export-role-name">${nomeCurto}</div>`
-              : `<div class="export-role-empty">— —</div>`}
+              ? `<div style="${S.roleName}">${nomeCurto}</div>`
+              : `<div style="${S.roleEmpty}">— —</div>`}
           </div>`;
         }).join('');
-        return `<div class="export-item" style="background:rgba(255,255,255,0.88)">
-          <div class="export-date">
-            <div class="export-date-day" style="color:${p.accent}">${culto.tipoDia.slice(0,3).toUpperCase()}</div>
-            <div class="export-date-num" style="color:${p.ink}">${culto.dia}</div>
+
+        return `<div style="${S.item}">
+          <div style="${S.dateCol}">
+            <div style="${S.dateDay}">${culto.tipoDia.slice(0, 3).toUpperCase()}</div>
+            <div style="${S.dateNum}">${culto.dia}</div>
           </div>
-          <div class="export-roles">${rolesHTML}</div>
+          <div style="${S.rolesRow}">${rolesHTML}</div>
         </div>`;
       }).join('');
 
-      const content = document.createElement('div');
-      content.className = 'export-page';
-      content.style.background = `linear-gradient(150deg, ${p.bgA} 0%, ${p.bgB} 55%, ${p.bgC} 100%)`;
-      content.innerHTML = `
-        <div class="export-header" style="background:${p.panel}CC">
-          <div class="export-header-badge" style="background:${p.bgA};color:${p.panel}">
-            ${iconHtml} Ministério de ${tipo}
+      // ── monta o HTML final ────────────────────────────────────────────
+      container.innerHTML = `<div style="${S.page}">
+        <div style="${S.header}">
+          <div style="${S.badge}">${iconHtml} Ministério de ${tipo}</div>
+          <div style="${S.titleRow}">
+            <div style="${S.kicker}">${ano}</div>
+            <div style="${S.title}">${MESES[mes].toUpperCase()}</div>
           </div>
-          <div class="export-title-row">
-            <div class="export-kicker" style="color:${p.accent}">${ano}</div>
-            <div class="export-title" style="color:${p.ink}">${MESES[mes].toUpperCase()}</div>
-          </div>
-          <div class="export-stats">${statsHTML}</div>
+          <div style="${S.stats}">${statsHTML}</div>
         </div>
-        <div class="export-list" style="background:${p.panel}CC">
-          <div class="export-list-title" style="color:${p.ink}">Escala do mês — ${tipo}</div>
+        <div style="${S.list}">
+          <div style="${S.listTitle}">Escala do mês — ${tipo}</div>
           ${itensHTML}
         </div>
-        <div class="export-footer">
-          <img src="https://guznbiqposfhqalqjggw.supabase.co/storage/v1/object/public/fotos-membros/logo_betesda_branca.png" class="export-footer-logo" />
+        <div style="${S.footer}">
+          <img src="https://guznbiqposfhqalqjggw.supabase.co/storage/v1/object/public/fotos-membros/logo_betesda_branca.png" style="${S.footerImg}" crossorigin="anonymous" />
         </div>
-      `;
-      container.appendChild(content);
-      document.body.appendChild(container);
+      </div>`;
 
-      const canvas = await html2canvas(content, { scale: 2, width: 1080, height: 1920, useCORS: true });
+      const content = container.firstElementChild;
+      const canvas = await html2canvas(content, {
+        scale: 2,
+        width: 1080,
+        height: 1920,
+        useCORS: true,
+        logging: false,
+      });
+
       const imgData = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.download = `Escala_${tipo}_${MESES[mes]}_${ano}.png`;
@@ -348,7 +386,9 @@ export default function EscalasMinisterial() {
         const blob = await (await fetch(imgData)).blob();
         const file = new File([blob], link.download, { type: 'image/png' });
         await navigator.share({ files: [file], title: `Escala ${tipo}` }).catch(() => link.click());
-      } else { link.click(); }
+      } else {
+        link.click();
+      }
       setStatus("✓ Imagem gerada!");
     } catch (err) {
       console.error(err);
@@ -372,7 +412,7 @@ export default function EscalasMinisterial() {
   };
 
   const removerMembroEquipe = async (pessoaId) => {
-    if (!window.confirm("Remover este membro?")) return;
+    if (!(await window.confirmModal("Remover Membro", "Remover este membro?"))) return;
     const { error } = await supabase.from('equipes_escala').delete().eq('tipo_escala', tipo).eq('pessoa_id', pessoaId);
     if (!error) { await carregarEquipe(); setStatus("Membro removido"); setTimeout(() => setStatus(""), 1500); }
   };
@@ -419,33 +459,111 @@ export default function EscalasMinisterial() {
     setStatus(`✓ Escala "${nome}" criada!`);
   };
 
+  // ── Editar cores da escala atual ─────────────────────────────────────────
+  const handleSalvarCores = () => {
+    const novaConfig = {
+      ...configEscalas,
+      [tipo]: {
+        ...configEscalas[tipo],
+        cor: {
+          ...configEscalas[tipo].cor,
+          bg: editCores.corBg,
+          accent: editCores.corAccent,
+          light: editCores.corBg + '15',
+          text: editCores.corBg,
+        }
+      }
+    };
+    setConfigEscalas(novaConfig);
+    // Persiste se for escala customizada
+    const custom = Object.fromEntries(
+      Object.entries(novaConfig).filter(([k]) => !CONFIG_ESCALAS_DEFAULT[k])
+    );
+    if (Object.keys(custom).length) {
+      try { localStorage.setItem('configEscalasCustom', JSON.stringify(custom)); } catch {}
+    }
+    // Atualiza paleta de exportação
+    PALETAS_MINISTERIO[tipo] = {
+      ...PALETAS_MINISTERIO[tipo],
+      bgA: editCores.corBg,
+      bgB: editCores.corBg + 'cc',
+      bgC: editCores.corAccent,
+      accent: editCores.corAccent,
+      pillA: editCores.corBg,
+      pillB: editCores.corAccent,
+    };
+    setStatus('✓ Cores atualizadas!');
+    setTimeout(() => setStatus(''), 2000);
+  };
+
   // ─── RENDER ──────────────────────────────────────────────────────────────
   const config = configEscalas[tipo];
   const cor = config?.cor || CONFIG_ESCALAS_DEFAULT["Cultos"].cor;
 
   return (
-    <div className="space-y-6">
-      {/* CABEÇALHO DINÂMICO */}
+    <div className="space-y-6 pb-24 lg:pb-6 w-full">
+
+      {/* ── CABEÇALHO DINÂMICO ───────────────────────────────────────────── */}
       <div
-        className="rounded-2xl px-6 py-5 flex items-center gap-4 shadow-lg"
+        className="rounded-2xl px-4 sm:px-6 py-4 sm:py-5 flex items-center gap-3 sm:gap-4 shadow-lg"
         style={{ background: `linear-gradient(135deg, ${cor.bg}, ${cor.accent})` }}
       >
         {config?.iconUrl ? (
-          <img src={config.iconUrl} alt={tipo} className="w-12 h-12 object-contain rounded-xl bg-white/10 p-2" />
+          <img src={config.iconUrl} alt={tipo} className="w-10 h-10 sm:w-12 sm:h-12 object-contain rounded-xl bg-white/10 p-2 flex-shrink-0" />
         ) : config?.iconSvg ? (
-          <span className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center p-2.5 text-white flex-shrink-0"
+          <span className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/20 flex items-center justify-center p-2.5 text-white flex-shrink-0"
             dangerouslySetInnerHTML={{ __html: config.iconSvg }} />
         ) : null}
+
         <div className="flex-1 min-w-0">
           <p className="text-white/60 text-[10px] font-black uppercase tracking-widest">Ministério</p>
-          <h1 className="text-white text-2xl font-black tracking-tight leading-none">{tipo}</h1>
+          <h1 className="text-white text-xl sm:text-2xl font-black tracking-tight leading-none">{tipo}</h1>
         </div>
+
         <span className="text-white/40 text-xs font-bold uppercase hidden sm:block">{MESES[mes]} · {ano}</span>
+
+        {/* Ícones de ação — visíveis apenas em mobile (lg:hidden) */}
+        <div className="flex items-center gap-2 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setIsModalEquipeAberto(true)}
+            title="Gerenciar Equipe"
+            className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition flex-shrink-0"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsModalConfigAberto(true)}
+            title="Configurações"
+            className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition flex-shrink-0"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 items-start">
-        {/* ── PAINEL ESQUERDO ────────────────────────────────────────── */}
-        <aside className="w-full lg:w-[300px] shrink-0 space-y-4 lg:sticky lg:top-24 order-2 lg:order-1">
+      {/* ── SELETOR DE MINISTÉRIO — apenas mobile (select nativo, sem scroll) ── */}
+      <div className="lg:hidden">
+        <select
+          value={tipo}
+          onChange={e => setTipo(e.target.value)}
+          className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold bg-white outline-none cursor-pointer shadow-sm"
+          style={{ color: cor.bg }}
+        >
+          {Object.keys(configEscalas).map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
+
+        {/* ── PAINEL ESQUERDO — oculto em mobile ───────────────────────── */}
+        <aside className="hidden lg:flex w-full lg:w-[300px] shrink-0 flex-col gap-4 lg:sticky lg:top-24">
 
           {/* Seletor de escala + mês/ano */}
           <Card className="p-0 overflow-hidden shadow-md">
@@ -487,6 +605,39 @@ export default function EscalasMinisterial() {
             </div>
           </Card>
 
+          {/* Edição de cores — desktop */}
+          <Card className="p-4 space-y-3 shadow-md">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cores de {tipo}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Principal</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={editCores.corBg}
+                    onChange={e => setEditCores(prev => ({ ...prev, corBg: e.target.value }))}
+                    className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5" />
+                  <span className="text-[10px] font-mono text-slate-400">{editCores.corBg}</span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Destaque</label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={editCores.corAccent}
+                    onChange={e => setEditCores(prev => ({ ...prev, corAccent: e.target.value }))}
+                    className="w-9 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5" />
+                  <span className="text-[10px] font-mono text-slate-400">{editCores.corAccent}</span>
+                </div>
+              </div>
+            </div>
+            {/* Preview da cor */}
+            <div className="h-8 rounded-lg transition-all" style={{ background: `linear-gradient(135deg, ${editCores.corBg}, ${editCores.corAccent})` }} />
+            <button
+              type="button"
+              onClick={handleSalvarCores}
+              className="w-full py-2 rounded-xl text-white text-[10px] font-black uppercase tracking-wider transition active:scale-95"
+              style={{ background: `linear-gradient(135deg, ${editCores.corBg}, ${editCores.corAccent})` }}
+            >Aplicar Cores</button>
+          </Card>
+
           {/* Indicadores compactos */}
           <Card className="p-4 space-y-2 shadow-md">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Resumo do Mês</p>
@@ -509,7 +660,6 @@ export default function EscalasMinisterial() {
             <div className="p-4 space-y-3">
               <button type="button" onClick={() => setIsModalEquipeAberto(true)}
                 className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-slate-400 text-[9px] font-black uppercase hover:bg-slate-50 transition flex items-center justify-center gap-2"
-                style={{ '--hover-color': cor.accent }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = cor.accent; e.currentTarget.style.color = cor.accent; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.color = ''; }}
               >
@@ -555,57 +705,81 @@ export default function EscalasMinisterial() {
           </Card>
         </aside>
 
-        {/* ── GRID DE DATAS ───────────────────────────────────────────── */}
-        <div className={`flex-1 min-w-0 grid grid-cols-1 xl:grid-cols-3 gap-4 order-1 lg:order-2 ${carregando ? 'opacity-50 pointer-events-none' : ''}`}>
+        {/* ── GRID DE DATAS ─────────────────────────────────────────────── */}
+        <div className={`flex-1 min-w-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 order-2 ${carregando ? 'opacity-50 pointer-events-none' : ''}`}>
           {diasEscala.length === 0 && (
             <div className="xl:col-span-3 text-center py-20 text-slate-400 text-sm italic">
               Nenhum dia configurado para este ministério neste mês.
             </div>
           )}
-          {diasEscala.map((culto) => {
-            return (
-              <Card key={culto.id} className="p-4 shadow-sm" style={{ borderLeft: `4px solid ${cor.accent}` }}>
-                {/* Cabeçalho compacto do card */}
-                <div className="flex justify-between items-center mb-3">
-                  <div className="flex items-baseline gap-2">
-                    <strong className="text-3xl text-slate-800 tracking-tighter">{culto.dia}</strong>
-                    <span className="text-xs font-black uppercase" style={{ color: cor.accent }}>{culto.tipoDia}</span>
+          {diasEscala.map((culto) => (
+            <Card key={culto.id} className="p-4 shadow-sm" style={{ borderLeft: `4px solid ${cor.accent}` }}>
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-baseline gap-2">
+                  <strong className="text-3xl text-slate-800 tracking-tighter">{culto.dia}</strong>
+                  <span className="text-xs font-black uppercase" style={{ color: cor.accent }}>{culto.tipoDia}</span>
+                </div>
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded-full font-black uppercase border"
+                  style={{ background: cor.light, color: cor.bg, borderColor: cor.accent + '40' }}
+                >{tipo}</span>
+              </div>
+              <div className="grid grid-cols-1 gap-2.5">
+                {(config?.cargos || []).map((cargo, idx) => (
+                  <div key={idx} className="flex flex-col gap-0.5">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{cargo}</label>
+                    <select
+                      value={dadosEscala[culto.id]?.[idx] || ""}
+                      onChange={(e) => handleSalvarAtribuicao(culto, idx, e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold bg-slate-50 text-slate-700 outline-none focus:bg-white transition-all cursor-pointer"
+                      onFocus={e => e.target.style.borderColor = cor.accent}
+                      onBlur={e => e.target.style.borderColor = ''}
+                    >
+                      <option value="">— Selecionar —</option>
+                      {equipe.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                    </select>
                   </div>
-                  <span
-                    className="text-[10px] px-2 py-0.5 rounded-full font-black uppercase border"
-                    style={{ background: cor.light, color: cor.bg, borderColor: cor.accent + '40' }}
-                  >{tipo}</span>
-                </div>
-                <div className="grid grid-cols-1 gap-2.5">
-                  {(config?.cargos || []).map((cargo, idx) => (
-                    <div key={idx} className="flex flex-col gap-0.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{cargo}</label>
-                      <select
-                        value={dadosEscala[culto.id]?.[idx] || ""}
-                        onChange={(e) => handleSalvarAtribuicao(culto, idx, e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold bg-slate-50 text-slate-700 outline-none focus:bg-white transition-all cursor-pointer"
-                        style={{ '--tw-ring-color': cor.accent }}
-                        onFocus={e => e.target.style.borderColor = cor.accent}
-                        onBlur={e => e.target.style.borderColor = ''}
-                      >
-                        <option value="">— Selecionar —</option>
-                        {equipe.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-                      </select>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            );
-          })}
+                ))}
+              </div>
+            </Card>
+          ))}
         </div>
       </div>
 
-      {/* ── PREVIEW DO PNG ─────────────────────────────────────────────── */}
+      {/* ── BARRA DE AÇÕES FIXADA — apenas mobile ────────────────────────── */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-4 py-3 flex items-center gap-3 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
+        <button
+          onClick={handleSalvarEscalaGeral}
+          disabled={carregando}
+          className="flex-1 py-3 rounded-xl text-white font-black text-xs uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
+          style={{ background: `linear-gradient(135deg, ${cor.bg}, ${cor.accent})` }}
+        >💾 Salvar</button>
+        <button
+          onClick={() => handleExportarPNG(false)}
+          disabled={carregando}
+          className="flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 border border-slate-200 text-slate-600 hover:bg-slate-50"
+        >📲 Exportar</button>
+        <button
+          onClick={() => handleExportarPNG(true)}
+          disabled={carregando}
+          className="w-11 h-11 rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition flex-shrink-0"
+          title="Baixar PNG"
+        >📥</button>
+      </div>{/* fim flex col/row */}
+
+      {/* ── PREVIEW DO PNG — sempre no corpo da página, abaixo do grid ─── */}
       {mostrarPreview && (
-        <div className="mt-10 p-6 md:p-10 bg-slate-900 rounded-[40px] border border-slate-800 flex flex-col items-center shadow-2xl">
-          <div className="mb-6 w-full max-w-xl">
-            <h3 className="text-white font-black uppercase tracking-[0.2em] text-sm">Prévia do PNG</h3>
-            <p className="text-slate-500 text-[10px] font-bold uppercase">Formato 1080×1920 · Escala reduzida</p>
+        <div className="mt-4 p-6 md:p-10 bg-slate-900 rounded-[40px] border border-slate-800 flex flex-col items-center shadow-2xl">
+          <div className="mb-6 w-full max-w-xl flex items-center justify-between">
+            <div>
+              <h3 className="text-white font-black uppercase tracking-[0.2em] text-sm">Prévia do PNG</h3>
+              <p className="text-slate-500 text-[10px] font-bold uppercase">Formato 1080×1920 · Escala reduzida</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMostrarPreview(false)}
+              className="text-slate-500 hover:text-white transition font-bold text-lg px-3 py-1"
+            >✕ Fechar</button>
           </div>
           <style>{exportStyles}</style>
           <div className="relative shadow-[0_0_100px_rgba(0,0,0,0.5)] border-[12px] border-slate-800 rounded-[60px] overflow-hidden origin-top scale-[0.3] sm:scale-[0.4] md:scale-[0.5]" style={{ width: '1080px', height: '1920px' }}>
@@ -666,6 +840,131 @@ export default function EscalasMinisterial() {
             </div>
           </div>
           <p className="text-slate-600 text-[10px] mt-[-400px] md:mt-[-450px] font-bold uppercase">↑ Fim da Prévia</p>
+        </div>
+      )}
+
+      {/* ── MODAL CONFIGURAÇÕES — bottom sheet mobile ────────────────────── */}
+      {isModalConfigAberto && (
+        <div className="lg:hidden fixed inset-0 z-50 flex items-end bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-t-3xl w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+            {/* Handle + header */}
+            <div className="flex flex-col items-center pt-3 pb-2 border-b border-slate-100 px-5">
+              <div className="w-10 h-1 rounded-full bg-slate-200 mb-3" />
+              <div className="w-full flex items-center justify-between">
+                <div>
+                  <h4 className="font-black text-slate-900 text-sm uppercase tracking-tight">Configurações</h4>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">{tipo}</p>
+                </div>
+                <button type="button" onClick={() => setIsModalConfigAberto(false)} className="text-slate-400 hover:text-slate-600 font-bold p-1 text-lg">✕</button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-5 space-y-5">
+              {/* Mês e Ano */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Mês</label>
+                  <select value={mes} onChange={e => setMes(parseInt(e.target.value))} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm bg-white outline-none cursor-pointer text-slate-700 font-semibold">
+                    {MESES.map((m, i) => <option key={m} value={i}>{m}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Ano</label>
+                  <select value={ano} onChange={e => setAno(parseInt(e.target.value))} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm bg-white outline-none cursor-pointer text-slate-700 font-semibold">
+                    {[2024, 2025, 2026, 2027].map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Resumo do mês */}
+              <div className="rounded-xl p-3 space-y-1.5" style={{ background: cor.light }}>
+                {[
+                  { label: "Total de datas", value: diasEscala.length },
+                  { label: "Domingos", value: diasEscala.filter(d => d.semana === 0).length },
+                  { label: "Quintas", value: diasEscala.filter(d => d.semana === 4).length },
+                ].filter(i => i.value > 0).map(({ label, value }) => (
+                  <div key={label} className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-slate-500">{label}</span>
+                    <strong className="text-sm font-black" style={{ color: cor.bg }}>{value}</strong>
+                  </div>
+                ))}
+              </div>
+
+              {/* Cores da escala */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cores de {tipo}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Principal</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={editCores.corBg}
+                        onChange={e => setEditCores(prev => ({ ...prev, corBg: e.target.value }))}
+                        className="w-10 h-10 rounded-xl border border-slate-200 cursor-pointer p-0.5 flex-shrink-0" />
+                      <span className="text-[10px] font-mono text-slate-400 break-all">{editCores.corBg}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Destaque</label>
+                    <div className="flex items-center gap-2">
+                      <input type="color" value={editCores.corAccent}
+                        onChange={e => setEditCores(prev => ({ ...prev, corAccent: e.target.value }))}
+                        className="w-10 h-10 rounded-xl border border-slate-200 cursor-pointer p-0.5 flex-shrink-0" />
+                      <span className="text-[10px] font-mono text-slate-400 break-all">{editCores.corAccent}</span>
+                    </div>
+                  </div>
+                </div>
+                {/* Preview barra de cor */}
+                <div className="h-8 rounded-xl transition-all" style={{ background: `linear-gradient(135deg, ${editCores.corBg}, ${editCores.corAccent})` }} />
+                <button
+                  type="button"
+                  onClick={() => { handleSalvarCores(); setIsModalConfigAberto(false); }}
+                  className="w-full py-2.5 rounded-xl text-white text-xs font-black uppercase tracking-wider transition active:scale-95 shadow-md"
+                  style={{ background: `linear-gradient(135deg, ${editCores.corBg}, ${editCores.corAccent})` }}
+                >Aplicar Cores</button>
+              </div>
+
+              {/* Equipe compacta */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Equipe de {tipo}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {equipe.length === 0 && <p className="text-[10px] text-slate-400 italic">Nenhum membro vinculado.</p>}
+                  {equipe.map(p => (
+                    <span key={p.id} className="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600">
+                      {p.nome}
+                      <button type="button" onClick={() => removerMembroEquipe(p.id)} className="text-slate-300 hover:text-rose-500 transition ml-0.5">✕</button>
+                    </span>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setIsModalConfigAberto(false); setIsModalEquipeAberto(true); }}
+                  className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-slate-400 text-[9px] font-black uppercase transition flex items-center justify-center gap-1"
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = cor.accent; e.currentTarget.style.color = cor.accent; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = ''; e.currentTarget.style.color = ''; }}
+                >+ Gerenciar Lista</button>
+              </div>
+
+              {/* Preview e imprimir */}
+              <div className="space-y-2 pt-1 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => { setMostrarPreview(v => !v); setIsModalConfigAberto(false); }}
+                  className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition flex items-center justify-center gap-2"
+                >
+                  {mostrarPreview ? '✕ Ocultar Prévia do PNG' : '👁 Visualizar Prévia do PNG'}
+                </button>
+                <button onClick={() => window.print()} className="w-full py-2 text-slate-400 text-[10px] font-bold uppercase hover:text-slate-600 transition">Imprimir PDF</button>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-slate-50">
+              <button
+                type="button"
+                onClick={() => setIsModalConfigAberto(false)}
+                className="w-full py-3 rounded-xl bg-slate-200 text-slate-700 font-black text-xs uppercase tracking-wider transition active:scale-95"
+              >Fechar</button>
+            </div>
+          </div>
         </div>
       )}
 

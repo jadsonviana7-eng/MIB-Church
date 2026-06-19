@@ -28,6 +28,11 @@ const RobotoStyle = () => (
     @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&display=swap');
     .agenda-root, .agenda-root * { font-family: 'Roboto', sans-serif !important; }
 
+    @media print {
+      body { background: white !important; }
+      main { padding-top: 0 !important; padding-bottom: 0 !important; }
+    }
+
     /* ── SunEditor Definitivo Styles ── */
     .sun-editor-wrapper { margin-top: 8px; border-radius: 12px; overflow: hidden; border: 1.5px solid #e8edf5; background: #fff; min-height: 350px; }
     .sun-editor { border: none !important; font-family: 'Roboto', sans-serif !important; }
@@ -575,7 +580,16 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
   };
 
   useEffect(() => { carregarEventos(); }, []);
-  useEffect(() => { setView('lista'); }, [submenu]);
+
+  useEffect(() => {
+    setView('lista');
+    window.scrollTo(0, 0);
+  }, [submenu]);
+
+  // Reset de scroll para navegação interna de eventos (Dashboard, Formulários, etc)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [view, subView, inscritoParaCarne, membroParaVerId]);
 
   const mudarMes = (offset) => {
     setDataAtual(new Date(dataAtual.getFullYear(), dataAtual.getMonth() + offset, 1));
@@ -605,7 +619,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
   };
 
   const excluirEvento = async (id) => {
-    if (!window.confirm("Deseja excluir este evento?")) return;
+    if (!(await window.confirmModal('Excluir Evento', 'Deseja excluir este evento?'))) return;
     const { error } = await supabase.from('agenda_eventos').delete().eq('id', id);
     if (error) alert(error.message);
     else { setModalEvento({ aberto: false, dados: null }); carregarEventos(); }
@@ -647,7 +661,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
   return (
     <div className="agenda-root space-y-6">
       <RobotoStyle /> {/* Mantido para estilos internos */}
-      <div className="hidden md:block">
+      <div className="hidden md:block print:hidden">
         <PageHeader
           titulo="Agenda"
           breadcrumb={['Agenda', submenu === 'calendario' ? 'Calendário' : 'Lista de Eventos']}
@@ -849,7 +863,7 @@ function GerenciadorMural({ onVoltar, membroLogado }) {
   useEffect(() => { carregarAvisos(); }, [carregarAvisos]);
 
   const handleExcluir = async (id) => {
-    if (!window.confirm("Remover este aviso do mural?")) return;
+    if (!(await window.confirmModal('Excluir Aviso', 'Remover este aviso do mural?'))) return;
     await supabase.from('mural_avisos').delete().eq('id', id);
     carregarAvisos();
   };
@@ -868,7 +882,7 @@ function GerenciadorMural({ onVoltar, membroLogado }) {
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
+          <div className="w-5 h-5 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
             <Icon.Mural />
           </div>
           <div>
@@ -1232,7 +1246,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
 
   const handleExcluirInscricao = async (e, id) => {
     e.stopPropagation();
-    if (!window.confirm("Deseja realmente excluir esta inscrição? Esta ação não pode ser desfeita.")) return;
+    if (!(await window.confirmModal('Excluir Inscrição', 'Deseja realmente excluir esta inscrição? Esta ação não pode ser desfeita.'))) return;
     
     // Adicionamos .select() para validar se a linha foi realmente removida no servidor
     const { data, error } = await supabase.from('agenda_inscricoes').delete().eq('id', id).select();
@@ -1249,7 +1263,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div className="flex items-center justify-between flex-wrap gap-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-y-4 print:hidden">
         <button className="btn-ghost !rounded-md text-xs sm:text-sm p-2 sm:px-4 sm:py-2" onClick={onVoltar}>
           <Icon.Back /> 
           <span className="hidden sm:inline">Voltar para lista</span>
@@ -1309,7 +1323,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
         </div>
       </div>
 
-      <div className="ag-card" style={{ padding: 32 }}>
+      <div className="ag-card print:hidden" style={{ padding: 32 }}>
         <div className="flex flex-col md:flex-row gap-10">
           <div style={{ width: 200, shrink: 0 }}>
             <img src={evento.capa_url || 'https://via.placeholder.com/200x270?text=Sem+Capa'} className="rounded-2xl shadow-xl border-4 border-white w-full object-cover" style={{ aspectRatio: '3/4' }} alt="Capa" />
@@ -1331,14 +1345,14 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
       </div>
 
       {/* LINHA DE INDICADORES RÁPIDOS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
         <StatCard label="Confirmados" valor={stats.confirmados} detalhe="Inscrições pagas" icone="✅" />
         <StatCard label="Pendentes" valor={stats.pendentes} detalhe="Aguardando PG" icone="⏳" />
         <StatCard label="Cancelados" valor={stats.cancelados} detalhe="Desistentes" icone="🚫" />
         <StatCard label="Disponíveis" valor={stats.disponiveis} detalhe="Vagas abertas" icone="🎟️" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:hidden">
         {/* CARD TOTAL RECEBIDO DESTACADO */}
         <div 
           className="lg:col-span-1 p-8 rounded-[24px] shadow-xl flex flex-col justify-center relative overflow-hidden"
@@ -1366,7 +1380,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
               <div className="h-full flex items-center justify-center text-slate-400 italic text-sm">Aguardando as primeiras inscrições...</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
+                <LineChart data={chartData} style={{ outline: 'none' }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -1387,12 +1401,45 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
         </Card>
       </div>
 
-      <div className="ag-card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="ag-card-header" style={{ padding: '20px 24px', marginBottom: 0, borderBottom: '1.5px solid #f1f5f9', background: '#fcfcfd' }}>
+      {/* CABEÇALHO DE IMPRESSÃO - Visível apenas no papel */}
+      <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-6">
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-3xl font-black uppercase text-slate-900 leading-tight">{evento.titulo}</h1>
+            <p className="text-sm font-bold text-slate-500">{evento.subtitulo || 'Relatório de Participantes Inscritos'}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Extraído em</p>
+            <p className="text-xs font-bold text-slate-700">{new Date().toLocaleDateString('pt-BR')} às {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-4 mt-8">
+          <div className="border border-slate-200 p-4 rounded-2xl">
+            <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">Confirmados</p>
+            <p className="text-2xl font-black text-emerald-600 leading-none">{stats.confirmados}</p>
+          </div>
+          <div className="border border-slate-200 p-4 rounded-2xl">
+            <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">Pendentes</p>
+            <p className="text-2xl font-black text-amber-600 leading-none">{stats.pendentes}</p>
+          </div>
+          <div className="border border-slate-200 p-4 rounded-2xl">
+            <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">Arrecadado</p>
+            <p className="text-2xl font-black text-slate-800 leading-none">{stats.totalRecebido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+          </div>
+          <div className="border border-slate-200 p-4 rounded-2xl">
+            <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">Total Geral</p>
+            <p className="text-2xl font-black text-blue-600 leading-none">{inscritos.length}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="ag-card print:border-none print:shadow-none print:p-0" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="ag-card-header print:hidden" style={{ padding: '20px 24px', marginBottom: 0, borderBottom: '1.5px solid #f1f5f9', background: '#fcfcfd' }}>
           <div className="ag-card-title">Participantes Inscritos</div>
           <span className="badge" style={{ background: '#eff6ff', color: '#1e3a8a' }}>{inscritos.length} registros</span>
         </div>
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto' }} className="print:overflow-visible">
           {carregando ? (
             <div className="text-center py-10 animate-pulse text-slate-400">Processando lista...</div>
           ) : inscritos.length === 0 ? (
@@ -1402,7 +1449,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
               {/* Tabela Desktop (sm+) */}
               <table className="ag-table hidden sm:table">
                 <thead>
-                  <tr><th>Data</th><th>Participante</th><th>E-mail / Telefone</th><th style={{ textAlign: 'right' }}>Status</th><th style={{ textAlign: 'right', paddingRight: '24px' }}>Ações</th></tr>
+                  <tr><th>Data</th><th>Participante</th><th>E-mail / Telefone</th><th style={{ textAlign: 'right' }}>Status</th><th style={{ textAlign: 'right', paddingRight: '24px' }} className="print:hidden">Ações</th></tr>
                 </thead>
                 <tbody>
                   {inscritos.map(i => {
@@ -1434,7 +1481,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
                             <span className="badge bg-amber-50 text-amber-700">pendente</span>
                           )}
                         </td>
-                        <td style={{ textAlign: 'right', paddingRight: '24px' }}>
+                        <td style={{ textAlign: 'right', paddingRight: '24px' }} className="print:hidden">
                           <button 
                             onClick={(e) => handleExcluirInscricao(e, i.id)}
                             className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
@@ -1478,7 +1525,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
                           )}
                           <button 
                             onClick={(e) => handleExcluirInscricao(e, i.id)}
-                            className="p-1.5 text-rose-500 active:scale-95 cursor-pointer"
+                            className="p-1.5 text-rose-500 active:scale-95 cursor-pointer print:hidden"
                           >
                             <Icon.Trash />
                           </button>

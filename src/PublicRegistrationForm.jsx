@@ -195,16 +195,16 @@ export default function PublicRegistrationForm() {
       bairro,
       cidade,
       estado,
-      cargo_sugerido: cargoSugerido.trim() || null,
-      celula_sugerida: celulaSugerida.trim() || null,
-      zona_sugerida: zonaSugerida.trim() || null,
-      atuacao_sugerida: atuacaoSugerida.trim() || null,
+      cargo: cargoSugerido.trim() || null,
+      celula_id: celulaSugerida || null,
+      zona_id: zonaSugerida || null,
+      atuacao: atuacaoSugerida.trim() || null,
       data_conversao: dataBRparaISO(dataConversao),
       data_batismo: dataBRparaISO(dataBatismo),
       batizado_aguas: batizadoAguas,
       conjuge_sugerido: conjugeSugerido.trim() || null,
       filhos_sugeridos: filhosSugeridos.trim() || null,
-      status: 'ativo',
+      status: 'pendente',
       tipo_membro: 'frequentador',
     };
 
@@ -451,7 +451,7 @@ export default function PublicRegistrationForm() {
               <select value={celulaSugerida} onChange={e => setCelulaSugerida(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-base bg-white">
                 <option value="">Selecione uma célula...</option>
                 {listaCelulas.map(c => (
-                  <option key={c.id} value={c.nome}>{c.nome}</option>
+                  <option key={c.id} value={c.id}>{c.nome}</option>
                 ))}
               </select>
             </div>
@@ -463,7 +463,7 @@ export default function PublicRegistrationForm() {
               <select value={zonaSugerida} onChange={e => setZonaSugerida(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-base bg-white">
                 <option value="">Selecione sua zona...</option>
                 {listaZonas.map(z => (
-                  <option key={z.id} value={z.nome}>{z.nome}</option>
+                  <option key={z.id} value={z.id}>{z.nome}</option>
                 ))}
               </select>
             </div>

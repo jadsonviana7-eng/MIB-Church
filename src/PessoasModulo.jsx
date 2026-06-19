@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardHeader, Avatar, SelectFiltro, ColumnChart, DoughnutCard, PageHeader } from './ui';
 import { supabase } from './supabaseClient';
 import DetalhesMembro from './DetalhesMembro';
@@ -16,6 +16,13 @@ export default function PessoasModulo(props) {
 
   const [mesSelecionado, setMesSelecionado] = useState(new Date().getMonth());
   const [relatorioSelecionado, setRelatorioSelecionado] = useState('Cargos');
+  const [abaPessoas, setAbaPessoas] = useState('membros'); // 'membros' | 'contribuintes'
+
+  // Remove os cadastros rápidos (contribuinte) e os que aguardam aprovação (pendente) da listagem principal
+  const pessoasFiltradasMembros = useMemo(
+    () => pessoasFiltradas.filter((p) => p.status !== 'contribuinte' && p.status !== 'pendente'),
+    [pessoasFiltradas]
+  );
 
   if (membroSelecionadoId) {
     return (
@@ -81,10 +88,32 @@ export default function PessoasModulo(props) {
         <PageHeader titulo="Membros"/>
       </div>
       {carregando && <div className="text-sm font-medium text-[#2563eb] mb-4">Sincronizando dados...</div>}
+
+      {/* Navegação por abas: Membros / Contribuintes (dizimistas não-membros) */}
+      <div className="grid grid-cols-2 gap-2 sm:inline-flex sm:gap-2 mb-5">
+        <button
+          type="button"
+          onClick={() => setAbaPessoas('membros')}
+          className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-center transition-all cursor-pointer ${abaPessoas === 'membros' ? 'bg-[#2563eb] text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+        >
+          Membros
+        </button>
+        <button
+          type="button"
+          onClick={() => setAbaPessoas('contribuintes')}
+          className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-center transition-all cursor-pointer ${abaPessoas === 'contribuintes' ? 'bg-[#2563eb] text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
+        >
+          Contribuintes
+        </button>
+      </div>
+
+      {abaPessoas === 'contribuintes' ? (
+        <AbaContribuintes pessoas={pessoas} obterDados={obterDados} />
+      ) : (
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5">
         <Card className="p-0">
           <CardHeader 
-            titulo={`${pessoasFiltradas.length} Pessoas`} 
+            titulo={`${pessoasFiltradasMembros.length} Pessoas`} 
             children={
               <input 
                 type="search" 
@@ -95,7 +124,7 @@ export default function PessoasModulo(props) {
               />
             }
           />
-          <TabelaPessoas pessoas={pessoasFiltradas} onSelecionar={setMembroSelecionadoId} />
+          <TabelaPessoas pessoas={pessoasFiltradasMembros} onSelecionar={setMembroSelecionadoId} />
         </Card>
 
         {/* Drawer de Filtros para Mobile / Sidebar para Desktop */}
@@ -119,6 +148,7 @@ export default function PessoasModulo(props) {
           </div>
         </div>
       </div>
+      )}
     </>
   );
 }
@@ -224,7 +254,7 @@ function InativosPessoas({ pessoas, onNavigate, obterDados }) {
   }, [pessoas]);
 
   async function handleReativar(id, nome) {
-    if (!window.confirm(`Deseja reativar o cadastro de ${nome}?`)) return;
+    if (!(await window.confirmModal("Reativar Cadastro", `Deseja reativar o cadastro de ${nome}?`))) return;
     
     const { error } = await supabase
       .from('pessoas')
@@ -309,7 +339,7 @@ function FiltrosPessoas({ filtros, alterarFiltro, limparFiltros, zonas, cargosDi
 }
 
 function AniversariantesPessoas({ pessoas, mesSelecionado, setMesSelecionado, onNavigate }) {
-  const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo'), [pessoas]);
+  const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo' && p.status !== 'contribuinte'), [pessoas]);
   const contagemMeses = meses.map((_, index) =>
     pessoasAtivas.filter((p) => p.data_nascimento && new Date(`${p.data_nascimento}T00:00:00`).getMonth() === index).length
   );
@@ -357,7 +387,7 @@ function AgrupamentoPessoas({ titulo, itens, campo, pessoas, abrirPessoasFiltrad
           <thead><tr><th>Nome</th><th>Vinculados</th><th className="text-right">Ação</th></tr></thead>
           <tbody>
             {itens.map((item) => {
-              const pessoasAtivas = pessoas.filter(p => p.status !== 'inativo');
+              const pessoasAtivas = pessoas.filter(p => p.status !== 'inativo' && p.status !== 'contribuinte');
               // Cargos e Atuações no banco guardam o NOME, enquanto Zonas guardam o ID.
               const isIdField = campo.endsWith('_id');
               const val = isIdField ? (item.id || item) : (item.nome || item);
@@ -382,7 +412,7 @@ function AgrupamentoPessoas({ titulo, itens, campo, pessoas, abrirPessoasFiltrad
 
 function RelatoriosPessoas({ pessoas, zonas, abrirPessoasFiltradas, relatorioSelecionado, setRelatorioSelecionado, breadcrumb = [], onNavigate }) {
   const botoes = ['Cargos', 'Faixa etaria', 'Aniversarios', 'Sexo', 'Estado civil', 'Batismo', 'Zona de moradia', 'Campo de Atuação'];
-  const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo'), [pessoas]);
+  const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo' && p.status !== 'contribuinte'), [pessoas]);
   const dados = agrupamentoPor(pessoasAtivas, (p) => valorCampoRelatorio(p, relatorioSelecionado, zonas));
 
   return (
@@ -429,16 +459,26 @@ function RelatoriosPessoas({ pessoas, zonas, abrirPessoasFiltradas, relatorioSel
               hideLegend={true} 
             />
           ) : (
-            <ColumnChart titulo={`Indicadores: ${relatorioSelecionado}`} dados={dados} />
+            <ColumnChart titulo={`Indicadores: ${relatorioSelecionado}`} dados={dados} hideLegend={true} />
           )}
           <Card className="p-0">
             <table className="table-mib">
-              <thead><tr><th>Classificação</th><th>Cadastrados</th><th className="text-right">Ação</th></tr></thead>
+              <thead>
+                <tr>
+                  <th className="pl-6">Classificação</th>
+                  <th className="text-center">Membros</th>
+                  <th className="text-center">%</th>
+                  <th className="text-right pr-6">Ação</th>
+                </tr>
+              </thead>
               <tbody>
                 {Object.entries(dados).map(([label, valor]) => (
                   <tr key={label}>
-                    <td className="font-medium">{label}</td>
-                    <td>{valor} pessoas</td>
+                    <td className="font-medium pl-6">{label}</td>
+                    <td className="text-center">{valor}</td>
+                    <td className="text-center text-slate-400 font-bold">
+                      {((valor / (pessoasAtivas.length || 1)) * 100).toFixed(0)}%
+                    </td>
                     <td className="text-right">
                       <button onClick={() => abrirPessoasFiltradas({ relatorioCampo: relatorioSelecionado, relatorioValor: label })} className="text-xs font-bold text-[#2563eb] cursor-pointer hover:underline">Ver lista</button>
                     </td>
@@ -447,6 +487,317 @@ function RelatoriosPessoas({ pessoas, zonas, abrirPessoasFiltradas, relatorioSel
               </tbody>
             </table>
           </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Aplica máscara progressiva de telefone brasileiro: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX
+function formatarTelefoneInput(value) {
+  const digitos = value.replace(/\D/g, '').slice(0, 11);
+  if (digitos.length <= 2) return digitos;
+  if (digitos.length <= 6) return `(${digitos.slice(0, 2)}) ${digitos.slice(2)}`;
+  if (digitos.length <= 10) return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`;
+  return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`;
+}
+
+// Aba "Contribuintes": cadastro rápido de dizimistas que ainda não são membros.
+// O registro é salvo em "pessoas" com status = 'contribuinte', o que faz com que:
+//  - NÃO apareça na lista de Membros, Aniversariantes, Agrupamentos ou Relatórios;
+//  - apareça automaticamente no seletor "Membro" do modal "Nova Receita" do
+//    Módulo Financeiro, pois esse select só exclui pessoas com status 'excluido'.
+function AbaContribuintes({ pessoas, obterDados }) {
+  const [nome, setNome] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [editandoId, setEditandoId] = useState(null);
+  const [enviando, setEnviando] = useState(false);
+  const [contribuicoesAbertas, setContribuicoesAbertas] = useState(null);
+  // Controla a exibição do formulário em telas menores que xl (pushdown)
+  const [formAbertoMobile, setFormAbertoMobile] = useState(false);
+
+  const contribuintes = useMemo(
+    () => pessoas
+      .filter((p) => p.status === 'contribuinte')
+      .sort((a, b) => (a.nome || '').localeCompare(b.nome || '', 'pt-BR')),
+    [pessoas]
+  );
+
+  function handleCancelar() {
+    setEditandoId(null);
+    setNome('');
+    setTelefone('');
+    setFormAbertoMobile(false);
+  }
+
+  function handleEditar(p) {
+    setEditandoId(p.id);
+    setNome(p.nome || '');
+    setTelefone(p.telefone || '');
+    setFormAbertoMobile(true);
+  }
+
+  async function handleSalvar(e) {
+    e.preventDefault();
+    if (!nome.trim()) return;
+
+    setEnviando(true);
+    try {
+      if (editandoId) {
+        const { error } = await supabase
+          .from('pessoas')
+          .update({ nome: nome.trim(), telefone: telefone.trim() || null })
+          .eq('id', editandoId);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('pessoas')
+          .insert([{ nome: nome.trim(), telefone: telefone.trim() || null, status: 'contribuinte' }]);
+        if (error) throw error;
+      }
+      handleCancelar();
+      obterDados();
+    } catch (err) {
+      alert('Erro ao salvar contribuinte: ' + err.message);
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  async function handleExcluir(p) {
+    if (!(await window.confirmModal("Excluir Contribuinte", `Deseja excluir o contribuinte "${p.nome}"? O histórico de contribuições será mantido, mas ele deixará de aparecer nesta lista e no seletor de membros do módulo financeiro.`))) return;
+    try {
+      const { error } = await supabase.from('pessoas').update({ status: 'excluido' }).eq('id', p.id);
+      if (error) throw error;
+      if (editandoId === p.id) handleCancelar();
+      obterDados();
+    } catch (err) {
+      alert('Erro ao excluir contribuinte: ' + err.message);
+    }
+  }
+
+  return (
+    <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr] gap-5">
+      {/* Botão-gatilho exibido apenas em telas menores que xl, abre o formulário em pushdown */}
+      {!formAbertoMobile && (
+        <button
+          type="button"
+          onClick={() => setFormAbertoMobile(true)}
+          className="xl:hidden w-full px-4 py-3 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition shadow-sm flex items-center justify-center gap-2"
+        >
+          <span className="text-base font-black">+</span> Incluir Contribuinte
+        </button>
+      )}
+
+      {/* Painel lateral esquerdo: formulário de cadastro rápido (sempre visível em xl, pushdown em telas menores) */}
+      <Card className={`p-5 h-fit ${formAbertoMobile ? 'block animate-in slide-in-from-top fade-in duration-300' : 'hidden'} xl:block xl:animate-none`}>
+        <h3 className="font-semibold text-sm text-[var(--text-heading)] uppercase tracking-wider mb-4 border-b border-[var(--border)] pb-3">
+          {editandoId ? 'Editar Contribuinte' : 'Novo Contribuinte'}
+        </h3>
+        <form onSubmit={handleSalvar} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1.5">Nome</label>
+            <input
+              type="text"
+              required
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Nome completo"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#008dc6]/20"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1.5">Telefone</label>
+            <input
+              type="tel"
+              value={telefone}
+              onChange={(e) => setTelefone(formatarTelefoneInput(e.target.value))}
+              placeholder="(00) 00000-0000"
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#008dc6]/20"
+            />
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            {editandoId ? (
+              <button
+                type="button"
+                onClick={handleCancelar}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600 transition"
+              >
+                Cancelar
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setFormAbertoMobile(false)}
+                className="xl:hidden px-4 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-600 transition"
+              >
+                Fechar
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={enviando}
+              className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition shadow-sm disabled:opacity-50"
+            >
+              {enviando ? 'Salvando...' : editandoId ? 'Salvar Alterações' : 'Incluir Contribuinte'}
+            </button>
+          </div>
+        </form>
+        <p className="text-[11px] text-slate-400 mt-4 leading-relaxed">
+          Ao incluir, o nome fica disponível no seletor "Membro" do modal Nova Receita, no Módulo Financeiro, sem aparecer na lista de membros da igreja.
+        </p>
+      </Card>
+
+      {/* Lista de contribuintes cadastrados */}
+      <Card className="p-0">
+        <CardHeader
+          titulo={`${contribuintes.length} Contribuintes`}
+          subtitulo="Pessoas que dizimam mas ainda não são membros cadastrados."
+        />
+        {contribuintes.length === 0 ? (
+          <div className="p-10 text-center text-sm text-slate-400">Nenhum contribuinte cadastrado ainda.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="table-mib">
+              <thead className="hidden md:table-header-group">
+                <tr>
+                  <th>Nome</th>
+                  <th className="hidden md:table-cell">Telefone</th>
+                  <th className="text-right pr-6">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contribuintes.map((p) => (
+                  <tr key={p.id}>
+                    <td className="py-3 md:py-2">
+                      <p className="font-semibold text-slate-700">{p.nome}</p>
+                      <p className="md:hidden text-[11px] text-[var(--text-muted)] mt-0.5">{p.telefone || 'Sem telefone'}</p>
+                    </td>
+                    <td className="hidden md:table-cell text-xs text-[var(--text-muted)]">{p.telefone || '—'}</td>
+                    <td className="text-right pr-6">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setContribuicoesAbertas(p)}
+                          title="Ver Contribuições"
+                          className="text-[#2563eb] hover:bg-blue-50 transition p-1.5 rounded-lg cursor-pointer"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleEditar(p)}
+                          title="Editar Contribuinte"
+                          className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleExcluir(p)}
+                          title="Excluir Contribuinte"
+                          className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      {contribuicoesAbertas && (
+        <ModalContribuicoesContribuinte
+          pessoa={contribuicoesAbertas}
+          onFechar={() => setContribuicoesAbertas(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// Modal somente-leitura que lista todos os lançamentos financeiros vinculados ao pessoa_id do contribuinte
+function ModalContribuicoesContribuinte({ pessoa, onFechar }) {
+  const [contribuicoes, setContribuicoes] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    let ativo = true;
+    async function carregar() {
+      setCarregando(true);
+      const { data, error } = await supabase
+        .from('transacoes_financeiras')
+        .select('*, categorias_financeiras(nome), contas_financeiras(nome)')
+        .eq('pessoa_id', pessoa.id)
+        .order('data', { ascending: false });
+
+      if (!ativo) return;
+      if (error) {
+        console.error('Erro ao carregar contribuições:', error);
+        setContribuicoes([]);
+      } else {
+        setContribuicoes(data || []);
+      }
+      setCarregando(false);
+    }
+    carregar();
+    return () => { ativo = false; };
+  }, [pessoa.id]);
+
+  const total = useMemo(
+    () => contribuicoes.reduce((acc, t) => acc + (Number(t.valor) || 0), 0),
+    [contribuicoes]
+  );
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-0 sm:p-4">
+      <div className="bg-white rounded-none sm:rounded-3xl border-none sm:border sm:border-slate-200 shadow-2xl w-full max-w-2xl h-full sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden">
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-emerald-50/30">
+          <div>
+            <h3 className="font-bold text-slate-900 text-sm sm:text-base uppercase tracking-tight">Contribuições de {pessoa.nome}</h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {contribuicoes.length} lançamento(s) • Total: R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+          <button type="button" onClick={onFechar} className="text-slate-400 hover:text-slate-600 font-bold p-2 text-xl">✕</button>
+        </div>
+        <div className="overflow-y-auto flex-1">
+          {carregando ? (
+            <div className="p-10 text-center text-sm text-slate-400">Carregando contribuições...</div>
+          ) : contribuicoes.length === 0 ? (
+            <div className="p-10 text-center text-sm text-slate-400">Nenhuma contribuição registrada para este contribuinte.</div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {contribuicoes.map((c) => (
+                <div key={c.id} className="p-4 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-800 truncate">{c.descricao}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {c.data ? new Date(c.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
+                      {' • '}{c.categorias_financeiras?.nome || 'Sem categoria'}
+                      {' • '}{c.contas_financeiras?.nome || 'Sem conta'}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className={`block text-sm font-black ${c.tipo === 'despesa' ? 'text-rose-600' : 'text-emerald-600'}`}>
+                      {c.tipo === 'despesa' ? '- ' : ''}R$ {Number(c.valor).toFixed(2)}
+                    </span>
+                    <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${c.status === 'pago' ? 'bg-green-100 text-green-800' : c.status === 'pendente' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'}`}>
+                      {c.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

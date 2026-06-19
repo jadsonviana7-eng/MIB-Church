@@ -8,12 +8,15 @@ import PessoasModulo from './PessoasModulo';
 import ModuloFinanceiro from './ModuloFinanceiro';
 import ModuloUtilitarios from './ModuloUtilitarios';
 import EscolasModulo from './EscolasModulo';
+import { ConfirmModal } from './ui';
+import GestaoMinisterial from './GestaoMinisterial';
 import AgendaModulo from './AgendaModulo';
 import PublicEventRegistration from './PublicEventRegistration';
 import DetalhesMembro from './DetalhesMembro';
 import HomePage from './HomePage'; // Novo componente HomePage
 import PublicRegistrationForm from './PublicRegistrationForm'; // Importar o novo componente
 import { MenuIcons, submenuIconKey } from './icons'; // Importa MenuIcons e submenuIconKey do novo arquivo
+import { Settings } from 'lucide-react';
 import { normalizarTexto, faixaDaIdade, meses, valorCampoRelatorio } from './churchUtils';
 
 const filtrosIniciais = {
@@ -23,6 +26,15 @@ const filtrosIniciais = {
 
 
 export default function App() {
+  const [confirmDialog, setConfirmDialog] = useState(null);
+
+  useEffect(() => {
+    window.confirmModal = (titulo, mensagem) => {
+      return new Promise((resolve) => {
+        setConfirmDialog({ titulo, mensagem, resolve });
+      });
+    };
+  }, []);
   // Filtros para Células
   const filtrosCelulaIniciais = {
     busca: '', faixaEtaria: '', genero: '', diaSemana: '', horario: '',
@@ -51,6 +63,7 @@ export default function App() {
   const [celulasSubmenu, setCelulasSubmenu] = useState('lista');
   const [financeiroSubmenu, setFinanceiroSubmenu] = useState('resumo');
   const [escolasSubmenu, setEscolasSubmenu] = useState('resumo'); // Novo estado para o submenu de Escolas
+  const [gestaoMinisterialSubmenu, setGestaoMinisterialSubmenu] = useState('escalas');
   const [agendaSubmenu, setAgendaSubmenu] = useState('calendario');
   const [utilitariosSubmenu, setUtilitariosSubmenu] = useState('resumo');
   const [filtrosFinanceiroAberto, setFiltrosFinanceiroAberto] = useState(false); // Novo estado para filtros financeiros mobile
@@ -113,6 +126,7 @@ export default function App() {
 
     if (p === 'membro') {
       if (modulo === 'Agenda') return true;
+      if (modulo === 'Gestão Ministerial') return true;
       if (modulo === 'Utilitários') {
         if (!bloco) return true;
         // Membros não acessam o Gerador de Carnê, Relatório Semanal nem Mural de Orações
@@ -134,6 +148,10 @@ export default function App() {
       return true; // Pastor visualiza todos os módulos e submenus, incluindo Gerador de Carnê
     }
     
+    if (p === 'pastor') {
+      return true;
+    }
+
     if (p === 'secretaria' && ['Pessoas', 'Células', 'Utilitários', 'Agenda'].includes(modulo)) {
       if (modulo === 'Utilitários' && bloco) {
         return !['Gerador de Carnê', 'Leitor de Carnê'].includes(bloco);
@@ -256,6 +274,15 @@ export default function App() {
     ['inscricoes', 'Inscrições Públicas'],
   ].filter(([id, label]) => hasAccess('Escolas', label)), [hasAccess]);
 
+  const submenusGestao = useMemo(() => [
+    ['dashboard', 'Dashboard'],
+    ['equipes', 'Equipes'],
+    ['escalas', 'Escalas'],
+    ['historico', 'Histórico'],
+    ['relatorios', 'Relatórios'],
+    ['config', 'Configurações']
+  ].filter(([id, label]) => hasAccess('Gestão Ministerial', label)), [hasAccess]);
+
   const submenusAgenda = useMemo(() => [
     ['calendario', 'Calendário'],
     ['eventos', 'Eventos'],
@@ -316,10 +343,26 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!usuarioLogado) return undefined;
-    const carregamentoInicial = window.setTimeout(() => obterDados(), 0);
-    return () => window.clearTimeout(carregamentoInicial);
+    if (usuarioLogado) {
+      obterDados();
+    }
   }, [usuarioLogado, obterDados]);
+
+  // Garante que a visualização sempre volte ao topo ao mudar de módulo, submenu ou abrir detalhes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [
+    moduloAtual,
+    pessoasSubmenu,
+    celulasSubmenu,
+    financeiroSubmenu,
+    escolasSubmenu,
+    agendaSubmenu,
+    utilitariosSubmenu,
+    membroSelecionadoId,
+    celulaSelecionadaId,
+    alunoSelecionadoParaCadernetaId
+  ]);
 
   async function handleSair() {
     try { await supabase.auth.signOut(); } catch { /* ignora erro de rede */ }
@@ -345,6 +388,7 @@ export default function App() {
       if (modulo === 'celulas') setCelulasSubmenu(submenu);
       if (modulo === 'financeiro') setFinanceiroSubmenu(submenu);
       if (modulo === 'escolas') setEscolasSubmenu(submenu);
+      if (modulo === 'gestao') setGestaoMinisterialSubmenu(submenu);
       if (modulo === 'agenda') setAgendaSubmenu(submenu);
       if (modulo === 'utilitarios') setUtilitariosSubmenu(submenu);
     }
@@ -383,6 +427,7 @@ export default function App() {
       case 'celulas': return 'Células';
       case 'financeiro': return 'Financeiro';
       case 'escolas': return 'Escolas';
+      case 'gestao': return 'Gestor Ministerial';
       case 'agenda': return 'Agenda';
       case 'utilitarios': return 'Utilitários';
       case 'configuracoes': return 'Configurações';
@@ -391,17 +436,49 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--surface-muted)] font-sans text-[var(--text-primary)] antialiased">
-      {/* ── TOPBAR FIXA — visível apenas em desktop (md+) ── */}
-      <header className="hidden md:flex print:hidden fixed top-0 inset-x-0 z-50 h-14 bg-[#1e3a8a] border-b border-white/10 items-center px-4 gap-1 shadow-md"> {/* <--- Altere bg-[#hex] aqui para o Desktop */}
-        {/* Logo */}
-        <button type="button" onClick={() => navegar('dashboard')} className="flex items-center gap-2.5 mr-4 shrink-0">
-          <img src="/logo-mib-mundau.png" alt="Logo" className="h-8 w-14 object-contain bg-white rounded-md p-0.5" />
-          <span className="font-bold text-white text-sm tracking-tight hidden lg:block">MIB Church</span>
+    <div className="flex flex-col min-h-screen bg-[var(--surface-muted)] font-sans text-[var(--text-primary)] antialiased">
+      {/* ── CABEÇALHO SUPERIOR PREMIUM — visível apenas em desktop (md+) ── */}
+      <header className="hidden md:flex print:hidden fixed top-0 inset-x-0 z-50 h-14 bg-gradient-to-r from-[#0d1e52] via-[#14296b] to-[#0d1e52] border-b border-blue-900/40 items-center justify-between px-6 shadow-sm backdrop-blur-md">
+        {/* Logo e Nome do Sistema */}
+        <button type="button" onClick={() => navegar('dashboard')} className="flex items-center gap-3 transition hover:opacity-90 shrink-0">
+          <img src="/logo-mib-mundau.png" alt="Logo" className="h-10 w-10 object-contain bg-white rounded-xl p-1.5 shadow-md shadow-blue-950/20 border border-blue-900/10" />
+          <div className="text-left">
+            <span className="font-extrabold text-white text-sm tracking-tight block">MIB Church</span>
+            <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest block -mt-1">Sistema de Gestão</span>
+          </div>
         </button>
 
-        {/* Nav items */}
-        <nav className="flex items-center gap-1 flex-1">
+        {/* Configurações e Perfil do Usuário */}
+        <div className="flex items-center gap-4 shrink-0">
+          {hasAccess('Configurações') && (
+            <button
+              type="button"
+              onClick={() => navegar('configuracoes')}
+              className={`p-1.5 rounded-xl transition cursor-pointer flex items-center justify-center border ${
+                moduloAtual === 'configuracoes'
+                  ? 'bg-blue-600/10 border-blue-500/20 text-blue-400'
+                  : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
+              }`}
+              title="Configurações do Sistema"
+            >
+              <Settings size={18} />
+            </button>
+          )}
+          
+          <div className="border-l border-slate-800 pl-4 h-8 flex items-center">
+            <UserAvatarDropdown 
+              usuarioLogado={usuarioLogado} 
+              membroLogado={membroLogado} 
+              onSair={handleSair} 
+              onVerPerfil={() => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(membroLogado?.id); }}
+            />
+          </div>
+        </div>
+      </header>
+
+      {/* ── MENU PRINCIPAL DE NAVEGAÇÃO — visível apenas em desktop (md+) ── */}
+      <div className="hidden md:flex print:hidden fixed top-14 inset-x-0 z-40 h-12 bg-[#1e3a8a]/95 backdrop-blur-md border-b border-white/10 items-center px-6 shadow-md">
+        <nav className="flex items-center gap-1.5 flex-1">
           {/* Dashboard */}
           {hasAccess('Visão Geral') && (
           <TopNavBtn ativo={moduloAtual === 'dashboard'} onClick={() => navegar('dashboard')} icon={MenuIcons.dashboard}>
@@ -410,7 +487,7 @@ export default function App() {
           </TopNavBtn>
           )}
 
-          {/* Pessoas com dropdown (Ajuste as cores dos itens internos se necessário) */}
+          {/* Pessoas com dropdown */}
           {hasAccess('Pessoas') && (
           <TopNavDropdown
             icon={MenuIcons.pessoas}
@@ -449,6 +526,21 @@ export default function App() {
           >
             {submenusFinanceiro.map(([id, label]) => (
               <DropdownItem key={id} ativo={moduloAtual === 'financeiro' && financeiroSubmenu === id} onClick={() => navegar('financeiro', id)} icon={MenuIcons[submenuIconKey.financeiro[id]]}>
+                {label}
+              </DropdownItem>
+            ))}
+          </TopNavDropdown>
+          )}
+
+          {/* Gestão Ministerial com dropdown */}
+          {hasAccess('Gestão Ministerial') && (
+          <TopNavDropdown
+            icon={MenuIcons.gestaoMinisterial}
+            label="Gestor Ministerial"
+            ativo={moduloAtual === 'gestao'}
+          >
+            {submenusGestao.map(([id, label]) => (
+              <DropdownItem key={id} ativo={moduloAtual === 'gestao' && gestaoMinisterialSubmenu === id} onClick={() => navegar('gestao', id)} icon={MenuIcons[submenuIconKey.gestao[id]]}>
                 {label}
               </DropdownItem>
             ))}
@@ -499,24 +591,8 @@ export default function App() {
             ))}
           </TopNavDropdown>
           )}
-
-          {hasAccess('Configurações') && (
-          <TopNavBtn ativo={moduloAtual === 'configuracoes'} onClick={() => navegar('configuracoes')} icon={MenuIcons.configuracoes}>
-            Configurações
-          </TopNavBtn>
-          )}
         </nav>
-
-        {/* Avatar do usuário com dropdown */}
-        <div className="shrink-0 ml-auto border-l border-slate-700/60 pl-4">
-          <UserAvatarDropdown 
-            usuarioLogado={usuarioLogado} 
-            membroLogado={membroLogado} 
-            onSair={handleSair} 
-            onVerPerfil={() => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(membroLogado?.id); }}
-          />
-        </div>
-      </header>
+      </div>
 
       {/* ── SIDEBAR LATERAL — visível apenas no mobile ── */}
       {/* Mobile Header */}
@@ -593,6 +669,10 @@ export default function App() {
           </button>
         </div>
         <nav className="flex-1 py-0 space-y-0 overflow-y-auto">
+          {hasAccess('Configurações') && (
+            <MenuButton ativo={moduloAtual === 'configuracoes'} onClick={() => navegar('configuracoes')} icon={MenuIcons.configuracoes}>Configurações</MenuButton>
+          )}
+
           {hasAccess('Visão Geral') && ( /* Removido o div wrapper */
             <MenuButton ativo={moduloAtual === 'dashboard'} onClick={() => navegar('dashboard')} icon={MenuIcons.dashboard}>
               Visão Geral
@@ -674,6 +754,31 @@ export default function App() {
           </div>
           )}
 
+          {hasAccess('Gestão Ministerial') && (
+          <div>
+            <MenuButton 
+              ativo={moduloAtual === 'gestao'} 
+               onClick={() => navegar('gestao', 'escalas')} 
+              icon={MenuIcons.gestaoMinisterial}
+              hasSubmenu={submenusGestao.length > 0}
+              expanded={mobileDropdownAberto === 'gestao'}
+              onToggle={() => toggleMobileDropdown('gestao')}
+            >
+              Gestor Ministerial
+            </MenuButton>
+            {mobileDropdownAberto === 'gestao' && (
+              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                {submenusGestao.map(([id, label]) => (
+                  <button key={id} type="button" onClick={() => navegar('gestao', id)}
+                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'gestao' && gestaoMinisterialSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                    {MenuIcons[submenuIconKey.gestao[id]]} {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          )}
+
           {hasAccess('Escolas') && (
           <div>
             <MenuButton 
@@ -748,10 +853,6 @@ export default function App() {
             )}
           </div>
           )}
-
-          {hasAccess('Configurações') && (
-          <MenuButton ativo={moduloAtual === 'configuracoes'} onClick={() => navegar('configuracoes')} icon={MenuIcons.configuracoes}>Configurações</MenuButton>
-          )}
         </nav>
         <div className="p-4 border-t border-white/10">
           <div className="flex items-center gap-3 mb-3">
@@ -804,7 +905,7 @@ export default function App() {
       </nav>
 
       {/* ── CONTEÚDO PRINCIPAL — offset do topbar no desktop ── */}
-      <main className="min-w-0 px-2 pb-20 pt-14 sm:px-6 sm:pb-6 md:pt-14 lg:px-10 lg:pb-8 lg:pt-[80px]">
+      <main className="min-w-0 px-2 pb-20 pt-14 sm:px-6 sm:pb-6 md:pt-[104px] lg:px-10 lg:pb-8 lg:pt-[104px] flex-1 overflow-y-auto">
         {/* Nova HomePage como a tela principal do dashboard */}
         {moduloAtual === 'dashboard' && (
           <>
@@ -824,6 +925,7 @@ export default function App() {
                 carregando={carregando}
                 periodoConvertidos={periodoConvertidos}
                 setPeriodoConvertidos={setPeriodoConvertidos}
+                onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
               />
             </div>
           </>
@@ -883,6 +985,16 @@ export default function App() {
           />
         )}
 
+        {moduloAtual === 'gestao' && (
+          <GestaoMinisterial
+            submenu={gestaoMinisterialSubmenu}
+            onNavigate={(sub) => navegar('gestao', sub)}
+            membroLogado={membroLogado}
+            usuarioLogado={usuarioLogado}
+            pessoas={pessoas}
+          />
+        )}
+
         {moduloAtual === 'escolas' && escolasSubmenu !== 'ficha-aluno' && (
           <EscolasModulo 
             submenu={escolasSubmenu} 
@@ -935,6 +1047,20 @@ export default function App() {
         )}
 
         {moduloAtual === 'configuracoes' && <TelaConfiguracoes onFechar={() => navegar('dashboard')} />}
+        {confirmDialog && (
+          <ConfirmModal
+            titulo={confirmDialog.titulo}
+            mensagem={confirmDialog.mensagem}
+            onConfirm={() => {
+              confirmDialog.resolve(true);
+              setConfirmDialog(null);
+            }}
+            onCancel={() => {
+              confirmDialog.resolve(false);
+              setConfirmDialog(null);
+            }}
+          />
+        )}
       </main>
     </div>
   );

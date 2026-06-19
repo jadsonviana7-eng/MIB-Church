@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { supabase } from './supabaseClient';
 import { 
+  Music, Heart, Sparkles, Shield, Home, Flame, BookOpen, Users, 
+  Compass, Clapperboard, Award, Mic, MessageSquare, Calendar, 
+  HelpingHand, Scroll, Smile, Globe, Video, Tv
+} from 'lucide-react';
+import { 
   PieChart, 
   Pie, 
   Cell, 
@@ -109,15 +114,15 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
   return (
     <Card className="p-0">
       <CardHeader titulo={titulo} hideOnMobile={hideHeaderOnMobile} />
-      <div className={`p-6 grid gap-10 lg:gap-16 items-center min-h-[340px] ${hideLegend ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-[280px_1fr]'}`}>
-        <div className={`relative shrink-0 mx-auto ${hideLegend ? 'h-64 w-full max-w-[450px]' : 'w-full h-72 lg:w-84 lg:h-84 lg:mx-0'}`}>
+      <div className="p-6 flex flex-col items-center gap-6 min-h-[420px]">
+        <div className="relative w-full h-72 max-w-md">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+            <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }} style={{ outline: 'none' }}>
               <Pie
                 activeIndex={activeIndex}
                 activeShape={renderActiveShape}
                 data={chartData}
-                innerRadius="65%"
+                innerRadius="50%"
                 outerRadius="100%"
                 paddingAngle={1}
                 dataKey="value"
@@ -140,21 +145,37 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
           </div>
         </div>
         {!hideLegend && (
-          <div className="space-y-1">
-          {entradas.length === 0 ? (
-            <p className="text-sm text-[var(--text-muted)]">Sem dados cadastrados.</p>
-          ) : (
-            entradas.map(([label, valor], index) => (
-              <div key={label} className="flex items-center justify-between gap-3 text-sm font-medium cursor-pointer group" onMouseEnter={() => setActiveIndex(index)} onMouseLeave={() => setActiveIndex(-1)}>
-                <span className="flex items-center gap-1 text-[var(--text-primary)]">
-                  <span className="h-3 w-3 rounded-full" style={{ background: chartColors[index % chartColors.length] }} />
-                  <span className="group-hover:text-[#2563eb] transition-colors">{label}</span>
-                </span>
-                <span className="text-[var(--text-heading)] font-semibold text-lg">{valor}</span>
-              </div>
-            ))
-          )}
-        </div>
+          <div className="w-full max-w-md mt-4 border-t border-slate-100 pt-4">
+            {entradas.length === 0 ? (
+              <p className="text-center text-xs text-slate-400 italic">Sem dados para exibir.</p>
+            ) : (
+              <table className="w-full text-[11px]">
+                <tbody>
+                  {entradas.map(([label, valor], index) => {
+                    const isHover = activeIndex === index;
+                    const pct = total > 0 ? ((valor / total) * 100).toFixed(0) : 0;
+                    return (
+                      <tr 
+                        key={label} 
+                        className={`transition-all border-b border-slate-50 last:border-0 hover:bg-slate-50 cursor-pointer ${isHover ? 'bg-slate-50' : ''}`}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onMouseLeave={() => setActiveIndex(-1)}
+                      >
+                        <td className="py-2 pl-2">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: chartColors[index % chartColors.length] }} />
+                            <span className="font-bold text-slate-600">{label}</span>
+                          </div>
+                        </td>
+                        <td className="py-2 text-right font-black text-slate-700">{valor}</td>
+                        <td className="py-2 text-right pr-2 text-slate-400 font-bold w-12">{pct}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         )}
       </div>
     </Card>
@@ -180,7 +201,7 @@ export function CombinationCard({ titulo, dados, periodo, setPeriodo, hideHeader
       />
       <div className="p-6 h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData}>
+          <ComposedChart data={chartData} style={{ outline: 'none' }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="name" tick={{fontSize: 11}} axisLine={false} tickLine={false} />
             <YAxis tick={{fontSize: 11}} axisLine={false} tickLine={false} />
@@ -202,15 +223,16 @@ export function CombinationCard({ titulo, dados, periodo, setPeriodo, hideHeader
   );
 }
 
-export function ColumnChart({ titulo, dados, hideHeaderOnMobile = false }) {
+export function ColumnChart({ titulo, dados, hideHeaderOnMobile = false, hideLegend = false }) {
   const chartData = Object.entries(dados).map(([name, value]) => ({ name, value }));
 
   return (
     <Card className="p-0">
       <CardHeader titulo={titulo} hideOnMobile={hideHeaderOnMobile} />
-      <div className="p-6 h-80">
+      <div className="p-6 flex flex-col items-center gap-6 min-h-[420px]">
+        <div className="w-full h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData}>
+          <BarChart data={chartData} style={{ outline: 'none' }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="name" tick={{fontSize: 10}} axisLine={false} tickLine={false} />
             <YAxis tick={{fontSize: 11}} axisLine={false} tickLine={false} />
@@ -227,6 +249,33 @@ export function ColumnChart({ titulo, dados, hideHeaderOnMobile = false }) {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
+        </div>
+        {!hideLegend && (
+          <div className="w-full max-w-md mt-4 border-t border-slate-100 pt-4">
+            {chartData.length === 0 ? (
+              <p className="text-center text-xs text-slate-400 italic">Sem dados para exibir.</p>
+            ) : (
+              <table className="w-full text-[11px]">
+                <tbody>
+                  {chartData.map((item, index) => (
+                    <tr 
+                      key={item.name} 
+                      className="border-b border-slate-50 last:border-0"
+                    >
+                      <td className="py-2 pl-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: chartColors[index % chartColors.length] }} />
+                          <span className="font-bold text-slate-600">{item.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-2 text-right pr-2 font-black text-slate-700">{item.value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -389,5 +438,85 @@ export function ModalWrapper({ titulo, children, onFechar }) {
         {children}
       </div>
     </div>
+  );
+}
+
+export function ConfirmModal({ titulo, mensagem, onConfirm, onCancel }) {
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="p-6 border-b border-rose-50 bg-rose-50/30 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg shrink-0">
+            ⚠️
+          </div>
+          <div className="flex-1">
+            <h3 className="font-black text-slate-800 text-base">{titulo || 'Confirmar Ação'}</h3>
+            <p className="text-xs text-slate-500 mt-1 leading-relaxed">{mensagem || 'Deseja realmente prosseguir?'}</p>
+          </div>
+        </div>
+        <div className="p-6 bg-slate-50/50 flex gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-white transition cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-100 transition active:scale-95 cursor-pointer"
+          >
+            🗑️ Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const ICON_MAP = {
+  Music,
+  Heart,
+  Sparkles,
+  Shield,
+  Home,
+  Flame,
+  BookOpen,
+  Users,
+  Compass,
+  Clapperboard,
+  Award,
+  Mic,
+  MessageSquare,
+  Calendar,
+  HelpingHand,
+  Scroll,
+  Smile,
+  Globe,
+  Video,
+  Tv
+};
+
+export function MinistryIcon({ icone, className = '', size = 20, style = {} }) {
+  const IconComponent = ICON_MAP[icone];
+  if (IconComponent) {
+    return <IconComponent className={className} size={size} style={style} />;
+  }
+  // Fallback to emoji
+  return (
+    <span 
+      className={className} 
+      style={{ 
+        fontSize: `${size}px`, 
+        lineHeight: 1, 
+        display: 'inline-flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        ...style 
+      }}
+    >
+      {icone || '🙏'}
+    </span>
   );
 }

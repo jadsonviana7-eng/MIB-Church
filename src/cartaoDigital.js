@@ -92,9 +92,9 @@ export async function desenharCartaoDigital(dados) {
   y += (Math.ceil(measureWrapLines(ctx, evento || 'Evento', CARD_WIDTH - 80)) ) * 42;
 
   // Linha pontilhada decorativa
-  y += 30;
+  y += 0;
   drawDashedLine(ctx, 50, y, CARD_WIDTH - 50);
-  y += 50;
+  y += 20;
 
   // QR Code grande
   const qrSize = 380;
@@ -121,8 +121,9 @@ export async function desenharCartaoDigital(dados) {
   }
 
   // Linha pontilhada
+  y += -20;
   drawDashedLine(ctx, 50, y, CARD_WIDTH - 50);
-  y += 50;
+  y += 40; // Movido 24px para cima (original 50) para aproximar as informações da linha
 
   // Informações essenciais
   ctx.textAlign = 'left';
@@ -152,7 +153,7 @@ export async function desenharCartaoDigital(dados) {
   ctx.textAlign = 'center';
   ctx.font = '16px Helvetica, Arial, sans-serif';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('Apresente este QR Code na entrada ou para confirmar o pagamento.', CARD_WIDTH / 2, CARD_HEIGHT - 30);
+  ctx.fillText('Apresente este QR Code para confirmar o pagamento.', CARD_WIDTH / 2, CARD_HEIGHT - 20);
 
   return canvas;
 }

@@ -424,14 +424,6 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
     });
   };
 
-  // Tenta casar um nome sugerido pelo cadastro público (cônjuge) com uma pessoa já existente na base, pelo nome exato.
-  // Não vincula automaticamente filhos (podem ser várias pessoas) — isso fica para a busca manual na aba Vínculo Familiar.
-  function buscarIdPorNomeSugerido(status, nomeSugerido) {
-    if (status !== 'pendente' || !nomeSugerido) return '';
-    const alvo = nomeSugerido.trim().toLowerCase();
-    return listaPessoas.find((lp) => lp.nome?.trim().toLowerCase() === alvo)?.id || '';
-  }
-
   function preencherFormulario(p) {
     setMembro(p);
     setNome(p.nome || '');
@@ -473,7 +465,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
     setPerfilEmocao(p.perfil_emocao || '');
     setPerfilAtuante(p.perfil_atuante || '');
     setPerfilTubarao(p.perfil_tubarao || '');
-    setConjugeId(p.conjuge_id || buscarIdPorNomeSugerido(p.status, p.conjuge_sugerido));
+    setConjugeId(p.conjuge_id || '');
     setPermissoesJson(p.permissoes_json || {});
     setPreviewNovaFotoUrl('');
     setFotoFinalBlob(null);
@@ -493,7 +485,6 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
           .eq('id', pessoaId).single();
         if (erroPessoa) console.warn('Erro ao carregar pessoa:', erroPessoa);
         if (p) preencherFormulario(p);
-        if (p?.status === 'pendente') setModoEdicao(true); // Cadastro pendente: abre direto para revisão e aprovação
 
         // Busca teste de personalidade mais recente
         if (p?.auth_user_id) {
@@ -683,8 +674,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
       zona_id: zonaId || null,
       data_batismo: dataBRparaISO(dataBatismo),
       data_conversao: dataBRparaISO(dataConversao),
-      status: membro?.status === 'pendente' ? 'ativo' : status,
-      tipo_membro: membro?.status === 'pendente' ? 'membro' : membro?.tipo_membro,
+      status,
       batizado_aguas: batizadoAguas,
       atuacao: Array.isArray(atuacao) ? (atuacao.join(', ') || null) : (atuacao || null),
       permissao: permissao.trim() || null,
@@ -791,7 +781,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
   }
 
   async function handleMatricularEmTurma(turmaId) {
-    if (!(await window.confirmModal('Matricular em Turma', 'Deseja matricular este membro nesta turma?'))) return;
+    if (!window.confirm('Deseja matricular este membro nesta turma?')) return;
     
     setSalvando(true);
     try {
@@ -843,8 +833,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
   }
 
   async function handleExcluirPermanente() {
-    const confirmacao = await window.confirmModal(
-      'Excluir Permanentemente',
+    const confirmacao = window.confirm(
       `⚠️ ATENÇÃO: Você está prestes a excluir PERMANENTEMENTE o cadastro de ${nome}.\n\nEsta ação não pode ser desfeita e removerá todos os vínculos (familiares, históricos, etc) desta pessoa.\n\nDeseja continuar?`
     );
     if (!confirmacao) return;
@@ -1006,9 +995,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                 <button type="button" onClick={onFechar} className="px-4 py-2 rounded-xl border border-[var(--border)] text-xs font-medium text-[var(--text-primary)]">Fechar</button>
               </>
             ) : (
-              <span className="text-xs text-amber-700 font-medium px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
-                {membro?.status === 'pendente' ? 'Revisando para aprovação' : 'Modo edição'}
-              </span>
+              <span className="text-xs text-amber-700 font-medium px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200">Modo edição</span>
             )}
           </div>
         </div>
@@ -1034,23 +1021,6 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
         <form onSubmit={handleSalvarEdicao} className="ficha-content w-full space-y-4">
           {abaAtiva === 'informacoes' && (
             <div className="space-y-4">
-              {membro.status === 'pendente' && (
-                <div className="p-5 bg-amber-50 border border-amber-200 rounded-[24px] flex gap-4 animate-in slide-in-from-top-2 duration-300">
-                  <span className="text-2xl">📋</span>
-                  <div>
-                    <h4 className="text-sm font-black text-amber-900 uppercase tracking-tight">Análise de Novo Cadastro</h4>
-                    <p className="text-xs text-amber-700 mt-1 leading-relaxed">Este membro se cadastrou pelo formulário público. Verifique as sugestões abaixo e preencha os dados oficiais antes de aprovar.</p>
-                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                      <p className="text-[10px] font-bold text-amber-800 uppercase">Cargo Escolhido: <span className="text-slate-900">{membro.cargo || 'Não informado'}</span></p>
-                      <p className="text-[10px] font-bold text-amber-800 uppercase">Célula Vinculada: <span className="text-slate-900">{nomeCelula !== '—' ? nomeCelula : 'Nenhuma'}</span></p>
-                      <p className="text-[10px] font-bold text-amber-800 uppercase">Zona Vinculada: <span className="text-slate-900">{nomeZona !== '—' ? nomeZona : 'Nenhuma'}</span></p>
-                      {membro.atuacao && <p className="text-[10px] font-bold text-amber-800 uppercase">Aptidão/Ministério: <span className="text-slate-900">{membro.atuacao}</span></p>}
-                      {membro.conjuge_sugerido && <p className="text-[10px] font-bold text-amber-800 uppercase">Cônjuge sugerido: <span className="text-slate-900">{membro.conjuge_sugerido}</span>{!conjugeId && <span className="text-amber-600 font-normal italic ml-1">— confirme em Vínculo Familiar</span>}</p>}
-                      {membro.filhos_sugeridos && <p className="text-[10px] font-bold text-amber-800 uppercase">Filhos sugeridos: <span className="text-slate-900">{membro.filhos_sugeridos}</span><span className="text-amber-600 font-normal italic ml-1">— busque e vincule em Vínculo Familiar</span></p>}
-                    </div>
-                  </div>
-                </div>
-              )}
               <div className="section-group">
                 <h3 className="section-title">Dados Pessoais</h3>
                 <div className="section-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1864,14 +1834,14 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
                   {salvando ? (
                     <>
                       <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                      {membro?.status === 'pendente' ? 'Aprovando...' : 'Salvando...'}
+                      Salvando...
                     </>
                   ) : (
                     <>
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
-                      {membro?.status === 'pendente' ? 'Aprovar Cadastro' : 'Salvar Alterações'}
+                      Salvar Alterações
                     </>
                   )}
                 </button>

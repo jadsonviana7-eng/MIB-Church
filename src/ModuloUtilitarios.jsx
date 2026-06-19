@@ -15,14 +15,6 @@ import MuralOracao from './MuralOracao';
 function getUtilitarios({ membroLogado, temVinculoEscala }) {
   return [
     {
-      id: 'escalas',
-      label: 'Escalas Ministeriais',
-      desc: 'Visualize sua escala de serviço e horários dos ministérios.',
-      icon: MenuIcons['u-escalas'],
-      gradient: 'from-blue-500 to-indigo-500',
-      show: membroLogado?.permissao !== 'membro' || temVinculoEscala,
-    },
-    {
       id: 'relatorio-semanal',
       label: 'Relatório Semanal',
       desc: 'Gere o gráfico de ofertas semanais para compartilhamento.',
@@ -125,11 +117,11 @@ export default function ModuloUtilitarios(props) {
   if (!conteudo) return null;
 
   return (
-    <div className="flex gap-6 items-start">
+    <div className="flex gap-6 items-start w-full">
       <div className="flex-1 min-w-0">{conteudo}</div>
 
       {/* Painel lateral fixo de atalhos — apenas em telas grandes */}
-      <aside className="hidden xl:block w-64 shrink-0 sticky top-6">
+      <aside className={`${submenu === 'escalas' ? 'hidden' : 'hidden xl:block'} w-64 shrink-0 sticky top-6`}>
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4">
           <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400 px-2 mb-2">
             Utilitários

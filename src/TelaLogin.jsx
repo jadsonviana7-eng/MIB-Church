@@ -3,12 +3,12 @@ import { supabase } from './supabaseClient';
 
 /* ── perfis (usados apenas internamente) ── */
 const perfisAcesso = [
-  { id: 'admin',       nome: 'Admin',          iniciais: 'AD' },
-  { id: 'pastor',      nome: 'Pastor',          iniciais: 'PR' },
-  { id: 'lider-celula',nome: 'Líder de Célula', iniciais: 'LC' },
-  { id: 'membro',      nome: 'Membro',          iniciais: 'MB' },
-  { id: 'secretaria',  nome: 'Secretaria',      iniciais: 'SC' },
-  { id: 'tesouraria',  nome: 'Tesouraria',      iniciais: 'TS' },
+  { id: 'admin', nome: 'Admin', iniciais: 'AD' },
+  { id: 'pastor', nome: 'Pastor', iniciais: 'PR' },
+  { id: 'lider-celula', nome: 'Líder de Célula', iniciais: 'LC' },
+  { id: 'membro', nome: 'Membro', iniciais: 'MB' },
+  { id: 'secretaria', nome: 'Secretaria', iniciais: 'SC' },
+  { id: 'tesouraria', nome: 'Tesouraria', iniciais: 'TS' },
 ];
 
 /* ── modos da tela ── */
@@ -18,14 +18,14 @@ const MODO = { LOGIN: 'login', ESQUECEU: 'esqueceu', NOVA_SENHA: 'nova_senha' };
 
 export default function TelaLogin({ onEntrar }) {
   const [modo, setModo] = useState(MODO.LOGIN);
-  const [email, setEmail]       = useState('');
-  const [senha, setSenha]       = useState('');
-  const [novaSenha, setNovaSenha]         = useState('');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+  const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
-  const [lembrar, setLembrar]   = useState(true);
-  const [erro, setErro]         = useState('');
-  const [info, setInfo]         = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [lembrar, setLembrar] = useState(true);
+  const [erro, setErro] = useState('');
+  const [info, setInfo] = useState('');
+  const [loading, setLoading] = useState(false);
   const [perfilIdentificado, setPerfilIdentificado] = useState(null);
   const canvasRef = useRef(null);
 
@@ -109,7 +109,7 @@ export default function TelaLogin({ onEntrar }) {
     const e = emailDigitado.trim().toLowerCase();
     // Regex simples para validar se o e-mail parece concluído
     const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (!regexEmail.test(e)) {
       setPerfilIdentificado(null);
       return;
@@ -147,7 +147,7 @@ export default function TelaLogin({ onEntrar }) {
         const { data: pData } = await supabase.from('pessoas').select('permissao').eq('email', data.user.email).maybeSingle();
         const pId = pData?.permissao?.toLowerCase() || 'membro';
         const perfil = perfisAcesso.find(p => p.id === pId) || perfisAcesso.find(p => p.id === 'membro');
-        
+
         onEntrar({ id: data.user.id, email: data.user.email, perfil, lembrarAcesso: lembrar });
       }
     } catch { setErro('Erro ao conectar. Tente novamente.'); }
@@ -533,17 +533,83 @@ export default function TelaLogin({ onEntrar }) {
 
         /* responsive */
         @media (max-width: 700px) {
-          .tl-root { align-items: flex-start; padding-top: 1rem; }
-          .tl-card { grid-template-columns: 1fr; max-width: 450px; }
-          .tl-left { min-height: 220px; padding: 3rem 1.5rem; align-items: center; text-align: center; }
-          .tl-logo-wrap { justify-content: center; width: 100%; }
-          .tl-logo-img { position: static; height: 90px; }
-          .tl-headline p { margin: 0.85rem auto 0; }
-          .tl-verse { border-left: none; border-top: 3px solid #2563eb; border-radius: 0 0 12px 12px; }
-          .tl-right { padding: 3rem 1.5rem; }
-          .tl-headline h1 { font-size: 1.3rem; }
-          .tl-right-title, .tl-right-sub { text-align: center; }
-          .tl-actions-row { flex-direction: column; gap: 0.8rem; align-items: center; }
+          .tl-root { padding: 0; align-items: stretch; justify-content: stretch; }
+          .tl-card { 
+            grid-template-columns: 1fr; 
+            max-width: none; 
+            border-radius: 0; 
+            min-height: 100vh; 
+            min-height: 100dvh; 
+            box-shadow: none; 
+            display: flex; 
+            flex-direction: column;
+            border: none;
+          }
+          .tl-left { 
+            height: 38vh;
+            min-height: 220px; 
+            padding: 1.5rem; 
+            display: flex;
+            align-items: center; 
+            justify-content: center; 
+            flex-direction: column;
+            flex-shrink: 0;
+          }
+          .tl-illustration { display: none; }
+          .tl-glow-line { display: none; }
+          
+          /* Exibir lema em tamanho compacto e centralizado no mobile */
+          .tl-headline { 
+            display: block; 
+            text-align: center; 
+            margin-top: 0.75rem;
+          }
+          .tl-headline h1 { 
+            font-size: 1.1rem; 
+            text-align: center; 
+            line-height: 1.35; 
+            font-family: 'Cinzel', serif; 
+            font-weight: 900;
+            color: #fff;
+          }
+          .tl-headline h1 span { color: #60a5fa; }
+          .tl-headline p { display: none; }
+          .tl-badge { display: none; }
+          .tl-verse { display: none; }
+          
+          .tl-logo-wrap { justify-content: center; width: 100%; display: flex; }
+          .tl-logo-img { position: relative; top: 0; left: 0; height: 90px; margin: 0 auto; display: block; }
+          
+          .tl-right { 
+            flex: 1; 
+            padding: 2.25rem 1.75rem; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+          }
+          .tl-right-title { font-size: 1.35rem; text-align: center; margin-bottom: 0.25rem; }
+          .tl-right-sub { font-size: 0.82rem; text-align: center; margin-bottom: 1.75rem; }
+          
+          .tl-field { margin-bottom: 1.15rem; }
+          .tl-label { margin-bottom: 0.45rem; font-size: 0.72rem; }
+          .tl-input { padding: 0.78rem 1rem; font-size: 0.875rem; border-radius: 12px; }
+          
+          .tl-perfil-chip { padding: 0.6rem 0.9rem; margin-bottom: 1.15rem; border-radius: 10px; }
+          .tl-alert { padding: 0.75rem 1rem; font-size: 0.78rem; margin-bottom: 1.15rem; border-radius: 10px; }
+          
+          .tl-actions-row { 
+            flex-direction: row; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 1.3rem; 
+            gap: 0;
+          }
+          .tl-check-row { font-size: 0.8rem; margin: 0; }
+          .tl-link { font-size: 0.8rem; }
+          
+          .tl-btn { padding: 0.85rem; font-size: 0.875rem; border-radius: 12px; }
+          .tl-divider { margin: 1.2rem 0; }
+          .tl-back { margin-bottom: 1.3rem; }
         }
       `}</style>
 
@@ -558,7 +624,7 @@ export default function TelaLogin({ onEntrar }) {
             <div className="tl-illustration">
               <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
                 {/* pessoas em círculo */}
-                {[0,60,120,180,240,300].map((deg, i) => {
+                {[0, 60, 120, 180, 240, 300].map((deg, i) => {
                   const rad = (deg * Math.PI) / 180;
                   const cx = 100 + 62 * Math.cos(rad);
                   const cy = 100 + 62 * Math.sin(rad);
@@ -570,7 +636,7 @@ export default function TelaLogin({ onEntrar }) {
                   );
                 })}
                 {/* conexões */}
-                {[0,60,120,180,240,300].map((deg, i) => {
+                {[0, 60, 120, 180, 240, 300].map((deg, i) => {
                   const rad = (deg * Math.PI) / 180;
                   const cx = 100 + 62 * Math.cos(rad);
                   const cy = 100 + 62 * Math.sin(rad);
@@ -591,7 +657,7 @@ export default function TelaLogin({ onEntrar }) {
                 src="/logo-betesda-mundau.png"
                 alt="MIB Church"
                 className="tl-logo-img"
-                onError={e => { e.target.style.display='none'; }}
+                onError={e => { e.target.style.display = 'none'; }}
               />
             </div>
 
@@ -675,7 +741,7 @@ export default function TelaLogin({ onEntrar }) {
                 {erro && <div className="tl-alert tl-alert-err">{erro}</div>}
 
                 <button type="submit" className="tl-btn tl-btn-primary" disabled={loading}>
-                  {loading ? 'Autenticando…' : 'Entrar no painel →'}
+                  {loading ? 'Autenticando…' : 'Entrar no Sistema'}
                 </button>
               </form>
             )}
@@ -705,8 +771,8 @@ export default function TelaLogin({ onEntrar }) {
                   />
                 </div>
 
-                {erro  && <div className="tl-alert tl-alert-err">{erro}</div>}
-                {info  && <div className="tl-alert tl-alert-info">{info}</div>}
+                {erro && <div className="tl-alert tl-alert-err">{erro}</div>}
+                {info && <div className="tl-alert tl-alert-info">{info}</div>}
 
                 <button type="submit" className="tl-btn tl-btn-primary" disabled={loading}>
                   {loading ? 'Enviando…' : 'Enviar link de redefinição →'}
@@ -750,8 +816,8 @@ export default function TelaLogin({ onEntrar }) {
                   />
                 </div>
 
-                {erro  && <div className="tl-alert tl-alert-err">{erro}</div>}
-                {info  && <div className="tl-alert tl-alert-info">{info}</div>}
+                {erro && <div className="tl-alert tl-alert-err">{erro}</div>}
+                {info && <div className="tl-alert tl-alert-info">{info}</div>}
 
                 <button type="submit" className="tl-btn tl-btn-primary" disabled={loading}>
                   {loading ? 'Salvando…' : 'Salvar nova senha →'}

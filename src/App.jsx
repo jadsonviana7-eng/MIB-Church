@@ -8,7 +8,7 @@ import PessoasModulo from './PessoasModulo';
 import ModuloFinanceiro from './ModuloFinanceiro';
 import ModuloUtilitarios from './ModuloUtilitarios';
 import EscolasModulo from './EscolasModulo';
-import { ConfirmModal } from './ui';
+import { ConfirmModal, ModalWrapper } from './ui';
 import GestaoMinisterial from './GestaoMinisterial';
 import AgendaModulo from './AgendaModulo';
 import PublicEventRegistration from './PublicEventRegistration';
@@ -16,7 +16,7 @@ import DetalhesMembro from './DetalhesMembro';
 import HomePage from './HomePage'; // Novo componente HomePage
 import PublicRegistrationForm from './PublicRegistrationForm'; // Importar o novo componente
 import { MenuIcons, submenuIconKey } from './icons'; // Importa MenuIcons e submenuIconKey do novo arquivo
-import { Settings } from 'lucide-react';
+import { Settings, Bell } from 'lucide-react';
 import { normalizarTexto, faixaDaIdade, meses, valorCampoRelatorio } from './churchUtils';
 
 const filtrosIniciais = {
@@ -78,6 +78,7 @@ export default function App() {
 
   // Estados de navegação e filtros restaurados
   const [membroSelecionadoId, setMembroSelecionadoId] = useState(null);
+  const [reuniaoSelecionadaId, setReuniaoSelecionadaId] = useState(null);
   const [alunoSelecionadoParaCadernetaId, setAlunoSelecionadoParaCadernetaId] = useState(null);
   const [filtros, setFiltros] = useState(filtrosIniciais);
   const [periodoConvertidos, setPeriodoConvertidos] = useState('mes');
@@ -95,6 +96,270 @@ export default function App() {
     if (!usuarioLogado?.email || pessoas.length === 0) return null;
     return pessoas.find(p => p.email?.toLowerCase() === usuarioLogado.email.toLowerCase());
   }, [usuarioLogado, pessoas]);
+
+  const [reunioesVistas, setReunioesVistas] = useState([]);
+
+  useEffect(() => {
+    if (membroLogado) {
+      const vistas = localStorage.getItem(`mib_reunioes_vistas_${membroLogado.id}`);
+      if (vistas) {
+        try {
+          setReunioesVistas(JSON.parse(vistas));
+        } catch (e) {
+          setReunioesVistas([]);
+        }
+      } else {
+        setReunioesVistas([]);
+      }
+    }
+  }, [membroLogado]);
+
+  const marcarReuniaoComoVista = useCallback((id) => {
+    if (!membroLogado) return;
+    setReunioesVistas((prev) => {
+      const idStr = String(id);
+      if (prev.includes(idStr)) return prev;
+      const novo = [...prev, idStr];
+      localStorage.setItem(`mib_reunioes_vistas_${membroLogado.id}`, JSON.stringify(novo));
+      return novo;
+    });
+  }, [membroLogado]);
+
+  const [notificacoes, setNotificacoes] = useState([]);
+  const [carregandoNotificacoes, setCarregandoNotificacoes] = useState(false);
+  const [notificacoesAberto, setNotificacoesAberto] = useState(false);
+  const [notificacoesLidas, setNotificacoesLidas] = useState([]);
+
+  useEffect(() => {
+    if (membroLogado) {
+      const salvas = localStorage.getItem(`mib_notificacoes_lidas_${membroLogado.id}`);
+      if (salvas) {
+        try {
+          setNotificacoesLidas(JSON.parse(salvas));
+        } catch (e) {
+          setNotificacoesLidas([]);
+        }
+      } else {
+        setNotificacoesLidas([]);
+      }
+    }
+  }, [membroLogado]);
+
+  const marcarNotificacaoComoLida = useCallback((id) => {
+    if (!membroLogado) return;
+    setNotificacoesLidas((prev) => {
+      const idStr = String(id);
+      if (prev.includes(idStr)) return prev;
+      const nova = [...prev, idStr];
+      localStorage.setItem(`mib_notificacoes_lidas_${membroLogado.id}`, JSON.stringify(nova));
+      return nova;
+    });
+  }, [membroLogado]);
+
+  const marcarTodasComoLidas = useCallback(() => {
+    if (!membroLogado) return;
+    const ids = notificacoes.map(n => String(n.id));
+    setNotificacoesLidas((prev) => {
+      const nova = [...new Set([...prev, ...ids])];
+      localStorage.setItem(`mib_notificacoes_lidas_${membroLogado.id}`, JSON.stringify(nova));
+      return nova;
+    });
+  }, [membroLogado, notificacoes]);
+
+  const findNameInDadosInscricao = (dados) => {
+    if (!dados) return 'Participante';
+    for (const k of Object.keys(dados)) {
+      const kLower = k.toLowerCase();
+      if (kLower.includes('nome') || kLower.includes('completo')) {
+        return dados[k];
+      }
+    }
+    return 'Participante';
+  };
+
+  const carregarNotificacoes = useCallback(async () => {
+    if (!membroLogado) return;
+    setCarregandoNotificacoes(true);
+    try {
+      const limiteDias = new Date();
+      limiteDias.setDate(limiteDias.getDate() - 3); // 3 dias atrás
+      const limiteDiasStr = limiteDias.toISOString().split('T')[0];
+
+      const lista = [];
+
+      // 1. Aniversariantes do dia
+      const hoje = new Date();
+      const mesHoje = hoje.getMonth() + 1;
+      const diaHoje = hoje.getDate();
+      const hojeStr = hoje.toISOString().split('T')[0];
+
+      pessoas.forEach(p => {
+        if (p.data_nascimento && p.status !== 'inativo') {
+          const parts = p.data_nascimento.split('-');
+          if (parts.length === 3) {
+            const mes = Number(parts[1]);
+            const dia = Number(parts[2]);
+            if (mes === mesHoje && dia === diaHoje) {
+              lista.push({
+                id: `aniv_${p.id}_${hojeStr}`,
+                tipo: 'aniversario',
+                titulo: `🎉 Hoje é aniversário de ${p.nome}!`,
+                descricao: `Membro faz aniversário hoje. Envie os parabéns!`,
+                dados: { idMembro: p.id },
+                created_at: new Date().toISOString()
+              });
+            }
+          }
+        }
+      });
+
+      const isPastorOuAdmin = ['pastor', 'admin'].includes(membroLogado.permissao);
+
+      if (isPastorOuAdmin) {
+        // 2. Novos cadastros
+        pessoas.forEach(p => {
+          if (p.created_at && p.status !== 'inativo') {
+            const created = new Date(p.created_at);
+            if (created >= limiteDias) {
+              lista.push({
+                id: `cadastro_${p.id}`,
+                tipo: 'novo_cadastro',
+                titulo: `👤 Novo cadastro realizado`,
+                descricao: `${p.nome} se cadastrou no sistema.`,
+                dados: { idMembro: p.id },
+                created_at: p.created_at
+              });
+            }
+          }
+        });
+
+        // 3. Novas inscrições em eventos (Supabase query)
+        try {
+          const { data: inscricoesEventos, error: errInsc } = await supabase
+            .from('agenda_inscricoes')
+            .select('id, created_at, dados_inscricao, agenda_eventos(titulo)')
+            .gte('created_at', limiteDias.toISOString())
+            .order('created_at', { ascending: false });
+
+          if (!errInsc && inscricoesEventos) {
+            inscricoesEventos.forEach(i => {
+              const nome = findNameInDadosInscricao(i.dados_inscricao);
+              const eventTitle = i.agenda_eventos?.titulo || 'Evento';
+              lista.push({
+                id: `insc_evento_${i.id}`,
+                tipo: 'inscricao_evento',
+                titulo: `🎟️ Nova inscrição em evento`,
+                descricao: `${nome} se inscreveu no evento "${eventTitle}".`,
+                dados: { modulo: 'agenda', tab: 'eventos' },
+                created_at: i.created_at
+              });
+            });
+          }
+        } catch (e) {
+          console.warn('Erro ao carregar inscrições de eventos para notificações:', e);
+        }
+
+        // 4. Novas candidaturas em turmas / cursos (Supabase query)
+        try {
+          const { data: inscricoesCursos, error: errInscCur } = await supabase
+            .from('inscricoes_publicas')
+            .select('id, created_at, nome_candidato, status_analise, turmas(nome)')
+            .eq('status_analise', 'pendente')
+            .gte('created_at', limiteDias.toISOString())
+            .order('created_at', { ascending: false });
+
+          if (!errInscCur && inscricoesCursos) {
+            inscricoesCursos.forEach(i => {
+              const turmaNome = i.turmas?.nome || 'Turma';
+              lista.push({
+                id: `insc_curso_${i.id}`,
+                tipo: 'inscricao_curso',
+                titulo: `📚 Nova inscrição pendente de curso`,
+                descricao: `${i.nome_candidato} se inscreveu para a turma "${turmaNome}".`,
+                dados: { modulo: 'escolas', tab: 'resumo' },
+                created_at: i.created_at
+              });
+            });
+          }
+        } catch (e) {
+          console.warn('Erro ao carregar inscrições de cursos para notificações:', e);
+        }
+      }
+
+      // 5. Escalas Pendentes para o Usuário Logado
+      try {
+        const { data: escalasUsuario, error: errEsc } = await supabase
+          .from('escalas')
+          .select('id, status, created_at, eventos_ministeriais(titulo, data_evento), ministerios(nome), ministerio_funcoes(nome)')
+          .eq('pessoa_id', membroLogado.id)
+          .eq('status', 'pendente');
+
+        if (!errEsc && escalasUsuario) {
+          escalasUsuario.forEach(esc => {
+            const eventTitle = esc.eventos_ministeriais?.titulo || 'Evento';
+            const ministerioNome = esc.ministerios?.nome || 'Ministério';
+            const funcaoNome = esc.ministerio_funcoes?.nome || 'Função';
+            const dataEvento = esc.eventos_ministeriais?.data_evento 
+              ? new Date(esc.eventos_ministeriais.data_evento).toLocaleDateString('pt-BR') 
+              : 'Sem data';
+
+            lista.push({
+              id: `escala_${esc.id}`,
+              tipo: 'escala_pendente',
+              titulo: `📅 Nova escala pendente!`,
+              descricao: `Você foi escalado como ${funcaoNome} no evento "${eventTitle}" (${dataEvento}) para o ministério ${ministerioNome}.`,
+              dados: { modulo: 'gestao', tab: 'escalas' },
+              created_at: esc.created_at || new Date().toISOString()
+            });
+          });
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar escalas para notificações:', e);
+      }
+
+      // 6. Novas pessoas adicionadas à célula liderada pelo usuário
+      const celulasLideradas = celulas.filter(c => String(c.lider_id) === String(membroLogado.id));
+      if (celulasLideradas.length > 0) {
+        const cellIds = celulasLideradas.map(c => String(c.id));
+        pessoas.forEach(p => {
+          if (p.celula_id && cellIds.includes(String(p.celula_id)) && p.created_at) {
+            const created = new Date(p.created_at);
+            if (created >= limiteDias) {
+              lista.push({
+                id: `celula_membro_${p.id}`,
+                tipo: 'novo_membro_celula',
+                titulo: `🏡 Novo membro na sua Célula`,
+                descricao: `${p.nome} foi adicionado à célula "${celulasLideradas.find(c => String(c.id) === String(p.celula_id))?.nome || 'Célula'}".`,
+                dados: { modulo: 'celulas', tab: 'lista' },
+                created_at: p.created_at
+              });
+            }
+          }
+        });
+      }
+
+      // Sort notifications by date (newest first)
+      lista.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      setNotificacoes(lista);
+    } catch (err) {
+      console.warn('Erro ao carregar notificações:', err);
+    } finally {
+      setCarregandoNotificacoes(false);
+    }
+  }, [membroLogado, pessoas, celulas]);
+
+  useEffect(() => {
+    if (membroLogado) {
+      carregarNotificacoes();
+      const interval = setInterval(carregarNotificacoes, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [membroLogado, carregarNotificacoes]);
+
+  const notificacoesAtivas = useMemo(() => {
+    return notificacoes.filter(n => !notificacoesLidas.includes(String(n.id)));
+  }, [notificacoes, notificacoesLidas]);
 
   // Indica se o membro logado possui alguma atuação/ministério vinculado
   // (usado para liberar o acesso a "Escalas Ministeriais" mesmo para membros comuns)
@@ -450,6 +715,21 @@ export default function App() {
 
         {/* Configurações e Perfil do Usuário */}
         <div className="flex items-center gap-4 shrink-0">
+          {/* Central de Notificações */}
+          <button
+            type="button"
+            onClick={() => setNotificacoesAberto(true)}
+            className="p-1.5 rounded-xl transition cursor-pointer flex items-center justify-center border border-transparent text-slate-400 hover:text-white hover:bg-slate-800 relative"
+            title="Alertas e Notificações"
+          >
+            <Bell size={18} />
+            {notificacoesAtivas.length > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-rose-600 text-white font-extrabold text-[9px] flex items-center justify-center shadow-md animate-pulse">
+                {notificacoesAtivas.length}
+              </span>
+            )}
+          </button>
+
           {hasAccess('Configurações') && (
             <button
               type="button"
@@ -601,7 +881,21 @@ export default function App() {
         <span className="flex-1 text-center text-sm font-bold uppercase tracking-wide">
           {getModuloTitle(moduloAtual)}
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          {/* Sino de Notificações no Mobile */}
+          <button 
+            onClick={() => setNotificacoesAberto(true)}
+            className="p-1.5 active:scale-95 transition-transform relative text-white"
+            title="Alertas e Notificações"
+          >
+            <Bell size={20} />
+            {notificacoesAtivas.length > 0 && (
+              <span className="absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-full bg-rose-600 text-white font-extrabold text-[8px] flex items-center justify-center shadow-md animate-pulse">
+                {notificacoesAtivas.length}
+              </span>
+            )}
+          </button>
+
           {/* Avatar clicável no mobile */}
           <button 
             onClick={() => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(membroLogado?.id); }}
@@ -911,7 +1205,23 @@ export default function App() {
           <>
             {/* Mobile: Exibe os cartões de navegação rápida */}
             <div className="md:hidden">
-              <HomePage onNavigate={navegar} hasAccess={hasAccess} membroLogado={membroLogado} />
+              <HomePage 
+                onNavigate={navegar} 
+                hasAccess={hasAccess} 
+                membroLogado={membroLogado} 
+                pessoas={pessoas}
+                celulas={celulas}
+                zonas={zonas}
+                relatoriosCelula={relatoriosCelula}
+                reunioesVistas={reunioesVistas}
+                onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
+                onVerReuniao={(id) => { 
+                  marcarReuniaoComoVista(id);
+                  setModuloAtual('celulas'); 
+                  setCelulasSubmenu('reunioes'); 
+                  setReuniaoSelecionadaId(id); 
+                }}
+              />
             </div>
 
             {/* Desktop: Exibe os indicadores estatísticos (Dashboard de outrora) */}
@@ -925,7 +1235,17 @@ export default function App() {
                 carregando={carregando}
                 periodoConvertidos={periodoConvertidos}
                 setPeriodoConvertidos={setPeriodoConvertidos}
+                reunioesVistas={reunioesVistas}
                 onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
+                onVerReuniao={(id) => { 
+                  marcarReuniaoComoVista(id);
+                  setModuloAtual('celulas'); 
+                  setCelulasSubmenu('reunioes'); 
+                  setReuniaoSelecionadaId(id); 
+                }}
+                membroLogado={membroLogado}
+                usuarioLogado={usuarioLogado}
+                onNavigate={navegar}
               />
             </div>
           </>
@@ -969,9 +1289,12 @@ export default function App() {
             relatoriosCelula={relatoriosCelula}
             celulaSelecionadaId={celulaSelecionadaId} // Passa o ID da célula selecionada
             setCelulaSelecionadaId={setCelulaSelecionadaId} // Passa a função para definir a célula selecionada
+            reuniaoSelecionadaId={reuniaoSelecionadaId}
+            setReuniaoSelecionadaId={setReuniaoSelecionadaId}
             obterDados={obterDados} // Passa a função para recarregar dados
             onNavigate={(sub) => navegar('celulas', sub)}
             membroLogado={membroLogado}
+            onMarcarReuniaoComoVista={marcarReuniaoComoVista}
           />
         )}
 
@@ -1060,6 +1383,120 @@ export default function App() {
               setConfirmDialog(null);
             }}
           />
+        )}
+
+        {notificacoesAberto && (
+          <ModalWrapper 
+            titulo="Central de Notificações" 
+            onFechar={() => setNotificacoesAberto(false)}
+          >
+            <div className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  {notificacoesAtivas.length === 0 
+                    ? 'Nenhum alerta pendente' 
+                    : `${notificacoesAtivas.length} alerta(s) pendente(s)`}
+                </span>
+                {notificacoesAtivas.length > 0 && (
+                  <button 
+                    type="button" 
+                    onClick={marcarTodasComoLidas}
+                    className="text-xs font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer"
+                  >
+                    Marcar todas como lidas
+                  </button>
+                )}
+              </div>
+              <div className="p-4 overflow-y-auto space-y-3 flex-1 max-h-[60vh]">
+                {notificacoesAtivas.length === 0 ? (
+                  <div className="text-center py-12 px-4 space-y-3 animate-fade-in">
+                    <span className="text-4xl block">🔔</span>
+                    <h4 className="font-bold text-slate-700 text-sm">Tudo em dia por aqui!</h4>
+                    <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                      Você não tem novas notificações no momento.
+                    </p>
+                  </div>
+                ) : (
+                  notificacoesAtivas.map((n) => {
+                    let icon = '🔔';
+                    let badgeColor = 'bg-blue-50 border-blue-100 text-blue-700';
+                    if (n.tipo === 'aniversario') {
+                      icon = '🎉';
+                      badgeColor = 'bg-pink-50 border-pink-100 text-pink-700';
+                    } else if (n.tipo === 'novo_cadastro') {
+                      icon = '👤';
+                      badgeColor = 'bg-emerald-50 border-emerald-100 text-emerald-700';
+                    } else if (n.tipo === 'inscricao_evento') {
+                      icon = '🎟️';
+                      badgeColor = 'bg-purple-50 border-purple-100 text-purple-700';
+                    } else if (n.tipo === 'inscricao_curso') {
+                      icon = '📚';
+                      badgeColor = 'bg-amber-50 border-amber-100 text-amber-700';
+                    } else if (n.tipo === 'escala_pendente') {
+                      icon = '📅';
+                      badgeColor = 'bg-indigo-50 border-indigo-100 text-indigo-700';
+                    } else if (n.tipo === 'novo_membro_celula') {
+                      icon = '🏡';
+                      badgeColor = 'bg-teal-50 border-teal-100 text-teal-700';
+                    }
+
+                    const handleNotifClick = () => {
+                      marcarNotificacaoComoLida(n.id);
+                      setNotificacoesAberto(false);
+                      if (n.tipo === 'aniversario' || n.tipo === 'novo_cadastro') {
+                        setModuloAtual('pessoas');
+                        setPessoasSubmenu('todos');
+                        setMembroSelecionadoId(n.dados.idMembro);
+                      } else if (n.tipo === 'inscricao_evento') {
+                        setModuloAtual('agenda');
+                        setAgendaSubmenu('eventos');
+                      } else if (n.tipo === 'inscricao_curso') {
+                        setModuloAtual('escolas');
+                        setEscolasSubmenu('resumo');
+                      } else if (n.tipo === 'escala_pendente') {
+                        setModuloAtual('gestao');
+                        setGestaoMinisterialSubmenu('escalas');
+                      } else if (n.tipo === 'novo_membro_celula') {
+                        setModuloAtual('celulas');
+                        setCelulasSubmenu('lista');
+                      }
+                    };
+
+                    return (
+                      <div 
+                        key={n.id} 
+                        className="flex gap-3 p-3 rounded-xl border border-slate-100 bg-white shadow-2xs hover:bg-slate-50 transition active:scale-[0.99] group cursor-pointer relative animate-fade-in"
+                        onClick={handleNotifClick}
+                      >
+                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center text-lg shrink-0 ${badgeColor}`}>
+                          {icon}
+                        </div>
+                        <div className="flex-1 min-w-0 pr-6">
+                          <h5 className="font-bold text-slate-800 text-xs truncate leading-snug group-hover:text-blue-700 transition">
+                            {n.titulo}
+                          </h5>
+                          <p className="text-slate-500 text-[11px] font-medium leading-relaxed mt-0.5 whitespace-pre-wrap">
+                            {n.descricao}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            marcarNotificacaoComoLida(n.id);
+                          }}
+                          className="absolute right-3 top-3 w-5 h-5 flex items-center justify-center rounded-full bg-slate-50 border text-slate-400 hover:text-rose-500 hover:bg-rose-50 hover:border-rose-100 transition text-[9px] cursor-pointer"
+                          title="Dispensar"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </ModalWrapper>
         )}
       </main>
     </div>

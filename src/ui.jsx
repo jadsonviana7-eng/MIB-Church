@@ -412,9 +412,24 @@ export function StatCard({ label, valor, detalhe, icone, className = "" }) {
   const isVertical = className.includes('text-center');
   const iconOnTop = className.includes('flex-col');
 
+  if (iconOnTop) {
+    return (
+      <Card className={`p-4 flex flex-col justify-between gap-3 ${className}`.trim()}>
+        <div className="flex items-center gap-2 w-full">
+          {icone && <div className="shrink-0">{icone}</div>}
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate flex-1 text-left">{label}</p>
+        </div>
+        <div className="flex items-baseline gap-1.5 flex-wrap w-full text-left">
+          <span className="text-xl sm:text-2xl font-black text-slate-800 leading-none">{valor}</span>
+          {detalhe && <span className="text-[10px] text-slate-500 font-semibold">{detalhe}</span>}
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className={`p-4 flex items-center gap-4 ${className}`.trim()}>
-      {icone && <div className={iconOnTop ? "mb-1" : "shrink-0"}>{icone}</div>}
+      {icone && <div className="shrink-0">{icone}</div>}
       <div className={`min-w-0 ${isVertical ? 'flex flex-col items-center' : 'flex-1'}`}>
         {!isVertical && <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate">{label}</p>}
         <div className={`mt-0.5 flex items-baseline gap-2 ${isVertical ? 'flex-col items-center gap-0' : ''}`}>

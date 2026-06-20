@@ -21,17 +21,35 @@ export default function CelulasModulo({
   relatoriosCelula,
   celulaSelecionadaId,
   setCelulaSelecionadaId,
+  reuniaoSelecionadaId,
+  setReuniaoSelecionadaId,
   obterDados,
   onNavigate,
-  membroLogado
+  membroLogado,
+  onMarcarReuniaoComoVista = () => {}
 }) {
   const [celulaEditando, setCelulaEditando] = useState(null);
   const [celulaExcluindo, setCelulaExcluindo] = useState(null);
   const [reuniaoParaVer, setReuniaoParaVer] = useState(null);
 
+  useEffect(() => {
+    if (reuniaoSelecionadaId && relatoriosCelula) {
+      const reuniao = relatoriosCelula.find(r => String(r.id) === String(reuniaoSelecionadaId));
+      if (reuniao) {
+        setReuniaoParaVer(reuniao);
+        if (onMarcarReuniaoComoVista) {
+          onMarcarReuniaoComoVista(reuniao.id);
+        }
+      }
+    }
+  }, [reuniaoSelecionadaId, relatoriosCelula, onMarcarReuniaoComoVista]);
+
   const isMembro = membroLogado?.permissao === 'membro';
 
   const abrirReuniao = (relatorio) => {
+    if (onMarcarReuniaoComoVista) {
+      onMarcarReuniaoComoVista(relatorio.id);
+    }
     setReuniaoParaVer(relatorio);
   };
 
@@ -57,10 +75,15 @@ export default function CelulasModulo({
             reuniao={reuniaoParaVer}
             celula={celulas.find(c => c.id === reuniaoParaVer.celula_id)}
             membros={pessoas.filter(p => p.celula_id === reuniaoParaVer.celula_id)}
-            onFechar={() => setReuniaoParaVer(null)}
+            membroLogado={membroLogado}
+            onFechar={() => {
+              setReuniaoParaVer(null);
+              if (setReuniaoSelecionadaId) setReuniaoSelecionadaId(null);
+            }}
             onSalvo={async () => {
               await obterDados();
               setReuniaoParaVer(null);
+              if (setReuniaoSelecionadaId) setReuniaoSelecionadaId(null);
             }}
           />
         )}
@@ -81,14 +104,33 @@ export default function CelulasModulo({
 
   if (submenu === 'reunioes') {
     return (
-      <ReunioesCelulas
-        celulas={celulas}
-        pessoas={pessoas}
-        relatoriosCelula={relatoriosCelula}
-        obterDados={obterDados}
-        onVoltar={() => onNavigate('lista')}
-        onVerReuniao={abrirReuniao}
-      />
+      <>
+        <ReunioesCelulas
+          celulas={celulas}
+          pessoas={pessoas}
+          relatoriosCelula={relatoriosCelula}
+          obterDados={obterDados}
+          onVoltar={() => onNavigate('lista')}
+          onVerReuniao={abrirReuniao}
+        />
+        {reuniaoParaVer && (
+          <ModalVerReuniao
+            reuniao={reuniaoParaVer}
+            celula={celulas.find(c => c.id === reuniaoParaVer.celula_id) || {}}
+            membros={pessoas.filter(p => p.celula_id === reuniaoParaVer.celula_id)}
+            membroLogado={membroLogado}
+            onFechar={() => {
+              setReuniaoParaVer(null);
+              if (setReuniaoSelecionadaId) setReuniaoSelecionadaId(null);
+            }}
+            onSalvo={async () => {
+              await obterDados();
+              setReuniaoParaVer(null);
+              if (setReuniaoSelecionadaId) setReuniaoSelecionadaId(null);
+            }}
+          />
+        )}
+      </>
     );
   }
 
@@ -1701,7 +1743,7 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
   );
 }
 
-function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
+function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLogado }) {
   const [editData, setEditData] = useState(reuniao.data_reuniao || '');
   const [editOferta, setEditOferta] = useState(reuniao?.oferta ? mascaraMoeda(Number(reuniao.oferta) * 100) : '');
   const [editTema, setEditTema] = useState('');
@@ -1710,6 +1752,7 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
   const [editNomesVisitantes, setEditNomesVisitantes] = useState([]);
   const [editNovoVisitante, setEditNovoVisitante] = useState('');
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+  const [modoEdicao, setModoEdicao] = useState(false);
 
   useEffect(() => {
     const { observacao, tema, nomesVisitantes } = extrairMetadadosReuniao(reuniao.observacoes);
@@ -1717,6 +1760,7 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
     setEditObservacoes(observacao);
     setEditNomesVisitantes(nomesVisitantes);
     setEditOferta(reuniao.oferta ? mascaraMoeda(Number(reuniao.oferta) * 100) : '');
+    setEditData(reuniao.data_reuniao || '');
 
     async function buscarPresencas() {
       const { data } = await supabase.from('presencas_relatorio').select('pessoa_id').eq('relatorio_id', reuniao.id);
@@ -1726,6 +1770,13 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
     }
     buscarPresencas();
   }, [reuniao, membros]);
+
+  const podeEditar = useMemo(() => {
+    if (!membroLogado) return false;
+    if (['admin', 'pastor'].includes(membroLogado.permissao)) return true;
+    if (membroLogado.permissao === 'lider-celula' && celula && String(celula.lider_id) === String(membroLogado.id)) return true;
+    return false;
+  }, [membroLogado, celula]);
 
   async function handleAtualizarReuniao(e) {
     e.preventDefault();
@@ -1761,12 +1812,22 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
     }
   }
 
+  const handleCancelarEdicao = () => {
+    const { observacao, tema, nomesVisitantes } = extrairMetadadosReuniao(reuniao.observacoes);
+    setEditTema(tema);
+    setEditObservacoes(observacao);
+    setEditNomesVisitantes(nomesVisitantes);
+    setEditOferta(reuniao.oferta ? mascaraMoeda(Number(reuniao.oferta) * 100) : '');
+    setEditData(reuniao.data_reuniao || '');
+    setModoEdicao(false);
+  };
+
   const handleAdicionarVisitanteEdicao = () => {
     if (!editNovoVisitante.trim()) return;
     const nomes = editNovoVisitante.split(',')
       .map(n => {
         const trimmed = n.trim();
-        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase(); // Capitaliza o primeiro e o resto em minúsculas
+        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
       })
       .filter(n => n !== "");
     if (nomes.length > 0) {
@@ -1780,100 +1841,226 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
   };
 
   return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
 
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <div>
-                <h4 className="font-semibold text-slate-950 text-base">Editar Reunião do Histórico</h4>
-                <p className="text-xs text-slate-400">
-                  Ajuste os dados do encontro da célula <strong className="text-emerald-700">{celula.nome}</strong>
-                </p>
+        {/* Header */}
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h4 className="font-semibold text-slate-950 text-base">
+              {modoEdicao ? 'Editar Reunião do Histórico' : 'Detalhes do Encontro'}
+            </h4>
+            <p className="text-xs text-slate-400">
+              {modoEdicao ? (
+                <>Ajuste os dados do encontro da célula <strong className="text-emerald-700">{celula?.nome}</strong></>
+              ) : (
+                <>Relatório de atividades da célula <strong className="text-emerald-700">{celula?.nome}</strong></>
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onFechar}
+            className="text-slate-400 hover:text-slate-600 font-bold p-1 text-sm cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        {!modoEdicao ? (
+          /* MODO VISUALIZAÇÃO */
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <div className="p-5 overflow-y-auto space-y-5 flex-1 animate-fade-in">
+              
+              {/* Cards de Indicadores com Números Maiores */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-blue-50/60 border border-blue-100/70 p-3.5 rounded-xl text-center flex flex-col justify-center shadow-3xs">
+                  <span className="text-2xl font-black text-blue-700 leading-none">
+                    {Object.values(editPresencas).filter(Boolean).length}
+                  </span>
+                  <span className="text-[10px] font-bold text-blue-500 uppercase mt-1.5 tracking-wider">Membros</span>
+                </div>
+                <div className="bg-purple-50/60 border border-purple-100/70 p-3.5 rounded-xl text-center flex flex-col justify-center shadow-3xs">
+                  <span className="text-2xl font-black text-purple-700 leading-none">
+                    {editNomesVisitantes.length}
+                  </span>
+                  <span className="text-[10px] font-bold text-purple-500 uppercase mt-1.5 tracking-wider">Visitantes</span>
+                </div>
+                <div className="bg-emerald-50/60 border border-emerald-100/70 p-3.5 rounded-xl text-center flex flex-col justify-center shadow-3xs">
+                  <span className="text-base font-black text-emerald-700 leading-tight">
+                    {editOferta ? editOferta : 'R$ 0,00'}
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-500 uppercase mt-1.5 tracking-wider">Oferta</span>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={onFechar}
-                className="text-slate-400 hover:text-slate-600 font-bold p-1 text-sm"
-              >
-                ✕
-              </button>
+
+              {/* Data e Tema */}
+              <div className="grid grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Data</span>
+                  <span className="text-sm font-bold text-slate-700">
+                    {editData ? new Date(`${editData}T00:00:00`).toLocaleDateString('pt-BR') : '—'}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Tema / Assunto</span>
+                  <span className="text-sm font-bold text-slate-700 truncate block">
+                    {editTema || '—'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Visitantes */}
+              <div>
+                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Visitantes do Encontro</span>
+                {editNomesVisitantes.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic">Nenhum visitante registrado.</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {editNomesVisitantes.map((nome, index) => (
+                      <span key={index} className="bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 flex items-center gap-1.5 shadow-3xs">
+                        👤 {nome}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Chamada / Presença */}
+              <div className="space-y-2">
+                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lista de Chamada ({membros.length})</span>
+                <div className="border border-slate-100 rounded-2xl p-2 bg-slate-50/30 space-y-1">
+                  {membros.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic p-2">Nenhum membro vinculado.</p>
+                  ) : (
+                    membros.map((m) => {
+                      const isPresente = !!editPresencas[m.id];
+                      return (
+                        <div key={m.id} className="flex items-center justify-between p-2 hover:bg-white rounded-xl hover:shadow-3xs transition">
+                          <div className="flex items-center gap-3">
+                            <Avatar pessoa={m} tamanho="w-8 h-8" />
+                            <span className="text-sm font-semibold text-slate-700">{m.nome}</span>
+                          </div>
+                          <input 
+                            type="checkbox" 
+                            checked={isPresente} 
+                            disabled
+                            className="w-5 h-5 rounded-md border-slate-300 text-[#055F6D] focus:ring-[#055F6D]/20 cursor-not-allowed"
+                          />
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Observações */}
+              <div>
+                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Observações Pastorais / Gerais</span>
+                <div className="bg-slate-50/80 border border-slate-200 p-3 rounded-xl text-xs text-slate-600 min-h-[50px] whitespace-pre-wrap">
+                  {editObservacoes || 'Nenhuma observação registrada.'}
+                </div>
+              </div>
+
             </div>
 
-            <form onSubmit={handleAtualizarReuniao} className="flex flex-col flex-1 overflow-hidden">
-              <div className="p-5 overflow-y-auto space-y-4 flex-1">
+            {/* Footer Visualização */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-end gap-2 shrink-0">
+              <button 
+                type="button" 
+                onClick={onFechar} 
+                className="px-5 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-600 font-bold hover:bg-slate-100 transition cursor-pointer"
+              >
+                Fechar
+              </button>
+              {podeEditar && (
+                <button 
+                  type="button" 
+                  onClick={() => setModoEdicao(true)} 
+                  className="btn-primary text-xs font-bold px-5 py-2 rounded-xl transition shadow-sm cursor-pointer"
+                >
+                  ✏️ Editar Relatório
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* MODO EDICÃO (Form) */
+          <form onSubmit={handleAtualizarReuniao} className="flex flex-col flex-1 overflow-hidden animate-fade-in">
+            <div className="p-5 overflow-y-auto space-y-4 flex-1">
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Data da Reunião</label>
-                    <input
-                      type="date"
-                      value={editData}
-                      onChange={(e) => setEditData(e.target.value)}
-                      required
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-1">
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Tema / Assunto</label>
-                    <input
-                      type="text"
-                      value={editTema}
-                      onChange={(e) => setEditTema(e.target.value)}
-                      placeholder="Ex: Fruto do Espírito"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Valor da Oferta (R$)</label>
-                    <input
-                      type="text"
-                      value={editOferta}
-                      onChange={(e) => setEditOferta(mascaraMoeda(e.target.value))}
-                      placeholder="R$ 0,00"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Data da Reunião</label>
+                  <input
+                    type="date"
+                    value={editData}
+                    onChange={(e) => setEditData(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
                 </div>
 
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      Visitantes Presentes
-                      <span className="ml-2 bg-amber-500 text-white font-semibold px-2 py-0.5 rounded-md text-[10px]">
-                        Contagem: {editNomesVisitantes.length}
-                      </span>
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={editNovoVisitante}
-                        onChange={(e) => setEditNovoVisitante(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdicionarVisitanteEdicao(); } }}
-                        placeholder="Digite o nome completo do visitante"
-                        className="flex-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-800 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
-                      <button type="button" onClick={handleAdicionarVisitanteEdicao} className="btn-primary text-xs px-3 rounded-xl cursor-pointer">+</button>
-                    </div>
-                  </div>
-
-                  {editNomesVisitantes.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {editNomesVisitantes.map((nome, index) => (
-                        <div key={index} className="bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-700 flex items-center gap-1.5 shadow-sm">
-                          👤 {nome}
-                          <button type="button" onClick={() => setEditNomesVisitantes(prev => prev.filter((_, i) => i !== index))} className="text-slate-400 hover:text-rose-500 font-bold text-[12px] pl-0.5">×</button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <div className="sm:col-span-1">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Tema / Assunto</label>
+                  <input
+                    type="text"
+                    value={editTema}
+                    onChange={(e) => setEditTema(e.target.value)}
+                    placeholder="Ex: Fruto do Espírito"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
                 </div>
 
                 <div>
-                  <div className="space-y-2 sm:space-y-0">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Chamada da Célula</label>
-                    <div className="sm:border sm:border-slate-100 sm:rounded-2xl sm:p-2 sm:bg-slate-50/30 sm:space-y-1">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Valor da Oferta (R$)</label>
+                  <input
+                    type="text"
+                    value={editOferta}
+                    onChange={(e) => setEditOferta(mascaraMoeda(e.target.value))}
+                    placeholder="R$ 0,00"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Visitantes Presentes
+                    <span className="ml-2 bg-amber-500 text-white font-semibold px-2 py-0.5 rounded-md text-[10px]">
+                      Contagem: {editNomesVisitantes.length}
+                    </span>
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={editNovoVisitante}
+                      onChange={(e) => setEditNovoVisitante(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdicionarVisitanteEdicao(); } }}
+                      placeholder="Digite o nome completo do visitante"
+                      className="flex-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-800 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <button type="button" onClick={handleAdicionarVisitanteEdicao} className="btn-primary text-xs px-3 rounded-xl cursor-pointer">+</button>
+                  </div>
+                </div>
+
+                {editNomesVisitantes.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {editNomesVisitantes.map((nome, index) => (
+                      <div key={index} className="bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-700 flex items-center gap-1.5 shadow-sm">
+                        👤 {nome}
+                        <button type="button" onClick={() => setEditNomesVisitantes(prev => prev.filter((_, i) => i !== index))} className="text-slate-400 hover:text-rose-500 font-bold text-[12px] pl-0.5">×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="space-y-2 sm:space-y-0">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Chamada da Célula</label>
+                  <div className="sm:border sm:border-slate-100 sm:rounded-2xl sm:p-2 sm:bg-slate-50/30 sm:space-y-1">
                     {membros.length === 0 ? (
                       <p className="text-xs text-slate-400 italic p-2">Nenhum membro vinculado para fazer a chamada.</p>
                     ) : (
@@ -1901,25 +2088,36 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo }) {
                       })
                     )}
                   </div>
-                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-medium mb-1">Observações</label>
-                  <textarea value={editObservacoes} onChange={(e) => setEditObservacoes(e.target.value)} rows={2} className="w-full px-3 py-2 border rounded-xl text-sm" />
-                </div>
-
               </div>
 
-              <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-end gap-2 shrink-0">
-                <button type="button" onClick={onFechar} className="px-4 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-600 font-semibold hover:bg-slate-100 transition cursor-pointer">Cancelar</button>
-                <button type="submit" disabled={salvandoEdicao} className="btn-primary text-xs font-semibold px-5 py-2 rounded-xl disabled:opacity-50 transition shadow-sm cursor-pointer">
-                  {salvandoEdicao ? 'Salvando...' : '💾 Salvar Alterações'}
-                </button>
+              <div>
+                <label className="block text-xs font-medium mb-1">Observações</label>
+                <textarea value={editObservacoes} onChange={(e) => setEditObservacoes(e.target.value)} rows={2} className="w-full px-3 py-2 border rounded-xl text-sm bg-white" />
               </div>
-            </form>
 
-          </div>
-        </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-end gap-2 shrink-0">
+              <button 
+                type="button" 
+                onClick={handleCancelarEdicao} 
+                className="px-4 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-600 font-semibold hover:bg-slate-100 transition cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button 
+                type="submit" 
+                disabled={salvandoEdicao} 
+                className="btn-primary text-xs font-semibold px-5 py-2 rounded-xl disabled:opacity-50 transition shadow-sm cursor-pointer"
+              >
+                {salvandoEdicao ? 'Salvando...' : '💾 Salvar Alterações'}
+              </button>
+            </div>
+          </form>
+        )}
+
+      </div>
+    </div>
   );
 }

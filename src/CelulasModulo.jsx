@@ -26,7 +26,7 @@ export default function CelulasModulo({
   obterDados,
   onNavigate,
   membroLogado,
-  onMarcarReuniaoComoVista = () => {}
+  onMarcarReuniaoComoVista = () => { }
 }) {
   const [celulaEditando, setCelulaEditando] = useState(null);
   const [celulaExcluindo, setCelulaExcluindo] = useState(null);
@@ -57,15 +57,15 @@ export default function CelulasModulo({
     const celula = celulas.find((item) => String(item.id) === String(celulaSelecionadaId));
     return (
       <>
-        <DetalhesCelula 
-          celula={celula} 
+        <DetalhesCelula
+          celula={celula}
           celulas={celulas}
-          pessoas={pessoas} 
-          zonas={zonas} 
-          relatoriosCelula={relatoriosCelula} 
-          onFechar={() => setCelulaSelecionadaId(null)} 
-          obterDados={obterDados} 
-          breadcrumb={['Células', 'Ficha']} 
+          pessoas={pessoas}
+          zonas={zonas}
+          relatoriosCelula={relatoriosCelula}
+          onFechar={() => setCelulaSelecionadaId(null)}
+          obterDados={obterDados}
+          breadcrumb={['Células', 'Ficha']}
           onVerReuniao={abrirReuniao}
           membroLogado={membroLogado}
           setCelulaSelecionadaId={setCelulaSelecionadaId}
@@ -163,7 +163,7 @@ export default function CelulasModulo({
                     <th>Célula</th>
                     <th>Líder</th>
                     <th>Agenda</th>
-                    <th>Membros</th>
+                    <th className="text-center">Membros</th>
                     <th className="text-right">Ações</th>
                   </tr>
                 </thead>
@@ -187,30 +187,31 @@ export default function CelulasModulo({
                         </td>
                         <td className="hidden md:table-cell">{nomePessoa(pessoas, celula.lider_id)}</td>
                         <td className="hidden md:table-cell text-[var(--text-muted)]">{celula.dia_semana || 'Sem dia'} · {celula.horario || '—'}</td>
+                        <td className="hidden md:table-cell font-medium text-slate-700 text-center">{membros.length} {membros.length === 1 ? 'membro' : 'membros'}</td>
                         <td className="text-right pr-6">
                           {!isMembro && (
                             <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              type="button"
-                              title="Editar célula"
-                              onClick={(e) => { e.stopPropagation(); setCelulaEditando(celula); }}
-                              className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
-                            >
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button
-                              type="button"
-                              title="Excluir célula"
-                              onClick={(e) => { e.stopPropagation(); setCelulaExcluindo(celula); }}
-                              className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
-                            >
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
+                              <button
+                                type="button"
+                                title="Editar célula"
+                                onClick={(e) => { e.stopPropagation(); setCelulaEditando(celula); }}
+                                className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
+                              >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                type="button"
+                                title="Excluir célula"
+                                onClick={(e) => { e.stopPropagation(); setCelulaExcluindo(celula); }}
+                                className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
+                              >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -309,14 +310,14 @@ function ReunioesCelulas({ celulas, pessoas, relatoriosCelula, obterDados, onVol
                     <td>{r.celulas?.nome || '—'}</td>
                     <td>
                       <span className="px-4 py-0.5 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
-                        {r.presencas_relatorio?.[0]?.count || 0} 
+                        {r.presencas_relatorio?.[0]?.count || 0}
                       </span>
                     </td>
                     <td>{Number(r.visitantes_presentes || 0)}</td>
                     <td>R$ {valorOfertaRelatorio(r).toFixed(2)}</td>
                     <td className="text-right pr-6">
                       <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
-                        <button 
+                        <button
                           onClick={() => onVerReuniao(r)}
                           className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
                           title="Ver/Editar Reunião"
@@ -325,7 +326,7 @@ function ReunioesCelulas({ celulas, pessoas, relatoriosCelula, obterDados, onVol
                             <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
-                        <button 
+                        <button
                           onClick={(e) => handleExcluirReuniao(e, r.id)}
                           className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
                           title="Excluir Reunião"
@@ -375,7 +376,7 @@ function ReunioesCelulas({ celulas, pessoas, relatoriosCelula, obterDados, onVol
                   </div>
 
                   <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                    <button 
+                    <button
                       onClick={(e) => handleExcluirReuniao(e, r.id)}
                       className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition"
                     >
@@ -534,14 +535,14 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
       setPresencasPeriodo([]);
       return;
     }
-    
+
     async function carregarPresencas() {
       setCarregandoPresencas(true);
       const { data, error } = await supabase
         .from('presencas_relatorio')
         .select('relatorio_id, pessoa_id')
         .in('relatorio_id', idsRelatorios);
-      
+
       if (!error && data) setPresencasPeriodo(data);
       setCarregandoPresencas(false);
     }
@@ -562,13 +563,13 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
             col4: `R$ ${Number(r.oferta || 0).toFixed(2)}`
           };
         });
-      
+
       case 'part_x_vis':
         return celulas.map(c => {
           const rels = relatoriosFiltrados.filter(r => r.celula_id === c.id);
           const totalPart = rels.reduce((acc, curr) => acc + (curr.presencas_relatorio?.[0]?.count || 0), 0);
           const totalVis = rels.reduce((acc, curr) => acc + Number(curr.visitantes_presentes || 0), 0);
-          return { col1: c.nome, col2: `${totalPart} Membros`, col3: `${totalVis} Visitantes`, col4: rels.length > 0 ? `${(totalVis/(totalPart+totalVis || 1)*100).toFixed(0)}% visitantes` : '-' };
+          return { col1: c.nome, col2: `${totalPart} Membros`, col3: `${totalVis} Visitantes`, col4: rels.length > 0 ? `${(totalVis / (totalPart + totalVis || 1) * 100).toFixed(0)}% visitantes` : '-' };
         });
 
       case 'presentes': {
@@ -757,10 +758,10 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
                 const cor = chartColorsRelatorio[i % chartColorsRelatorio.length];
                 const isHover = categoriaHover === label;
                 const pct = total > 0 ? ((valor / total) * 100).toFixed(0) : 0;
-                
+
                 return (
-                  <tr 
-                    key={label} 
+                  <tr
+                    key={label}
                     className={`transition-all border-b border-slate-50 last:border-0 hover:bg-slate-50 cursor-pointer ${isHover ? 'bg-slate-50' : ''}`}
                     onMouseEnter={() => setCategoriaHover(label)}
                     onMouseLeave={() => setCategoriaHover(null)}
@@ -807,32 +808,32 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
         {/* Calendário */}
         <div className="p-4 w-72">
           <div className="flex items-center justify-between mb-4">
-          <button type="button" onClick={() => setViewDate(new Date(ano, mes - 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400">‹</button>
-          <span className="text-sm font-bold text-slate-700">{viewDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</span>
-          <button type="button" onClick={() => setViewDate(new Date(ano, mes + 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400">›</button>
-        </div>
-        <div className="grid grid-cols-7 gap-1 mb-2">
-          {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map(d => <div key={d} className="text-[10px] font-bold text-slate-300 text-center">{d}</div>)}
-        </div>
-        <div className="grid grid-cols-7 gap-1">
-          {dias.map((dia, i) => {
-            if (!dia) return <div key={i} />;
-            const dStr = formatarParaISO(dia);
-            const ativo = dStr === dataInicio || dStr === dataFim;
-            const noRange = dataInicio && dataFim && dStr > dataInicio && dStr < dataFim;
-            return (
-              <button
-                key={i} type="button" onClick={() => {
-                  if (!dataInicio || (dataInicio && dataFim)) { setDataInicio(dStr); setDataFim(''); }
-                  else { dStr < dataInicio ? (setDataFim(dataInicio), setDataInicio(dStr)) : setDataFim(dStr); setCalendarioAberto(false); }
-                }}
-                className={`h-8 w-8 text-xs rounded-lg transition-colors ${ativo ? 'bg-[#055F6D] text-white font-bold' : noRange ? 'bg-emerald-50 text-[#055F6D]' : 'hover:bg-slate-50 text-slate-600'}`}
-              >
-                {dia.getDate()}
-              </button>
-            );
-          })}
-        </div>
+            <button type="button" onClick={() => setViewDate(new Date(ano, mes - 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400">‹</button>
+            <span className="text-sm font-bold text-slate-700">{viewDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</span>
+            <button type="button" onClick={() => setViewDate(new Date(ano, mes + 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400">›</button>
+          </div>
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map(d => <div key={d} className="text-[10px] font-bold text-slate-300 text-center">{d}</div>)}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {dias.map((dia, i) => {
+              if (!dia) return <div key={i} />;
+              const dStr = formatarParaISO(dia);
+              const ativo = dStr === dataInicio || dStr === dataFim;
+              const noRange = dataInicio && dataFim && dStr > dataInicio && dStr < dataFim;
+              return (
+                <button
+                  key={i} type="button" onClick={() => {
+                    if (!dataInicio || (dataInicio && dataFim)) { setDataInicio(dStr); setDataFim(''); }
+                    else { dStr < dataInicio ? (setDataFim(dataInicio), setDataInicio(dStr)) : setDataFim(dStr); setCalendarioAberto(false); }
+                  }}
+                  className={`h-8 w-8 text-xs rounded-lg transition-colors ${ativo ? 'bg-[#055F6D] text-white font-bold' : noRange ? 'bg-emerald-50 text-[#055F6D]' : 'hover:bg-slate-50 text-slate-600'}`}
+                >
+                  {dia.getDate()}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
@@ -840,68 +841,68 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
 
   return (
     <div className="space-y-6">
-      
+
 
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 items-start">
         {/* PAINEL LATERAL DE FILTROS */}
         <aside className="space-y-4 lg:sticky lg:top-24">
           <Card className="p-0 overflow-hidden shadow-sm">
             <CardHeader titulo="Menu de Relatórios" />
-          {/* Select para mobile */}
-          <div className="p-4 md:hidden">
-            <select
-              value={tipoAtivo}
-              onChange={(e) => {
-                const newTipo = e.target.value;
-                setTipoAtivo(newTipo);
-                // Encontra o primeiro item do novo tipo para definir como subTipoAtivo
-                const categoria = categoriasRelatorios.find(cat => cat.id === newTipo);
-                if (categoria && categoria.itens.length > 0) {
-                  setSubTipoAtivo(categoria.itens[0].id);
-                } else {
-                  setSubTipoAtivo(''); // Limpa se não houver itens
-                }
-              }}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
-            >
-              {categoriasRelatorios.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.label}</option>
-              ))}
-            </select>
-            {/* Sub-select para mobile */}
-            {tipoAtivo && categoriasRelatorios.find(cat => cat.id === tipoAtivo)?.itens.length > 0 && (
+            {/* Select para mobile */}
+            <div className="p-4 md:hidden">
               <select
-                value={subTipoAtivo}
-                onChange={(e) => setSubTipoAtivo(e.target.value)}
-                className="w-full px-3 py-2 mt-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                value={tipoAtivo}
+                onChange={(e) => {
+                  const newTipo = e.target.value;
+                  setTipoAtivo(newTipo);
+                  // Encontra o primeiro item do novo tipo para definir como subTipoAtivo
+                  const categoria = categoriasRelatorios.find(cat => cat.id === newTipo);
+                  if (categoria && categoria.itens.length > 0) {
+                    setSubTipoAtivo(categoria.itens[0].id);
+                  } else {
+                    setSubTipoAtivo(''); // Limpa se não houver itens
+                  }
+                }}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
               >
-                {categoriasRelatorios.find(cat => cat.id === tipoAtivo)?.itens.map(item => (
-                  <option key={item.id} value={item.id}>{item.label}</option>
+                {categoriasRelatorios.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.label}</option>
                 ))}
               </select>
-            )}
-          </div>
-          {/* Botões para desktop */}
-          <div className="p-4 space-y-4 hidden md:block">
-            {categoriasRelatorios.map(cat => (
-              <div key={cat.id} className="space-y-1">
-                <div className={`px-3 py-2 text-[18px] font-black uppercase ${tipoAtivo === cat.id ? 'text-[#055F6D]' : 'text-slate-400'}`}>
-                  {cat.label}
+              {/* Sub-select para mobile */}
+              {tipoAtivo && categoriasRelatorios.find(cat => cat.id === tipoAtivo)?.itens.length > 0 && (
+                <select
+                  value={subTipoAtivo}
+                  onChange={(e) => setSubTipoAtivo(e.target.value)}
+                  className="w-full px-3 py-2 mt-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                >
+                  {categoriasRelatorios.find(cat => cat.id === tipoAtivo)?.itens.map(item => (
+                    <option key={item.id} value={item.id}>{item.label}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+            {/* Botões para desktop */}
+            <div className="p-4 space-y-4 hidden md:block">
+              {categoriasRelatorios.map(cat => (
+                <div key={cat.id} className="space-y-1">
+                  <div className={`px-3 py-2 text-[18px] font-black uppercase ${tipoAtivo === cat.id ? 'text-[#055F6D]' : 'text-slate-400'}`}>
+                    {cat.label}
+                  </div>
+                  {cat.itens.map(item => (
+                    <button
+                      key={item.id}
+                      onClick={() => { setTipoAtivo(cat.id); setSubTipoAtivo(item.id); }}
+                      className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${subTipoAtivo === item.id ? 'bg-[#055F6D] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'}`}
+                    >
+                      {item.label}
+                      <span className={`transition-transform group-hover:translate-x-1 ${subTipoAtivo === item.id ? 'opacity-100' : 'opacity-0'}`}>→</span>
+                    </button>
+                  ))}
+                  <div className="h-2" />
                 </div>
-                {cat.itens.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => { setTipoAtivo(cat.id); setSubTipoAtivo(item.id); }}
-                    className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${subTipoAtivo === item.id ? 'bg-[#055F6D] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'}`}
-                  >
-                    {item.label}
-                    <span className={`transition-transform group-hover:translate-x-1 ${subTipoAtivo === item.id ? 'opacity-100' : 'opacity-0'}`}>→</span>
-                  </button>
-                ))}
-                <div className="h-2" />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
           </Card>
 
           <Card className="p-5 bg-gradient-to-br from-[#055F6D] to-[#044a56] text-blue">
@@ -928,10 +929,10 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
               </h3>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Resultados processados em tempo real</p>
             </div>
-            
+
             {subTipoAtivo !== 'cat_celulas' && (
               <div className="relative datepicker-container shrink-0">
-                <div 
+                <div
                   onClick={() => setCalendarioAberto(!calendarioAberto)}
                   className="flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer transition-all hover:border-[#055F6D] group"
                 >
@@ -1046,44 +1047,43 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
               );
             })()
           ) : (
-          <Card className="p-0 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="table-mib">
-                <thead>
-                  <tr className="bg-slate-50">
-                    {colunas.map((col, i) => <th key={i} className={i === 0 ? '' : i === 3 ? 'text-right pr-6' : ''}>{col}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {carregandoPresencas && (subTipoAtivo === 'presentes' || subTipoAtivo === 'ausentes') ? (
-                    <tr>
-                      <td colSpan={4} className="p-12 text-center text-slate-400 animate-pulse">Cruzando dados de presença...</td>
+            <Card className="p-0 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="table-mib">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      {colunas.map((col, i) => <th key={i} className={i === 0 ? '' : i === 3 ? 'text-right pr-6' : ''}>{col}</th>)}
                     </tr>
-                  ) : dadosRelatorio.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="p-12 text-center text-slate-400 italic">Nenhum dado encontrado para esta categoria.</td>
-                    </tr>
-                  ) : (
-                    dadosRelatorio.map((row, idx) => (
-                      <tr key={idx}>
-                        <td className="font-bold text-slate-700">{row.col1}</td>
-                        <td className="text-slate-500 text-xs font-medium">{row.col2}</td>
-                        <td className="text-slate-500 text-xs font-medium">{row.col3}</td>
-                        <td className="text-right pr-6">
-                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                            row.col4.includes('⚠️') || row.col4.includes('Inativa') ? 'bg-rose-50 text-rose-600' : 
-                            row.col4.includes('✓') || row.col4.includes('Membro') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-400'
-                          }`}>
-                            {row.col4}
-                          </span>
-                        </td>
+                  </thead>
+                  <tbody>
+                    {carregandoPresencas && (subTipoAtivo === 'presentes' || subTipoAtivo === 'ausentes') ? (
+                      <tr>
+                        <td colSpan={4} className="p-12 text-center text-slate-400 animate-pulse">Cruzando dados de presença...</td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+                    ) : dadosRelatorio.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="p-12 text-center text-slate-400 italic">Nenhum dado encontrado para esta categoria.</td>
+                      </tr>
+                    ) : (
+                      dadosRelatorio.map((row, idx) => (
+                        <tr key={idx}>
+                          <td className="font-bold text-slate-700">{row.col1}</td>
+                          <td className="text-slate-500 text-xs font-medium">{row.col2}</td>
+                          <td className="text-slate-500 text-xs font-medium">{row.col3}</td>
+                          <td className="text-right pr-6">
+                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${row.col4.includes('⚠️') || row.col4.includes('Inativa') ? 'bg-rose-50 text-rose-600' :
+                              row.col4.includes('✓') || row.col4.includes('Membro') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-400'
+                              }`}>
+                              {row.col4}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           )}
 
           {/* DICAS DE ANÁLISE (CONTEXTUAL) */}
@@ -1093,9 +1093,9 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
               <div>
                 <h5 className="text-xs font-bold text-blue-900 uppercase tracking-tight">Dica de Gestão</h5>
                 <p className="text-[11px] text-blue-700 mt-1 leading-relaxed">
-                  {tipoAtivo === 'frequencias' ? 'Monitore a relação visitantes x participantes para entender o potencial de crescimento da sua rede de células.' : 
-                   tipoAtivo === 'desenvolvimento' ? 'Células inativas por mais de 30 dias podem precisar de suporte ou readequação da liderança.' : 
-                   'Mantenha os dados de co-líderes e auxiliares atualizados para garantir a sucessão e multiplicação saudável.'}
+                  {tipoAtivo === 'frequencias' ? 'Monitore a relação visitantes x participantes para entender o potencial de crescimento da sua rede de células.' :
+                    tipoAtivo === 'desenvolvimento' ? 'Células inativas por mais de 30 dias podem precisar de suporte ou readequação da liderança.' :
+                      'Mantenha os dados de co-líderes e auxiliares atualizados para garantir a sucessão e multiplicação saudável.'}
                 </p>
               </div>
             </div>
@@ -1275,17 +1275,6 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
         <aside className="space-y-4">
           <Card className="p-0 overflow-hidden shadow-sm">
             <div className="relative h-48 w-full bg-slate-100 border-b border-slate-100">
-              {/* BOTÃO VOLTAR NA CAPA: Apenas em telas pequenas para economizar espaço */}
-              <button 
-                type="button" 
-                onClick={onFechar} 
-                className="xl:hidden absolute top-4 left-4 z-20 bg-[#1e3a8a] text-white p-2 rounded-xl shadow-lg hover:bg-[#1e40af] transition-all cursor-pointer group"
-                title="Voltar para a lista"
-              >
-                <svg className="w-5 h-5 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
 
               {imagemPreview || celula.imagem_url ? (
                 <img
@@ -1304,29 +1293,29 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                   <span className="text-[9px] text-slate-300 font-bold uppercase mt-1">Tamanho ideal: 1200x300px</span>
                 </div>
               )}
-              
+
               {!isMembro && (
-                <label 
-                className="absolute bottom-4 right-4 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/20 hover:bg-black/50 text-white/90 backdrop-blur-md border border-white/10 cursor-pointer transition-all shadow-lg group" 
-                title="Alterar Capa (1200x300px)"
-              >
-                <svg 
-                  className="w-4 h-4 pointer-events-none" 
-                  fill="none" 
-                  viewBox="0 0 24 24" 
-                  stroke="currentColor" 
-                  strokeWidth={2.5}
+                <label
+                  className="absolute bottom-4 right-4 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-black/20 hover:bg-black/50 text-white/90 backdrop-blur-md border border-white/10 cursor-pointer transition-all shadow-lg group"
+                  title="Alterar Capa (1200x300px)"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleSelecionarImagem} 
-                  className="hidden" 
-                />
-              </label>
+                  <svg
+                    className="w-4 h-4 pointer-events-none"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleSelecionarImagem}
+                    className="hidden"
+                  />
+                </label>
               )}
             </div>
 
@@ -1393,26 +1382,26 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                   badge: null,
                   mobileOnly: true // Marcamos para ocultar no desktop
                 },
-                { 
-                  id: 'membros', 
-                  label: 'Membros', 
-                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>, 
-                  cor: '#2563eb', 
-                  badge: membros.length 
+                {
+                  id: 'membros',
+                  label: 'Membros',
+                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+                  cor: '#2563eb',
+                  badge: membros.length
                 },
-                { 
-                  id: 'reunioes', 
-                  label: 'Reuniões', 
-                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>, 
-                  cor: '#055F6D', 
-                  badge: relatorios.length 
+                {
+                  id: 'reunioes',
+                  label: 'Reuniões',
+                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>,
+                  cor: '#055F6D',
+                  badge: relatorios.length
                 },
-                { 
-                  id: 'filhas', 
-                  label: 'Gerações', 
-                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>, 
-                  cor: '#8b5cf6', 
-                  badge: celulasFilhas.length 
+                {
+                  id: 'filhas',
+                  label: 'Gerações',
+                  icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>,
+                  cor: '#8b5cf6',
+                  badge: celulasFilhas.length
                 },
               ].map((tab) => {
                 const isAtivo = abaAtiva === tab.id;
@@ -1422,9 +1411,8 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                     type="button"
                     onClick={() => setAbaAtiva(tab.id)}
                     className={`flex-1 flex items-center justify-center py-3 rounded-t-xl text-[11px] font-black uppercase tracking-wider transition-all shrink-0 border-b-2 cursor-pointer xl:justify-center xl:gap-1.5 xl:px-4 xl:py-2.5 xl:font-['Roboto']
-                      ${tab.mobileOnly ? 'xl:hidden' : ''} ${
-                      isAtivo ? 'bg-slate-50 text-slate-900' : 'text-slate-400 border-transparent hover:text-slate-600 hover:bg-slate-50/50'
-                    }`}
+                      ${tab.mobileOnly ? 'xl:hidden' : ''} ${isAtivo ? 'bg-slate-50 text-slate-900' : 'text-slate-400 border-transparent hover:text-slate-600 hover:bg-slate-50/50'
+                      }`}
                     style={{ borderBottomColor: isAtivo ? tab.cor : 'transparent' }}
                   >
                     <span style={{ color: isAtivo ? tab.cor : undefined }} className="scale-[2.2] xl:scale-100">{tab.icon}</span>
@@ -1479,29 +1467,29 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
           {abaAtiva === 'membros' && (
             <Card className="p-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="p-1 border-t border-[var(--border)] lg:max-h-none lg:overflow-y-visible">
-                  {membros.length === 0 ? (
-                    <p className="p-10 text-center text-sm text-[var(--text-muted)] italic">Nenhum membro vinculado a esta célula ainda.</p>
-                  ) : (
-                    <table className="table-mib">
-                      <thead className="hidden md:table-header-group">
-                        <tr>
-                          <th>Membro</th>
-                          <th>Função</th>
-                          {!isMembro && <th className="text-right">Ação</th>}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {membros.map((membro) => (
-                          <tr key={membro.id} className="group">
-                            <td>
-                              <div className="flex items-center gap-3">
-                                <Avatar pessoa={membro} tamanho="w-8 h-8" />
-                                <span className="font-medium text-[var(--text-heading)] text-sm">{membro.nome}</span>
-                              </div>
-                            </td>
-                            <td className="hidden md:table-cell text-[var(--text-muted)] text-xs">{membro.cargo || 'Membro'}</td>
-                            {!isMembro && (
-                              <td className="text-right pr-6">
+                {membros.length === 0 ? (
+                  <p className="p-10 text-center text-sm text-[var(--text-muted)] italic">Nenhum membro vinculado a esta célula ainda.</p>
+                ) : (
+                  <table className="table-mib">
+                    <thead className="hidden md:table-header-group">
+                      <tr>
+                        <th>Membro</th>
+                        <th>Função</th>
+                        {!isMembro && <th className="text-right">Ação</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {membros.map((membro) => (
+                        <tr key={membro.id} className="group">
+                          <td>
+                            <div className="flex items-center gap-3">
+                              <Avatar pessoa={membro} tamanho="w-8 h-8" />
+                              <span className="font-medium text-[var(--text-heading)] text-sm">{membro.nome}</span>
+                            </div>
+                          </td>
+                          <td className="hidden md:table-cell text-[var(--text-muted)] text-xs">{membro.cargo || 'Membro'}</td>
+                          {!isMembro && (
+                            <td className="text-right pr-6">
                               <button
                                 type="button"
                                 disabled={excluindoId === membro.id}
@@ -1514,13 +1502,13 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                                 </svg>
                               </button>
                             </td>
-                            )}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </Card>
           )}
 
@@ -1554,7 +1542,7 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                             </td>
                             <td>
                               <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-800 text-xs font-medium">
-                                {relatorio.presencas_relatorio?.[0]?.count || 0} 
+                                {relatorio.presencas_relatorio?.[0]?.count || 0}
                               </span>
                             </td>
                             <td>
@@ -1567,29 +1555,29 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                             </td>
                             {!isMembro && (
                               <td className="text-right pr-6">
-                              <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                                <button
-                                  type="button"
-                                  title="Visualizar e Editar"
-                                  onClick={(e) => { e.stopPropagation(); onVerReuniao(relatorio); }}
-                                  className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
-                                >
-                                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                </button>
-                                <button
-                                  type="button"
-                                  title="Excluir Reunião"
-                                  onClick={(e) => handleExcluirReuniao(e, relatorio.id)}
-                                  className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
-                                >
-                                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </td>
+                                <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    type="button"
+                                    title="Visualizar e Editar"
+                                    onClick={(e) => { e.stopPropagation(); onVerReuniao(relatorio); }}
+                                    className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    title="Excluir Reunião"
+                                    onClick={(e) => handleExcluirReuniao(e, relatorio.id)}
+                                    className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </td>
                             )}
                           </tr>
                         ))}
@@ -1604,7 +1592,7 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                           onClick={() => onVerReuniao(relatorio)}
                           className="p-4 flex items-center justify-between hover:bg-slate-50 transition active:scale-[0.98] cursor-pointer"
                         >
-                          <div className="flex items-center justify-between flex-1 pr-4"> 
+                          <div className="flex items-center justify-between flex-1 pr-4">
                             <div className="flex flex-col"> {/* Agrupa data e tema verticalmente */}
                               <p className="text-sm font-black text-slate-800 tracking-tight">
                                 {relatorio.data_reuniao ? new Date(`${relatorio.data_reuniao}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
@@ -1628,8 +1616,8 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                           <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                             {!isMembro && (
                               <>
-                                <button 
-                                  type="button" 
+                                <button
+                                  type="button"
                                   onClick={(e) => handleExcluirReuniao(e, relatorio.id)}
                                   className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition"
                                 >
@@ -1663,8 +1651,8 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                     </thead>
                     <tbody>
                       {celulasFilhas.map((filha) => (
-                        <tr 
-                          key={filha.id} 
+                        <tr
+                          key={filha.id}
                           onClick={() => setCelulaSelecionadaId(filha.id)}
                           className="cursor-pointer hover:bg-slate-50 transition"
                         >
@@ -1871,7 +1859,7 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
           /* MODO VISUALIZAÇÃO */
           <div className="flex flex-col flex-1 overflow-hidden">
             <div className="p-5 overflow-y-auto space-y-5 flex-1 animate-fade-in">
-              
+
               {/* Cards de Indicadores com Números Maiores */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-blue-50/60 border border-blue-100/70 p-3.5 rounded-xl text-center flex flex-col justify-center shadow-3xs">
@@ -1941,9 +1929,9 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
                             <Avatar pessoa={m} tamanho="w-8 h-8" />
                             <span className="text-sm font-semibold text-slate-700">{m.nome}</span>
                           </div>
-                          <input 
-                            type="checkbox" 
-                            checked={isPresente} 
+                          <input
+                            type="checkbox"
+                            checked={isPresente}
                             disabled
                             className="w-5 h-5 rounded-md border-slate-300 text-[#055F6D] focus:ring-[#055F6D]/20 cursor-not-allowed"
                           />
@@ -1966,17 +1954,17 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
 
             {/* Footer Visualização */}
             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-end gap-2 shrink-0">
-              <button 
-                type="button" 
-                onClick={onFechar} 
+              <button
+                type="button"
+                onClick={onFechar}
                 className="px-5 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-600 font-bold hover:bg-slate-100 transition cursor-pointer"
               >
                 Fechar
               </button>
               {podeEditar && (
-                <button 
-                  type="button" 
-                  onClick={() => setModoEdicao(true)} 
+                <button
+                  type="button"
+                  onClick={() => setModoEdicao(true)}
                   className="btn-primary text-xs font-bold px-5 py-2 rounded-xl transition shadow-sm cursor-pointer"
                 >
                   ✏️ Editar Relatório
@@ -2067,8 +2055,8 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
                       membros.map((m) => {
                         const isPresente = !!editPresencas[m.id];
                         return (
-                          <div key={m.id} 
-                            onClick={() => togglePresencaEdicao(m.id)} 
+                          <div key={m.id}
+                            onClick={() => togglePresencaEdicao(m.id)}
                             className="mb-1 bg-white border border-slate-100 rounded-xl p-3 shadow-sm
                                        flex items-center justify-between cursor-pointer transition active:scale-[0.98] select-none
                                        sm:mb-0 sm:bg-transparent sm:border-transparent sm:shadow-none sm:p-2 sm:hover:bg-white sm:hover:shadow-sm sm:hover:border-slate-100"
@@ -2077,9 +2065,9 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
                               <Avatar pessoa={m} tamanho="w-8 h-8" />
                               <span className="text-sm font-bold text-slate-700">{m.nome}</span>
                             </div>
-                            <input 
-                              type="checkbox" 
-                              checked={isPresente} 
+                            <input
+                              type="checkbox"
+                              checked={isPresente}
                               readOnly
                               className="w-5 h-5 rounded-md border-slate-300 text-[#055F6D] focus:ring-[#055F6D]/20 cursor-pointer"
                             />
@@ -2099,16 +2087,16 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
             </div>
 
             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-end gap-2 shrink-0">
-              <button 
-                type="button" 
-                onClick={handleCancelarEdicao} 
+              <button
+                type="button"
+                onClick={handleCancelarEdicao}
                 className="px-4 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-600 font-semibold hover:bg-slate-100 transition cursor-pointer"
               >
                 Cancelar
               </button>
-              <button 
-                type="submit" 
-                disabled={salvandoEdicao} 
+              <button
+                type="submit"
+                disabled={salvandoEdicao}
                 className="btn-primary text-xs font-semibold px-5 py-2 rounded-xl disabled:opacity-50 transition shadow-sm cursor-pointer"
               >
                 {salvandoEdicao ? 'Salvando...' : '💾 Salvar Alterações'}

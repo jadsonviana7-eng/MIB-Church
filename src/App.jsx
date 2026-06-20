@@ -79,6 +79,18 @@ export default function App() {
   // Estados de navegação e filtros restaurados
   const [membroSelecionadoId, setMembroSelecionadoId] = useState(null);
   const [reuniaoSelecionadaId, setReuniaoSelecionadaId] = useState(null);
+  const [abaDashboard, setAbaDashboard] = useState('visao_geral');
+  const [origemVerReuniao, setOrigemVerReuniao] = useState(null);
+
+  const handleSetReuniaoSelecionadaId = (id) => {
+    setReuniaoSelecionadaId(id);
+    if (id === null && origemVerReuniao === 'dashboard') {
+      setOrigemVerReuniao(null);
+      setModuloAtual('dashboard');
+      setAbaDashboard('celulas');
+    }
+  };
+
   const [alunoSelecionadoParaCadernetaId, setAlunoSelecionadoParaCadernetaId] = useState(null);
   const [filtros, setFiltros] = useState(filtrosIniciais);
   const [periodoConvertidos, setPeriodoConvertidos] = useState('mes');
@@ -643,6 +655,8 @@ export default function App() {
     // Isso evita que a ficha de um membro impeça a abertura de outra tela do mesmo módulo
     setMembroSelecionadoId(null);
     setCelulaSelecionadaId(null);
+    setReuniaoSelecionadaId(null);
+    setOrigemVerReuniao(null);
     
     if (submenu !== 'ficha-aluno') {
       setAlunoSelecionadoParaCadernetaId(null);
@@ -697,6 +711,34 @@ export default function App() {
       case 'utilitarios': return 'Utilitários';
       case 'configuracoes': return 'Configurações';
       default: return '';
+    }
+  };
+
+  const mostrarBotaoVoltarMobile = 
+    (moduloAtual === 'pessoas' && !!(filtros.cargo || filtros.zona || filtros.atuacao || filtros.relatorioCampo)) ||
+    (moduloAtual === 'celulas' && !!celulaSelecionadaId);
+
+  const handleVoltarMobile = () => {
+    if (moduloAtual === 'pessoas') {
+      if (filtros.cargo) {
+        alterarFiltro('cargo', '');
+        navegar('pessoas', 'cargo');
+      } else if (filtros.zona) {
+        alterarFiltro('zona', '');
+        navegar('pessoas', 'zona');
+      } else if (filtros.atuacao) {
+        alterarFiltro('atuacao', '');
+        navegar('pessoas', 'atuacao');
+      } else if (filtros.relatorioCampo) {
+        setFiltros(prev => ({ ...prev, relatorioCampo: '', relatorioValor: '' }));
+        navegar('pessoas', 'relatorios');
+      }
+    } else if (moduloAtual === 'celulas') {
+      if (reuniaoSelecionadaId) {
+        handleSetReuniaoSelecionadaId(null);
+      } else {
+        setCelulaSelecionadaId(null);
+      }
     }
   };
 
@@ -877,7 +919,20 @@ export default function App() {
       {/* ── SIDEBAR LATERAL — visível apenas no mobile ── */}
       {/* Mobile Header */}
       <div className="fixed top-0 inset-x-0 z-40 h-14 bg-[#1e3a8a] text-white flex items-center px-4 md:hidden print:hidden shadow-md"> {/* <--- Altere bg-[#hex] aqui para o Mobile */}
-        <div className="w-12" /> {/* Espaço para equilibrar o layout do título centralizado */}
+        {mostrarBotaoVoltarMobile ? (
+          <button
+            type="button"
+            onClick={handleVoltarMobile}
+            className="w-12 h-12 flex items-center justify-start active:scale-95 transition-transform text-white/90 hover:text-white cursor-pointer"
+            aria-label="Voltar"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </button>
+        ) : (
+          <div className="w-12" />
+        )}
         <span className="flex-1 text-center text-sm font-bold uppercase tracking-wide">
           {getModuloTitle(moduloAtual)}
         </span>
@@ -1217,10 +1272,13 @@ export default function App() {
                 onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
                 onVerReuniao={(id) => { 
                   marcarReuniaoComoVista(id);
+                  setOrigemVerReuniao('dashboard'); 
                   setModuloAtual('celulas'); 
                   setCelulasSubmenu('reunioes'); 
-                  setReuniaoSelecionadaId(id); 
+                  handleSetReuniaoSelecionadaId(id); 
                 }}
+                abaDashboard={abaDashboard}
+                setAbaDashboard={setAbaDashboard}
               />
             </div>
 
@@ -1239,13 +1297,16 @@ export default function App() {
                 onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
                 onVerReuniao={(id) => { 
                   marcarReuniaoComoVista(id);
+                  setOrigemVerReuniao('dashboard'); 
                   setModuloAtual('celulas'); 
                   setCelulasSubmenu('reunioes'); 
-                  setReuniaoSelecionadaId(id); 
+                  handleSetReuniaoSelecionadaId(id); 
                 }}
                 membroLogado={membroLogado}
                 usuarioLogado={usuarioLogado}
                 onNavigate={navegar}
+                abaDashboard={abaDashboard}
+                setAbaDashboard={setAbaDashboard}
               />
             </div>
           </>
@@ -1290,7 +1351,7 @@ export default function App() {
             celulaSelecionadaId={celulaSelecionadaId} // Passa o ID da célula selecionada
             setCelulaSelecionadaId={setCelulaSelecionadaId} // Passa a função para definir a célula selecionada
             reuniaoSelecionadaId={reuniaoSelecionadaId}
-            setReuniaoSelecionadaId={setReuniaoSelecionadaId}
+            setReuniaoSelecionadaId={handleSetReuniaoSelecionadaId}
             obterDados={obterDados} // Passa a função para recarregar dados
             onNavigate={(sub) => navegar('celulas', sub)}
             membroLogado={membroLogado}

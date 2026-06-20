@@ -24,6 +24,8 @@ export default function PessoasModulo(props) {
     [pessoasFiltradas]
   );
 
+  const temFiltroVinculo = !!(filtros.cargo || filtros.zona || filtros.atuacao || filtros.relatorioCampo);
+
   if (membroSelecionadoId) {
     return (
       <DetalhesMembro
@@ -89,8 +91,67 @@ export default function PessoasModulo(props) {
       </div>
       {carregando && <div className="text-sm font-medium text-[#2563eb] mb-4">Sincronizando dados...</div>}
 
+      {/* Botões de Retorno Dinâmicos para Filtros */}
+      {filtros.cargo && (
+        <div className="mb-4 hidden md:block">
+          <button
+            type="button"
+            onClick={() => {
+              alterarFiltro('cargo', '');
+              onNavigate('cargo');
+            }}
+            className="flex items-center gap-1.5 text-xs font-bold text-[#055F6D] hover:text-[#044c57] bg-[#055F6D]/5 hover:bg-[#055F6D]/10 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+          >
+            ← Voltar para Cargos
+          </button>
+        </div>
+      )}
+      {filtros.zona && (
+        <div className="mb-4 hidden md:block">
+          <button
+            type="button"
+            onClick={() => {
+              alterarFiltro('zona', '');
+              onNavigate('zona');
+            }}
+            className="flex items-center gap-1.5 text-xs font-bold text-[#055F6D] hover:text-[#044c57] bg-[#055F6D]/5 hover:bg-[#055F6D]/10 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+          >
+            ← Voltar para Zonas
+          </button>
+        </div>
+      )}
+      {filtros.atuacao && (
+        <div className="mb-4 hidden md:block">
+          <button
+            type="button"
+            onClick={() => {
+              alterarFiltro('atuacao', '');
+              onNavigate('atuacao');
+            }}
+            className="flex items-center gap-1.5 text-xs font-bold text-[#055F6D] hover:text-[#044c57] bg-[#055F6D]/5 hover:bg-[#055F6D]/10 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+          >
+            ← Voltar para Atuações
+          </button>
+        </div>
+      )}
+      {filtros.relatorioCampo && (
+        <div className="mb-4 hidden md:block">
+          <button
+            type="button"
+            onClick={() => {
+              alterarFiltro('relatorioCampo', '');
+              alterarFiltro('relatorioValor', '');
+              onNavigate('relatorios');
+            }}
+            className="flex items-center gap-1.5 text-xs font-bold text-[#055F6D] hover:text-[#044c57] bg-[#055F6D]/5 hover:bg-[#055F6D]/10 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+          >
+            ← Voltar para Relatórios
+          </button>
+        </div>
+      )}
+
       {/* Navegação por abas: Membros / Contribuintes (dizimistas não-membros) */}
-      <div className="grid grid-cols-2 gap-2 sm:inline-flex sm:gap-2 mb-5">
+      <div className={`${temFiltroVinculo ? 'hidden sm:inline-flex' : 'grid grid-cols-2 sm:inline-flex'} gap-2 sm:gap-2 mb-5`}>
         <button
           type="button"
           onClick={() => setAbaPessoas('membros')}
@@ -379,33 +440,121 @@ function AniversariantesPessoas({ pessoas, mesSelecionado, setMesSelecionado, on
 }
 
 function AgrupamentoPessoas({ titulo, itens, campo, pessoas, abrirPessoasFiltradas, breadcrumb = [], onNavigate }) {
+  const getIconForField = (fieldName, itemName) => {
+    const item = String(itemName || '').toLowerCase();
+    
+    if (fieldName === 'cargo') {
+      if (item.includes('pastor') || item.includes('bispo') || item.includes('apostolo') || item.includes('apóstolo')) {
+        return {
+          icon: (
+            <svg className="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+            </svg>
+          ),
+          colorClass: "text-blue-600 bg-blue-50 group-hover:bg-blue-100"
+        };
+      }
+      if (item.includes('líder') || item.includes('lider')) {
+        return {
+          icon: (
+            <svg className="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          ),
+          colorClass: "text-emerald-600 bg-emerald-50 group-hover:bg-emerald-100"
+        };
+      }
+      if (item.includes('secret') || item.includes('admin') || item.includes('diret')) {
+        return {
+          icon: (
+            <svg className="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/>
+            </svg>
+          ),
+          colorClass: "text-amber-600 bg-amber-50 group-hover:bg-amber-100"
+        };
+      }
+      if (item.includes('membro') || item.includes('ovelha') || item.includes('fiel')) {
+        return {
+          icon: (
+            <svg className="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          ),
+          colorClass: "text-teal-600 bg-teal-50 group-hover:bg-teal-100"
+        };
+      }
+      return {
+        icon: (
+          <svg className="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
+          </svg>
+        ),
+        colorClass: "text-indigo-600 bg-indigo-50 group-hover:bg-indigo-100"
+      };
+    }
+    
+    if (fieldName === 'zona_id') {
+      return {
+        icon: (
+          <svg className="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+        ),
+        colorClass: "text-rose-600 bg-rose-50 group-hover:bg-rose-100"
+      };
+    }
+    
+    return {
+      icon: (
+        <svg className="w-6 h-6 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      ),
+      colorClass: "text-violet-600 bg-violet-50 group-hover:bg-violet-100"
+    };
+  };
+
   return (
     <div className="space-y-4">
       <PageHeader titulo={titulo} breadcrumb={breadcrumb} onNavigate={() => onNavigate('todos')} />
-      <Card className="p-0">
-        <table className="table-mib">
-          <thead><tr><th>Nome</th><th>Vinculados</th><th className="text-right">Ação</th></tr></thead>
-          <tbody>
-            {itens.map((item) => {
-              const pessoasAtivas = pessoas.filter(p => p.status !== 'inativo' && p.status !== 'contribuinte');
-              // Cargos e Atuações no banco guardam o NOME, enquanto Zonas guardam o ID.
-              const isIdField = campo.endsWith('_id');
-              const val = isIdField ? (item.id || item) : (item.nome || item);
-              
-              const contagem = pessoasAtivas.filter((p) => String(p[campo] || '') === String(val)).length;
-              return (
-                <tr key={val}>
-                  <td className="font-medium">{item.nome || item}</td>
-                  <td>{contagem} pessoas</td>
-                  <td className="text-right">
-                    <button onClick={() => abrirPessoasFiltradas({ [campo === 'zona_id' ? 'zona' : campo]: val })} className="text-xs font-bold text-[#2563eb]">Ver lista</button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </Card>
+      
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {itens.map((item) => {
+          const nomeItem = item.nome || item;
+          const val = campo.endsWith('_id') ? (item.id || item) : nomeItem;
+          const contagem = pessoas.filter(p => p.status !== 'inativo' && p.status !== 'contribuinte' && String(p[campo] || '') === String(val)).length;
+          const iconInfo = getIconForField(campo, nomeItem);
+          
+          return (
+            <button
+              key={val}
+              type="button"
+              onClick={() => abrirPessoasFiltradas({ [campo === 'zona_id' ? 'zona' : campo]: val })}
+              className="flex flex-col items-center justify-between p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-100 bg-white hover:bg-slate-50/50 hover:border-slate-300 hover:shadow-lg hover:scale-[1.03] active:scale-97 transition-all duration-300 text-center w-full aspect-square group cursor-pointer relative"
+            >
+              {/* Icon Container */}
+              <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 transition-colors ${iconInfo.colorClass}`}>
+                {iconInfo.icon}
+              </div>
+
+              {/* Title and Highlighed Count */}
+              <div className="flex-1 flex flex-col justify-center my-3 w-full">
+                <h4 className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 truncate">{nomeItem}</h4>
+                <div className="flex items-baseline justify-center gap-1.5">
+                  <span className="text-2xl sm:text-4xl font-black text-slate-800 group-hover:text-[#055F6D] transition-colors">{contagem}</span>
+                  <span className="text-[9px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider">{contagem === 1 ? 'membro' : 'membros'}</span>
+                </div>
+              </div>
+
+              {/* Hover link action indicator */}
+              <span className="text-[9px] sm:text-[10px] font-bold text-[#055F6D] opacity-0 group-hover:opacity-100 transition-opacity duration-300 uppercase tracking-wider">
+                Ver membros →
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -424,8 +573,8 @@ function RelatoriosPessoas({ pessoas, zonas, abrirPessoasFiltradas, relatorioSel
       
       <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6 items-start">
         {/* Painel Lateral de Opções */}
-        <Card className="p-0 h-fit">
-          <CardHeader titulo="Opções de Relatório" subtitulo="Selecione o indicador desejado." />
+        <Card className="p-0 h-fit !rounded-t-none">
+          <CardHeader titulo="Opções de Relatório" />
           {/* Select para mobile */}
           <div className="p-4 md:hidden">
             <select
@@ -457,11 +606,12 @@ function RelatoriosPessoas({ pessoas, zonas, abrirPessoasFiltradas, relatorioSel
               startAngle={180} 
               endAngle={0} 
               hideLegend={true} 
+              className="!rounded-t-none"
             />
           ) : (
-            <ColumnChart titulo={`Indicadores: ${relatorioSelecionado}`} dados={dados} hideLegend={true} />
+            <ColumnChart titulo={`Indicadores: ${relatorioSelecionado}`} dados={dados} hideLegend={true} className="!rounded-t-none" />
           )}
-          <Card className="p-0">
+          <Card className="p-0 !rounded-t-none">
             <table className="table-mib">
               <thead>
                 <tr>
@@ -479,8 +629,22 @@ function RelatoriosPessoas({ pessoas, zonas, abrirPessoasFiltradas, relatorioSel
                     <td className="text-center text-slate-400 font-bold">
                       {((valor / (pessoasAtivas.length || 1)) * 100).toFixed(0)}%
                     </td>
-                    <td className="text-right">
-                      <button onClick={() => abrirPessoasFiltradas({ relatorioCampo: relatorioSelecionado, relatorioValor: label })} className="text-xs font-bold text-[#2563eb] cursor-pointer hover:underline">Ver lista</button>
+                    <td className="text-right pr-6">
+                      <button
+                        type="button"
+                        onClick={() => abrirPessoasFiltradas({ relatorioCampo: relatorioSelecionado, relatorioValor: label })}
+                        className="p-1.5 rounded-lg hover:bg-blue-50 text-[#2563eb] hover:text-blue-800 transition-all cursor-pointer inline-flex items-center justify-center"
+                        title="Ver lista de pessoas"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="8" y1="6" x2="21" y2="6" />
+                          <line x1="8" y1="12" x2="21" y2="12" />
+                          <line x1="8" y1="18" x2="21" y2="18" />
+                          <line x1="3" y1="6" x2="3.01" y2="6" />
+                          <line x1="3" y1="12" x2="3.01" y2="12" />
+                          <line x1="3" y1="18" x2="3.01" y2="18" />
+                        </svg>
+                      </button>
                     </td>
                   </tr>
                 ))}

@@ -90,11 +90,12 @@ export function CardHeader({ titulo, subtitulo, children, className = '' }) {
   );
 }
 
-export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hideLegend = false, hideHeaderOnMobile = false }) {
+export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hideLegend = false, hideHeaderOnMobile = false, className = '' }) {
   const [activeIndex, setActiveIndex] = useState(-1);
   const entradas = Object.entries(dados).sort((a, b) => b[1] - a[1]);
   const total = entradas.reduce((sum, [, valor]) => sum + valor, 0); // Corrigido para somar corretamente
   const chartData = entradas.map(([name, value]) => ({ name, value }));
+  const isHalfCircle = Math.abs(endAngle - startAngle) <= 180;
 
   const renderActiveShape = (props) => {
     const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
@@ -112,18 +113,20 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
   };
 
   return (
-    <Card className="p-0">
+    <Card className={`p-0 ${className}`.trim()}>
       <CardHeader titulo={titulo} hideOnMobile={hideHeaderOnMobile} />
-      <div className="p-6 flex flex-col items-center gap-6 min-h-[420px]">
-        <div className="relative w-full h-72 max-w-md">
+      <div className={`p-6 flex flex-col items-center gap-6 ${isHalfCircle ? (hideLegend ? 'min-h-[260px]' : 'min-h-[360px]') : 'min-h-[420px]'}`}>
+        <div className={`relative w-full max-w-md ${isHalfCircle ? 'h-56' : 'h-72'}`}>
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }} style={{ outline: 'none' }}>
+            <PieChart margin={isHalfCircle ? { top: 0, right: 10, bottom: 0, left: 10 } : { top: 20, right: 20, bottom: 20, left: 20 }} style={{ outline: 'none' }}>
               <Pie
                 activeIndex={activeIndex}
                 activeShape={renderActiveShape}
                 data={chartData}
-                innerRadius="50%"
-                outerRadius="100%"
+                innerRadius={isHalfCircle ? "60%" : "50%"}
+                outerRadius={isHalfCircle ? "120%" : "100%"}
+                cy={isHalfCircle ? "85%" : "50%"}
+                cx="50%"
                 paddingAngle={1}
                 dataKey="value"
                 startAngle={startAngle}
@@ -139,7 +142,10 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <div 
+            className="absolute inset-x-0 flex flex-col items-center pointer-events-none"
+            style={isHalfCircle ? { top: '78%', transform: 'translateY(-50%)' } : { top: '50%', transform: 'translateY(-50%)' }}
+          >
             <span className={`${hideLegend ? 'text-5xl' : 'text-4xl'} font-black text-[var(--text-heading)]`}>{total}</span>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total</span>
           </div>
@@ -223,11 +229,11 @@ export function CombinationCard({ titulo, dados, periodo, setPeriodo, hideHeader
   );
 }
 
-export function ColumnChart({ titulo, dados, hideHeaderOnMobile = false, hideLegend = false }) {
+export function ColumnChart({ titulo, dados, hideHeaderOnMobile = false, hideLegend = false, className = '' }) {
   const chartData = Object.entries(dados).map(([name, value]) => ({ name, value }));
 
   return (
-    <Card className="p-0">
+    <Card className={`p-0 ${className}`.trim()}>
       <CardHeader titulo={titulo} hideOnMobile={hideHeaderOnMobile} />
       <div className="p-6 flex flex-col items-center gap-6 min-h-[420px]">
         <div className="w-full h-80">
@@ -306,11 +312,14 @@ export function Recentes({ titulo, itens, render }) {
 
 export function PageHeader({ titulo, subtitulo, breadcrumb = [], onNavigate, children }) {
   return (
-    <div className="mb-6 xl:mb-2 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between pt-0">
-      <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 pl-[30px] md:pl-0">
-        <h2 className="mt-0 text-2xl sm:text-3xl xl:text-[18px] font-semibold text-[var(--text-heading)] tracking-tight">{titulo}</h2>
+    <div className="mb-6 xl:mb-2 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between pt-0 w-full">
+      <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 pl-0 md:pl-0 w-full md:w-auto">
+        <div className="md:contents flex flex-col w-full bg-white border border-t-0 border-slate-100 md:bg-transparent md:border-0 rounded-t-none rounded-b-2xl p-4 md:p-0 shadow-sm md:shadow-none text-center md:text-left items-center md:items-start">
+          <h2 className="mt-0 text-base sm:text-3xl xl:text-[18px] font-bold text-slate-800 tracking-tight">{titulo}</h2>
+          {subtitulo && <p className="mt-1 md:mt-2 text-[11px] md:text-sm text-[var(--text-muted)] max-w-3xl">{subtitulo}</p>}
+        </div>
         {breadcrumb.length > 0 && (
-          <nav className="flex items-center gap-2 text-[11px] font-bold tracking-tight text-slate-400" aria-label="Breadcrumb">
+          <nav className="hidden md:flex items-center gap-2 text-[11px] font-bold tracking-tight text-slate-400" aria-label="Breadcrumb">
             {breadcrumb.map((item, index) => {
               const isLast = index === breadcrumb.length - 1;
               // Formata para "Somente a primeira maiúscula"
@@ -331,7 +340,6 @@ export function PageHeader({ titulo, subtitulo, breadcrumb = [], onNavigate, chi
             })}
           </nav>
         )}
-        {subtitulo && <p className="mt-2 text-sm text-[var(--text-muted)] max-w-3xl">{subtitulo}</p>}
       </div>
       {children && <div className="flex flex-wrap gap-2">{children}</div>}
     </div>

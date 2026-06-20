@@ -31,9 +31,13 @@ export default function HomePage({
   relatoriosCelula = [],
   onVerMembro = () => {},
   onVerReuniao = () => {},
-  reunioesVistas = []
+  reunioesVistas = [],
+  abaDashboard,
+  setAbaDashboard
 }) {
-  const [abaAtiva, setAbaAtiva] = useState('visao_geral');
+  const [localAbaAtiva, setLocalAbaAtiva] = useState('visao_geral');
+  const abaAtiva = abaDashboard !== undefined ? abaDashboard : localAbaAtiva;
+  const setAbaAtiva = setAbaDashboard !== undefined ? setAbaDashboard : setLocalAbaAtiva;
   
   // Estados para dados de aviso e igreja
   const [avisos, setAvisos] = useState([]);
@@ -337,25 +341,25 @@ export default function HomePage({
         />
       </div>
 
-      {/* 3. MENU DE ABAS MOBILE (TABS NAVIGATION) */}
-      <div className="flex bg-white/70 backdrop-blur-md p-1 rounded-xl shadow-xs border border-slate-200/80 overflow-x-auto scrollbar-hide gap-1">
+      {/* 3. MENU DE ABAS MOBILE (TABS NAVIGATION - GRID SEGMENTADO FIXO) */}
+      <div className="grid grid-cols-4 bg-white/80 backdrop-blur-md p-1 rounded-xl shadow-xs border border-slate-200/80 gap-1 w-full">
         {[
-          { id: 'visao_geral', label: 'Geral', icon: <Users size={14} /> },
-          { id: 'celulas', label: 'Células', icon: <Home size={14} /> },
-          { id: 'demografia', label: 'Demografia', icon: <Activity size={14} /> },
-          { id: 'financas', label: 'Financeiro', icon: <Coins size={14} /> }
+          { id: 'visao_geral', label: 'Geral', icon: <Users size={16} /> },
+          { id: 'celulas', label: 'Células', icon: <Home size={16} /> },
+          { id: 'demografia', label: 'Crescimento', icon: <Activity size={16} /> },
+          { id: 'financas', label: 'Finanças', icon: <Coins size={16} /> }
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setAbaAtiva(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all duration-200 whitespace-nowrap cursor-pointer ${
+            className={`flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-lg text-[9px] font-extrabold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
               abaAtiva === tab.id 
                 ? 'bg-[#1e3a8a] text-white shadow-xs' 
                 : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
             }`}
           >
             {tab.icon}
-            <span>{tab.label}</span>
+            <span className="truncate max-w-full">{tab.label}</span>
           </button>
         ))}
       </div>

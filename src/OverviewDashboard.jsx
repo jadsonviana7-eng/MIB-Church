@@ -37,9 +37,13 @@ export default function OverviewDashboard({
   membroLogado = null,
   usuarioLogado = null,
   onNavigate = () => {},
-  reunioesVistas = []
+  reunioesVistas = [],
+  abaDashboard,
+  setAbaDashboard
 }) {
-  const [abaAtiva, setAbaAtiva] = useState('visao_geral');
+  const [localAbaAtiva, setLocalAbaAtiva] = useState('visao_geral');
+  const abaAtiva = abaDashboard !== undefined ? abaDashboard : localAbaAtiva;
+  const setAbaAtiva = setAbaDashboard !== undefined ? setAbaDashboard : setLocalAbaAtiva;
   
   // Estados para dados financeiros (carregados sob demanda com tratamento de erro/RLS)
   const [financeLoading, setFinanceLoading] = useState(false);

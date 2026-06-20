@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ministeriosService } from './services/ministeriosService';
+import { jsPDF } from 'jspdf';
 
 export default function RelatoriosMinisterial() {
   const [loading, setLoading] = useState(true);
@@ -178,6 +179,546 @@ export default function RelatoriosMinisterial() {
     } catch (e) {
       console.error(e);
       alert('Erro ao exportar: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function exportarVoluntariosExcel() {
+    setLoading(true);
+    try {
+      const { data: membros, error } = await supabase
+        .from('ministerio_membros')
+        .select(`
+          id,
+          funcao,
+          lider,
+          ativo,
+          pessoas (
+            nome,
+            email,
+            telefone,
+            cargo
+          ),
+          ministerios (
+            nome
+          )
+        `);
+
+      if (error) throw error;
+
+      const agrupados = {};
+      (membros || []).forEach(m => {
+        const minNome = m.ministerios?.nome || 'Sem Ministério';
+        if (!agrupados[minNome]) agrupados[minNome] = [];
+        agrupados[minNome].push(m);
+      });
+
+      let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8"/>
+<style>
+  body { font-family: Arial, sans-serif; }
+  table { border-collapse: collapse; margin-bottom: 20px; width: 100%; }
+  th { background-color: #1e3a8a; color: white; border: 1px solid #cbd5e1; font-size: 11px; padding: 6px; text-align: left; }
+  td { border: 1px solid #e2e8f0; font-size: 11px; padding: 6px; }
+  .title { font-size: 16px; font-weight: bold; color: #1e3a8a; margin-bottom: 5px; }
+  .meta { font-size: 10px; color: #64748b; margin-bottom: 15px; }
+  .category-header { background-color: #f1f5f9; font-weight: bold; font-size: 12px; color: #1e293b; padding: 8px; border: 1px solid #cbd5e1; }
+</style>
+</head>
+<body>
+  <div class="title">Relatório Geral de Voluntários por Ministério</div>
+  <div class="meta">Gerado em: ${new Date().toLocaleString('pt-BR')}</div>`;
+
+      Object.entries(agrupados).forEach(([minNome, lista]) => {
+        html += `<table>
+          <thead>
+            <tr>
+              <th colspan="7" class="category-header">Ministério: ${minNome}</th>
+            </tr>
+            <tr>
+              <th>Nome Voluntário</th>
+              <th>Cargo Igreja</th>
+              <th>E-mail</th>
+              <th>Telefone</th>
+              <th>Função Ministerial</th>
+              <th>Líder</th>
+              <th>Vínculo Ativo</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+        lista.forEach(m => {
+          html += `<tr>
+            <td>${m.pessoas?.nome || ''}</td>
+            <td>${m.pessoas?.cargo || ''}</td>
+            <td>${m.pessoas?.email || ''}</td>
+            <td>${m.pessoas?.telefone || ''}</td>
+            <td>${m.funcao || ''}</td>
+            <td>${m.lider ? 'Sim' : 'Não'}</td>
+            <td>${m.ativo ? 'Sim' : 'Não'}</td>
+          </tr>`;
+        });
+
+        html += `</tbody></table><br/>`;
+      });
+
+      html += `</body></html>`;
+
+      const blob = new Blob([`\uFEFF${html}`], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Voluntarios_por_Ministerio_${new Date().getFullYear()}.xls`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('✓ Relatório Excel de voluntários baixado!');
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao exportar Excel: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function exportarVoluntariosPDF() {
+    setLoading(true);
+    try {
+      const { data: membros, error } = await supabase
+        .from('ministerio_membros')
+        .select(`
+          id,
+          funcao,
+          lider,
+          ativo,
+          pessoas (
+            nome,
+            email,
+            telefone,
+            cargo
+          ),
+          ministerios (
+            nome
+          )
+        `);
+
+      if (error) throw error;
+
+      const agrupados = {};
+      (membros || []).forEach(m => {
+        const minNome = m.ministerios?.nome || 'Sem Ministério';
+        if (!agrupados[minNome]) agrupados[minNome] = [];
+        agrupados[minNome].push(m);
+      });
+
+      const doc = new jsPDF();
+      let y = 20;
+      const margin = 15;
+      const pageWidth = 210;
+      const pageHeight = 297;
+
+      const trunc = (str, len) => (str && str.length > len) ? str.substring(0, len) + '...' : (str || '');
+
+      const drawHeader = (title) => {
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(30, 58, 138);
+        doc.text(title, margin, y);
+        y += 6;
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, margin, y);
+        y += 12;
+      };
+
+      drawHeader('Relatório Geral de Voluntários por Ministério');
+
+      Object.entries(agrupados).forEach(([minNome, lista]) => {
+        if (y > pageHeight - 35) {
+          doc.addPage();
+          y = 20;
+          drawHeader('Relatório Geral de Voluntários por Ministério');
+        }
+
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(30, 41, 59);
+        doc.text(`Ministério: ${minNome}`, margin, y);
+        y += 6;
+
+        doc.setFillColor(30, 58, 138);
+        doc.rect(margin, y, pageWidth - 2 * margin, 8, 'F');
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(255, 255, 255);
+        doc.text('Nome Voluntário', margin + 2, y + 5.5);
+        doc.text('Cargo', margin + 52, y + 5.5);
+        doc.text('Função', margin + 82, y + 5.5);
+        doc.text('Líder', margin + 117, y + 5.5);
+        doc.text('Telefone', margin + 129, y + 5.5);
+        doc.text('Ativo', margin + 154, y + 5.5);
+        doc.text('E-mail', margin + 164, y + 5.5);
+        y += 8;
+
+        lista.forEach(m => {
+          if (y > pageHeight - 15) {
+            doc.addPage();
+            y = 20;
+            drawHeader('Relatório Geral de Voluntários por Ministério');
+            
+            doc.setFont('Helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.setTextColor(30, 41, 59);
+            doc.text(`Ministério: ${minNome} (continuação)`, margin, y);
+            y += 6;
+
+            doc.setFillColor(30, 58, 138);
+            doc.rect(margin, y, pageWidth - 2 * margin, 8, 'F');
+            doc.setFont('Helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(255, 255, 255);
+            doc.text('Nome Voluntário', margin + 2, y + 5.5);
+            doc.text('Cargo', margin + 52, y + 5.5);
+            doc.text('Função', margin + 82, y + 5.5);
+            doc.text('Líder', margin + 117, y + 5.5);
+            doc.text('Telefone', margin + 129, y + 5.5);
+            doc.text('Ativo', margin + 154, y + 5.5);
+            doc.text('E-mail', margin + 164, y + 5.5);
+            y += 8;
+          }
+
+          doc.setFont('Helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(51, 65, 85);
+
+          const nome = trunc(m.pessoas?.nome || '', 28);
+          const cargo = trunc(m.pessoas?.cargo || '', 16);
+          const funcao = trunc(m.funcao || '', 20);
+          const lider = m.lider ? 'Sim' : 'Não';
+          const tel = trunc(m.pessoas?.telefone || '', 14);
+          const ativo = m.ativo ? 'Sim' : 'Não';
+          const email = trunc(m.pessoas?.email || '', 20);
+
+          doc.text(nome, margin + 2, y + 5);
+          doc.text(cargo, margin + 52, y + 5);
+          doc.text(funcao, margin + 82, y + 5);
+          doc.text(lider, margin + 117, y + 5);
+          doc.text(tel, margin + 129, y + 5);
+          doc.text(ativo, margin + 154, y + 5);
+          doc.text(email, margin + 164, y + 5);
+
+          doc.setDrawColor(241, 245, 249);
+          doc.line(margin, y + 7, pageWidth - margin, y + 7);
+          y += 7;
+        });
+
+        y += 8;
+      });
+
+      doc.save(`Voluntarios_MIB_Church_${new Date().getFullYear()}.pdf`);
+      showToast('✓ Relatório PDF de voluntários baixado!');
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao exportar PDF: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function exportarEscalasExcel() {
+    setLoading(true);
+    try {
+      const parseDatabaseDate = (str) => {
+        if (!str) return null;
+        if (!str.includes('Z') && !str.match(/[+-]\d{2}(:?\d{2})?$/)) {
+          const clean = str.trim().replace(' ', 'T');
+          return new Date(clean + 'Z');
+        }
+        return new Date(str);
+      };
+
+      const formatarDataFuso = (isoString) => {
+        if (!isoString) return '';
+        try {
+          const date = parseDatabaseDate(isoString);
+          const bDate = new Date(date.getTime() - 3 * 3600 * 1000);
+          const YYYY = bDate.getUTCFullYear();
+          const MM = String(bDate.getUTCMonth() + 1).padStart(2, '0');
+          const DD = String(bDate.getUTCDate()).padStart(2, '0');
+          const hh = String(bDate.getUTCHours()).padStart(2, '0');
+          const mm = String(bDate.getUTCMinutes()).padStart(2, '0');
+          return `${DD}/${MM}/${YYYY} ${hh}:${mm}`;
+        } catch (e) {
+          return new Date(isoString).toLocaleString('pt-BR');
+        }
+      };
+
+      const { data: escalas, error } = await supabase
+        .from('escalas')
+        .select(`
+          status,
+          created_at,
+          eventos_ministeriais (
+            titulo,
+            data_evento,
+            local
+          ),
+          pessoas (
+            nome
+          ),
+          ministerios (
+            nome
+          ),
+          ministerio_funcoes (
+            nome
+          )
+        `);
+
+      if (error) throw error;
+
+      const agrupados = {};
+      (escalas || []).forEach(e => {
+        const minNome = e.ministerios?.nome || 'Sem Ministério';
+        if (!agrupados[minNome]) agrupados[minNome] = [];
+        agrupados[minNome].push(e);
+      });
+
+      let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8"/>
+<style>
+  body { font-family: Arial, sans-serif; }
+  table { border-collapse: collapse; margin-bottom: 20px; width: 100%; }
+  th { background-color: #7c3aed; color: white; border: 1px solid #cbd5e1; font-size: 11px; padding: 6px; text-align: left; }
+  td { border: 1px solid #e2e8f0; font-size: 11px; padding: 6px; }
+  .title { font-size: 16px; font-weight: bold; color: #7c3aed; margin-bottom: 5px; }
+  .meta { font-size: 10px; color: #64748b; margin-bottom: 15px; }
+  .category-header { background-color: #f5f3ff; font-weight: bold; font-size: 12px; color: #4c1d95; padding: 8px; border: 1px solid #ddd6fe; }
+</style>
+</head>
+<body>
+  <div class="title">Relatório de Escalas por Ministério</div>
+  <div class="meta">Gerado em: ${new Date().toLocaleString('pt-BR')}</div>`;
+
+      Object.entries(agrupados).forEach(([minNome, lista]) => {
+        html += `<table>
+          <thead>
+            <tr>
+              <th colspan="7" class="category-header">Ministério: ${minNome}</th>
+            </tr>
+            <tr>
+              <th>Evento</th>
+              <th>Data/Hora</th>
+              <th>Local</th>
+              <th>Função Escalada</th>
+              <th>Voluntário</th>
+              <th>Confirmação</th>
+              <th>Data Escalação</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+        lista.forEach(e => {
+          html += `<tr>
+            <td>${e.eventos_ministeriais?.titulo || ''}</td>
+            <td>${e.eventos_ministeriais ? formatarDataFuso(e.eventos_ministeriais.data_evento) : ''}</td>
+            <td>${e.eventos_ministeriais?.local || ''}</td>
+            <td>${e.ministerio_funcoes?.nome || 'Geral'}</td>
+            <td>${e.pessoas?.nome || ''}</td>
+            <td>${e.status || 'pendente'}</td>
+            <td>${new Date(e.created_at).toLocaleDateString('pt-BR')}</td>
+          </tr>`;
+        });
+
+        html += `</tbody></table><br/>`;
+      });
+
+      html += `</body></html>`;
+
+      const blob = new Blob([`\uFEFF${html}`], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Escalas_por_Ministerio_${new Date().getFullYear()}.xls`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast('✓ Relatório Excel de escalas baixado!');
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao exportar Excel: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function exportarEscalasPDF() {
+    setLoading(true);
+    try {
+      const parseDatabaseDate = (str) => {
+        if (!str) return null;
+        if (!str.includes('Z') && !str.match(/[+-]\d{2}(:?\d{2})?$/)) {
+          const clean = str.trim().replace(' ', 'T');
+          return new Date(clean + 'Z');
+        }
+        return new Date(str);
+      };
+
+      const formatarDataFuso = (isoString) => {
+        if (!isoString) return '';
+        try {
+          const date = parseDatabaseDate(isoString);
+          const bDate = new Date(date.getTime() - 3 * 3600 * 1000);
+          const YYYY = bDate.getUTCFullYear();
+          const MM = String(bDate.getUTCMonth() + 1).padStart(2, '0');
+          const DD = String(bDate.getUTCDate()).padStart(2, '0');
+          const hh = String(bDate.getUTCHours()).padStart(2, '0');
+          const mm = String(bDate.getUTCMinutes()).padStart(2, '0');
+          return `${DD}/${MM}/${YYYY} ${hh}:${mm}`;
+        } catch (e) {
+          return new Date(isoString).toLocaleString('pt-BR');
+        }
+      };
+
+      const { data: escalas, error } = await supabase
+        .from('escalas')
+        .select(`
+          status,
+          created_at,
+          eventos_ministeriais (
+            titulo,
+            data_evento,
+            local
+          ),
+          pessoas (
+            nome
+          ),
+          ministerios (
+            nome
+          ),
+          ministerio_funcoes (
+            nome
+          )
+        `);
+
+      if (error) throw error;
+
+      const agrupados = {};
+      (escalas || []).forEach(e => {
+        const minNome = e.ministerios?.nome || 'Sem Ministério';
+        if (!agrupados[minNome]) agrupados[minNome] = [];
+        agrupados[minNome].push(e);
+      });
+
+      const doc = new jsPDF();
+      let y = 20;
+      const margin = 15;
+      const pageWidth = 210;
+      const pageHeight = 297;
+
+      const trunc = (str, len) => (str && str.length > len) ? str.substring(0, len) + '...' : (str || '');
+
+      const drawHeader = (title) => {
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(124, 58, 237);
+        doc.text(title, margin, y);
+        y += 6;
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, margin, y);
+        y += 12;
+      };
+
+      drawHeader('Relatório de Escalas por Ministério');
+
+      Object.entries(agrupados).forEach(([minNome, lista]) => {
+        if (y > pageHeight - 35) {
+          doc.addPage();
+          y = 20;
+          drawHeader('Relatório de Escalas por Ministério');
+        }
+
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(30, 41, 59);
+        doc.text(`Ministério: ${minNome}`, margin, y);
+        y += 6;
+
+        doc.setFillColor(124, 58, 237);
+        doc.rect(margin, y, pageWidth - 2 * margin, 8, 'F');
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(255, 255, 255);
+        doc.text('Evento', margin + 2, y + 5.5);
+        doc.text('Data/Hora', margin + 50, y + 5.5);
+        doc.text('Local', margin + 82, y + 5.5);
+        doc.text('Função', margin + 112, y + 5.5);
+        doc.text('Voluntário', margin + 138, y + 5.5);
+        doc.text('Confirmação', margin + 168, y + 5.5);
+        y += 8;
+
+        lista.forEach(e => {
+          if (y > pageHeight - 15) {
+            doc.addPage();
+            y = 20;
+            drawHeader('Relatório de Escalas por Ministério');
+
+            doc.setFont('Helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.setTextColor(30, 41, 59);
+            doc.text(`Ministério: ${minNome} (continuação)`, margin, y);
+            y += 6;
+
+            doc.setFillColor(124, 58, 237);
+            doc.rect(margin, y, pageWidth - 2 * margin, 8, 'F');
+            doc.setFont('Helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.setTextColor(255, 255, 255);
+            doc.text('Evento', margin + 2, y + 5.5);
+            doc.text('Data/Hora', margin + 50, y + 5.5);
+            doc.text('Local', margin + 82, y + 5.5);
+            doc.text('Função', margin + 112, y + 5.5);
+            doc.text('Voluntário', margin + 138, y + 5.5);
+            doc.text('Confirmação', margin + 168, y + 5.5);
+            y += 8;
+          }
+
+          doc.setFont('Helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(51, 65, 85);
+
+          const evento = trunc(e.eventos_ministeriais?.titulo || '', 26);
+          const dataHora = formatarDataFuso(e.eventos_ministeriais?.data_evento);
+          const local = trunc(e.eventos_ministeriais?.local || '', 16);
+          const funcao = trunc(e.ministerio_funcoes?.nome || 'Geral', 14);
+          const voluntario = trunc(e.pessoas?.nome || '', 18);
+          const status = e.status || 'pendente';
+
+          doc.text(evento, margin + 2, y + 5);
+          doc.text(dataHora, margin + 50, y + 5);
+          doc.text(local, margin + 82, y + 5);
+          doc.text(funcao, margin + 112, y + 5);
+          doc.text(voluntario, margin + 138, y + 5);
+          doc.text(status, margin + 168, y + 5);
+
+          doc.setDrawColor(241, 245, 249);
+          doc.line(margin, y + 7, pageWidth - margin, y + 7);
+          y += 7;
+        });
+
+        y += 8;
+      });
+
+      doc.save(`Escalas_MIB_Church_${new Date().getFullYear()}.pdf`);
+      showToast('✓ Relatório PDF de escalas baixado!');
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao exportar PDF: ' + e.message);
     } finally {
       setLoading(false);
     }
@@ -818,44 +1359,84 @@ export default function RelatoriosMinisterial() {
           <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between group hover:border-slate-200 transition">
             <div>
               <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
-                <FileSpreadsheet size={20} />
+                <Users size={20} />
               </div>
               <h3 className="font-bold text-slate-800 text-sm">Relatório Geral de Voluntários</h3>
               <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                Exporta uma lista completa contendo todos os voluntários, e-mail, telefone, ministérios correspondentes, funções específicas e status de coordenação de equipes.
+                Exporta uma lista completa estruturada de voluntários contendo nome, e-mail, telefone, cargo, ministérios e funções específicas correspondentes, agrupados por Ministério.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={exportarVoluntarios}
-              disabled={loading}
-              className="mt-6 w-full py-2.5 bg-slate-100 hover:bg-slate-200/80 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Download size={14} />
-              Baixar Voluntários (.csv)
-            </button>
+            <div className="mt-6 grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={exportarVoluntariosPDF}
+                disabled={loading}
+                className="py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer border border-red-100"
+              >
+                <Download size={12} />
+                PDF
+              </button>
+              <button
+                type="button"
+                onClick={exportarVoluntariosExcel}
+                disabled={loading}
+                className="py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer border border-emerald-100"
+              >
+                <FileSpreadsheet size={12} />
+                Excel
+              </button>
+              <button
+                type="button"
+                onClick={exportarVoluntarios}
+                disabled={loading}
+                className="py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer border border-slate-200"
+              >
+                <Download size={12} />
+                CSV
+              </button>
+            </div>
           </div>
 
           {/* Card Exportar Histórico de Escalas */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between group hover:border-slate-200 transition">
             <div>
               <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4">
-                <FileSpreadsheet size={20} />
+                <Calendar size={20} />
               </div>
               <h3 className="font-bold text-slate-800 text-sm">Histórico Consolidado de Escalas</h3>
               <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                Planilha detalhada de todas as escalas realizadas no sistema, incluindo o nome do evento, local, funções atribuídas, voluntários escalados e confirmação final.
+                Tabela detalhada de todas as escalas cadastradas no sistema, incluindo o título do evento, data/hora, local, função escalada, voluntário atribuído e status de confirmação, agrupados por Ministério.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={exportarEscalas}
-              disabled={loading}
-              className="mt-6 w-full py-2.5 bg-slate-100 hover:bg-slate-200/80 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <Download size={14} />
-              Baixar Escalas (.csv)
-            </button>
+            <div className="mt-6 grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={exportarEscalasPDF}
+                disabled={loading}
+                className="py-2 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer border border-red-100"
+              >
+                <Download size={12} />
+                PDF
+              </button>
+              <button
+                type="button"
+                onClick={exportarEscalasExcel}
+                disabled={loading}
+                className="py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer border border-emerald-100"
+              >
+                <FileSpreadsheet size={12} />
+                Excel
+              </button>
+              <button
+                type="button"
+                onClick={exportarEscalas}
+                disabled={loading}
+                className="py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer border border-slate-200"
+              >
+                <Download size={12} />
+                CSV
+              </button>
+            </div>
           </div>
         </div>
       )}

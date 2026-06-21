@@ -4,14 +4,16 @@ import { supabase } from './supabaseClient';
 import DetalhesMembro from './DetalhesMembro';
 import FormularioCadastro from './FormularioCadastro';
 import { meses, agrupamentoPor, valorCampoRelatorio, faixasEtarias } from './churchUtils';
+import PainelAtuacoes from './PainelAtuacoes';
 
 export default function PessoasModulo(props) {
   const {
     submenu, pessoas, pessoasFiltradas, filtros, alterarFiltro, limparFiltros,
     zonas, carregando, membroSelecionadoId, setMembroSelecionadoId, obterDados,
-    cargosDisponiveis, atuacoesDisponiveis, escolaridadesDisponiveis, abrirPessoasFiltradas, membroLogado
-    , onNavigate,
-    filtrosMobileAberto, setFiltrosMobileAberto
+    cargosDisponiveis, atuacoesDisponiveis, escolaridadesDisponiveis, abrirPessoasFiltradas, membroLogado,
+    onNavigate,
+    filtrosMobileAberto, setFiltrosMobileAberto,
+    hasAccess
   } = props;
 
   const [mesSelecionado, setMesSelecionado] = useState(new Date().getMonth());
@@ -26,6 +28,12 @@ export default function PessoasModulo(props) {
 
   const temFiltroVinculo = !!(filtros.cargo || filtros.zona || filtros.atuacao || filtros.relatorioCampo);
 
+  useEffect(() => {
+    if (temFiltroVinculo) {
+      setAbaPessoas('membros');
+    }
+  }, [temFiltroVinculo]);
+
   if (membroSelecionadoId) {
     return (
       <DetalhesMembro
@@ -36,6 +44,7 @@ export default function PessoasModulo(props) {
         cargosLista={cargosDisponiveis}
         atuacoesLista={atuacoesDisponiveis}
         membroLogado={membroLogado}
+        hasAccess={hasAccess}
       />
     );
   }
@@ -69,7 +78,15 @@ export default function PessoasModulo(props) {
   }
 
   if (submenu === 'atuacao') {
-    return <AgrupamentoPessoas titulo="Membros por Atuação" itens={atuacoesDisponiveis} campo="atuacao" pessoas={pessoas} abrirPessoasFiltradas={abrirPessoasFiltradas} breadcrumb={['Pessoas', 'Atuações']} onNavigate={onNavigate} />;
+    return (
+      <PainelAtuacoes 
+        pessoas={pessoas} 
+        atuacoesDisponiveis={atuacoesDisponiveis} 
+        obterDados={obterDados} 
+        abrirPessoasFiltradas={abrirPessoasFiltradas} 
+        onNavigate={onNavigate} 
+      />
+    );
   }
 
   if (submenu === 'relatorios') {
@@ -151,42 +168,66 @@ export default function PessoasModulo(props) {
       )}
 
       {/* Navegação por abas: Membros / Contribuintes (dizimistas não-membros) */}
-      <div className={`${temFiltroVinculo ? 'hidden sm:inline-flex' : 'grid grid-cols-2 sm:inline-flex'} gap-2 sm:gap-2 mb-5`}>
-        <button
-          type="button"
-          onClick={() => setAbaPessoas('membros')}
-          className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-center transition-all cursor-pointer ${abaPessoas === 'membros' ? 'bg-[#2563eb] text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
-        >
-          Membros
-        </button>
-        <button
-          type="button"
-          onClick={() => setAbaPessoas('contribuintes')}
-          className={`w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-center transition-all cursor-pointer ${abaPessoas === 'contribuintes' ? 'bg-[#2563eb] text-white shadow-md' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}
-        >
-          Contribuintes
-        </button>
-      </div>
+      {!temFiltroVinculo && (
+        <div className="inline-flex p-1 bg-slate-100/90 rounded-2xl border border-slate-200/50 mb-6 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setAbaPessoas('membros')}
+            className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-center transition-all duration-200 cursor-pointer ${
+              abaPessoas === 'membros'
+                ? 'bg-white text-[#055F6D] shadow-sm'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-white/40'
+            }`}
+          >
+            Membros
+          </button>
+          <button
+            type="button"
+            onClick={() => setAbaPessoas('contribuintes')}
+            className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-center transition-all duration-200 cursor-pointer ${
+              abaPessoas === 'contribuintes'
+                ? 'bg-white text-[#055F6D] shadow-sm'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-white/40'
+            }`}
+          >
+            Contribuintes
+          </button>
+        </div>
+      )}
 
       {abaPessoas === 'contribuintes' ? (
         <AbaContribuintes pessoas={pessoas} obterDados={obterDados} />
       ) : (
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5">
-        <Card className="p-0">
-          <CardHeader 
-            titulo={`${pessoasFiltradasMembros.length} Pessoas`} 
-            children={
-              <input 
-                type="search" 
-                value={filtros.busca} 
-                onChange={(e) => alterarFiltro('busca', e.target.value)} 
-                placeholder="Buscar por nome..." 
-                className="rounded-x1 border border-slate-500 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#008dc6]/20"
-              />
-            }
-          />
-          <TabelaPessoas pessoas={pessoasFiltradasMembros} onSelecionar={setMembroSelecionadoId} />
-        </Card>
+        <>
+          {/* Barra de Pesquisa Moderna com largura total */}
+          <div className="relative mb-5 w-full">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.637 10.637z" />
+              </svg>
+            </div>
+            <input 
+              type="search" 
+              value={filtros.busca} 
+              onChange={(e) => alterarFiltro('busca', e.target.value)} 
+              placeholder="Buscar por nome..." 
+              className="w-full pl-11 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#055F6D]/20 focus:border-[#055F6D] transition-all shadow-xs"
+            />
+            {filtros.busca && (
+              <button
+                type="button"
+                onClick={() => alterarFiltro('busca', '')}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition cursor-pointer"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5">
+            <Card className="p-0">
+              <TabelaPessoas pessoas={pessoasFiltradasMembros} onSelecionar={setMembroSelecionadoId} />
+            </Card>
 
         {/* Drawer de Filtros para Mobile / Sidebar para Desktop */}
         <div className={`${filtrosMobileAberto ? 'fixed inset-0 z-[60] flex items-end justify-center sm:items-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm' : 'hidden xl:block'} transition-all`}>
@@ -209,6 +250,7 @@ export default function PessoasModulo(props) {
           </div>
         </div>
       </div>
+      </>
       )}
     </>
   );
@@ -523,7 +565,14 @@ function AgrupamentoPessoas({ titulo, itens, campo, pessoas, abrirPessoasFiltrad
         {itens.map((item) => {
           const nomeItem = item.nome || item;
           const val = campo.endsWith('_id') ? (item.id || item) : nomeItem;
-          const contagem = pessoas.filter(p => p.status !== 'inativo' && p.status !== 'contribuinte' && String(p[campo] || '') === String(val)).length;
+          const contagem = pessoas.filter(p => {
+            if (p.status === 'inativo' || p.status === 'contribuinte') return false;
+            if (campo === 'atuacao') {
+              const roles = p.atuacao ? p.atuacao.split(',').map(s => s.trim().toLowerCase()) : [];
+              return roles.includes(String(val).toLowerCase());
+            }
+            return String(p[campo] || '') === String(val);
+          }).length;
           const iconInfo = getIconForField(campo, nomeItem);
           
           return (

@@ -1,12 +1,146 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Card, CardHeader, PageHeader } from './ui'; // Importar PageHeader
+import { Card, CardHeader, PageHeader } from './ui';
 import { 
   mascaraTelefone, 
   mascaraCNPJ, 
   desmascararTelefone, 
   desmascararCNPJ 
 } from './mascaras';
+import { 
+  Building2, MapPin, Briefcase, CreditCard, Search, X, Check, Trash2, Edit2, Palette, Sun, Moon, Globe
+} from 'lucide-react';
+import { aplicarTema } from './themeUtils';
+
+// Dicionário de Tradução de Exemplo para a tela de configurações (Proof of Concept i18n)
+const t = {
+  pt: {
+    configuracoes: "Configurações do Sistema",
+    subtitulo: "Gerencie as informações institucionais, localizações, atuações e parâmetros financeiros.",
+    voltar: "Voltar ao Dashboard",
+    categorias: "Categorias",
+    institucional: "Institucional",
+    localizacao: "Localização & Zonas",
+    atuacoes: "Campos de Atuação",
+    financeiro: "Financeiro & Carnê",
+    aparencia: "Aparência",
+    salvar: "Salvar",
+    salvando: "Salvando...",
+    excluir: "Excluir",
+    editar: "Editar",
+    adicionar: "Adicionar",
+    limpar: "Limpar",
+    nomeIgreja: "Nome da Igreja",
+    pastorLocal: "Pastor Local / Responsável",
+    cnpj: "CNPJ",
+    telefone: "Telefone",
+    email: "E-mail de Contato",
+    logo: "Logotipo da Igreja",
+    logoSub: "Insira a URL de uma imagem válida (PNG, JPG) para cabeçalhos e relatórios.",
+    enderecoLogradouro: "Endereço / Logradouro",
+    numero: "Número",
+    bairro: "Bairro",
+    cidade: "Cidade",
+    estado: "Estado (UF)",
+    cep: "CEP",
+    instrucoesCarne: "Instruções de Pagamento",
+    localPagamento: "Local de Pagamento Padrão",
+    formasPagamento: "Formas de Pagamento",
+    aparenciaTitulo: "Preferências Visuais",
+    aparenciaSub: "Personalize o tema, a cor principal de destaque e o idioma de exibição do sistema.",
+    modoInterface: "Modo da Interface",
+    claro: "Modo Claro",
+    escuro: "Modo Escuro",
+    corDestaque: "Cor de Destaque",
+    idiomaSelecionado: "Idioma do Sistema",
+    idiomaAjuda: "Selecione o idioma padrão para os menus e formulários.",
+    selecioneCor: "Escolha uma cor de destaque para os botões e detalhes do sistema."
+  },
+  en: {
+    configuracoes: "System Settings",
+    subtitulo: "Manage institutional information, locations, roles, and financial parameters.",
+    voltar: "Back to Dashboard",
+    categorias: "Categories",
+    institucional: "Institutional",
+    localizacao: "Location & Zones",
+    atuacoes: "Fields of Action",
+    financeiro: "Financial & Slip",
+    aparencia: "Appearance",
+    salvar: "Save",
+    salvando: "Saving...",
+    excluir: "Delete",
+    editar: "Edit",
+    adicionar: "Add",
+    limpar: "Clear",
+    nomeIgreja: "Church Name",
+    pastorLocal: "Local Pastor / Responsible",
+    cnpj: "CNPJ/Tax ID",
+    telefone: "Phone Number",
+    email: "Contact E-mail",
+    logo: "Church Logo",
+    logoSub: "Enter the URL of a valid image (PNG, JPG) for headers and reports.",
+    enderecoLogradouro: "Address / Street",
+    numero: "Number",
+    bairro: "Neighborhood",
+    cidade: "City",
+    estado: "State/Province",
+    cep: "ZIP Code",
+    instrucoesCarne: "Payment Instructions",
+    localPagamento: "Default Payment Place",
+    formasPagamento: "Payment Methods",
+    aparenciaTitulo: "Visual Preferences",
+    aparenciaSub: "Personalize the theme, main accent color, and display language.",
+    modoInterface: "Interface Mode",
+    claro: "Light Mode",
+    escuro: "Dark Mode",
+    corDestaque: "Accent Color",
+    idiomaSelecionado: "System Language",
+    idiomaAjuda: "Select the default language for menus and forms.",
+    selecioneCor: "Choose an accent color for buttons and system highlights."
+  },
+  es: {
+    configuracoes: "Configuración del Sistema",
+    subtitulo: "Administre la información institucional, ubicaciones, roles y parámetros financieros.",
+    voltar: "Volver al Panel",
+    categorias: "Categorías",
+    institucional: "Institucional",
+    localizacao: "Ubicación y Zonas",
+    atuacoes: "Campos de Actuación",
+    financeiro: "Financiero y Carnet",
+    aparencia: "Apariencia",
+    salvar: "Guardar",
+    salvando: "Guardando...",
+    excluir: "Eliminar",
+    editar: "Editar",
+    adicionar: "Agregar",
+    limpar: "Limpiar",
+    nomeIgreja: "Nombre de la Iglesia",
+    pastorLocal: "Pastor Local / Responsable",
+    cnpj: "CNPJ / Identificación",
+    telefone: "Teléfono",
+    email: "Correo de Contacto",
+    logo: "Logotipo de la Iglesia",
+    logoSub: "Ingrese la URL de una imagen válida (PNG, JPG) para encabezados e informes.",
+    enderecoLogradouro: "Dirección / Calle",
+    numero: "Número",
+    bairro: "Barrio",
+    cidade: "Ciudad",
+    estado: "Estado",
+    cep: "Código Postal",
+    instrucoesCarne: "Instrucciones de Pago",
+    localPagamento: "Lugar de Pago Predeterminado",
+    formasPagamento: "Métodos de Pago",
+    aparenciaTitulo: "Preferencias Visuales",
+    aparenciaSub: "Personalice el tema, el color de acento principal y el idioma de visualización.",
+    modoInterface: "Modo de Interfaz",
+    claro: "Modo Claro",
+    escuro: "Modo Oscuro",
+    corDestaque: "Color de Acento",
+    idiomaSelecionado: "Idioma del Sistema",
+    idiomaAjuda: "Seleccione el idioma predeterminado para menús y formularios.",
+    selecioneCor: "Elija un color de acento para los botones y elementos del sistema."
+  }
+};
 
 export default function TelaConfiguracoes({ onFechar }) {
   const [zonas, setZonas] = useState([]);
@@ -31,6 +165,21 @@ export default function TelaConfiguracoes({ onFechar }) {
   const [carneInstrucoes, setCarneInstrucoes] = useState('');
   const [carneLocalPagamento, setCarneLocalPagamento] = useState('');
   const [salvandoIgreja, setSalvandoIgreja] = useState(false);
+  const [pastorResponsavel, setPastorResponsavel] = useState('');
+
+  // Novos estados para aprimoramento profissional
+  const [abaAtiva, setAbaAtiva] = useState('institucional');
+  const [filtroZonas, setFiltroZonas] = useState('');
+  const [filtroAtuacoes, setFiltroAtuacoes] = useState('');
+  const [filtroFormas, setFiltroFormas] = useState('');
+
+  const [editandoId, setEditandoId] = useState(null);
+  const [editandoTexto, setEditandoTexto] = useState('');
+
+  // Aparência e preferências
+  const [temaModo, setTemaModo] = useState('claro');
+  const [temaAcento, setTemaAcento] = useState('azul');
+  const [idioma, setIdioma] = useState('pt');
 
   async function carregarDadosConfiguracao() {
     setCarregando(true);
@@ -47,18 +196,19 @@ export default function TelaConfiguracoes({ onFechar }) {
       if (erroIgreja) console.warn('Tabela "dados_igreja" não encontrada. Veja DATABASE_SCHEMA.md');
       if (igr) {
         setNomeIgreja(igr.nome_igreja || '');
-          setCnpj(mascaraCNPJ(igr.cnpj || ''));
+        setCnpj(mascaraCNPJ(igr.cnpj || ''));
         setEndereco(igr.endereco || '');
         setNumero(igr.numero || '');
         setBairro(igr.bairro || '');
         setCidade(igr.cidade || '');
         setEstado(igr.estado || '');
         setCep(igr.cep || '');
-          setTelefone(mascaraTelefone(igr.telefone || ''));
+        setTelefone(mascaraTelefone(igr.telefone || ''));
         setEmailContato(igr.email_contato || '');
         setLogoUrl(igr.logo_url || '');
         setCarneInstrucoes(igr.carne_instrucoes || '');
         setCarneLocalPagamento(igr.carne_local_pagamento || '');
+        setPastorResponsavel(igr.pastor_responsavel || '');
       }
       const { data: listFormasPagamento, error: erroFormasPagamento } = await supabase.from('formas_pagamento_disponiveis').select('*').order('nome');
       if (erroFormasPagamento) console.warn('Tabela "formas_pagamento_disponiveis" não encontrada. Veja DATABASE_SCHEMA.md');
@@ -74,6 +224,12 @@ export default function TelaConfiguracoes({ onFechar }) {
 
   useEffect(() => {
     carregarDadosConfiguracao();
+    const modo = localStorage.getItem('mib-theme-modo') || 'claro';
+    const acento = localStorage.getItem('mib-theme-acento') || 'azul';
+    const lang = localStorage.getItem('mib-language') || 'pt';
+    setTemaModo(modo);
+    setTemaAcento(acento);
+    setIdioma(lang);
   }, []);
 
   async function handleSalvarDadosIgreja(e) {
@@ -94,11 +250,12 @@ export default function TelaConfiguracoes({ onFechar }) {
         logo_url: logoUrl.trim(),
         carne_instrucoes: carneInstrucoes.trim(),
         carne_local_pagamento: carneLocalPagamento.trim(),
+        pastor_responsavel: pastorResponsavel.trim(),
       }).eq('id', 1);
       if (error) throw error;
-      window.alert('Dados da igreja atualizados.');
+      window.alert('Dados salvos com sucesso.');
     } catch (err) {
-      window.alert('Erro: ' + err.message);
+      window.alert('Erro ao salvar dados: ' + err.message);
     } finally {
       setSalvandoIgreja(false);
     }
@@ -164,106 +321,787 @@ export default function TelaConfiguracoes({ onFechar }) {
     await carregarDadosConfiguracao();
   }
 
+  async function handleSalvarEdicaoZona(id) {
+    if (!editandoTexto.trim()) return;
+    setCarregando(true);
+    try {
+      const { error } = await supabase.from('zonas_moradia').update({ nome: editandoTexto.trim() }).eq('id', id);
+      if (error) throw error;
+      setEditandoId(null);
+      setEditandoTexto('');
+      await carregarDadosConfiguracao();
+    } catch (err) {
+      window.alert('Erro ao atualizar zona: ' + err.message);
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function handleSalvarEdicaoAtuacao(id) {
+    if (!editandoTexto.trim()) return;
+    setCarregando(true);
+    try {
+      const { error } = await supabase.from('atuacoes').update({ nome: editandoTexto.trim() }).eq('id', id);
+      if (error) throw error;
+      setEditandoId(null);
+      setEditandoTexto('');
+      await carregarDadosConfiguracao();
+    } catch (err) {
+      window.alert('Erro ao atualizar atuação: ' + err.message);
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function handleSalvarEdicaoFormaPagamento(id) {
+    if (!editandoTexto.trim()) return;
+    setCarregando(true);
+    try {
+      const { error } = await supabase.from('formas_pagamento_disponiveis').update({ nome: editandoTexto.trim() }).eq('id', id);
+      if (error) throw error;
+      setEditandoId(null);
+      setEditandoTexto('');
+      await carregarDadosConfiguracao();
+    } catch (err) {
+      window.alert('Erro ao atualizar forma de pagamento: ' + err.message);
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  const handleAlterarAparencia = (modo, acento) => {
+    setTemaModo(modo);
+    setTemaAcento(acento);
+    aplicarTema(modo, acento);
+  };
+
+  const handleAlterarIdioma = (lang) => {
+    setIdioma(lang);
+    localStorage.setItem('mib-language', lang);
+  };
+
   return (
-    <div className="w-full max-w-full sm:max-w-3xl space-y-4 px-2">
-      <PageHeader titulo="Configurações" subtitulo="Dados institucionais, zonas geográficas e campos de atuação.">
-        <button type="button" onClick={onFechar} className="px-4 py-2 rounded-xl border border-[var(--border)] text-xs font-medium">Fechar</button>
+    <div className="w-full max-w-full sm:max-w-5xl space-y-5 px-2">
+      <PageHeader titulo={t[idioma].configuracoes} subtitulo={t[idioma].subtitulo}>
+        <button 
+          type="button" 
+          onClick={onFechar} 
+          className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-3xs cursor-pointer transition-all active:scale-95"
+        >
+          {t[idioma].voltar}
+        </button>
       </PageHeader>
 
-      <Card className="p-0">
-        <CardHeader titulo="Cadastro institucional da igreja" />
-        <form onSubmit={handleSalvarDadosIgreja} className="card-body-full space-y-3">
-          <input type="text" required placeholder="Nome da igreja" value={nomeIgreja} onChange={(e) => setNomeIgreja(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
-          <div className="grid grid-cols-2 gap-3">
-            <input 
-              type="text" 
-              placeholder="CNPJ" 
-              value={cnpj} 
-              onChange={(e) => setCnpj(mascaraCNPJ(e.target.value))} 
-              className="w-full px-3 py-2 border rounded-xl text-sm" 
-            />
-            <input 
-              type="text" 
-              placeholder="Telefone" 
-              value={telefone} 
-              onChange={(e) => setTelefone(mascaraTelefone(e.target.value))} 
-              className="w-full px-3 py-2 border rounded-xl text-sm" 
-            />
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+        {/* NAVEGAÇÃO POR ABAS - Sidebar no desktop / Menu horizontal no mobile */}
+        <div className="md:col-span-3 bg-white border border-slate-100 rounded-2xl p-2.5 shadow-3xs space-y-1">
+          <p className="hidden md:block text-[9px] font-black text-slate-400 uppercase tracking-widest px-3.5 py-2">
+            {t[idioma].categorias}
+          </p>
+          <div className="flex md:flex-col overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 gap-1.5 scrollbar-hide">
+            {[
+              { id: 'institucional', label: t[idioma].institucional, icon: <Building2 size={16} /> },
+              { id: 'localizacao', label: t[idioma].localizacao, icon: <MapPin size={16} /> },
+              { id: 'atuacoes', label: t[idioma].atuacoes, icon: <Briefcase size={16} /> },
+              { id: 'financeiro', label: t[idioma].financeiro, icon: <CreditCard size={16} /> },
+              { id: 'aparencia', label: t[idioma].aparencia, icon: <Palette size={16} /> }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setAbaAtiva(tab.id);
+                  setEditandoId(null);
+                  setEditandoTexto('');
+                }}
+                className={`flex items-center gap-2.5 py-2.5 px-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none shrink-0 md:w-full ${
+                  abaAtiva === tab.id
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            ))}
           </div>
-          <input type="email" placeholder="E-mail de contato" value={emailContato} onChange={(e) => setEmailContato(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
-          <input type="url" placeholder="URL da logo (opcional)" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-            <input type="text" placeholder="Endereço / Logradouro" value={endereco} onChange={(e) => setEndereco(e.target.value)} className="sm:col-span-9 px-3 py-2 border rounded-xl text-sm" />
-            <input type="text" placeholder="Nº" value={numero} onChange={(e) => setNumero(e.target.value)} className="sm:col-span-3 px-3 py-2 border rounded-xl text-sm" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <input type="text" placeholder="Bairro" value={bairro} onChange={(e) => setBairro(e.target.value)} className="px-3 py-2 border rounded-xl text-sm" />
-            <input type="text" placeholder="Cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} className="px-3 py-2 border rounded-xl text-sm" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <input type="text" placeholder="Estado (UF)" maxLength={2} value={estado} onChange={(e) => setEstado(e.target.value.toUpperCase())} className="px-3 py-2 border rounded-xl text-sm" />
-            <input type="text" placeholder="CEP" value={cep} onChange={(e) => setCep(e.target.value)} className="px-3 py-2 border rounded-xl text-sm" />
-          </div>
-
-          <div className="pt-4 border-t border-slate-100">
-            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Configurações do Carnê</h4>
-            <textarea placeholder="Instruções padrão (Ex: Pagamento via PIX, regras de multa...)" value={carneInstrucoes} onChange={(e) => setCarneInstrucoes(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm mb-3 resize-none" rows="3" />
-            <input type="text" placeholder="Local de pagamento padrão" value={carneLocalPagamento} onChange={(e) => setCarneLocalPagamento(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
-          </div>
-
-          <button type="submit" disabled={salvandoIgreja} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl ml-auto block">
-            {salvandoIgreja ? 'Salvando...' : '💾 Salvar Configurações (Igreja e Carnê)'}
-          </button>
-        </form>
-      </Card>
-
-      <Card className="p-0">
-        <CardHeader titulo="Zonas geográficas" subtitulo="Usadas em pessoas e células." />
-        <form onSubmit={handleAdicionarZona} className="card-body-full border-b border-[var(--border)] flex gap-2">
-          <input type="text" placeholder="Ex: Zona Norte..." value={novaZona} onChange={(e) => setNovaZona(e.target.value)} className="flex-1 px-3 py-2 border rounded-xl text-sm" disabled={carregando} />
-          <button type="submit" disabled={carregando || !novaZona.trim()} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl shrink-0">+ Inserir zona</button>
-        </form>
-        <div className="divide-y divide-[var(--border)] max-h-48 overflow-y-auto">
-          {zonas.length === 0 ? <p className="p-4 text-xs text-[var(--text-muted)]">Nenhuma zona.</p> : zonas.map((z) => (
-            <div key={z.id} className="px-4 py-2.5 flex justify-between items-center text-sm">
-              <span>{z.nome}</span>
-              <button type="button" onClick={() => handleExcluirZona(z.id)} className="text-xs text-rose-600">Excluir</button>
-            </div>
-          ))}
         </div>
-      </Card>
 
-      <Card className="p-0">
-        <CardHeader titulo="Campos de atuação" subtitulo="Lista usada na aba Informações Adicionais da ficha do membro." />
-        <form onSubmit={handleAdicionarAtuacao} className="card-body-full border-b border-[var(--border)] flex gap-2">
-          <input type="text" placeholder="Ex: Louvor, Infantil, Diaconia..." value={novaAtuacao} onChange={(e) => setNovaAtuacao(e.target.value)} className="flex-1 px-3 py-2 border rounded-xl text-sm" disabled={carregando} />
-          <button type="submit" disabled={carregando || !novaAtuacao.trim()} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl shrink-0">+ Inserir atuação</button>
-        </form>
-        <div className="divide-y divide-[var(--border)] max-h-48 overflow-y-auto">
-          {atuacoes.length === 0 ? <p className="p-4 text-xs text-[var(--text-muted)]">Nenhuma atuação cadastrada.</p> : atuacoes.map((a) => (
-            <div key={a.id} className="px-4 py-2.5 flex justify-between items-center text-sm">
-              <span>{a.nome}</span>
-              <button type="button" onClick={() => handleExcluirAtuacao(a.id)} className="text-xs text-rose-600">Excluir</button>
-            </div>
-          ))}
-        </div>
-      </Card>
+        {/* PAINEL DE CONTEÚDO */}
+        <div className="md:col-span-9 space-y-4">
+          
+          {/* ── ABA 1: INSTITUCIONAL ── */}
+          {abaAtiva === 'institucional' && (
+            <Card className="p-0 border border-slate-100 rounded-2xl shadow-3xs overflow-hidden">
+              <CardHeader 
+                titulo={t[idioma].institucional} 
+                subtitulo="Informações gerais e identidade visual da igreja para relatórios e recibos." 
+              />
+              <div className="p-5 border-t border-slate-50 bg-slate-50/10">
+                
+                {/* PREVIEW DO LOGOTIPO */}
+                <div className="mb-6 p-4 bg-white border border-slate-100 rounded-2xl flex flex-col sm:flex-row items-center gap-4 shadow-3xs">
+                  <div className="w-16 h-16 rounded-2xl border border-slate-100 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 shadow-3xs">
+                    {logoUrl ? (
+                      <img src={logoUrl} alt="Logo da Igreja" className="w-full h-full object-contain" />
+                    ) : (
+                      <Building2 size={24} className="text-slate-400" />
+                    )}
+                  </div>
+                  <div className="text-center sm:text-left space-y-1 flex-1 min-w-0 w-full">
+                    <h4 className="font-extrabold text-slate-800 text-xs">{t[idioma].logo}</h4>
+                    <p className="text-[10px] text-slate-400 font-medium">{t[idioma].logoSub}</p>
+                    <input 
+                      type="url" 
+                      placeholder="https://exemplo.com/logo.png" 
+                      value={logoUrl} 
+                      onChange={(e) => setLogoUrl(e.target.value)} 
+                      className="w-full mt-1.5 px-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none" 
+                    />
+                  </div>
+                </div>
 
-      <Card className="p-0">
-        <CardHeader titulo="Formas de pagamento" subtitulo="Opções disponíveis para eventos pagos." />
-        <form onSubmit={handleAdicionarFormaPagamento} className="card-body-full border-b border-[var(--border)] flex gap-2">
-          <input type="text" placeholder="Ex: Boleto, Transferência Bancária..." value={novaFormaPagamento} onChange={(e) => setNovaFormaPagamento(e.target.value)} className="flex-1 px-3 py-2 border rounded-xl text-sm" disabled={carregando} />
-          <button type="submit" disabled={carregando || !novaFormaPagamento.trim()} className="btn-primary text-xs font-semibold px-4 py-2 rounded-xl shrink-0">+ Inserir forma</button>
-        </form>
-        <div className="divide-y divide-[var(--border)] max-h-48 overflow-y-auto">
-          {formasPagamentoDisponiveis.length === 0 ? <p className="p-4 text-xs text-[var(--text-muted)]">Nenhuma forma de pagamento cadastrada.</p> : formasPagamentoDisponiveis.map((f) => (
-            <div key={f.id} className="px-4 py-2.5 flex justify-between items-center text-sm">
-              <span>{f.nome}</span>
-              <button type="button" onClick={() => handleExcluirFormaPagamento(f.id)} className="text-xs text-rose-600">Excluir</button>
+                {/* FORMULÁRIO INSTITUCIONAL */}
+                <form onSubmit={handleSalvarDadosIgreja} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].nomeIgreja}</label>
+                      <input 
+                        type="text" 
+                        required 
+                        placeholder={t[idioma].nomeIgreja} 
+                        value={nomeIgreja} 
+                        onChange={(e) => setNomeIgreja(e.target.value)} 
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none" 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].pastorLocal}</label>
+                      <input 
+                        type="text" 
+                        placeholder={t[idioma].pastorLocal} 
+                        value={pastorResponsavel} 
+                        onChange={(e) => setPastorResponsavel(e.target.value)} 
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].cnpj}</label>
+                      <input 
+                        type="text" 
+                        placeholder="00.000.000/0000-00" 
+                        value={cnpj} 
+                        onChange={(e) => setCnpj(mascaraCNPJ(e.target.value))} 
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none" 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].telefone}</label>
+                      <input 
+                        type="text" 
+                        placeholder="(00) 00000-0000" 
+                        value={telefone} 
+                        onChange={(e) => setTelefone(mascaraTelefone(e.target.value))} 
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].email}</label>
+                    <input 
+                      type="email" 
+                      placeholder="contato@igreja.com" 
+                      value={emailContato} 
+                      onChange={(e) => setEmailContato(e.target.value)} 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none" 
+                    />
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={salvandoIgreja} 
+                    className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-bold shadow-sm transition-all ml-auto block cursor-pointer select-none active:scale-98"
+                  >
+                    {salvandoIgreja ? t[idioma].salvando : t[idioma].salvar}
+                  </button>
+                </form>
+              </div>
+            </Card>
+          )}
+
+          {/* ── ABA 2: LOCALIZAÇÃO & ZONAS ── */}
+          {abaAtiva === 'localizacao' && (
+            <div className="space-y-5">
+              {/* ENDEREÇO SEDE */}
+              <Card className="p-0 border border-slate-100 rounded-2xl shadow-3xs overflow-hidden">
+                <CardHeader 
+                  titulo="Endereço da Sede" 
+                  subtitulo="Localização física principal da igreja." 
+                />
+                <form onSubmit={handleSalvarDadosIgreja} className="p-5 border-t border-slate-50 bg-slate-50/10 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                    <div className="sm:col-span-9 space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].enderecoLogradouro}</label>
+                      <input 
+                        type="text" 
+                        placeholder="Rua, Avenida, Praça..." 
+                        value={endereco} 
+                        onChange={(e) => setEndereco(e.target.value)} 
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none" 
+                      />
+                    </div>
+                    <div className="sm:col-span-3 space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].numero}</label>
+                      <input 
+                        type="text" 
+                        placeholder="Ex: 123" 
+                        value={numero} 
+                        onChange={(e) => setNumero(e.target.value)} 
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].bairro}</label>
+                      <input 
+                        type="text" 
+                        placeholder="Bairro" 
+                        value={bairro} 
+                        onChange={(e) => setBairro(e.target.value)} 
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none" 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].cidade}</label>
+                      <input 
+                        type="text" 
+                        placeholder="Cidade" 
+                        value={cidade} 
+                        onChange={(e) => setCidade(e.target.value)} 
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].estado}</label>
+                      <input 
+                        type="text" 
+                        placeholder="SP" 
+                        maxLength={2} 
+                        value={estado} 
+                        onChange={(e) => setEstado(e.target.value.toUpperCase())} 
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none" 
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].cep}</label>
+                      <input 
+                        type="text" 
+                        placeholder="00000-000" 
+                        value={cep} 
+                        onChange={(e) => setCep(e.target.value)} 
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none" 
+                      />
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={salvandoIgreja} 
+                    className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-bold shadow-sm transition-all ml-auto block cursor-pointer select-none active:scale-98"
+                  >
+                    {salvandoIgreja ? t[idioma].salvando : t[idioma].salvar}
+                  </button>
+                </form>
+              </Card>
+
+              {/* ZONAS GEOGRÁFICAS */}
+              <Card className="p-0 border border-slate-100 rounded-2xl shadow-3xs overflow-hidden">
+                <CardHeader 
+                  titulo={`Zonas Geográficas (${zonas.length})`} 
+                  subtitulo="Mapeamento de regiões para organizar membros e células." 
+                />
+                
+                {/* Form Adicionar Zona */}
+                <form onSubmit={handleAdicionarZona} className="p-4 border-t border-slate-50 bg-slate-50/20 flex gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="Ex: Zona Leste, Região Central..." 
+                    value={novaZona} 
+                    onChange={(e) => setNovaZona(e.target.value)} 
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none bg-white" 
+                    disabled={carregando} 
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={carregando || !novaZona.trim()} 
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-bold shadow-sm disabled:bg-slate-300 transition-all shrink-0 cursor-pointer select-none active:scale-95"
+                  >
+                    + {t[idioma].adicionar}
+                  </button>
+                </form>
+
+                {/* Filtro interno */}
+                {zonas.length > 0 && (
+                  <div className="px-4 py-2 bg-white border-b border-slate-100 flex items-center gap-2">
+                    <Search size={14} className="text-slate-400 shrink-0" />
+                    <input 
+                      type="text" 
+                      placeholder="Pesquisar zona..." 
+                      value={filtroZonas} 
+                      onChange={(e) => setFiltroZonas(e.target.value)} 
+                      className="w-full text-xs text-slate-700 bg-transparent border-none focus:outline-none focus:ring-0 py-1"
+                    />
+                    {filtroZonas && (
+                      <button 
+                        type="button" 
+                        onClick={() => setFiltroZonas('')} 
+                        className="text-[10px] text-slate-450 hover:text-slate-750 font-bold uppercase shrink-0"
+                      >
+                        {t[idioma].limpar}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Lista de zonas */}
+                <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto bg-white">
+                  {(() => {
+                    const filtradas = zonas.filter(z => z.nome.toLowerCase().includes((filtroZonas || '').toLowerCase()));
+                    if (filtradas.length === 0) {
+                      return <p className="p-4 text-xs text-slate-450 italic text-center">Nenhuma zona encontrada.</p>;
+                    }
+                    return filtradas.map((z) => (
+                      <div key={z.id} className="px-4 py-3 flex justify-between items-center text-xs group hover:bg-slate-50/50 transition-colors">
+                        {editandoId === z.id ? (
+                          <div className="flex items-center gap-2 flex-1 mr-3">
+                            <input 
+                              type="text" 
+                              value={editandoTexto} 
+                              onChange={(e) => setEditandoTexto(e.target.value)} 
+                              className="flex-1 px-2.5 py-1 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 bg-white"
+                              autoFocus 
+                            />
+                            <button 
+                              type="button" 
+                              onClick={() => handleSalvarEdicaoZona(z.id)} 
+                              className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
+                              title={t[idioma].salvar}
+                            >
+                              <Check size={16} />
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => { setEditandoId(null); setEditandoTexto(''); }} 
+                              className="p-1 text-slate-500 hover:bg-slate-100 rounded-md transition-colors"
+                              title="Cancelar"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="font-medium text-slate-700">{z.nome}</span>
+                            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                type="button" 
+                                onClick={() => { setEditandoId(z.id); setEditandoTexto(z.nome); }} 
+                                className="px-2.5 py-1 text-slate-555 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                              >
+                                <Edit2 size={12} /> {t[idioma].editar}
+                              </button>
+                              <button 
+                                type="button" 
+                                onClick={() => handleExcluirZona(z.id)} 
+                                className="px-2.5 py-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                              >
+                                <Trash2 size={12} /> {t[idioma].excluir}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </Card>
             </div>
-          ))}
+          )}
+
+          {/* ── ABA 3: CAMPOS DE ATUAÇÃO ── */}
+          {abaAtiva === 'atuacoes' && (
+            <Card className="p-0 border border-slate-100 rounded-2xl shadow-3xs overflow-hidden">
+              <CardHeader 
+                titulo={`${t[idioma].atuacoes} (${atuacoes.length})`} 
+                subtitulo="Gerencie as áreas ministeriais onde os membros da igreja atuarão." 
+              />
+              
+              {/* Form Adicionar Atuação */}
+              <form onSubmit={handleAdicionarAtuacao} className="p-4 border-t border-slate-50 bg-slate-50/20 flex gap-2">
+                <input 
+                  type="text" 
+                  placeholder="Ex: Diaconia, Ministério Infantil, Recepção..." 
+                  value={novaAtuacao} 
+                  onChange={(e) => setNovaAtuacao(e.target.value)} 
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none bg-white" 
+                  disabled={carregando} 
+                />
+                <button 
+                  type="submit" 
+                  disabled={carregando || !novaAtuacao.trim()} 
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-bold shadow-sm disabled:bg-slate-300 transition-all shrink-0 cursor-pointer select-none active:scale-95"
+                >
+                  + {t[idioma].adicionar}
+                </button>
+              </form>
+
+              {/* Filtro interno */}
+              {atuacoes.length > 0 && (
+                <div className="px-4 py-2 bg-white border-b border-slate-100 flex items-center gap-2">
+                  <Search size={14} className="text-slate-400 shrink-0" />
+                  <input 
+                    type="text" 
+                    placeholder="Pesquisar atuação..." 
+                    value={filtroAtuacoes} 
+                    onChange={(e) => setFiltroAtuacoes(e.target.value)} 
+                    className="w-full text-xs text-slate-700 bg-transparent border-none focus:outline-none focus:ring-0 py-1"
+                  />
+                  {filtroAtuacoes && (
+                    <button 
+                      type="button" 
+                      onClick={() => setFiltroAtuacoes('')} 
+                      className="text-[10px] text-slate-450 hover:text-slate-750 font-bold uppercase shrink-0"
+                    >
+                      {t[idioma].limpar}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Lista de atuações */}
+              <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto bg-white">
+                {(() => {
+                  const filtradas = atuacoes.filter(a => a.nome.toLowerCase().includes((filtroAtuacoes || '').toLowerCase()));
+                  if (filtradas.length === 0) {
+                    return <p className="p-4 text-xs text-slate-450 italic text-center">Nenhuma atuação encontrada.</p>;
+                  }
+                  return filtradas.map((a) => (
+                    <div key={a.id} className="px-4 py-3 flex justify-between items-center text-xs group hover:bg-slate-50/50 transition-colors">
+                      {editandoId === a.id ? (
+                        <div className="flex items-center gap-2 flex-1 mr-3">
+                          <input 
+                            type="text" 
+                            value={editandoTexto} 
+                            onChange={(e) => setEditandoTexto(e.target.value)} 
+                            className="flex-1 px-2.5 py-1 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 bg-white"
+                            autoFocus 
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => handleSalvarEdicaoAtuacao(a.id)} 
+                            className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
+                            title={t[idioma].salvar}
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={() => { setEditandoId(null); setEditandoTexto(''); }} 
+                            className="p-1 text-slate-500 hover:bg-slate-100 rounded-md transition-colors"
+                            title="Cancelar"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="font-medium text-slate-700">{a.nome}</span>
+                          <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              type="button" 
+                              onClick={() => { setEditandoId(a.id); setEditandoTexto(a.nome); }} 
+                              className="px-2.5 py-1 text-slate-555 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                            >
+                              <Edit2 size={12} /> {t[idioma].editar}
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => handleExcluirAtuacao(a.id)} 
+                              className="px-2.5 py-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                            >
+                              <Trash2 size={12} /> {t[idioma].excluir}
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ));
+                })()}
+              </div>
+            </Card>
+          )}
+
+          {/* ── ABA 4: FINANCEIRO & CARNÊ ── */}
+          {abaAtiva === 'financeiro' && (
+            <div className="space-y-5">
+              {/* CONFIG CARNÊ */}
+              <Card className="p-0 border border-slate-100 rounded-2xl shadow-3xs overflow-hidden">
+                <CardHeader 
+                  titulo="Configurações do Carnê" 
+                  subtitulo="Defina as instruções de pagamento e o local padrão para os boletos/carnês." 
+                />
+                <form onSubmit={handleSalvarDadosIgreja} className="p-5 border-t border-slate-50 bg-slate-50/10 space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].instrucoesCarne}</label>
+                    <textarea 
+                      placeholder="Ex: Instruções de multa, regras de depósito ou chaves PIX para pagamento..." 
+                      value={carneInstrucoes} 
+                      onChange={(e) => setCarneInstrucoes(e.target.value)} 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none bg-white resize-none" 
+                      rows="4" 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">{t[idioma].localPagamento}</label>
+                    <input 
+                      type="text" 
+                      placeholder="Ex: PIX ou Secretaria da Igreja" 
+                      value={carneLocalPagamento} 
+                      onChange={(e) => setCarneLocalPagamento(e.target.value)} 
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none bg-white" 
+                    />
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    disabled={salvandoIgreja} 
+                    className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-bold shadow-sm transition-all ml-auto block cursor-pointer select-none active:scale-98"
+                  >
+                    {salvandoIgreja ? t[idioma].salvando : t[idioma].salvar}
+                  </button>
+                </form>
+              </Card>
+
+              {/* FORMAS DE PAGAMENTO */}
+              <Card className="p-0 border border-slate-100 rounded-2xl shadow-3xs overflow-hidden">
+                <CardHeader 
+                  titulo={`${t[idioma].formasPagamento} (${formasPagamentoDisponiveis.length})`} 
+                  subtitulo="Opções de liquidação nas inscrições e eventos pagos." 
+                />
+                
+                {/* Form Adicionar Forma */}
+                <form onSubmit={handleAdicionarFormaPagamento} className="p-4 border-t border-slate-50 bg-slate-50/20 flex gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="Ex: PIX, Transferência, Dinheiro..." 
+                    value={novaFormaPagamento} 
+                    onChange={(e) => setNovaFormaPagamento(e.target.value)} 
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none bg-white" 
+                    disabled={carregando} 
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={carregando || !novaFormaPagamento.trim()} 
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-bold shadow-sm disabled:bg-slate-300 transition-all shrink-0 cursor-pointer select-none active:scale-95"
+                  >
+                    + {t[idioma].adicionar}
+                  </button>
+                </form>
+
+                {/* Filtro interno */}
+                {formasPagamentoDisponiveis.length > 0 && (
+                  <div className="px-4 py-2 bg-white border-b border-slate-100 flex items-center gap-2">
+                    <Search size={14} className="text-slate-400 shrink-0" />
+                    <input 
+                      type="text" 
+                      placeholder="Pesquisar forma..." 
+                      value={filtroFormas} 
+                      onChange={(e) => setFiltroFormas(e.target.value)} 
+                      className="w-full text-xs text-slate-700 bg-transparent border-none focus:outline-none focus:ring-0 py-1"
+                    />
+                    {filtroFormas && (
+                      <button 
+                        type="button" 
+                        onClick={() => setFiltroFormas('')} 
+                        className="text-[10px] text-slate-450 hover:text-slate-750 font-bold uppercase shrink-0"
+                      >
+                        {t[idioma].limpar}
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Lista de formas */}
+                <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto bg-white">
+                  {(() => {
+                    const filtradas = formasPagamentoDisponiveis.filter(f => f.nome.toLowerCase().includes((filtroFormas || '').toLowerCase()));
+                    if (filtradas.length === 0) {
+                      return <p className="p-4 text-xs text-slate-450 italic text-center">Nenhuma forma encontrada.</p>;
+                    }
+                    return filtradas.map((f) => (
+                      <div key={f.id} className="px-4 py-3 flex justify-between items-center text-xs group hover:bg-slate-50/50 transition-colors">
+                        {editandoId === f.id ? (
+                          <div className="flex items-center gap-2 flex-1 mr-3">
+                            <input 
+                              type="text" 
+                              value={editandoTexto} 
+                              onChange={(e) => setEditandoTexto(e.target.value)} 
+                              className="flex-1 px-2.5 py-1 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 bg-white"
+                              autoFocus 
+                            />
+                            <button 
+                              type="button" 
+                              onClick={() => handleSalvarEdicaoFormaPagamento(f.id)} 
+                              className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
+                              title={t[idioma].salvar}
+                            >
+                              <Check size={16} />
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => { setEditandoId(null); setEditandoTexto(''); }} 
+                              className="p-1 text-slate-500 hover:bg-slate-100 rounded-md transition-colors"
+                              title="Cancelar"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="font-medium text-slate-700">{f.nome}</span>
+                            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button 
+                                type="button" 
+                                onClick={() => { setEditandoId(f.id); setEditandoTexto(f.nome); }} 
+                                className="px-2.5 py-1 text-slate-555 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                              >
+                                <Edit2 size={12} /> {t[idioma].editar}
+                              </button>
+                              <button 
+                                type="button" 
+                                onClick={() => handleExcluirFormaPagamento(f.id)} 
+                                className="px-2.5 py-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                              >
+                                <Trash2 size={12} /> {t[idioma].excluir}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* ── ABA 5: APARÊNCIA ── */}
+          {abaAtiva === 'aparencia' && (
+            <Card className="p-0 border border-slate-100 rounded-2xl shadow-3xs overflow-hidden">
+              <CardHeader 
+                titulo={t[idioma].aparenciaTitulo} 
+                subtitulo={t[idioma].aparenciaSub} 
+              />
+              <div className="p-5 border-t border-slate-50 bg-slate-50/10 space-y-6">
+                
+                {/* MODO DA INTERFACE (CLARO / ESCURO) */}
+                <div className="space-y-3">
+                  <h4 className="font-extrabold text-slate-800 text-xs flex items-center gap-1.5 animate-in slide-in-from-top-1 duration-200">
+                    {temaModo === 'claro' ? <Sun size={15} className="text-warning" /> : <Moon size={15} className="text-blue-400" />}
+                    {t[idioma].modoInterface}
+                  </h4>
+                  <div className="grid grid-cols-2 gap-3 max-w-sm">
+                    <button
+                      type="button"
+                      onClick={() => handleAlterarAparencia('claro', temaAcento)}
+                      className={`py-3 px-4 border rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 ${
+                        temaModo === 'claro'
+                          ? 'bg-slate-900 border-slate-900 text-white shadow-xs'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Sun size={14} />
+                      {t[idioma].claro}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAlterarAparencia('escuro', temaAcento)}
+                      className={`py-3 px-4 border rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 ${
+                        temaModo === 'escuro'
+                          ? 'bg-slate-900 border-slate-900 text-white shadow-xs'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      <Moon size={14} />
+                      {t[idioma].escuro}
+                    </button>
+                  </div>
+                </div>
+
+                {/* PALETA DE CORES DE ACENTO */}
+                <div className="space-y-3 border-t border-slate-100 pt-5">
+                  <h4 className="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
+                    <Palette size={15} className="text-indigo-500" />
+                    {t[idioma].corDestaque}
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-medium">{t[idioma].selecioneCor}</p>
+                  <div className="flex flex-wrap gap-4 pt-1.5 animate-in fade-in duration-300">
+                    {[
+                      { id: 'azul', name: 'Classic Blue', color: 'bg-[#202046]', border: 'border-[#202046]' },
+                      { id: 'esmeralda', name: 'Emerald Teal', color: 'bg-[#0f766e]', border: 'border-[#0f766e]' },
+                      { id: 'roxo', name: 'Deep Purple', color: 'bg-[#6b21a8]', border: 'border-[#6b21a8]' },
+                      { id: 'slate', name: 'Slate Gray', color: 'bg-[#334155]', border: 'border-[#334155]' }
+                    ].map((acento) => (
+                      <button
+                        key={acento.id}
+                        type="button"
+                        onClick={() => handleAlterarAparencia(temaModo, acento.id)}
+                        className={`flex items-center gap-2 py-2 px-3 border rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer bg-white ${
+                          temaAcento === acento.id
+                            ? `${acento.border} text-slate-900 ring-2 ring-offset-2 ring-slate-400`
+                            : 'border-slate-200 text-slate-650 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className={`w-3.5 h-3.5 rounded-full ${acento.color} inline-block shadow-3xs`} />
+                        {acento.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* IDIOMA DO SISTEMA */}
+                <div className="space-y-3 border-t border-slate-100 pt-5">
+                  <h4 className="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
+                    <Globe size={15} className="text-emerald-500" />
+                    {t[idioma].idiomaSelecionado}
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-medium">{t[idioma].idiomaAjuda}</p>
+                  <div className="max-w-xs">
+                    <select
+                      value={idioma}
+                      onChange={(e) => handleAlterarIdioma(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+                    >
+                      <option value="pt">🇧🇷 Português (Brasil)</option>
+                      <option value="en">🇺🇸 English (United States)</option>
+                      <option value="es">🇪🇸 Español (España)</option>
+                    </select>
+                  </div>
+                </div>
+
+              </div>
+            </Card>
+          )}
+
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

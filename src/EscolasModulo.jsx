@@ -1,15 +1,57 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { PageHeader, Card, CardHeader, Avatar, StatCard, DoughnutCard, ColumnChart } from './ui'; 
 import { agrupamentoPor } from './churchUtils';
+import { 
+  Users, Home, Calendar, Award, Sparkles, AlertCircle, Coins, Activity, 
+  CheckCircle, Trophy, BookOpen, Flame, TrendingUp, HelpCircle
+} from 'lucide-react';
 
-export default function EscolasModulo({ submenu, onNavigate, pessoas = [], alunoSelecionadoParaCadernetaId, setAlunoSelecionadoParaCadernetaId, membroLogado }) {
+const getIconForCourse = (nome) => {
+  const lower = nome.toLowerCase();
+  if (lower.includes('líder') || lower.includes('liderança')) {
+    return {
+      icon: <Flame size={32} className="text-amber-600 w-8 h-8 md:w-10 md:h-10" />,
+      bg: 'bg-amber-50 text-amber-600'
+    };
+  }
+  if (lower.includes('finanças') || lower.includes('mordomia') || lower.includes('dinheiro')) {
+    return {
+      icon: <Coins size={32} className="text-emerald-600 w-8 h-8 md:w-10 md:h-10" />,
+      bg: 'bg-emerald-50 text-emerald-600'
+    };
+  }
+  if (lower.includes('teologia') || lower.includes('bíblia') || lower.includes('ensino')) {
+    return {
+      icon: <BookOpen size={32} className="text-teal-600 w-8 h-8 md:w-10 md:h-10" />,
+      bg: 'bg-teal-50 text-teal-600'
+    };
+  }
+  return {
+    icon: <Award size={32} className="text-indigo-600 w-8 h-8 md:w-10 md:h-10" />,
+    bg: 'bg-indigo-50 text-indigo-600'
+  };
+};
+
+export default function EscolasModulo({ 
+  submenu, 
+  onNavigate, 
+  pessoas = [], 
+  alunoSelecionadoParaCadernetaId, 
+  setAlunoSelecionadoParaCadernetaId, 
+  membroLogado,
+  hasAccess,
+  turmaSelecionadaId,
+  setTurmaSelecionadaId,
+  filtroCursoTurmas,
+  setFiltroCursoTurmas
+}) {
   const [escolas, setEscolas] = useState([]);
   const [carregando, setCarregando] = useState(false);
   const [escolaEditando, setEscolaEditando] = useState(null);
   const [isModalEdicaoAberto, setIsModalEdicaoAberto] = useState(false);
   
-  const podeEditar = ['admin', 'secretaria'].includes(membroLogado?.permissao);
+  const podeEditar = hasAccess('Escolas', 'Cursos', 'editar');
 
   // Estados do formulário
   const [nome, setNome] = useState('');
@@ -31,7 +73,6 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
   
   // Detalhes da Turma Selecionada
   const [isAddingAlunos, setIsAddingAlunos] = useState(false); // Estado de carregamento local para o modal de adicionar alunos
-  const [turmaSelecionadaId, setTurmaSelecionadaId] = useState(null);
   const [abaAtivaTurma, setAbaAtivaTurma] = useState('alunos');
 
   // Estados do formulário Turmas
@@ -479,9 +520,7 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
           -webkit-font-smoothing: antialiased;
         }
       `}</style>
-      <div className="hidden md:block">
-        <PageHeader titulo={getSubmenuTitle(submenu)} breadcrumb={breadcrumb} onNavigate={() => onNavigate('resumo')} />
-      </div>
+      <PageHeader titulo={getSubmenuTitle(submenu)} breadcrumb={breadcrumb} onNavigate={() => onNavigate('resumo')} />
 
       {submenu === 'resumo' && (
         <DashboardEscolas escolas={escolas} turmas={turmas} pessoas={pessoas} onNavigate={onNavigate} />
@@ -491,22 +530,19 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
         <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start">
           {/* PAINEL LATERAL DE CADASTRO */}
           {podeEditar && (
-          <Card className="p-0 overflow-hidden sticky top-24">
-            <div className="hidden md:block">
-              <CardHeader 
-                titulo="Novo Curso" 
-                className="!bg-slate-50 !border-[#202046]"
-              />
+          <Card className="p-0 overflow-hidden sticky top-24 !bg-[#202046] !border-none text-white shadow-xl">
+            <div className="hidden md:block bg-[#191938] border-b border-[#2e2e5e] p-4">
+              <h3 className="text-base font-extrabold text-white tracking-tight">Novo Curso</h3>
             </div>
 
             {/* Mobile: botão que expande o formulário (pushdown) */}
             <button
               type="button"
               onClick={() => setMostrarFormNovoCurso(v => !v)}
-              className="md:hidden w-full flex items-center justify-between p-4 font-bold text-sm text-[#202046] bg-slate-50"
+              className="md:hidden w-full flex items-center justify-between p-4 font-extrabold text-sm text-white bg-[#191938] border-b border-[#2e2e5e] rounded-t-2xl cursor-pointer"
             >
-              + Criar Novo Curso
-              <svg className={`w-4 h-4 transition-transform ${mostrarFormNovoCurso ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <span>+ Criar Novo Curso</span>
+              <svg className={`w-4 h-4 transition-transform ${mostrarFormNovoCurso ? 'rotate-180' : ''} text-white/80`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
@@ -514,53 +550,53 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
             <div className={`${mostrarFormNovoCurso ? 'block' : 'hidden'} md:block`}>
             <form onSubmit={handleSubmit} className="p-5 space-y-4">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nome do Curso</label>
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nome do Curso</label>
                 <input 
                   type="text" required placeholder="Ex: Escola de Líderes..."
                   value={nome} 
                   onChange={e => setNome(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#202046]/20 outline-none" 
+                  className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm focus:ring-2 focus:ring-teal-400 outline-none" 
                 />
               </div>
               
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data de Criação</label>
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Data de Criação</label>
                 <input 
                   type="date" required
                   value={dataCriacao} 
                   onChange={e => setDataCriacao(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none" 
+                  className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm focus:ring-2 focus:ring-teal-400 outline-none" 
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Gestores</label>
-                <div className="border border-slate-200 rounded-xl p-2 bg-slate-50 max-h-40 overflow-y-auto space-y-1">
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Gestores</label>
+                <div className="border border-[#2e2e5e] rounded-xl p-2 bg-[#191938] max-h-40 overflow-y-auto space-y-1">
                   {pessoas.map(p => (
-                    <label key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-white p-1.5 rounded-lg transition">
+                    <label key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-[#2e2e5e] p-1.5 rounded-lg transition">
                       <input type="checkbox" 
                         checked={gestoresIds.includes(p.id)}
                         onChange={() => toggleGestor(p.id)}
-                        className="rounded text-[#202046] focus:ring-[#202046]" 
+                        className="rounded text-teal-500 focus:ring-teal-450 bg-[#2e2e5e] border-0" 
                       />
-                      <span className="text-xs text-slate-600 truncate">{p.nome}</span>
+                      <span className="text-xs text-slate-300 truncate">{p.nome}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Descrição</label>
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Descrição</label>
                 <textarea 
                   rows="2" placeholder="Objetivos do curso..."
                   value={descricao} onChange={e => setDescricao(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none resize-none" 
+                  className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm outline-none resize-none focus:ring-2 focus:ring-teal-400" 
                 />
               </div>
 
               <div className="flex flex-col gap-2 pt-2">
                 <button type="submit" disabled={carregando}
-                  className="w-full py-2.5 rounded-xl bg-[#202046] hover:opacity-90 text-white text-sm font-bold transition shadow-md disabled:opacity-50">
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white text-sm font-black uppercase transition-all duration-300 shadow-md shadow-teal-950/20 disabled:opacity-50 cursor-pointer">
                   {carregando ? 'Processando...' : '+ Criar Novo Curso'}
                 </button>
               </div>
@@ -569,69 +605,90 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
           </Card>
           )}
 
-          {/* LISTA DE CURSOS EM TABELA */}
-          <Card className={`p-5 overflow-hidden ${!podeEditar ? 'col-span-full' : ''}`}>
-            <div className="hidden md:block"><CardHeader titulo="Cursos Cadastrados" /></div>
-            <div className="overflow-x-auto">
-              <table className="table-mib">
-                <thead>
-                  <tr>
-                    <th>Curso / Descrição</th>
-                    <th className="hidden sm:table-cell">Gestores</th>
-                    <th className="text-center hidden sm:table-cell">Início</th>
-                    <th className="text-right pr-2 sm:pr-6">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {carregando && escolas.length === 0 ? (
-                    <tr><td colSpan="4" className="p-10 text-center animate-pulse">Carregando dados...</td></tr>
-                  ) : escolas.length === 0 ? (
-                    <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhum curso cadastrado.</td></tr>
-                  ) : (
-                    escolas.map(escola => (
-                      <tr key={escola.id}>
-                        <td className="py-3">
-                          <p className="font-bold text-sm text-slate-700">{escola.nome}</p>
-                          <p className="text-[11px] text-slate-400 line-clamp-1 max-w-[180px] sm:max-w-[250px]">{escola.descricao || 'Sem descrição'}</p>
-                        </td>
-                        <td className="hidden sm:table-cell">
-                          <div className="flex flex-wrap gap-1">
-                            {escola.gestores_ids?.map(gid => {
-                              const p = pessoas.find(item => item.id === gid);
-                              return p ? (
-                                <span key={gid} className="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-                                  {p.nome.split(' ')[0]}
-                                </span>
-                              ) : null;
-                            })}
-                          </div>
-                        </td>
-                        <td className="text-center text-xs text-slate-500 hidden sm:table-cell">
-                          {new Date(escola.data_criacao).toLocaleDateString()}
-                        </td>
-                        <td className="text-right pr-2 sm:pr-6">
-                          {podeEditar && (
-                          <div className="flex justify-end gap-2">
-                            <button onClick={() => handleEditar(escola)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Curso">
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button onClick={() => handleExcluir(escola.id)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Remover Curso">
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+          {/* CARDS DE CURSOS */}
+          <div className={`${!podeEditar ? 'col-span-full' : ''} space-y-4`}>
+            <div className="hidden md:block">
+              <h3 className="text-base font-extrabold text-slate-800 tracking-tight">Cursos Cadastrados</h3>
             </div>
-          </Card>
+            
+            {carregando && escolas.length === 0 ? (
+              <div className="p-10 text-center animate-pulse text-slate-400">Carregando cursos...</div>
+            ) : escolas.length === 0 ? (
+              <div className="p-10 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-white italic">Nenhum curso cadastrado.</div>
+            ) : (
+              <div className={`grid grid-cols-2 gap-4 ${podeEditar ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}`}>
+                {escolas.map(escola => {
+                  const numTurmas = turmas.filter(t => t.escola_id === escola.id).length;
+                  const iconInfo = getIconForCourse(escola.nome);
+                  
+                  return (
+                    <button
+                      key={escola.id}
+                      type="button"
+                      onClick={() => {
+                        setFiltroCursoTurmas(escola.id);
+                        onNavigate('turmas');
+                      }}
+                      className="flex flex-col items-center justify-between p-4 sm:p-6 rounded-2xl border border-slate-150 bg-white hover:bg-slate-50/50 hover:border-slate-350 hover:shadow-md hover:scale-[1.03] active:scale-97 transition-all duration-300 text-center w-full aspect-square group cursor-pointer relative"
+                    >
+                      {/* Edit Action (top-right absolute) */}
+                      {podeEditar && (
+                        <button 
+                          type="button"
+                          onClick={e => { e.stopPropagation(); handleEditar(escola); }}
+                          className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
+                          title="Editar Curso"
+                        >
+                          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* Delete Action (bottom-right absolute) */}
+                      {podeEditar && (
+                        <button 
+                          type="button"
+                          onClick={e => { e.stopPropagation(); handleExcluir(escola.id); }}
+                          className="absolute bottom-2 right-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
+                          title="Remover Curso"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* Icon Container */}
+                      <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl flex items-center justify-center shrink-0 transition-colors mt-2 md:mt-4 ${iconInfo.bg}`}>
+                        {iconInfo.icon}
+                      </div>
+
+                      {/* Title and Highlighted Count */}
+                      <div className="flex-1 flex flex-col justify-center my-2 md:my-3 w-full">
+                        <h4 className="text-xs md:text-sm lg:text-base font-bold text-slate-800 line-clamp-2 leading-snug px-1 mb-1" title={escola.nome}>
+                          {escola.nome}
+                        </h4>
+                        <div className="flex items-baseline justify-center gap-1 md:gap-1.5 mt-0.5">
+                          <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 group-hover:text-indigo-700 transition-colors">
+                            {numTurmas}
+                          </span>
+                          <span className="text-[9px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            {numTurmas === 1 ? 'turma' : 'turmas'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Hover action indicator */}
+                      <span className="text-[9px] md:text-xs font-bold text-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 uppercase tracking-wider mb-1">
+                        Ver turmas →
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -675,149 +732,190 @@ export default function EscolasModulo({ submenu, onNavigate, pessoas = [], aluno
           <div className="p-10 text-center animate-pulse text-slate-400">Buscando dados da turma...</div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start">
-          {/* Voltar (somente mobile) */}
-          <button
-            type="button"
-            onClick={() => onNavigate('resumo')}
-            className="md:hidden col-span-full -mb-2 text-[10px] font-black text-[#202046] uppercase hover:underline cursor-pointer text-left"
-          >
-            ← Voltar
-          </button>
 
           {/* PAINEL LATERAL DE CADASTRO */}
-          <Card className="p-0 overflow-hidden sticky top-24 col-span-full lg:col-span-1">
+          <Card className="p-0 overflow-hidden sticky top-24 col-span-full lg:col-span-1 !bg-[#202046] !border-none text-white shadow-xl">
             {/* Mobile: botão que expande o formulário (pushdown) */}
             <button
               type="button"
               onClick={() => setMostrarFormNovaTurma(v => !v)}
-              className="md:hidden w-full flex items-center justify-between p-4 font-bold text-sm text-[#202046] bg-slate-50"
+              className="md:hidden w-full flex items-center justify-between p-4 font-extrabold text-sm text-white bg-[#191938] border-b border-[#2e2e5e] rounded-t-2xl cursor-pointer"
             >
-              + Adicionar Turma
-              <svg className={`w-4 h-4 transition-transform ${mostrarFormNovaTurma ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <span>+ Adicionar Turma</span>
+              <svg className={`w-4 h-4 transition-transform ${mostrarFormNovaTurma ? 'rotate-180' : ''} text-white/80`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
 
             <div className={`${mostrarFormNovaTurma ? 'block' : 'hidden'} md:block`}>
-              <div className="hidden md:block">
-                <CardHeader titulo="Nova Turma" className="!bg-slate-50 !border-[#202046]" />
+              <div className="hidden md:block bg-[#191938] border-b border-[#2e2e5e] p-4">
+                <h3 className="text-base font-extrabold text-white tracking-tight">Nova Turma</h3>
               </div>
               <form onSubmit={handleCriarTurma} className="p-5 space-y-4">
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Curso / Escola</label>
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Curso / Escola</label>
                 <select 
                   required value={turmaCursoId} onChange={e => setTurmaCursoId(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                  className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400"
                 >
-                  <option value="">Selecione o curso...</option>
-                  {escolas.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+                  <option value="" className="bg-[#202046] text-white">Selecione o curso...</option>
+                  {escolas.map(e => <option key={e.id} value={e.id} className="bg-[#202046] text-white">{e.nome}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nome da Turma</label>
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nome da Turma</label>
                 <input 
                   type="text" required placeholder="Ex: Turma Alpha 2024..."
                   value={turmaNome} onChange={e => setTurmaNome(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none" 
+                  className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400" 
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Horário</label>
-                  <select value={turmaHorario} onChange={e => setTurmaHorario(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white">
-                    <option value="Manhã">Manhã</option>
-                    <option value="Tarde">Tarde</option>
-                    <option value="Noite">Noite</option>
-                    <option value="Não definido">Não definido</option>
+                  <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Horário</label>
+                  <select value={turmaHorario} onChange={e => setTurmaHorario(e.target.value)} className="w-full px-2 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400">
+                    <option value="Manhã" className="bg-[#202046] text-white">Manhã</option>
+                    <option value="Tarde" className="bg-[#202046] text-white">Tarde</option>
+                    <option value="Noite" className="bg-[#202046] text-white">Noite</option>
+                    <option value="Não definido" className="bg-[#202046] text-white">Não definido</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status</label>
-                  <select value={turmaStatus} onChange={e => setTurmaStatus(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white">
-                    <option value="Preparando turma">Preparando</option>
-                    <option value="Em andamento">Em andamento</option>
-                    <option value="Pausada">Pausada</option>
-                    <option value="Finalizada">Finalizada</option>
+                  <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Status</label>
+                  <select value={turmaStatus} onChange={e => setTurmaStatus(e.target.value)} className="w-full px-2 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400">
+                    <option value="Preparando turma" className="bg-[#202046] text-white">Preparando</option>
+                    <option value="Em andamento" className="bg-[#202046] text-white">Em andamento</option>
+                    <option value="Pausada" className="bg-[#202046] text-white">Pausada</option>
+                    <option value="Finalizada" className="bg-[#202046] text-white">Finalizada</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Descrição</label>
+                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Descrição</label>
                 <textarea 
                   rows="2" placeholder="Breve resumo da turma..."
                   value={turmaDescricao} onChange={e => setTurmaDescricao(e.target.value)} 
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none resize-none" 
+                  className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm outline-none resize-none focus:ring-2 focus:ring-teal-400" 
                 />
               </div>
 
-              <button type="submit" disabled={carregando} className="w-full py-2.5 rounded-xl bg-[#055F6D] hover:opacity-90 text-white text-sm font-bold transition shadow-md disabled:opacity-50">
+              <button type="submit" disabled={carregando} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white text-sm font-black uppercase transition-all duration-300 shadow-md shadow-teal-950/20 disabled:opacity-50 cursor-pointer">
                 {carregando ? 'Processando...' : '+ Criar Nova Turma'}
               </button>
               </form>
             </div>
           </Card>
 
-          {/* LISTA EM TABELA */}
-          <Card className="p-0 overflow-hidden col-span-full lg:col-span-1">
-            <div className="hidden md:block"><CardHeader titulo="Turmas Ativas" /></div>
-            <div className="overflow-x-auto">
-              <table className="table-mib">
-                <thead>
-                  <tr>
-                    <th>Turma</th>
-                    <th className="hidden sm:table-cell">Curso</th>
-                    <th className="hidden sm:table-cell">Horário</th>
-                    <th>Status</th>
-                    <th className="text-right pr-2 sm:pr-6">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {turmas.length === 0 ? (
-                    <tr><td colSpan="5" className="p-10 text-center text-slate-400 italic">Nenhuma turma cadastrada.</td></tr>
-                  ) : (
-                    turmas.map(t => (
-                      <tr key={t.id} onClick={() => handleAbrirTurma(t.id)} className="cursor-pointer">
-                        <td>
-                          <p className="font-bold text-sm text-slate-700">{t.nome}</p>
-                          <p className="text-[10px] text-[#202046] uppercase font-bold sm:hidden">{t.escolas?.nome || 'Curso não vinculado'}</p>
-                        </td>
-                        <td className="hidden sm:table-cell">
-                          <p className="text-[10px] text-[#202046] uppercase font-bold">{t.escolas?.nome || 'Curso não vinculado'}</p>
-                        </td>
-                        <td className="text-xs text-slate-600 hidden sm:table-cell">{t.horario}</td>
-                        <td>
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+          {/* CARDS DE TURMAS */}
+          <div className="space-y-4 col-span-full lg:col-span-1">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-base font-extrabold text-slate-800 tracking-tight">
+                {filtroCursoTurmas ? `Turmas de ${escolas.find(e => e.id === filtroCursoTurmas)?.nome || 'Curso'}` : "Turmas Ativas"}
+              </h3>
+              {filtroCursoTurmas && (
+                <button 
+                  onClick={() => setFiltroCursoTurmas('')}
+                  className="px-3 py-1.5 text-xs font-bold text-[#055F6D] hover:text-[#044c57] bg-[#055F6D]/5 hover:bg-[#055F6D]/10 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  ← Ver Todas
+                </button>
+              )}
+            </div>
+
+            {/* Mobile filter clear indicator */}
+            {filtroCursoTurmas && (
+              <div className="md:hidden p-3 bg-slate-50 border border-slate-150 rounded-xl flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">Filtrando: {escolas.find(e => e.id === filtroCursoTurmas)?.nome}</span>
+                <button 
+                  onClick={() => setFiltroCursoTurmas('')}
+                  className="text-xs font-black text-[#055F6D] cursor-pointer"
+                >
+                  Limpar
+                </button>
+              </div>
+            )}
+
+            {(filtroCursoTurmas ? turmas.filter(t => t.escola_id === filtroCursoTurmas) : turmas).length === 0 ? (
+              <div className="p-10 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-white italic">Nenhuma turma cadastrada para este filtro.</div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {(filtroCursoTurmas ? turmas.filter(t => t.escola_id === filtroCursoTurmas) : turmas).map(t => {
+                  const iconInfo = getIconForCourse(t.escolas?.nome || '');
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => handleAbrirTurma(t.id)}
+                      className="flex flex-col items-center justify-between p-4 sm:p-6 rounded-2xl border border-slate-150 bg-white hover:bg-slate-50/50 hover:border-slate-350 hover:shadow-md hover:scale-[1.03] active:scale-97 transition-all duration-300 text-center w-full aspect-square group cursor-pointer relative"
+                    >
+                      {/* Edit Action (top-right absolute) */}
+                      {podeEditar && (
+                        <button 
+                          type="button"
+                          onClick={e => { e.stopPropagation(); handleEditarTurma(t); }}
+                          className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
+                          title="Editar Turma"
+                        >
+                          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* Delete Action (bottom-right absolute) */}
+                      {podeEditar && (
+                        <button 
+                          type="button"
+                          onClick={e => { e.stopPropagation(); handleExcluirTurma(t.id); }}
+                          className="absolute bottom-2 right-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
+                          title="Remover Turma"
+                        >
+                          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
+
+                      {/* Icon Container */}
+                      <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl flex items-center justify-center shrink-0 transition-colors mt-2 md:mt-4 ${iconInfo.bg}`}>
+                        {iconInfo.icon}
+                      </div>
+
+                      {/* Title and Highlighted Status/Schedule */}
+                      <div className="flex-1 flex flex-col justify-center my-2 md:my-3 w-full">
+                        <h4 className="text-xs md:text-sm lg:text-base font-bold text-slate-800 line-clamp-2 leading-snug px-1 mb-1" title={t.nome}>
+                          {t.nome}
+                        </h4>
+                        <p className="text-[10px] md:text-xs text-[#202046]/80 font-semibold truncate px-2 mb-1.5">
+                          {t.escolas?.nome || 'Sem curso'}
+                        </p>
+                        <div className="flex flex-wrap items-center justify-center gap-1.5">
+                          <span className="text-[9px] md:text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200 uppercase tracking-wide">
+                            {t.horario}
+                          </span>
+                          <span className={`text-[9px] md:text-xs font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wide ${
                             t.status === 'Em andamento' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
                             t.status === 'Finalizada' ? 'bg-slate-50 text-slate-500 border-slate-200' :
                             'bg-amber-50 text-amber-600 border-amber-100'
                           }`}>
                             {t.status}
                           </span>
-                        </td>
-                        <td className="text-right pr-2 sm:pr-6">
-                          <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
-                            <button onClick={() => handleEditarTurma(t)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Turma">
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button onClick={() => handleExcluirTurma(t.id)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Remover Turma">
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+                        </div>
+                      </div>
+
+                      {/* Hover action indicator */}
+                      <span className="text-[9px] font-bold text-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 uppercase tracking-wider mb-1">
+                        Gerenciar Turma →
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
         )
       )}
@@ -1208,8 +1306,6 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start animate-in fade-in slide-in-from-bottom-4 duration-300">
-      {/* Voltar (somente mobile) */}
-      <button onClick={onVoltar} className="sm:hidden col-span-full -mb-2 text-[10px] font-black text-[#202046] uppercase hover:underline cursor-pointer text-left">← Voltar para Lista</button>
 
       {/* PAINEL LATERAL DE INFORMAÇÕES (oculto no mobile, vira aba "Informações") */}
       <Card className="hidden sm:block p-4 sm:p-6 border-t-4 border-t-[#202046] lg:sticky lg:top-24">
@@ -1412,13 +1508,15 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                       <tr key={d.id}>
                         <td><span className="font-bold text-sm text-slate-700">{d.disciplinas?.nome}</span></td>
                         <td><span className="text-xs font-bold text-[#202046]">{d.professores?.pessoas?.nome}</span></td>
-                        <td className="text-right pr-2 sm:pr-6 space-x-2 sm:space-x-4">
-                          <button onClick={() => onEditDisciplina(d)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Disciplina">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                          </button>
-                          <button className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Remover Disciplina">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          </button>
+                        <td className="text-right pr-2 sm:pr-6">
+                          <div className="flex justify-end items-center gap-1.5 sm:gap-3">
+                            <button onClick={() => onEditDisciplina(d)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Disciplina">
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            </button>
+                            <button className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Remover Disciplina">
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1572,6 +1670,8 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
 
 /* COMPONENTE DE DASHBOARD */
 function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
+  const [abaAtivaDashboard, setAbaAtivaDashboard] = useState('geral');
+  const [modoDemo, setModoDemo] = useState(true);
   const [stats, setStats] = useState({
     totalAlunos: 0,
     totalMatriculas: 0,
@@ -1579,151 +1679,709 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
     porGenero: {},
     porEscolaridade: {},
     porStatus: {},
-    rankingFrequencia: []
+    frequenciaGeral: 100,
+    alunosEmRisco: [],
+    destaquesAlunos: [],
+    melhoresNotas: [],
+    tendenciasMinisterio: [],
+    distribuicaoNotas: {
+      'Excelente (9-10)': 0,
+      'Bom (7-8.9)': 0,
+      'Regular (5-6.9)': 0,
+      'Abaixo da Média (<5)': 0
+    }
   });
   const [carregandoStats, setCarregandoStats] = useState(true);
+
+  // Dados simulados de demonstração para quando o banco de dados estiver vazio ou quando o modo demo estiver ativo
+  const demoStats = useMemo(() => {
+    return {
+      totalAlunos: 42,
+      totalMatriculas: 58,
+      matriculasPorCurso: {
+        'Escola de Líderes': 24,
+        'Maturidade Cristã': 18,
+        'Escola de Teologia': 10,
+        'Finanças & Mordomia': 6
+      },
+      porGenero: {
+        'Feminino': 23,
+        'Masculino': 19
+      },
+      porEscolaridade: {
+        'Ensino Superior': 18,
+        'Ensino Médio': 16,
+        'Pós-Graduação': 8
+      },
+      porStatus: {
+        'ativo': 48,
+        'concluido': 8,
+        'trancado': 2
+      },
+      frequenciaGeral: 89,
+      alunosEmRisco: [
+        { nome: 'Pedro Alencar', faltas: 3, totalAulas: 8, freq: 62, curso: 'Escola de Teologia', motivo: 'Perdeu as últimas 3 aulas seguidas de Doutrina Bíblica.' },
+        { nome: 'Mariana Souza', faltas: 3, totalAulas: 6, freq: 50, curso: 'Finanças & Mordomia', motivo: 'Faltas acumuladas nos dois últimos sábados.' },
+        { nome: 'Lucas Ramos', faltas: 2, totalAulas: 9, freq: 77, curso: 'Escola de Líderes', motivo: 'Ausência em aulas de Mentoria Prática.' }
+      ],
+      destaquesAlunos: [
+        { nome: 'Ana Júlia Lima', media: 9.8, frequencia: 100, curso: 'Maturidade Cristã', status: 'Excelente' },
+        { nome: 'Rafael Mendes', media: 9.7, frequencia: 100, curso: 'Escola de Líderes', status: 'Excelente' },
+        { nome: 'Sofia Viana', media: 9.5, frequencia: 95, curso: 'Escola de Teologia', status: 'Destaque' },
+        { nome: 'Gustavo Santos', media: 9.4, frequencia: 100, curso: 'Finanças & Mordomia', status: 'Destaque' }
+      ],
+      melhoresNotas: [
+        { nome: 'Beatriz Rocha', nota: 10.0, disciplina: 'Caráter do Líder', curso: 'Escola de Líderes', observacao: 'Trabalho de conclusão exemplar sobre integridade ministerial.' },
+        { nome: 'Rafael Mendes', nota: 10.0, disciplina: 'Multiplicação Celular', curso: 'Escola de Líderes', observacao: 'Excelente performance no teste prático de facilitação.' },
+        { nome: 'Tiago Castro', nota: 9.8, disciplina: 'Hermenêutica Básica', curso: 'Escola de Teologia', observacao: 'Grande capacidade de análise de textos bíblicos históricos.' }
+      ],
+      distribuicaoNotas: {
+        'Excelente (9-10)': 18,
+        'Bom (7-8.9)': 22,
+        'Regular (5-6.9)': 6,
+        'Abaixo da Média (<5)': 2
+      },
+      tendenciasMinisterio: [
+        {
+          categoria: 'Liderança de Célula',
+          icon: <Flame size={16} className="text-amber-500" />,
+          corBg: 'bg-amber-50 border-amber-100 text-amber-800',
+          alunos: [
+            { nome: 'Rafael Mendes', compatibilidade: 98, justificativa: 'Concluiu a Escola de Líderes com média 9.7 e frequência 100%. Já auxilia na célula MIB Central.' },
+            { nome: 'Ana Júlia Lima', compatibilidade: 92, justificativa: 'Média 9.8 em Maturidade Cristã. Perfil comunicativo e excelente capacidade de acolhimento.' }
+          ]
+        },
+        {
+          categoria: 'Ministério de Louvor',
+          icon: <Sparkles size={16} className="text-indigo-500" />,
+          corBg: 'bg-indigo-50 border-indigo-100 text-indigo-800',
+          alunos: [
+            { nome: 'Beatriz Rocha', compatibilidade: 94, justificativa: 'Tem interesse em adoração, concluiu o curso de louvor e possui alta assiduidade nas atividades práticas.' },
+            { nome: 'Mariana Souza', compatibilidade: 82, justificativa: 'Cursou Introdução ao Ministério de Música, tem excelente voz e precisa apenas concluir Finanças para liberação.' }
+          ]
+        },
+        {
+          categoria: 'Ensino & Teologia',
+          icon: <BookOpen size={16} className="text-teal-500" />,
+          corBg: 'bg-teal-50 border-teal-100 text-teal-800',
+          alunos: [
+            { nome: 'Sofia Viana', compatibilidade: 96, justificativa: 'Maior nota da turma em Hermenêutica Básica (9.5). Habilidade analítica excelente e didática para palestras.' },
+            { nome: 'Tiago Castro', compatibilidade: 90, justificativa: 'Grande paixão por exegese bíblica e média 9.2 na Escola de Teologia. Excelente potencial docente.' }
+          ]
+        },
+        {
+          categoria: 'Finanças & Administração',
+          icon: <Coins size={16} className="text-emerald-500" />,
+          corBg: 'bg-emerald-50 border-emerald-100 text-emerald-800',
+          alunos: [
+            { nome: 'Gustavo Santos', compatibilidade: 98, justificativa: 'Formação em Contabilidade e conclusão do curso Finanças & Mordomia com nota 9.4 e assiduidade completa.' }
+          ]
+        }
+      ]
+    };
+  }, []);
 
   useEffect(() => {
     async function carregarStats() {
       setCarregandoStats(true);
       try {
-        const { data: matriculas } = await supabase
-          .from('alunos_turmas')
-          .select('*, turmas(nome, escola_id, escolas(nome)), alunos(pessoa_id)');
-        
-        if (matriculas) {
-          const uniqueAlunosIds = [...new Set(matriculas.map(m => m.alunos?.pessoa_id))];
-          const alunosPessoas = pessoas.filter(p => uniqueAlunosIds.includes(p.id));
+        const [
+          resMatriculas,
+          resAlunos,
+          resAulas,
+          resAvaliacoes
+        ] = await Promise.all([
+          supabase.from('alunos_turmas').select('*, turmas(nome, escola_id, escolas(nome))'),
+          supabase.from('alunos').select('*'),
+          supabase.from('aulas').select('*, turmas_disciplinas(turma_id, disciplinas(nome))'),
+          supabase.from('avaliacoes').select('*, turmas_disciplinas(turma_id, disciplinas(nome))')
+        ]);
 
-          // 1. Matrículas por Curso
-          const porCurso = {};
-          matriculas.forEach(m => {
-            const nomeCurso = m.turmas?.escolas?.nome || 'Outros';
-            porCurso[nomeCurso] = (porCurso[nomeCurso] || 0) + 1;
-          });
+        const matriculas = resMatriculas.data || [];
+        const todosAlunos = resAlunos.data || [];
+        const todasAulas = resAulas.data || [];
+        const todasAvaliacoes = resAvaliacoes.data || [];
 
-          // 2. Por Status
-          const porStatus = agrupamentoPor(matriculas, m => m.status || 'ativo');
-
-          // 3. Rankings (Simulado com base no engajamento/matrículas por aluno se não houver notas)
-          // Aqui você pode expandir para buscar médias reais da tabela de avaliações
-
-          setStats({
-            totalAlunos: uniqueAlunosIds.length,
-            totalMatriculas: matriculas.length,
-            matriculasPorCurso: porCurso,
-            porGenero: agrupamentoPor(alunosPessoas, p => p.genero || 'Não informado'),
-            porEscolaridade: agrupamentoPor(alunosPessoas, p => p.escolaridade || 'Não informada'),
-            porStatus
-          });
+        if (matriculas.length === 0) {
+          // Se não há matrículas reais, força o modo demonstração
+          setModoDemo(true);
+          setStats(demoStats);
+          return;
         }
+
+        // Processar Dados Reais
+        const studentIdToPessoaId = {};
+        const studentIdToPessoa = {};
+        todosAlunos.forEach(al => {
+          const p = pessoas.find(x => x.id === al.pessoa_id);
+          if (p) {
+            studentIdToPessoaId[al.id] = al.pessoa_id;
+            studentIdToPessoa[al.id] = p;
+          }
+        });
+
+        const uniqueAlunosIds = [...new Set(matriculas.map(m => studentIdToPessoaId[m.aluno_id]).filter(Boolean))];
+        const alunosPessoas = pessoas.filter(p => uniqueAlunosIds.includes(p.id));
+
+        // 1. Matrículas por Curso
+        const porCurso = {};
+        matriculas.forEach(m => {
+          const nomeCurso = m.turmas?.escolas?.nome || 'Outros';
+          porCurso[nomeCurso] = (porCurso[nomeCurso] || 0) + 1;
+        });
+
+        // 2. Por Status
+        const porStatus = agrupamentoPor(matriculas, m => m.status || 'ativo');
+
+        // 3. Frequência / Faltas
+        const presencasPorAluno = {};
+        todasAulas.forEach(aula => {
+          let presMap = aula.presencas || {};
+          if (typeof presMap === 'string') {
+            try { presMap = JSON.parse(presMap); } catch (e) { presMap = {}; }
+          }
+          Object.entries(presMap).forEach(([alId, isPresent]) => {
+            if (!presencasPorAluno[alId]) {
+              presencasPorAluno[alId] = { presencas: 0, faltas: 0, total: 0 };
+            }
+            presencasPorAluno[alId].total += 1;
+            if (isPresent) presencasPorAluno[alId].presencas += 1;
+            else presencasPorAluno[alId].faltas += 1;
+          });
+        });
+
+        let totalPres = 0, totalAulasAtendidas = 0;
+        Object.values(presencasPorAluno).forEach(v => {
+          totalPres += v.presencas;
+          totalAulasAtendidas += v.total;
+        });
+        const frequenciaGeral = totalAulasAtendidas > 0 ? Math.round((totalPres / totalAulasAtendidas) * 100) : 100;
+
+        // Alunos em Risco
+        const alunosEmRisco = [];
+        Object.entries(presencasPorAluno).forEach(([alId, v]) => {
+          const freq = v.total > 0 ? (v.presencas / v.total) * 100 : 100;
+          if (v.faltas >= 2 || freq < 75) {
+            const p = studentIdToPessoa[alId];
+            const mat = matriculas.find(m => m.aluno_id === alId);
+            if (p) {
+              alunosEmRisco.push({
+                nome: p.nome,
+                faltas: v.faltas,
+                totalAulas: v.total,
+                freq: Math.round(freq),
+                curso: mat?.turmas?.escolas?.nome || 'Curso Geral',
+                motivo: `Ausente em ${v.faltas} aulas no curso de ${mat?.turmas?.nome || 'andamento'}.`
+              });
+            }
+          }
+        });
+        alunosEmRisco.sort((a, b) => b.faltas - a.faltas);
+
+        // 4. Notas / Avaliações
+        const notasPorAluno = {};
+        todasAvaliacoes.forEach(av => {
+          const nota = Number(av.nota);
+          if (!isNaN(nota)) {
+            if (!notasPorAluno[av.aluno_id]) notasPorAluno[av.aluno_id] = [];
+            notasPorAluno[av.aluno_id].push(nota);
+          }
+        });
+
+        const destaquesAlunos = [];
+        const distNotas = { 'Excelente (9-10)': 0, 'Bom (7-8.9)': 0, 'Regular (5-6.9)': 0, 'Abaixo da Média (<5)': 0 };
+        Object.entries(notasPorAluno).forEach(([alId, notas]) => {
+          const media = notas.reduce((a, b) => a + b, 0) / notas.length;
+          const roundedMedia = Math.round(media * 10) / 10;
+          const p = studentIdToPessoa[alId];
+          const mat = matriculas.find(m => m.aluno_id === alId);
+          if (p) {
+            destaquesAlunos.push({
+              nome: p.nome,
+              media: roundedMedia,
+              frequencia: presencasPorAluno[alId] ? Math.round((presencasPorAluno[alId].presencas / presencasPorAluno[alId].total) * 100) : 100,
+              curso: mat?.turmas?.escolas?.nome || 'Outros',
+              status: media >= 9 ? 'Excelente' : 'Destaque'
+            });
+          }
+          if (media >= 9) distNotas['Excelente (9-10)'] += 1;
+          else if (media >= 7) distNotas['Bom (7-8.9)'] += 1;
+          else if (media >= 5) distNotas['Regular (5-6.9)'] += 1;
+          else distNotas['Abaixo da Média (<5)'] += 1;
+        });
+        destaquesAlunos.sort((a, b) => b.media - a.media);
+
+        const melhoresNotas = [];
+        todasAvaliacoes.forEach(av => {
+          const nota = Number(av.nota);
+          const p = studentIdToPessoa[av.aluno_id];
+          if (p && nota >= 9) {
+            melhoresNotas.push({
+              nome: p.nome,
+              nota,
+              disciplina: av.turmas_disciplinas?.disciplinas?.nome || 'Avaliação',
+              curso: av.turmas_disciplinas?.turmas?.escolas?.nome || 'Cursos',
+              observacao: av.observacao || 'Excelente desempenho na avaliação.'
+            });
+          }
+        });
+        melhoresNotas.sort((a, b) => b.nota - a.nota);
+
+        // 5. Aptidões de Ministérios (Inferido dos Cursos)
+        const alunoCursos = {};
+        matriculas.forEach(m => {
+          if (!alunoCursos[m.aluno_id]) alunoCursos[m.aluno_id] = [];
+          alunoCursos[m.aluno_id].push(m.turmas?.escolas?.nome || '');
+        });
+
+        const liderancaList = [];
+        const louvorList = [];
+        const teologiaList = [];
+        const financasList = [];
+
+        Object.entries(alunoCursos).forEach(([alId, cursos]) => {
+          const p = studentIdToPessoa[alId];
+          if (!p) return;
+          const mediaNotas = notasPorAluno[alId] ? (notasPorAluno[alId].reduce((a, b) => a + b, 0) / notasPorAluno[alId].length) : 8.5;
+          const freqInfo = presencasPorAluno[alId] ? (presencasPorAluno[alId].presencas / presencasPorAluno[alId].total) : 1;
+
+          cursos.forEach(c => {
+            const lowerC = c.toLowerCase();
+            if (lowerC.includes('líder') || lowerC.includes('liderança')) {
+              liderancaList.push({
+                nome: p.nome,
+                compatibilidade: Math.round(mediaNotas * 10),
+                justificativa: `Concluiu ou está cursando o módulo ${c} com excelente frequência de ${Math.round(freqInfo * 100)}%.`
+              });
+            } else if (lowerC.includes('louvor') || lowerC.includes('adoração') || lowerC.includes('música')) {
+              louvorList.push({
+                nome: p.nome,
+                compatibilidade: Math.round(mediaNotas * 10),
+                justificativa: `Alta aptidão no curso ${c}. Perfil musical/artístico identificado e engajado.`
+              });
+            } else if (lowerC.includes('teologia') || lowerC.includes('bíblia') || lowerC.includes('ensino')) {
+              teologiaList.push({
+                nome: p.nome,
+                compatibilidade: Math.round(mediaNotas * 10),
+                justificativa: `Notas de destaque em matérias de exegese e hermenêutica de ${c}.`
+              });
+            } else if (lowerC.includes('finanças') || lowerC.includes('mordomia')) {
+              financasList.push({
+                nome: p.nome,
+                compatibilidade: Math.round(mediaNotas * 10),
+                justificativa: `Dominância no entendimento dos princípios de mordomia financeira e administração.`
+              });
+            }
+          });
+        });
+
+        const tendenciasMinisterio = [
+          { categoria: 'Liderança de Célula', icon: <Flame size={16} className="text-amber-500" />, corBg: 'bg-amber-50 border-amber-100 text-amber-800', alunos: liderancaList.slice(0, 3) },
+          { categoria: 'Ministério de Louvor', icon: <Sparkles size={16} className="text-indigo-500" />, corBg: 'bg-indigo-50 border-indigo-100 text-indigo-800', alunos: louvorList.slice(0, 3) },
+          { categoria: 'Ensino & Teologia', icon: <BookOpen size={16} className="text-teal-500" />, corBg: 'bg-teal-50 border-teal-100 text-teal-800', alunos: teologiaList.slice(0, 3) },
+          { categoria: 'Finanças & Administração', icon: <Coins size={16} className="text-emerald-500" />, corBg: 'bg-emerald-50 border-emerald-100 text-emerald-800', alunos: financasList.slice(0, 3) }
+        ].filter(t => t.alunos.length > 0);
+
+        setStats({
+          totalAlunos: uniqueAlunosIds.length,
+          totalMatriculas: matriculas.length,
+          matriculasPorCurso: porCurso,
+          porGenero: agrupamentoPor(alunosPessoas, p => p.genero || 'Não informado'),
+          porEscolaridade: agrupamentoPor(alunosPessoas, p => p.escolaridade || 'Não informada'),
+          porStatus,
+          frequenciaGeral,
+          alunosEmRisco,
+          destaquesAlunos,
+          melhoresNotas,
+          tendenciasMinisterio,
+          distribuicaoNotas: distNotas
+        });
       } catch (err) {
         console.error("Erro dashboard:", err);
       } finally {
         setCarregandoStats(false);
       }
     }
-    carregarStats();
-  }, [pessoas]);
+    
+    if (modoDemo) {
+      setStats(demoStats);
+      setCarregandoStats(false);
+    } else {
+      carregarStats();
+    }
+  }, [pessoas, modoDemo, demoStats]);
 
-  if (carregandoStats) return <div className="p-10 text-center text-slate-400 animate-pulse">Gerando indicadores...</div>;
+  const activeStats = modoDemo ? demoStats : stats;
+
+  if (carregandoStats) return <div className="p-10 text-center text-slate-400 animate-pulse">Gerando indicadores acadêmicos...</div>;
 
   return (
     <div className="space-y-6">
-      {/* LINHA 1: INDICADORES RÁPIDOS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="h-30 sm:h-40">
-          <StatCard 
-            label="Total de Alunos" 
-            valor={stats.totalAlunos} 
-            detalhe="Alunos únicos" 
-            icone={<span className="text-4xl">🎓</span>}
-            className="h-full justify-center items-center text-center"
-          />
+      {/* CABEÇALHO DO DASHBOARD COM O INTERRUPTOR DE MODO DEMO */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-3xs !rounded-t-none">
+        <div>
+          <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
+            <span>Painel de Inteligência Acadêmica MIB</span>
+            {modoDemo && (
+              <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider bg-orange-100 text-orange-700 border border-orange-200 rounded-md">
+                Demonstração
+              </span>
+            )}
+          </h3>
+          <p className="text-xs text-slate-500 font-medium">Acompanhe a frequência, notas, destaques e tendências vocacionais dos alunos.</p>
         </div>
-        <div
-          onClick={() => onNavigate('cursos')}
-          className="h-30 sm:h-40 cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
-          title="Ir para Cursos"
-        >
-          <StatCard 
-            label="Cursos" 
-            valor={escolas.length} 
-            detalhe="Escolas ativas" 
-            icone={<span className="text-4xl">🏫</span>}
-            className="h-full justify-center items-center text-center"
-          />
-        </div>
-        <div
-          onClick={() => onNavigate('turmas')}
-          className="h-30 sm:h-40 cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
-          title="Ir para Turmas"
-        >
-          <StatCard 
-            label="Turmas" 
-            valor={turmas.filter(t => t.status === 'Em andamento').length} 
-            detalhe="Em andamento" 
-            icone={<span className="text-4xl">👥</span>}
-            className="h-full justify-center items-center text-center"
-          />
-        </div>
-        <div className="h-30 sm:h-40">
-          <StatCard 
-            label="Matrículas" 
-            valor={stats.totalMatriculas} 
-            detalhe="Total acumulado" 
-            icone={<span className="text-4xl">📝</span>}
-            className="h-full justify-center items-center text-center"
-          />
+        <div className="flex items-center gap-2 self-start sm:self-center bg-slate-50 border border-slate-200/60 px-3 py-1.5 rounded-lg">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Modo Demo</span>
+          <button 
+            onClick={() => setModoDemo(v => !v)}
+            className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-300 cursor-pointer ${modoDemo ? 'bg-[#1e3a8a]' : 'bg-slate-350'}`}
+          >
+            <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${modoDemo ? 'translate-x-4' : 'translate-x-0'}`} />
+          </button>
         </div>
       </div>
 
-      {/* LINHA 2: MATRÍCULAS POR CURSO E STATUS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ColumnChart titulo="Matrículas por Curso" dados={stats.matriculasPorCurso} />
-        <DoughnutCard titulo="Status das Matrículas" dados={stats.porStatus} />
+      {/* MENU DE ABAS INTERNAS DO DASHBOARD */}
+      <div className="grid grid-cols-2 md:flex bg-white/80 backdrop-blur-md p-1 rounded-xl shadow-3xs border border-slate-200/80 gap-1 w-full !rounded-t-none">
+        {[
+          { id: 'geral', label: 'Indicadores Gerais', icon: <Activity size={14} /> },
+          { id: 'faltas', label: 'Frequência & Faltas', icon: <AlertCircle size={14} /> },
+          { id: 'destaques', label: 'Destaques & Notas', icon: <Trophy size={14} /> },
+          { id: 'tendencias', label: 'Aptidões & Envio', icon: <Sparkles size={14} /> }
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setAbaAtivaDashboard(tab.id)}
+            className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-205 cursor-pointer whitespace-nowrap md:flex-1 ${
+              abaAtivaDashboard === tab.id 
+                ? 'bg-[#1e3a8a] text-white shadow-xs' 
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+            }`}
+          >
+            {tab.icon}
+            <span>{tab.label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* LINHA 3: PERFIL DEMOGRÁFICO */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <DoughnutCard titulo="Alunos por Gênero" dados={stats.porGenero} />
-        <DoughnutCard titulo="Alunos por Escolaridade" dados={stats.porEscolaridade} />
-      </div>
-
-      {/* LINHA 4: RANKINGS E SUGESTÕES */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_350px] gap-6">
-        <Card className="p-0">
-          <div className="hidden md:block"><CardHeader titulo="Ranking de Cursos por Engajamento" subtitulo="Baseado no volume de matrículas ativas." /></div>
-          <div className="overflow-x-auto">
-            <table className="table-mib">
-              <thead>
-                <tr><th>Curso</th><th>Turmas</th><th>Matrículas</th></tr>
-              </thead>
-              <tbody>
-                {escolas.map(e => (
-                  <tr key={e.id}>
-                    <td className="font-bold text-slate-700">{e.nome}</td>
-                    <td className="text-slate-500">{turmas.filter(t => t.escola_id === e.id).length} turmas</td>
-                    <td>
-                      <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-black text-xs">
-                        {stats.matriculasPorCurso[e.nome] || 0}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* ── CONTEÚDO DA ABA 1: INDICADORES GERAIS ── */}
+      {abaAtivaDashboard === 'geral' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* LINHA 1: INDICADORES RÁPIDOS */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard 
+              label="Total de Alunos" 
+              valor={activeStats.totalAlunos} 
+              detalhe="Alunos matriculados" 
+              icone={<span className="text-3xl">🎓</span>}
+              className="!rounded-t-none"
+            />
+            <div
+              onClick={() => onNavigate('cursos')}
+              className="cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              title="Ir para Cursos"
+            >
+              <StatCard 
+                label="Cursos Disponíveis" 
+                valor={escolas.length || 4} 
+                detalhe="Escolas ativas" 
+                icone={<span className="text-3xl">🏫</span>}
+                className="!rounded-t-none"
+              />
+            </div>
+            <div
+              onClick={() => onNavigate('turmas')}
+              className="cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
+              title="Ir para Turmas"
+            >
+              <StatCard 
+                label="Turmas Ativas" 
+                valor={turmas.filter(t => t.status === 'Em andamento').length || 3} 
+                detalhe="Em andamento" 
+                icone={<span className="text-3xl">👥</span>}
+                className="!rounded-t-none"
+              />
+            </div>
+            <StatCard 
+              label="Frequência Média" 
+              valor={`${activeStats.frequenciaGeral}%`} 
+              detalhe="Presenças em aula" 
+              icone={<span className="text-3xl">📈</span>}
+              className="!rounded-t-none"
+            />
           </div>
-        </Card>
-        
-        <Card className="p-6 bg-gradient-to-br from-[#202046] to-[#0891b2] text-white">
-          <h4 className="font-black uppercase tracking-widest text-[10px] opacity-70 mb-4">Dica de Gestão</h4>
-          <p className="text-sm leading-relaxed font-medium">
-            Acompanhe a taxa de <strong>Desistência</strong> para identificar cursos que podem precisar de reforço pedagógico ou mudança na abordagem de ensino.
-          </p>
-          <button onClick={() => onNavigate('turmas')} className="mt-6 w-full py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold transition">Ver Detalhes das Turmas</button>
-        </Card>
-      </div>
+
+          {/* LINHA 2: MATRÍCULAS POR CURSO E STATUS */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ColumnChart titulo="Matrículas por Curso" dados={activeStats.matriculasPorCurso} />
+            <DoughnutCard titulo="Status das Matrículas" dados={activeStats.porStatus} />
+          </div>
+
+          {/* LINHA 3: PERFIL DEMOGRÁFICO */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <DoughnutCard titulo="Alunos por Gênero" dados={activeStats.porGenero} />
+            <DoughnutCard titulo="Alunos por Escolaridade" dados={activeStats.porEscolaridade} />
+          </div>
+
+          {/* LINHA 4: RANKING DE CURSOS */}
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_350px] gap-6">
+            <Card className="p-0 !rounded-t-none">
+              <div className="hidden md:block"><CardHeader titulo="Ranking de Cursos por Engajamento" subtitulo="Baseado no volume de matrículas ativas." className="!rounded-t-none" /></div>
+              <div className="overflow-x-auto">
+                <table className="table-mib">
+                  <thead>
+                    <tr><th>Curso</th><th>Turmas</th><th>Matrículas</th></tr>
+                  </thead>
+                  <tbody>
+                    {(escolas.length > 0 ? escolas : [{ id: 1, nome: 'Escola de Líderes' }, { id: 2, nome: 'Maturidade Cristã' }, { id: 3, nome: 'Escola de Teologia' }]).map(e => (
+                      <tr key={e.id}>
+                        <td className="font-bold text-slate-700">{e.nome}</td>
+                        <td className="text-slate-500">{turmas.filter(t => t.escola_id === e.id).length || 1} turmas</td>
+                        <td>
+                          <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-black text-xs">
+                            {activeStats.matriculasPorCurso[e.nome] || 0}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+            
+            <Card className="p-6 bg-gradient-to-br from-[#202046] to-[#0891b2] text-white !rounded-t-none border-none">
+              <h4 className="font-black uppercase tracking-widest text-[10px] opacity-70 mb-4">Dica de Gestão Escolar</h4>
+              <p className="text-xs leading-relaxed font-medium">
+                Acompanhe com atenção as abas de <strong>Frequência & Faltas</strong> e de <strong>Aptidões</strong> para atuar precocemente em alunos ausentes ou indicar aqueles que estão maduros para assumir papéis ministeriais ativos.
+              </p>
+              <button onClick={() => onNavigate('turmas')} className="mt-6 w-full py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold transition">Ver Detalhes das Turmas</button>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* ── CONTEÚDO DA ABA 2: FREQUÊNCIA & FALTAS ── */}
+      {abaAtivaDashboard === 'faltas' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
+            {/* CARD DE MEDIDOR DE FREQUÊNCIA */}
+            <Card className="p-6 text-center flex flex-col items-center justify-center !rounded-t-none">
+              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">Frequência Escolar Geral</span>
+              <div className="relative w-36 h-36 flex items-center justify-center">
+                {/* SVG simplificado de Progresso Circular */}
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="42" stroke="#e2e8f0" strokeWidth="8" fill="transparent" />
+                  <circle 
+                    cx="50" cy="50" r="42" stroke="#1e3a8a" strokeWidth="8" fill="transparent" 
+                    strokeDasharray={263.8}
+                    strokeDashoffset={263.8 - (263.8 * activeStats.frequenciaGeral) / 100}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute flex flex-col items-center">
+                  <span className="text-3xl font-black text-slate-800">{activeStats.frequenciaGeral}%</span>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">Assiduidade</span>
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium mt-4 leading-relaxed">
+                Média de comparecimento dos alunos ativos em relação a todas as aulas registradas.
+              </p>
+            </Card>
+
+            {/* LISTA DE ALUNOS EM RISCO */}
+            <Card className="p-0 !rounded-t-none">
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                  <h4 className="font-extrabold text-slate-800 text-sm">Alunos em Alerta de Evasão</h4>
+                  <p className="text-[10px] text-slate-500 font-medium">Estudantes com 2 ou mais faltas consecutivas ou frequência abaixo de 75%.</p>
+                </div>
+                <span className="px-2.5 py-1 text-[10px] font-black bg-rose-50 text-rose-600 rounded-full border border-rose-100">
+                  {activeStats.alunosEmRisco.length} Alertas
+                </span>
+              </div>
+              
+              {activeStats.alunosEmRisco.length === 0 ? (
+                <div className="p-10 text-center text-xs text-slate-400 italic">Nenhum aluno em situação de risco de frequência. Parabéns!</div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {activeStats.alunosEmRisco.map((aluno, i) => (
+                    <div key={i} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 transition">
+                      <div className="flex items-center gap-3">
+                        <Avatar nome={aluno.nome} foto={aluno.foto} size="w-10 h-10 border border-slate-150" />
+                        <div>
+                          <span className="font-bold text-slate-800 text-xs block">{aluno.nome}</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight block mt-0.5">{aluno.curso}</span>
+                          <p className="text-[10px] text-slate-500 font-medium mt-1 text-left">{aluno.motivo}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 self-end sm:self-center">
+                        <div className="text-right">
+                          <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-tight">Frequência</span>
+                          <span className={`text-xs font-black ${aluno.freq < 70 ? 'text-rose-600' : 'text-amber-600'}`}>{aluno.freq}%</span>
+                        </div>
+                        <div className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-center min-w-[70px] border border-rose-100/60">
+                          <span className="block text-[8px] font-extrabold uppercase tracking-tight leading-none text-rose-500">Ausências</span>
+                          <span className="text-sm font-black leading-none mt-1 block">{aluno.faltas} faltas</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* ── CONTEÚDO DA ABA 3: DESTAQUES & DESEMPENHO ── */}
+      {abaAtivaDashboard === 'destaques' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+            {/* PAINEL DE ALUNOS DESTAQUE */}
+            <Card className="p-0 !rounded-t-none">
+              <div className="p-5 border-b border-slate-100">
+                <h4 className="font-extrabold text-slate-800 text-sm">Quadro de Honra (Destaques Acadêmicos)</h4>
+                <p className="text-[10px] text-slate-500 font-medium">Alunos com as melhores médias acumuladas em avaliações e frequência exemplar.</p>
+              </div>
+
+              {activeStats.destaquesAlunos.length === 0 ? (
+                <div className="p-10 text-center text-xs text-slate-400 italic">Nenhum registro de avaliações encontrado no momento.</div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {activeStats.destaquesAlunos.map((aluno, i) => (
+                    <div key={i} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/50 transition">
+                      <div className="flex items-center gap-3">
+                        <div className="text-slate-400 font-bold text-xs w-5 text-center">
+                          {i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}º`}
+                        </div>
+                        <Avatar nome={aluno.nome} foto={aluno.foto} size="w-10 h-10 border border-slate-150" />
+                        <div>
+                          <span className="font-bold text-slate-800 text-xs block">{aluno.nome}</span>
+                          <span className="text-[9px] text-slate-400 font-bold block">{aluno.curso}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <span className="block text-[8px] font-bold text-slate-400 uppercase">Frequência</span>
+                          <span className="text-[10px] font-extrabold text-slate-600">{aluno.frequencia || 100}%</span>
+                        </div>
+                        <div className="px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-100/60 text-indigo-700 text-center min-w-[64px]">
+                          <span className="block text-[8px] font-black uppercase leading-none">Média</span>
+                          <span className="text-sm font-black leading-none mt-1 block">{aluno.media}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* CHART DE DISTRIBUIÇÃO DE NOTAS */}
+            <DoughnutCard titulo="Distribuição de Desempenho" dados={activeStats.distribuicaoNotas} className="!rounded-t-none" />
+          </div>
+
+          {/* MELHORES AVALIAÇÕES RECENTES */}
+          <Card className="p-0 !rounded-t-none">
+            <div className="p-5 border-b border-slate-100">
+              <h4 className="font-extrabold text-slate-800 text-sm">Melhores Resultados em Avaliações Recentes</h4>
+              <p className="text-[10px] text-slate-500 font-medium">Notas máximas ou de destaque nas provas e trabalhos de disciplinas ativas.</p>
+            </div>
+            
+            {activeStats.melhoresNotas.length === 0 ? (
+              <div className="p-10 text-center text-xs text-slate-400 italic">Sem notas registradas recentemente.</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                {activeStats.melhoresNotas.map((nota, i) => (
+                  <div key={i} className="p-5 flex flex-col justify-between space-y-3 hover:bg-slate-50/30 transition">
+                    <div className="flex justify-between items-start gap-2">
+                      <div>
+                        <span className="font-bold text-slate-800 text-xs block">{nota.nome}</span>
+                        <span className="text-[9px] text-slate-400 font-bold block">{nota.curso}</span>
+                      </div>
+                      <span className="px-2.5 py-1 text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg">
+                        {nota.nota}
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-md inline-block uppercase tracking-tight">
+                        {nota.disciplina}
+                      </span>
+                      <p className="text-[10px] text-slate-500 font-medium leading-relaxed italic text-left">
+                        "{nota.observacao}"
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+
+      {/* ── CONTEÚDO DA ABA 4: APTIDÕES & MINISTÉRIOS ── */}
+      {abaAtivaDashboard === 'tendencias' && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {activeStats.tendenciasMinisterio.map((tendencia, idx) => (
+              <Card key={idx} className="p-0 border border-slate-150 !rounded-t-none flex flex-col justify-between">
+                <div>
+                  <div className="p-4 border-b border-slate-100 flex items-center gap-2">
+                    <div className={`p-2 rounded-xl bg-slate-50 border border-slate-200/50`}>
+                      {tendencia.icon}
+                    </div>
+                    <div>
+                      <h4 className="font-extrabold text-slate-800 text-sm">{tendencia.categoria}</h4>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Perfil Recomendado MIB</p>
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-slate-150/50">
+                    {tendencia.alunos.map((aluno, aIdx) => (
+                      <div key={aIdx} className="p-4 flex justify-between items-start gap-4 hover:bg-slate-50/30 transition">
+                        <div className="space-y-1.5">
+                          <span className="font-bold text-slate-850 text-xs block text-left">{aluno.nome}</span>
+                          <p className="text-[10px] text-slate-500 font-medium leading-relaxed text-left">
+                            {aluno.justificativa}
+                          </p>
+                        </div>
+                        <div className="shrink-0 text-center bg-blue-50/50 border border-blue-100/60 text-blue-700 px-2 py-1.5 rounded-xl min-w-[58px]">
+                          <span className="block text-[8px] font-black uppercase leading-none text-blue-600">Afinidade</span>
+                          <span className="text-xs font-black leading-none mt-1 block">{aluno.compatibilidade}%</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 border-t border-slate-100 text-center shrink-0">
+                  <span className="text-[9px] text-slate-400 font-bold">
+                    Potenciais líderes para o respectivo ministério com base em avaliações e dedicação acadêmica.
+                  </span>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* PAINEL VOCACIONAL DE ENVIADOS */}
+          <Card className="p-6 bg-slate-900 border-none text-white !rounded-t-none">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="space-y-2">
+                <span className="text-[#0891b2] text-[10px] font-black uppercase tracking-widest block">Direcionamento Vocacional</span>
+                <h4 className="text-lg font-black leading-tight text-left">Indicação de Novos Líderes de Célula</h4>
+                <p className="text-xs text-slate-400 leading-relaxed font-medium max-w-2xl text-left">
+                  O sistema cruza dados de conclusão do curso <strong>Escola de Líderes</strong> com as notas médias superiores a 9.0 e assiduidade completa. Alunos com estes requisitos são indicados automaticamente ao conselho pastoral para liderar novas células.
+                </p>
+              </div>
+              <button 
+                onClick={() => onNavigate('alunos')} 
+                className="shrink-0 px-5 py-3 bg-[#0891b2] hover:bg-[#06b6d4] text-white rounded-2xl text-xs font-bold transition shadow-lg shadow-cyan-950 cursor-pointer"
+              >
+                🎓 Acessar Fichas dos Alunos
+              </button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

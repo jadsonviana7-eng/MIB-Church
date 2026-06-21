@@ -54,7 +54,7 @@ export function Card({ children, className = '', style = {} }) {
   return (
     <section 
       className={`card border-b-2 border-[#60a5fa]/20 ${className}`.trim()} 
-      style={{ fontFamily: "'Roboto', sans-serif", ...style }}
+      style={{ fontFamily: "var(--font-body)", ...style }}
     >
       {children}
     </section>
@@ -65,13 +65,13 @@ export function CardHeader({ titulo, subtitulo, children, className = '' }) {
   return (
     <div
       className={`card-header flex flex-wrap items-center justify-between gap-3 border-b border-[#0095ff]/15 ${className}`.trim()}
-      style={{ fontFamily: "'Roboto', sans-serif" }}
+      style={{ fontFamily: "var(--font-body)" }}
     >
       <div>
         {titulo && (
           <h3 
             className="text-base font-bold text-[var(--text-heading)] tracking-tight" 
-            style={{ fontFamily: "'Roboto', sans-serif" }}
+            style={{ fontFamily: "var(--font-heading)" }}
           >
             {titulo}
           </h3>
@@ -79,7 +79,7 @@ export function CardHeader({ titulo, subtitulo, children, className = '' }) {
         {subtitulo && (
           <p 
             className="text-xs text-[var(--text-muted)] mt-0.5"
-            style={{ fontFamily: "'Roboto', sans-serif", fontWeight: 400 }}
+            style={{ fontFamily: "var(--font-body)", fontWeight: 400 }}
           >
             {subtitulo}
           </p>
@@ -417,34 +417,48 @@ export function CampoInput({ label, value, onChange, disabled, mask, type = 'tex
 }
 
 export function StatCard({ label, valor, detalhe, icone, className = "" }) {
-  const isVertical = className.includes('text-center');
   const iconOnTop = className.includes('flex-col');
 
   if (iconOnTop) {
     return (
-      <Card className={`p-4 flex flex-col justify-between gap-3 ${className}`.trim()}>
-        <div className="flex items-center gap-2 w-full">
+      <Card className={`p-4 flex flex-col justify-between gap-4 ${className}`.trim()}>
+        <div className="flex items-center gap-3 w-full">
           {icone && <div className="shrink-0">{icone}</div>}
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate flex-1 text-left">{label}</p>
+          <div className="flex flex-col min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate text-left leading-snug">{label}</p>
+            {detalhe && (
+              <span className="text-[11px] text-slate-500 font-semibold mt-0.5 text-left leading-none truncate">
+                {detalhe}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex items-baseline gap-1.5 flex-wrap w-full text-left">
-          <span className="text-xl sm:text-2xl font-black text-slate-800 leading-none">{valor}</span>
-          {detalhe && <span className="text-[10px] text-slate-500 font-semibold">{detalhe}</span>}
+        <div className="text-left w-full">
+          <span className="text-2xl sm:text-3xl font-black text-slate-800 leading-none block">
+            {valor}
+          </span>
         </div>
       </Card>
     );
   }
 
   return (
-    <Card className={`p-4 flex items-center gap-4 ${className}`.trim()}>
-      {icone && <div className="shrink-0">{icone}</div>}
-      <div className={`min-w-0 ${isVertical ? 'flex flex-col items-center' : 'flex-1'}`}>
-        {!isVertical && <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate">{label}</p>}
-        <div className={`mt-0.5 flex items-baseline gap-2 ${isVertical ? 'flex-col items-center gap-0' : ''}`}>
-          <span className="text-2xl font-bold text-slate-800">{valor}</span>
-          <span className="text-[11px] text-slate-500 whitespace-nowrap">{detalhe}</span>
+    <Card className={`p-4 flex items-center justify-between gap-4 ${className}`.trim()}>
+      <div className="flex items-center gap-3.5 min-w-0">
+        {icone && <div className="shrink-0">{icone}</div>}
+        <div className="min-w-0 flex flex-col">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate leading-snug">{label}</p>
+          {detalhe && (
+            <span className="text-[11px] text-slate-500 font-semibold mt-0.5 truncate leading-none">
+              {detalhe}
+            </span>
+          )}
         </div>
-        {isVertical && <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-1">{label}</p>}
+      </div>
+      <div className="shrink-0 text-right">
+        <span className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight leading-none">
+          {valor}
+        </span>
       </div>
     </Card>
   );

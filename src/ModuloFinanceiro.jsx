@@ -9,7 +9,7 @@ import RelatoriosFinanceiros from './RelatoriosFinanceiros';
 import HistoricoFinanceiro from './HistoricoFinanceiro';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, filtrosMobileAberto, setFiltrosMobileAberto }) {
+export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membroLogado, hasAccess, filtrosMobileAberto, setFiltrosMobileAberto }) {
   const [abaAtiva, setAbaAtiva] = useState(submenu || 'resumo');
   const [anoFiltro, setAnoFiltro] = useState(new Date().getFullYear().toString());
   const [mesFiltro, setMesFiltro] = useState(new Date().getMonth().toString());
@@ -305,6 +305,8 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, filtro
             categoriaFiltro={categoriaFiltro}
             setCategoriaFiltro={setCategoriaFiltro}
             usuarioLogado={usuarioLogado}
+            membroLogado={membroLogado}
+            hasAccess={hasAccess}
             filtrosMobileAberto={filtrosMobileAberto}
             setFiltrosMobileAberto={setFiltrosMobileAberto}
             onVoltar={() => setAbaAtiva('resumo')}
@@ -312,11 +314,11 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, filtro
         )}
 
         {abaAtiva === 'categorias' && (
-          <CategoriasFinanceiras usuarioLogado={usuarioLogado} onVoltar={() => setAbaAtiva('resumo')} />
+          <CategoriasFinanceiras usuarioLogado={usuarioLogado} membroLogado={membroLogado} hasAccess={hasAccess} onVoltar={() => setAbaAtiva('resumo')} />
         )}
 
         {abaAtiva === 'contas' && (
-          <ContasFinanceiras usuarioLogado={usuarioLogado} onVoltar={() => setAbaAtiva('resumo')} />
+          <ContasFinanceiras usuarioLogado={usuarioLogado} membroLogado={membroLogado} hasAccess={hasAccess} onVoltar={() => setAbaAtiva('resumo')} />
         )}
 
         {abaAtiva === 'relatorios' && <RelatoriosFinanceiros onVoltar={() => setAbaAtiva('resumo')} />}

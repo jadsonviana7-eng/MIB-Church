@@ -31,10 +31,11 @@ const MODULOS_SISTEMA = [
   { modulo: 'Visão Geral', blocos: ['Dashboard', 'Indicadores e gráficos'] },
   { modulo: 'Pessoas', blocos: ['Ver todos', 'Adicionar pessoa', 'Aniversariantes', 'Relatórios', 'Ficha do membro'] },
   { modulo: 'Células', blocos: ['Lista de células', 'Nova célula', 'Reuniões', 'Detalhes da célula', 'Membros da célula'] },
-  { modulo: 'Financeiro', blocos: ['Resumo', 'Transações', 'Receitas', 'Contribuições', 'Relatórios financeiros', 'Categorias', 'Contas/Caixas', 'Importar'] },
+  { modulo: 'Financeiro', blocos: ['Resumo', 'Transações', 'Receitas', 'Contribuições', 'Relatórios financeiros', 'Categorias', 'Contas/Caixas', 'Importar', 'Gestor financeiro'] },
   { modulo: 'Escolas', blocos: ['Visão Geral', 'Cursos', 'Turmas', 'Disciplinas', 'Professores', 'Alunos', 'Aulas', 'Avaliações', 'Inscrições Públicas'] },
   { modulo: 'Agenda', blocos: ['Calendário', 'Eventos'] },
   { modulo: 'Utilitários', blocos: ['Escalas Ministerial', 'Relatório Semanal', 'Calculadora de Tributos', 'Teste de Temperamento', 'Pedido de Oração', 'Mural de Orações'] },
+  { modulo: 'Gestão Ministerial', blocos: ['Dashboard', 'Equipes', 'Escalas', 'Histórico', 'Relatórios', 'Configurações'] },
   { modulo: 'Configurações', blocos: ['Listas auxiliares', 'Preferências do sistema'] },
 ];
 
@@ -142,7 +143,8 @@ function calcularPermissoesPorCargo(membro) {
     push('Pessoas', ['Ver todos', 'Adicionar pessoa', 'Aniversariantes', 'Relatórios', 'Ficha do membro']);
     push('Células', ['Lista de células', 'Nova célula', 'Reuniões', 'Detalhes da célula']);
     push('Configurações', ['Listas auxiliares', 'Preferências do sistema']);
-    push('Financeiro', ['Receitas', 'Contribuições', 'Relatórios financeiros']);
+    push('Financeiro', ['Receitas', 'Contribuições', 'Relatórios financeiros', 'Gestor financeiro']);
+    push('Gestão Ministerial', ['Dashboard', 'Equipes', 'Escalas', 'Histórico', 'Relatórios', 'Configurações']);
     return itens;
   }
 
@@ -150,9 +152,10 @@ function calcularPermissoesPorCargo(membro) {
     push('Visão Geral', ['Dashboard', 'Indicadores e gráficos']);
     push('Pessoas', ['Ver todos', 'Adicionar pessoa', 'Aniversariantes', 'Relatórios', 'Ficha do membro']);
     push('Células', ['Lista de células', 'Nova célula', 'Reuniões', 'Detalhes da célula', 'Membros da célula']);
-    push('Financeiro', ['Resumo', 'Transações', 'Receitas', 'Contribuições', 'Relatórios financeiros', 'Categorias', 'Contas/Caixas', 'Importar']);
+    push('Financeiro', ['Resumo', 'Transações', 'Receitas', 'Contribuições', 'Relatórios financeiros', 'Categorias', 'Contas/Caixas', 'Importar', 'Gestor financeiro']);
     push('Escolas', ['Visão Geral', 'Cursos', 'Turmas', 'Disciplinas', 'Professores', 'Alunos', 'Aulas', 'Avaliações', 'Inscrições Públicas']);
     push('Utilitários', ['Escalas Ministerial', 'Relatório Semanal', 'Calculadora de Tributos', 'Teste de Temperamento', 'Pedido de Oração', 'Mural de Orações']);
+    push('Gestão Ministerial', ['Dashboard', 'Equipes', 'Escalas', 'Histórico', 'Relatórios', 'Configurações']);
     return itens;
   }
 
@@ -185,7 +188,7 @@ function calcularPermissoesPorCargo(membro) {
   return itens;
 }
 
-function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], onDadosAtualizados, cargosLista = [], atuacoesLista = [], isStudentCadernetaView = false, membroLogado }) {
+function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], onDadosAtualizados, cargosLista = [], atuacoesLista = [], isStudentCadernetaView = false, membroLogado, hasAccess }) {
   const [pessoaId, setPessoaId] = useState(propPessoaId);
   const [historicoNavegacao, setHistoricoNavegacao] = useState([]);
 
@@ -383,6 +386,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
   const [perfilAtuante, setPerfilAtuante] = useState('');
   const [testePersonalidade, setTestePersonalidade] = useState(null);
   const [permissoesJson, setPermissoesJson] = useState({});
+  const [modulosExpandidos, setModulosExpandidos] = useState({});
 
   const isMembro = membroLogado?.permissao === 'membro';
   const [historicoPresenca, setHistoricoPresenca] = useState([]);
@@ -1181,7 +1185,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
           <div className="flex flex-wrap gap-2 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
             {!modoEdicao ? (
               <>
-                {['admin', 'pastor', 'secretaria'].includes(membroLogado?.permissao) && (
+                {hasAccess && hasAccess('Pessoas', 'Ficha do membro', 'editar') && (
                   <button 
                     type="button" 
                     onClick={() => setModoEdicao(true)} 
@@ -1194,7 +1198,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
                     <span className="hidden sm:block">Editar</span>
                   </button>
                 )}
-                {['admin', 'pastor'].includes(membroLogado?.permissao) && (
+                {hasAccess && hasAccess('Pessoas', 'Ficha do membro', 'excluir') && (
                   <>
                     <button 
                       type="button" 
@@ -2074,58 +2078,110 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
                   </h4>
                   <p className="text-xs text-slate-500 mb-6">Como administrador, você pode ligar/desligar módulos específicos para este membro, ignorando o perfil padrão.</p>
                   
-                  <div className="space-y-6">
-                    {MODULOS_SISTEMA.map((m) => (
-                      <div key={m.modulo} className="space-y-2">
-                        <h5 className="text-[10px] font-black text-slate-500 border-b border-slate-200 pb-1 uppercase tracking-widest">{m.modulo}</h5>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {m.blocos.map((bloco) => {
-                            const keyBase = `${m.modulo}|${bloco}`;
-                            const ativo = permissoesJson[keyBase] === true;
-                            return (
-                              <div key={bloco} className={`p-3 rounded-2xl border transition-all ${ativo ? 'bg-white border-emerald-200 shadow-sm' : 'bg-slate-50/50 border-slate-100'}`}>
-                                <div className="flex items-center justify-between">
-                                  <span className={`text-[11px] font-bold ${ativo ? 'text-emerald-900' : 'text-slate-400'}`}>{bloco}</span>
-                                  <button
-                                    type="button"
-                                    disabled={dis}
-                                    onClick={() => setPermissoesJson(prev => {
-                                      const novoEstado = !ativo;
-                                      const next = { ...prev, [keyBase]: novoEstado };
-                                      if (!novoEstado) {
-                                        // Limpa sub-permissões ao desativar o bloco
-                                        delete next[`${keyBase}|ver`];
-                                        delete next[`${keyBase}|editar`];
-                                        delete next[`${keyBase}|excluir`];
-                                      } else {
-                                        // Ativa 'ver' por padrão ao ligar o bloco
-                                        next[`${keyBase}|ver`] = true;
-                                      }
-                                      return next;
-                                    })}
-                                    className={`w-8 h-4 rounded-full relative transition-colors ${ativo ? 'bg-emerald-600' : 'bg-slate-300'}`}
-                                  >
-                                    <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${ativo ? 'right-0.5' : 'left-0.5'}`} />
-                                  </button>
-                                </div>
-                                
-                                {ativo && (
-                                  <div className="flex gap-1 pt-3 border-t border-slate-50 mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                                    {['ver', 'editar', 'excluir'].map(action => {
-                                      const subKey = `${keyBase}|${action}`;
-                                      const subAtivo = permissoesJson[subKey] === true;
-                                      return (
-                                        <button key={action} type="button" disabled={dis} onClick={() => setPermissoesJson(p => ({ ...p, [subKey]: !subAtivo }))} className={`flex-1 py-1 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all ${subAtivo ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-100'}`}>{action}</button>
-                                      );
-                                    })}
-                                  </div>
-                                )}
+                  <div className="space-y-3">
+                    {MODULOS_SISTEMA.map((m) => {
+                      const isOpen = !!modulosExpandidos[m.modulo];
+                      const blocosAtivosCount = m.blocos.filter(bloco => permissoesJson[`${m.modulo}|${bloco}`] === true).length;
+                      
+                      return (
+                        <div key={m.modulo} className="bg-white rounded-2xl border border-slate-200 overflow-hidden transition-all duration-200">
+                          {/* Cabeçalho do Acordeão */}
+                          <button
+                            type="button"
+                            onClick={() => setModulosExpandidos(prev => ({ ...prev, [m.modulo]: !isOpen }))}
+                            className="w-full flex items-center justify-between p-4 hover:bg-slate-50/80 transition-colors text-left focus:outline-none"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-extrabold text-slate-800 tracking-tight">{m.modulo}</span>
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${blocosAtivosCount > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+                                {blocosAtivosCount > 0 ? `🟢 ${blocosAtivosCount} ativo(s)` : '⚪ inativo'}
+                              </span>
+                            </div>
+                            <svg
+                              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                          </button>
+                          
+                          {/* Corpo do Acordeão */}
+                          {isOpen && (
+                            <div className="p-4 border-t border-slate-100 bg-slate-50/30 animate-in fade-in duration-200">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {m.blocos.map((bloco) => {
+                                  const keyBase = `${m.modulo}|${bloco}`;
+                                  const ativo = permissoesJson[keyBase] === true;
+                                  return (
+                                    <div key={bloco} className={`p-3 rounded-xl border transition-all duration-200 ${ativo ? 'bg-white border-emerald-200 shadow-xs' : 'bg-white border-slate-200'}`}>
+                                      <div className="flex items-center justify-between">
+                                        <span className={`text-[11px] font-bold ${ativo ? 'text-slate-800' : 'text-slate-400'}`}>{bloco}</span>
+                                        <button
+                                          type="button"
+                                          disabled={dis}
+                                          onClick={() => setPermissoesJson(prev => {
+                                            const novoEstado = !ativo;
+                                            const next = { ...prev, [keyBase]: novoEstado };
+                                            if (!novoEstado) {
+                                              // Limpa sub-permissões ao desativar o bloco
+                                              delete next[`${keyBase}|ver`];
+                                              delete next[`${keyBase}|editar`];
+                                              delete next[`${keyBase}|excluir`];
+                                            } else {
+                                              // Ativa 'ver' por padrão ao ligar o bloco
+                                              next[`${keyBase}|ver`] = true;
+                                            }
+                                            return next;
+                                          })}
+                                          className={`w-10 h-6 rounded-full relative transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${ativo ? 'bg-emerald-500' : 'bg-slate-200'}`}
+                                        >
+                                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-xs transition-all duration-200 ${ativo ? 'right-1' : 'left-1'}`} />
+                                        </button>
+                                      </div>
+                                      
+                                      {ativo && (
+                                        <div className="flex gap-1 pt-3 border-t border-slate-100 mt-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                                          {['ver', 'editar', 'excluir'].map(action => {
+                                            const subKey = `${keyBase}|${action}`;
+                                            const subAtivo = permissoesJson[subKey] === true;
+                                            
+                                            let activeClass = '';
+                                            let inactiveClass = 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600';
+                                            
+                                            if (action === 'ver') {
+                                              activeClass = 'bg-blue-500 border-blue-500 text-white shadow-xs shadow-blue-500/20';
+                                            } else if (action === 'editar') {
+                                              activeClass = 'bg-amber-500 border-amber-500 text-white shadow-xs shadow-amber-500/20';
+                                            } else if (action === 'excluir') {
+                                              activeClass = 'bg-rose-500 border-rose-500 text-white shadow-xs shadow-rose-500/20';
+                                            }
+                                            
+                                            return (
+                                              <button
+                                                key={action}
+                                                type="button"
+                                                disabled={dis}
+                                                onClick={() => setPermissoesJson(p => ({ ...p, [subKey]: !subAtivo }))}
+                                                className={`flex-1 py-1 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all duration-150 ${subAtivo ? activeClass : inactiveClass}`}
+                                              >
+                                                {action}
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
                               </div>
-                            );
-                          })}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}

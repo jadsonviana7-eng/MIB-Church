@@ -12,6 +12,8 @@ export default function TransacoesFinanceiras({
   contaFiltro, setContaFiltro,
   categoriaFiltro, setCategoriaFiltro,
   usuarioLogado,
+  membroLogado,
+  hasAccess,
   filtrosMobileAberto, setFiltrosMobileAberto,
   onVoltar,
 }) {
@@ -24,7 +26,7 @@ export default function TransacoesFinanceiras({
   const [transacoes, setTransacoes] = useState([]);
   const [carregando, setCarregando] = useState(true);
 
-  const podeEditar = ['admin', 'tesouraria', 'financeiro'].includes(usuarioLogado?.perfil?.id || '');
+  const podeEditar = hasAccess('Financeiro', 'Transações', 'editar');
 
   // Lógica para o seletor de período simplificado (Mobile)
   const labelPeriodoMobile = useMemo(() => {

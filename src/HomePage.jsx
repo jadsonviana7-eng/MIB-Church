@@ -6,7 +6,7 @@ import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona } from './
 import PainelAprovacoes from './PainelAprovacoes';
 import { 
   Users, Home, Flame, Calendar, DollarSign, Award, Sparkles,
-  ChevronRight, Smile, MapPin, TrendingUp, BookOpen, AlertCircle,
+  ChevronRight, ChevronLeft, Smile, MapPin, TrendingUp, BookOpen, AlertCircle,
   Coins, Zap, Plus, ShieldAlert, TrendingDown, Activity
 } from 'lucide-react';
 import { 
@@ -45,21 +45,34 @@ export default function HomePage({
   const [dadosIgreja, setDadosIgreja] = useState(null);
   const [modalAvisoAberto, setModalAvisoAberto] = useState(false);
   const [avisoSelecionado, setAvisoSelecionado] = useState(null);
-  const scrollRef = useRef(null);
+  const [avisoAtivoIdx, setAvisoAtivoIdx] = useState(0);
 
   // Estados para dados financeiros (carregados sob demanda com tratamento de erro/RLS)
   const [financeLoading, setFinanceLoading] = useState(false);
   const [financeData, setFinanceData] = useState(null);
   const [hasFinanceAccess, setHasFinanceAccess] = useState(true);
 
-  // Rolagem manual do carrossel de avisos
-  const scroll = (direction) => {
-    if (scrollRef.current) {
-      const { scrollLeft, clientWidth } = scrollRef.current;
-      const scrollTo = direction === 'left' ? scrollLeft - clientWidth : scrollLeft + clientWidth;
-      scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
-    }
-  };
+  // Handlers para navegação do mural de avisos
+  const avisoAnterior = useCallback((e) => {
+    e.stopPropagation();
+    setAvisoAtivoIdx((prev) => (prev === 0 ? avisos.length - 1 : prev - 1));
+  }, [avisos.length]);
+
+  const proximoAviso = useCallback((e) => {
+    e.stopPropagation();
+    setAvisoAtivoIdx((prev) => (prev + 1) % avisos.length);
+  }, [avisos.length]);
+
+  // Rotação automática dinâmica do mural de avisos (a cada 6 segundos)
+  useEffect(() => {
+    if (avisos.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setAvisoAtivoIdx((prev) => (prev + 1) % avisos.length);
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [avisos.length]);
 
   // Carrega avisos ativos
   useEffect(() => {
@@ -303,7 +316,7 @@ export default function HomePage({
     <div className="space-y-5 pb-6">
       
       {/* 1. CABEÇALHO MOBILE PREMIUM */}
-      <div className="flex items-center justify-between p-4 bg-linear-to-r from-[#202046] to-[#2a2a6b] text-white rounded-2xl shadow-md gap-4">
+      <div className="flex items-center justify-between p-4 bg-linear-to-r from-[#202046] to-[#2a2a6b] text-white rounded-b-2xl rounded-t-none shadow-md gap-4">
         <div className="flex items-center gap-3 min-w-0">
           {membroLogado?.foto_url ? (
             <img 
@@ -328,31 +341,18 @@ export default function HomePage({
         </div>
       </div>
 
-      {/* 2. NOME DA IGREJA EM CIMA E LOGO ABAIXO MAIOR */}
-      <div className="flex flex-col items-center justify-center py-2 text-center">
-        <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
-          {dadosIgreja?.nome || 'MIB Church'}
-        </span>
-        <img 
-          src={dadosIgreja?.logo_url || '/logo-betesda.png'} 
-          alt="Logo" 
-          className="h-16 sm:h-20 object-contain mt-2.5 drop-shadow-xs" 
-          onError={(e) => { e.target.style.display = 'none'; }}
-        />
-      </div>
-
-      {/* 3. MENU DE ABAS MOBILE (TABS NAVIGATION - GRID SEGMENTADO FIXO) */}
+      {/* 2. MENU DE ABAS MOBILE (TABS NAVIGATION - GRID SEGMENTADO FIXO) */}
       <div className="grid grid-cols-4 bg-white/80 backdrop-blur-md p-1 rounded-xl shadow-xs border border-slate-200/80 gap-1 w-full">
         {[
-          { id: 'visao_geral', label: 'Geral', icon: <Users size={16} /> },
-          { id: 'celulas', label: 'Células', icon: <Home size={16} /> },
-          { id: 'demografia', label: 'Crescimento', icon: <Activity size={16} /> },
-          { id: 'financas', label: 'Finanças', icon: <Coins size={16} /> }
+          { id: 'visao_geral', label: 'Geral', icon: <Users size={14} /> },
+          { id: 'celulas', label: 'Células', icon: <Home size={14} /> },
+          { id: 'demografia', label: 'Crescimento', icon: <Activity size={14} /> },
+          { id: 'financas', label: 'Finanças', icon: <Coins size={14} /> }
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setAbaAtiva(tab.id)}
-            className={`flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-lg text-[9px] font-extrabold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+            className={`flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-lg !text-[10px] font-bold uppercase tracking-tight transition-all duration-200 cursor-pointer ${
               abaAtiva === tab.id 
                 ? 'bg-[#1e3a8a] text-white shadow-xs' 
                 : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
@@ -389,28 +389,8 @@ export default function HomePage({
               </div>
             </div>
 
-            {/* MURAL DE AVISOS (Dynamic Carousel) */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between px-1">
-                <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-500">Mural de Avisos</h3>
-                {avisos.length > 1 && (
-                  <div className="flex gap-1">
-                    <button 
-                      onClick={() => scroll('left')}
-                      className="w-5.5 h-5.5 bg-white border border-slate-150 rounded-md flex items-center justify-center text-slate-400 active:bg-slate-50 shadow-3xs cursor-pointer"
-                    >
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path d="M15 19l-7-7 7-7" /></svg>
-                    </button>
-                    <button 
-                      onClick={() => scroll('right')}
-                      className="w-5.5 h-5.5 bg-white border border-slate-150 rounded-md flex items-center justify-center text-slate-400 active:bg-slate-50 shadow-3xs cursor-pointer"
-                    >
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path d="M9 5l7 7-7 7" /></svg>
-                    </button>
-                  </div>
-                )}
-              </div>
-
+            {/* MURAL DE AVISOS (Single active card with overlay arrows) */}
+            <div className="w-full">
               {carregandoAvisos ? (
                 <div className="h-28 bg-white rounded-xl border border-slate-100 animate-pulse flex items-center justify-center text-[10px] text-slate-400">
                   Carregando comunicados...
@@ -420,37 +400,74 @@ export default function HomePage({
                   Nenhum aviso ativo para exibição.
                 </div>
               ) : (
-                <div 
-                  ref={scrollRef}
-                  className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide gap-3.5 pb-1"
-                >
-                  {avisos.map(av => (
-                    <div 
-                      key={av.id} 
-                      onClick={() => handleActionAviso(av)}
-                      className="snap-start shrink-0 w-full bg-white border border-slate-100 rounded-xl shadow-3xs overflow-hidden flex flex-col justify-between active:scale-[0.98] transition-all cursor-pointer"
-                    >
-                      {av.imagem_url && (
-                        <div className="w-full h-24 overflow-hidden bg-slate-50 shrink-0">
-                          <img src={av.imagem_url} className="w-full h-full object-cover" alt="" />
-                        </div>
-                      )}
-                      <div className="p-3.5 flex flex-col justify-between flex-1 min-h-[80px]">
-                        <div>
-                          <h4 className="font-extrabold text-slate-800 text-[11px] leading-snug line-clamp-1">{av.titulo}</h4>
-                          <p className="text-[9px] text-slate-500 font-medium mt-0.5 line-clamp-2 leading-relaxed">{av.subtitulo}</p>
-                        </div>
-                        <div className="mt-2.5 pt-1.5 border-t border-slate-50 flex items-center justify-between text-[7px] font-black uppercase text-slate-400 tracking-wider">
+                <div className="relative w-full">
+                  {/* Card do aviso ativo */}
+                  {(() => {
+                    const av = avisos[avisoAtivoIdx] || avisos[0];
+                    if (!av) return null;
+                    return (
+                      <div 
+                        key={av.id}
+                        onClick={() => handleActionAviso(av)}
+                        className="w-full bg-white border border-slate-100 rounded-xl shadow-3xs overflow-hidden active:scale-[0.99] transition-all cursor-pointer relative animate-in fade-in duration-300"
+                      >
+                        {av.imagem_url && (
+                          <div className="w-full h-52 sm:h-60 overflow-hidden bg-slate-50 shrink-0 relative">
+                            <img src={av.imagem_url} className="w-full h-full object-cover animate-in zoom-in-95 duration-500" alt="" />
+                          </div>
+                        )}
+                        <div className="p-3.5 flex items-center justify-between text-[8px] font-black uppercase text-slate-450 tracking-wider">
                           <span>{new Date(av.created_at).toLocaleDateString('pt-BR')}</span>
                           {(av.link_externo || av.conteudo_html) && (
-                            <span className="text-blue-600 font-bold">
+                            <span className="text-blue-650 font-bold">
                               {av.link_externo ? 'Link' : 'Ler mais'}
                             </span>
                           )}
                         </div>
                       </div>
+                    );
+                  })()}
+
+                  {/* Setas de navegação (apenas se houver mais de um aviso) */}
+                  {avisos.length > 1 && (
+                    <>
+                      <button
+                        onClick={avisoAnterior}
+                        className="absolute left-2.5 top-[104px] sm:top-[120px] -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white backdrop-blur-xs text-slate-800 shadow-md border border-slate-200/50 flex items-center justify-center active:scale-90 transition-all cursor-pointer z-10"
+                        aria-label="Aviso anterior"
+                      >
+                        <ChevronLeft size={16} strokeWidth={2.5} />
+                      </button>
+                      <button
+                        onClick={proximoAviso}
+                        className="absolute right-2.5 top-[104px] sm:top-[120px] -translate-y-1/2 w-8 h-8 rounded-full bg-white/80 hover:bg-white backdrop-blur-xs text-slate-800 shadow-md border border-slate-200/50 flex items-center justify-center active:scale-90 transition-all cursor-pointer z-10"
+                        aria-label="Próximo aviso"
+                      >
+                        <ChevronRight size={16} strokeWidth={2.5} />
+                      </button>
+                    </>
+                  )}
+
+                  {/* Indicadores / Dots centralizados na imagem */}
+                  {avisos.length > 1 && (
+                    <div className="absolute bottom-[48px] left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10 bg-black/10 px-2 py-1 rounded-full backdrop-blur-xs">
+                      {avisos.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setAvisoAtivoIdx(idx);
+                          }}
+                          className={`w-1.5 h-1.5 rounded-full transition-all duration-200 cursor-pointer ${
+                            idx === avisoAtivoIdx 
+                              ? 'bg-white w-3' 
+                              : 'bg-white/50'
+                          }`}
+                          aria-label={`Ir para aviso ${idx + 1}`}
+                        />
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
             </div>

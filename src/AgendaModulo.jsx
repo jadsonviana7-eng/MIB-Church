@@ -547,7 +547,7 @@ const findInJsonGlobal = (obj, query) => {
 };
 
 /* ─── Main Export ─────────────────────────────────────────────────────────── */
-export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoas = [] }) {
+export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAccess, pessoas = [] }) {
   const [eventos, setEventos] = useState([]);
   const [dataAtual, setDataAtual] = useState(new Date());
   const [carregando, setCarregando] = useState(false);
@@ -558,7 +558,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, pessoa
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [membroParaVerId, setMembroParaVerId] = useState(null);
 
-  const podeEditar = ['admin', 'pastor', 'secretaria'].includes(membroLogado?.permissao);
+  const podeEditar = hasAccess('Agenda', 'Eventos', 'editar');
 
   const carregarEventos = async () => {
     setCarregando(true);

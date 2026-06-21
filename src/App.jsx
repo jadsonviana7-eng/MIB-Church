@@ -42,6 +42,8 @@ export default function App() {
 
   const [filtrosCelula, setFiltrosCelula] = useState(filtrosCelulaIniciais);
   const [celulaSelecionadaId, setCelulaSelecionadaId] = useState(null);
+  const [turmaSelecionadaId, setTurmaSelecionadaId] = useState(null);
+  const [filtroCursoTurmas, setFiltroCursoTurmas] = useState('');
   const escolaridadesDisponiveis = ['Ensino Fundamental', 'Ensino Médio', 'Ensino Superior', 'Pós-graduação', 'Mestrado/Doutorado'];
 
   const [usuarioLogado, setUsuarioLogado] = useState(() => {
@@ -384,21 +386,34 @@ export default function App() {
   /**
    * Verifica se o membro logado tem acesso a um módulo ou bloco específico.
    */
-  const hasAccess = useCallback((modulo, bloco = null) => {
+  const hasAccess = useCallback((modulo, bloco = null, acao = null) => {
     if (!membroLogado) return false;
     if (membroLogado.permissao === 'admin') return true;
 
-    // 1. Prioridade: Permissões Manuais (JSON do banco)
     const json = membroLogado.permissoes_json || {};
-    if (bloco) {
-      const key = `${modulo}|${bloco}`;
-      if (json[key] === true || json[`${key}|ver`] === true) return true;
-    } else {
-      const hasAnyBlock = Object.keys(json).some(k => k.startsWith(`${modulo}|`) && json[k] === true);
-      if (hasAnyBlock) return true;
+    const temManual = Object.keys(json).length > 0;
+
+    // Se possui permissão manual configurada para o membro, ela é EXCLUSIVA (ignora regras de cargo padrão)
+    if (temManual) {
+      // Gestor financeiro tem acesso total ao Financeiro
+      if (modulo === 'Financeiro' && (json['Financeiro|Gestor financeiro'] === true || json['Financeiro|Gestor financeiro|ver'] === true)) {
+        return true;
+      }
+
+      if (bloco) {
+        if (acao) {
+          const key = `${modulo}|${bloco}|${acao}`;
+          return json[key] === true;
+        } else {
+          const key = `${modulo}|${bloco}`;
+          return json[key] === true || json[`${key}|ver`] === true;
+        }
+      } else {
+        return Object.keys(json).some(k => k.startsWith(`${modulo}|`) && json[k] === true);
+      }
     }
 
-    // 2. Permissões Padrão por Perfil
+    // Se NÃO possui permissão manual, segue as regras padrões de cargo/perfil (Aditivo/Fallback)
     const p = membroLogado.permissao?.toLowerCase() || '';
 
     if (p === 'membro') {
@@ -488,7 +503,10 @@ export default function App() {
       if (filtros.faixaEtaria && faixaDaIdade(p.data_nascimento) !== filtros.faixaEtaria) return false;
       if (filtros.zona && String(p.zona_id) !== String(filtros.zona)) return false;
       if (filtros.cargo && p.cargo !== filtros.cargo) return false;
-      if (filtros.atuacao && p.atuacao !== filtros.atuacao) return false;
+      if (filtros.atuacao) {
+        const roles = p.atuacao ? p.atuacao.split(',').map(s => s.trim().toLowerCase()) : [];
+        if (!roles.includes(filtros.atuacao.toLowerCase())) return false;
+      }
       return true;
     });
   }, [pessoas, filtros]);
@@ -657,6 +675,8 @@ export default function App() {
     setCelulaSelecionadaId(null);
     setReuniaoSelecionadaId(null);
     setOrigemVerReuniao(null);
+    setTurmaSelecionadaId(null);
+    setFiltroCursoTurmas('');
     
     if (submenu !== 'ficha-aluno') {
       setAlunoSelecionadoParaCadernetaId(null);
@@ -716,7 +736,8 @@ export default function App() {
 
   const mostrarBotaoVoltarMobile = 
     (moduloAtual === 'pessoas' && !!(filtros.cargo || filtros.zona || filtros.atuacao || filtros.relatorioCampo)) ||
-    (moduloAtual === 'celulas' && !!celulaSelecionadaId);
+    (moduloAtual === 'celulas' && !!celulaSelecionadaId) ||
+    (moduloAtual === 'escolas' && (escolasSubmenu !== 'resumo' || !!turmaSelecionadaId || !!filtroCursoTurmas || !!alunoSelecionadoParaCadernetaId));
 
   const handleVoltarMobile = () => {
     if (moduloAtual === 'pessoas') {
@@ -738,6 +759,18 @@ export default function App() {
         handleSetReuniaoSelecionadaId(null);
       } else {
         setCelulaSelecionadaId(null);
+      }
+    } else if (moduloAtual === 'escolas') {
+      if (escolasSubmenu === 'ficha-aluno') {
+        setAlunoSelecionadoParaCadernetaId(null);
+        navegar('escolas', 'turmas');
+      } else if (turmaSelecionadaId) {
+        setTurmaSelecionadaId(null);
+      } else if (filtroCursoTurmas) {
+        setFiltroCursoTurmas('');
+        navegar('escolas', 'cursos');
+      } else {
+        navegar('escolas', 'resumo');
       }
     }
   };
@@ -817,7 +850,7 @@ export default function App() {
             ativo={moduloAtual === 'pessoas'}
           >
             {submenusPessoas.map(([id, label]) => (
-              <DropdownItem key={id} ativo={moduloAtual === 'pessoas' && pessoasSubmenu === id} onClick={() => navegar('pessoas', id)} icon={MenuIcons[submenuIconKey.pessoas[id]]}>
+              <DropdownItem key={id} ativo={moduloAtual === 'pessoas' && pessoasSubmenu === id} onClick={() => { if (id === 'todos') setFiltros(filtrosIniciais); navegar('pessoas', id); }} icon={MenuIcons[submenuIconKey.pessoas[id]]}>
                 {label}
               </DropdownItem>
             ))}
@@ -951,6 +984,34 @@ export default function App() {
             )}
           </button>
 
+          {/* Botão de Filtros exclusivo para o módulo Pessoas em mobile */}
+          {moduloAtual === 'pessoas' && !membroSelecionadoId && (
+            <button
+              type="button"
+              onClick={() => setFiltrosPessoasAberto(true)}
+              className="p-1.5 active:scale-95 transition-transform text-white cursor-pointer"
+              aria-label="Abrir filtros"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+              </svg>
+            </button>
+          )}
+
+          {/* Botão de Filtros exclusivo para Transações Financeiras em mobile */}
+          {moduloAtual === 'financeiro' && financeiroSubmenu === 'transacoes' && (
+            <button
+              type="button"
+              onClick={() => setFiltrosFinanceiroAberto(true)}
+              className="p-1.5 active:scale-95 transition-transform text-white cursor-pointer"
+              aria-label="Abrir filtros"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
+              </svg>
+            </button>
+          )}
+
           {/* Avatar clicável no mobile */}
           <button 
             onClick={() => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(membroLogado?.id); }}
@@ -959,33 +1020,6 @@ export default function App() {
           >
             <UserAvatarImg usuarioLogado={usuarioLogado} membroLogado={membroLogado} tamanho="w-8 h-8" />
           </button>
-
-        {/* Botão de Filtros exclusivo para o módulo Pessoas em mobile */}
-        {moduloAtual === 'pessoas' && !membroSelecionadoId && (
-          <button
-            type="button"
-            onClick={() => setFiltrosPessoasAberto(true)}
-            className="p-2 -mr-1 active:opacity-50 transition-opacity"
-            aria-label="Abrir filtros"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
-            </svg>
-          </button>
-        )}
-        {/* Botão de Filtros exclusivo para Transações Financeiras em mobile */}
-        {moduloAtual === 'financeiro' && financeiroSubmenu === 'transacoes' && (
-          <button
-            type="button"
-            onClick={() => setFiltrosFinanceiroAberto(true)}
-            className="p-2 -mr-1 active:opacity-50 transition-opacity"
-            aria-label="Abrir filtros"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z" />
-            </svg>
-          </button>
-        )}
         </div>
       </div>
       {/* Original mobile menu toggle button removed */}
@@ -1032,7 +1066,7 @@ export default function App() {
           <div>
             <MenuButton 
               ativo={moduloAtual === 'pessoas'} 
-              onClick={() => navegar('pessoas', 'todos')} 
+              onClick={() => { setFiltros(filtrosIniciais); navegar('pessoas', 'todos'); }} 
               icon={MenuIcons.pessoas}
               hasSubmenu={submenusPessoas.length > 0}
               expanded={mobileDropdownAberto === 'pessoas'}
@@ -1043,7 +1077,7 @@ export default function App() {
             {mobileDropdownAberto === 'pessoas' && (
               <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                 {submenusPessoas.map(([id, label]) => (
-                  <button key={id} type="button" onClick={() => navegar('pessoas', id)}
+                  <button key={id} type="button" onClick={() => { if (id === 'todos') setFiltros(filtrosIniciais); navegar('pessoas', id); }}
                     className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'pessoas' && pessoasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
                     {MenuIcons[submenuIconKey.pessoas[id]]} {label}
                   </button>
@@ -1332,6 +1366,7 @@ export default function App() {
             onNavigate={(sub) => navegar('pessoas', sub)}
             abrirPessoasFiltradas={abrirPessoasFiltradas}
             membroLogado={membroLogado}
+            hasAccess={hasAccess}
             filtrosMobileAberto={filtrosPessoasAberto}
             setFiltrosMobileAberto={setFiltrosPessoasAberto}
           />
@@ -1355,6 +1390,7 @@ export default function App() {
             obterDados={obterDados} // Passa a função para recarregar dados
             onNavigate={(sub) => navegar('celulas', sub)}
             membroLogado={membroLogado}
+            hasAccess={hasAccess}
             onMarcarReuniaoComoVista={marcarReuniaoComoVista}
           />
         )}
@@ -1364,6 +1400,8 @@ export default function App() {
             meses={meses} 
             submenu={financeiroSubmenu} 
             usuarioLogado={usuarioLogado} 
+            membroLogado={membroLogado}
+            hasAccess={hasAccess}
             filtrosMobileAberto={filtrosFinanceiroAberto}
             setFiltrosMobileAberto={setFiltrosFinanceiroAberto}
           />
@@ -1375,6 +1413,7 @@ export default function App() {
             onNavigate={(sub) => navegar('gestao', sub)}
             membroLogado={membroLogado}
             usuarioLogado={usuarioLogado}
+            hasAccess={hasAccess}
             pessoas={pessoas}
           />
         )}
@@ -1387,6 +1426,11 @@ export default function App() {
             alunoSelecionadoParaCadernetaId={alunoSelecionadoParaCadernetaId} // Passa o ID do aluno
             setAlunoSelecionadoParaCadernetaId={setAlunoSelecionadoParaCadernetaId} // Passa o setter
             membroLogado={membroLogado}
+            hasAccess={hasAccess}
+            turmaSelecionadaId={turmaSelecionadaId}
+            setTurmaSelecionadaId={setTurmaSelecionadaId}
+            filtroCursoTurmas={filtroCursoTurmas}
+            setFiltroCursoTurmas={setFiltroCursoTurmas}
           />
         )}
 
@@ -1407,6 +1451,7 @@ export default function App() {
             onDadosAtualizados={obterDados}
             isStudentCadernetaView={true} // Indica que é a visão de caderneta do aluno
             membroLogado={membroLogado}
+            hasAccess={hasAccess}
           />
           </div>
         )}
@@ -1416,6 +1461,7 @@ export default function App() {
             submenu={agendaSubmenu}
             onNavigate={(sub) => navegar('agenda', sub)}
             membroLogado={membroLogado}
+            hasAccess={hasAccess}
             pessoas={pessoas}
           />
         )}
@@ -1426,6 +1472,7 @@ export default function App() {
             onNavigate={(sub) => navegar('utilitarios', sub)}
             usuarioLogado={usuarioLogado}
             membroLogado={membroLogado}
+            hasAccess={hasAccess}
             temVinculoEscala={temVinculoEscala}
           />
         )}

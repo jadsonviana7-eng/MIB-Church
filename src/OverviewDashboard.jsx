@@ -247,7 +247,7 @@ export default function OverviewDashboard({
     <div className="space-y-6">
       
       {/* 1. CABEÇALHO DE BOAS-VINDAS PREMIUM */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-[#202046] via-[#2a2a6b] to-[#3b3b8c] p-6 sm:p-8 text-white shadow-xl animate-in fade-in duration-500">
+      <div className="relative overflow-hidden rounded-b-3xl rounded-t-none bg-linear-to-r from-[#202046] via-[#2a2a6b] to-[#3b3b8c] p-6 sm:p-8 text-white shadow-xl animate-in fade-in duration-500">
         <div className="absolute right-0 top-0 -mr-16 -mt-16 h-48 w-48 rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
         <div className="absolute left-1/3 bottom-0 -ml-16 -mb-16 h-40 w-40 rounded-full bg-blue-500/10 blur-2xl pointer-events-none"></div>
         

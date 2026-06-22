@@ -283,3 +283,79 @@ function measureWrapLines(ctx, text, maxWidth) {
   }
   return lines;
 }
+
+/**
+ * Gera o cartão em PDF e tenta compartilhar usando o Web Share API.
+ * Retorna true se compartilhado com sucesso, false caso contrário.
+ */
+export async function compartilharCartaoPDF(dados, nomeArquivo) {
+  const canvas = await desenharCartaoDigital(dados);
+  const imgData = canvas.toDataURL('image/png');
+
+  const pdfWidth = 90; // mm
+  const pdfHeight = (CARD_HEIGHT / CARD_WIDTH) * pdfWidth;
+
+  const doc = new jsPDF({ unit: 'mm', format: [pdfWidth, pdfHeight] });
+  doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+  
+  const blob = doc.output('blob');
+  const file = new File([blob], nomeArquivo || 'cartao.pdf', { type: 'application/pdf' });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: 'Cartão Digital de Pagamento',
+        text: 'Segue em anexo o cartão digital de pagamento.',
+      });
+      return true;
+    } catch (err) {
+      console.warn('Erro ao compartilhar via Web Share:', err);
+      // AbortError indica que o usuário cancelou o menu de compartilhamento
+      if (err.name === 'AbortError') {
+        return true; // Considera resolvido pois o usuário interagiu com o menu nativo
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * Gera múltiplos cartões consolidando em um PDF e tenta compartilhar usando o Web Share API.
+ * Retorna true se compartilhado com sucesso, false caso contrário.
+ */
+export async function compartilharCartoesPDF(listaDados, nomeArquivo) {
+  if (!listaDados.length) return false;
+
+  const pdfWidth = 90; // mm
+  const pdfHeight = (CARD_HEIGHT / CARD_WIDTH) * pdfWidth;
+  const doc = new jsPDF({ unit: 'mm', format: [pdfWidth, pdfHeight] });
+
+  for (let i = 0; i < listaDados.length; i++) {
+    const canvas = await desenharCartaoDigital(listaDados[i]);
+    const imgData = canvas.toDataURL('image/png');
+    if (i > 0) doc.addPage([pdfWidth, pdfHeight]);
+    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+  }
+
+  const blob = doc.output('blob');
+  const file = new File([blob], nomeArquivo || 'cartoes.pdf', { type: 'application/pdf' });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: 'Cartões Digitais de Pagamento',
+        text: 'Segue em anexo os cartões digitais de pagamento.',
+      });
+      return true;
+    } catch (err) {
+      console.warn('Erro ao compartilhar via Web Share:', err);
+      if (err.name === 'AbortError') {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+

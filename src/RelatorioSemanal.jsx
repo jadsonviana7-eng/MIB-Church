@@ -225,10 +225,12 @@ export default function RelatorioSemanal({ usuarioLogado }) {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <PageHeader titulo="Relatório Semanal" breadcrumb={['Utilitários', 'Relatório Semanal']} />
+    <div className="max-w-4xl mx-auto pt-0 px-0 pb-12 sm:px-6 space-y-6 mx-[-3px] sm:mx-auto">
+      <div className="mx-[3px] sm:mx-0">
+        <PageHeader titulo="Relatório Semanal" breadcrumb={['Utilitários', 'Relatório Semanal']} />
+      </div>
       
-      <Card className="p-0 overflow-hidden border-none shadow-2xl">
+      <Card className="p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
         {/* Cabeçalho Visual (Adaptado do seu HTML) */}
         <div className="p-6 bg-gradient-to-br from-[#2d1457] to-[#5a2d9c] text-white flex items-center gap-4">
           <div className="w-16 h-16 bg-white/10 rounded-xl flex items-center justify-center border border-white/20">
@@ -250,56 +252,68 @@ export default function RelatorioSemanal({ usuarioLogado }) {
           </div>
         </div>
 
-        {/* Formulário Interativo */}
-        <div className="p-8 bg-[#f5eeff] space-y-6">
-          <InputPill 
-            label="Oferta de Socorro (Povo)" 
-            value={valores.socorroPovo} 
-            onChange={(v) => handleInputChange('socorroPovo', v)} 
-          />
-          <InputPill 
-            label="Oferta de Socorro" 
-            value={valores.socorro} 
-            onChange={(v) => handleInputChange('socorro', v)} 
-          />
-          <InputPill 
-            label="Oferta de Gratidão" 
-            value={valores.gratidao} 
-            onChange={(v) => handleInputChange('gratidao', v)} 
-          />
-          <InputPill 
-            label="Semeadura" 
-            value={valores.semeadura} 
-            onChange={(v) => handleInputChange('semeadura', v)} 
-          />
-          <InputPill 
-            label="Oferta de Israel" 
-            value={valores.israel} 
-            onChange={(v) => handleInputChange('israel', v)} 
-          />
+        {/* Formulário Interativo em Grid Responsivo */}
+        <div className="p-6 sm:p-8 bg-[#f5eeff]">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            {/* Bloco de Inputs (Esquerda no desktop, vertical no mobile) */}
+            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <InputPill 
+                label="Oferta de Socorro (Povo)" 
+                value={valores.socorroPovo} 
+                onChange={(v) => handleInputChange('socorroPovo', v)} 
+              />
+              <InputPill 
+                label="Oferta de Socorro" 
+                value={valores.socorro} 
+                onChange={(v) => handleInputChange('socorro', v)} 
+              />
+              <InputPill 
+                label="Oferta de Gratidão" 
+                value={valores.gratidao} 
+                onChange={(v) => handleInputChange('gratidao', v)} 
+              />
+              <InputPill 
+                label="Semeadura" 
+                value={valores.semeadura} 
+                onChange={(v) => handleInputChange('semeadura', v)} 
+              />
+              <div className="sm:col-span-2 max-w-xs mx-auto w-full">
+                <InputPill 
+                  label="Oferta de Israel" 
+                  value={valores.israel} 
+                  onChange={(v) => handleInputChange('israel', v)} 
+                />
+              </div>
+            </div>
 
-          <div className="pt-6 border-t border-purple-200 text-center">
-            <p className="text-xs font-bold text-purple-400 uppercase tracking-widest">Total da Semana</p>
-            <p className="text-4xl font-black text-[#2d1457] mt-1">{formatBRL(total)}</p>
-          </div>
+            {/* Bloco de Ações e Resumo (Direita no desktop, inferior no mobile) */}
+            <div className="lg:col-span-5 flex flex-col justify-between bg-white/40 border border-purple-200/50 rounded-[28px] p-6 shadow-xs">
+              <div className="text-center py-4 flex-1 flex flex-col justify-center">
+                <p className="text-xs font-bold text-purple-400 uppercase tracking-widest">Total da Semana</p>
+                <p className="text-4xl font-black text-[#2d1457] mt-2 tracking-tight">{formatBRL(total)}</p>
+              </div>
 
-          <button
-            onClick={handleExportarPNG}
-            disabled={carregando}
-            className="w-full py-4 rounded-full bg-gradient-to-r from-[#2d1457] to-[#5a2d9c] text-white font-bold uppercase tracking-widest text-sm shadow-xl hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 mb-3"
-          >
-            {carregando ? 'Gerando Imagem...' : '📲 Exportar para WhatsApp'}
-          </button>
+              <div className="space-y-4 pt-4 border-t border-purple-200/40">
+                <button
+                  onClick={handleExportarPNG}
+                  disabled={carregando}
+                  className="w-full py-4 rounded-full bg-gradient-to-r from-[#2d1457] to-[#5a2d9c] text-white font-bold uppercase tracking-widest text-xs shadow-md hover:scale-[1.01] active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {carregando ? 'Gerando Imagem...' : '📲 Exportar para WhatsApp'}
+                </button>
 
-          <div className="flex items-center justify-between pt-2 px-1">
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Visualizar Layout</span>
-            <button 
-              type="button"
-              onClick={() => setMostrarPreview(!mostrarPreview)} 
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${mostrarPreview ? 'bg-[#2d1457]' : 'bg-slate-200'}`}
-            >
-              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${mostrarPreview ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
+                <div className="flex items-center justify-between pt-2 px-1">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Visualizar Layout</span>
+                  <button 
+                    type="button"
+                    onClick={() => setMostrarPreview(!mostrarPreview)} 
+                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${mostrarPreview ? 'bg-[#2d1457]' : 'bg-slate-200'}`}
+                  >
+                    <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${mostrarPreview ? 'translate-x-5' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </Card>

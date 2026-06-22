@@ -8,6 +8,26 @@ import ModalEditarCelula from './ModalEditarCelula';
 import ModalExcluirCelula from './ModalExcluirCelula';
 import ModalLancarReuniao from './ModalLancarReuniao';
 import FormularioCelula from './FormularioCelula';
+import { 
+  CalendarDays, 
+  Users, 
+  UserCheck, 
+  UserMinus, 
+  Compass, 
+  Layers, 
+  PlusCircle, 
+  Activity, 
+  Award, 
+  MapPin, 
+  Clock, 
+  FileSpreadsheet, 
+  Printer, 
+  Sparkles, 
+  TrendingUp, 
+  ChevronLeft, 
+  ChevronRight,
+  TrendingDown
+} from 'lucide-react';
 
 export default function CelulasModulo({
   submenu,
@@ -487,37 +507,37 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
       id: 'frequencias',
       label: '1. Frequências',
       itens: [
-        { id: 'reunioes', label: 'Relatório de reuniões' },
-        { id: 'part_x_vis', label: 'Participantes x Visitantes' },
-        { id: 'presentes', label: 'Pessoas Presentes' },
-        { id: 'ausentes', label: 'Pessoas Ausentes' },
-        { id: 'sem_celula', label: 'Pessoas sem células' }
+        { id: 'reunioes', label: 'Relatório de reuniões', icon: CalendarDays },
+        { id: 'part_x_vis', label: 'Participantes x Visitantes', icon: Users },
+        { id: 'presentes', label: 'Pessoas Presentes', icon: UserCheck },
+        { id: 'ausentes', label: 'Pessoas Ausentes', icon: UserMinus },
+        { id: 'sem_celula', label: 'Pessoas sem células', icon: Compass }
       ]
     },
     {
       id: 'desenvolvimento',
       label: '2. Desenvolvimento',
       itens: [
-        { id: 'cat_celulas', label: 'Categoria de células' },
-        { id: 'novas_celulas', label: 'Novas células' },
-        { id: 'ativas_inativas', label: 'Células Ativas/Inativas' }
+        { id: 'cat_celulas', label: 'Categoria de células', icon: Layers },
+        { id: 'novas_celulas', label: 'Novas células', icon: PlusCircle },
+        { id: 'ativas_inativas', label: 'Células Ativas/Inativas', icon: Activity }
       ]
     },
     {
       id: 'lideranca',
       label: '3. Liderança',
       itens: [
-        { id: 'lideres', label: 'Relatório de Líderes' },
-        { id: 'colideres', label: 'Relatório de Co-líderes' },
-        { id: 'auxiliares', label: 'Relatório de Auxiliares' }
+        { id: 'lideres', label: 'Relatório de Líderes', icon: Award },
+        { id: 'colideres', label: 'Relatório de Co-líderes', icon: Award },
+        { id: 'auxiliares', label: 'Relatório de Auxiliares', icon: Award }
       ]
     },
     {
       id: 'outros',
       label: '4. Outros',
       itens: [
-        { id: 'zona', label: 'Relatórios de Zona' },
-        { id: 'dias_horarios', label: 'Dias e Horários' }
+        { id: 'zona', label: 'Relatórios de Zona', icon: MapPin },
+        { id: 'dias_horarios', label: 'Dias e Horários', icon: Clock }
       ]
     }
   ];
@@ -580,6 +600,8 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
           .map(p => {
             const totalReunioesCelula = relatoriosFiltrados.filter(r => r.celula_id === p.celula_id).length;
             return {
+              type: 'pessoa',
+              pessoa: p,
               col1: p.nome,
               col2: celulas.find(c => c.id === p.celula_id)?.nome || 'Sem Célula',
               col3: `${stats[p.id]} de ${totalReunioesCelula} reuniões`,
@@ -598,6 +620,8 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
           .map(p => {
             const totalReunioesCelula = relatoriosFiltrados.filter(r => r.celula_id === p.celula_id).length;
             return {
+              type: 'pessoa',
+              pessoa: p,
               col1: p.nome,
               col2: celulas.find(c => c.id === p.celula_id)?.nome || 'Sem Célula',
               col3: `0 de ${totalReunioesCelula} reuniões`,
@@ -609,6 +633,8 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
 
       case 'sem_celula':
         return pessoas.filter(p => !p.celula_id && p.status !== 'inativo').map(p => ({
+          type: 'pessoa',
+          pessoa: p,
           col1: p.nome,
           col2: p.telefone || 'Sem contato',
           col3: p.tipo_membro || 'Visitante',
@@ -643,11 +669,20 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
 
       // --- LIDERANÇA ---
       case 'lideres':
-        return celulas.map(c => ({ col1: nomePessoa(pessoas, c.lider_id), col2: 'Líder', col3: c.nome, col4: 'Ativo' }));
+        return celulas.map(c => {
+          const l = pessoas.find(p => p.id === c.lider_id);
+          return { type: 'pessoa', pessoa: l, col1: nomePessoa(pessoas, c.lider_id), col2: 'Líder', col3: c.nome, col4: 'Ativo' };
+        });
       case 'colideres':
-        return celulas.filter(c => c.co_lider_id).map(c => ({ col1: nomePessoa(pessoas, c.co_lider_id), col2: 'Co-líder', col3: c.nome, col4: 'Treinamento' }));
+        return celulas.filter(c => c.co_lider_id).map(c => {
+          const cl = pessoas.find(p => p.id === c.co_lider_id);
+          return { type: 'pessoa', pessoa: cl, col1: nomePessoa(pessoas, c.co_lider_id), col2: 'Co-líder', col3: c.nome, col4: 'Treinamento' };
+        });
       case 'auxiliares':
-        return celulas.filter(c => c.auxiliar_id).map(c => ({ col1: nomePessoa(pessoas, c.auxiliar_id), col2: 'Auxiliar', col3: c.nome, col4: 'Apoio' }));
+        return celulas.filter(c => c.auxiliar_id).map(c => {
+          const aux = pessoas.find(p => p.id === c.auxiliar_id);
+          return { type: 'pessoa', pessoa: aux, col1: nomePessoa(pessoas, c.auxiliar_id), col2: 'Auxiliar', col3: c.nome, col4: 'Apoio' };
+        });
 
       // --- OUTROS ---
       case 'zona':
@@ -676,8 +711,6 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
     const total = Object.values(dados).reduce((a, b) => a + b, 0);
     if (total === 0) return <p className="text-xs text-slate-400 italic text-center py-4">Nenhuma categoria definida.</p>;
 
-    // Arco de meia rosca: de 180° a 0° (sentido horário, parte superior)
-    // cx=160, cy=150, r_ext=130, r_int=80
     const cx = 160, cy = 150, rExt = 130, rInt = 80;
     const strokeW = rExt - rInt; // 50
 
@@ -706,7 +739,7 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
             const anguloFim = ((acumulado + valor) / total) * 180;
             acumulado += valor;
 
-            const r = (rExt + rInt) / 2; // raio médio
+            const r = (rExt + rInt) / 2;
             const p1 = polarToXY(anguloInicio, r);
             const p2 = polarToXY(anguloFim, r);
             const largeArc = (anguloFim - anguloInicio) > 180 ? 1 : 0;
@@ -808,12 +841,16 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
         {/* Calendário */}
         <div className="p-4 w-72">
           <div className="flex items-center justify-between mb-4">
-            <button type="button" onClick={() => setViewDate(new Date(ano, mes - 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400">‹</button>
-            <span className="text-sm font-bold text-slate-700">{viewDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</span>
-            <button type="button" onClick={() => setViewDate(new Date(ano, mes + 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400">›</button>
+            <button type="button" onClick={() => setViewDate(new Date(ano, mes - 1, 1))} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 flex items-center justify-center transition-colors">
+              <ChevronLeft size={16} />
+            </button>
+            <span className="text-sm font-bold text-slate-700 capitalize">{viewDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</span>
+            <button type="button" onClick={() => setViewDate(new Date(ano, mes + 1, 1))} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 flex items-center justify-center transition-colors">
+              <ChevronRight size={16} />
+            </button>
           </div>
           <div className="grid grid-cols-7 gap-1 mb-2">
-            {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map(d => <div key={d} className="text-[10px] font-bold text-slate-300 text-center">{d}</div>)}
+            {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((d, index) => <div key={index} className="text-[10px] font-bold text-slate-300 text-center">{d}</div>)}
           </div>
           <div className="grid grid-cols-7 gap-1">
             {dias.map((dia, i) => {
@@ -827,7 +864,7 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
                     if (!dataInicio || (dataInicio && dataFim)) { setDataInicio(dStr); setDataFim(''); }
                     else { dStr < dataInicio ? (setDataFim(dataInicio), setDataInicio(dStr)) : setDataFim(dStr); setCalendarioAberto(false); }
                   }}
-                  className={`h-8 w-8 text-xs rounded-lg transition-colors ${ativo ? 'bg-[#055F6D] text-white font-bold' : noRange ? 'bg-emerald-50 text-[#055F6D]' : 'hover:bg-slate-50 text-slate-600'}`}
+                  className={`h-8 w-8 text-xs rounded-lg transition-colors flex items-center justify-center ${ativo ? 'bg-[#055F6D] text-white font-bold' : noRange ? 'bg-emerald-50 text-[#055F6D]' : 'hover:bg-slate-50 text-slate-600'}`}
                 >
                   {dia.getDate()}
                 </button>
@@ -840,13 +877,19 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
   };
 
   return (
-    <div className="space-y-6">
-
+    <div className="max-w-6xl pt-0 px-0 pb-12 sm:px-6 space-y-6 mx-[-3px] sm:mx-auto">
+      <div className="mx-[3px] sm:mx-0">
+        <PageHeader 
+          titulo="Relatórios de Células" 
+          breadcrumb={['Células', 'Relatórios']} 
+          onNavigate={onNavigate} 
+        />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 items-start">
         {/* PAINEL LATERAL DE FILTROS */}
         <aside className="space-y-4 lg:sticky lg:top-24">
-          <Card className="p-0 overflow-hidden shadow-sm">
+          <Card className="p-0 overflow-hidden shadow-sm rounded-3xl border border-slate-100">
             <CardHeader titulo="Menu de Relatórios" />
             {/* Select para mobile */}
             <div className="p-4 md:hidden">
@@ -855,15 +898,14 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
                 onChange={(e) => {
                   const newTipo = e.target.value;
                   setTipoAtivo(newTipo);
-                  // Encontra o primeiro item do novo tipo para definir como subTipoAtivo
                   const categoria = categoriasRelatorios.find(cat => cat.id === newTipo);
                   if (categoria && categoria.itens.length > 0) {
                     setSubTipoAtivo(categoria.itens[0].id);
                   } else {
-                    setSubTipoAtivo(''); // Limpa se não houver itens
+                    setSubTipoAtivo('');
                   }
                 }}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-white outline-none font-bold text-slate-600"
               >
                 {categoriasRelatorios.map((cat) => (
                   <option key={cat.id} value={cat.id}>{cat.label}</option>
@@ -874,7 +916,7 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
                 <select
                   value={subTipoAtivo}
                   onChange={(e) => setSubTipoAtivo(e.target.value)}
-                  className="w-full px-3 py-2 mt-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                  className="w-full px-3 py-2.5 mt-2 border border-slate-200 rounded-xl text-xs bg-white outline-none font-bold text-slate-700"
                 >
                   {categoriasRelatorios.find(cat => cat.id === tipoAtivo)?.itens.map(item => (
                     <option key={item.id} value={item.id}>{item.label}</option>
@@ -886,35 +928,44 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
             <div className="p-4 space-y-4 hidden md:block">
               {categoriasRelatorios.map(cat => (
                 <div key={cat.id} className="space-y-1">
-                  <div className={`px-3 py-2 text-[18px] font-black uppercase ${tipoAtivo === cat.id ? 'text-[#055F6D]' : 'text-slate-400'}`}>
+                  <div className={`px-3 py-1.5 text-[11px] font-black uppercase tracking-wider ${tipoAtivo === cat.id ? 'text-[#055F6D]' : 'text-slate-400'}`}>
                     {cat.label}
                   </div>
-                  {cat.itens.map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => { setTipoAtivo(cat.id); setSubTipoAtivo(item.id); }}
-                      className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${subTipoAtivo === item.id ? 'bg-[#055F6D] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'}`}
-                    >
-                      {item.label}
-                      <span className={`transition-transform group-hover:translate-x-1 ${subTipoAtivo === item.id ? 'opacity-100' : 'opacity-0'}`}>→</span>
-                    </button>
-                  ))}
+                  {cat.itens.map(item => {
+                    const IconComponent = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => { setTipoAtivo(cat.id); setSubTipoAtivo(item.id); }}
+                        className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between group ${subTipoAtivo === item.id ? 'bg-[#055F6D] text-white shadow-md' : 'text-slate-600 hover:bg-slate-50'}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <IconComponent className={`w-4 h-4 ${subTipoAtivo === item.id ? 'text-white' : 'text-slate-400 group-hover:text-slate-700'}`} strokeWidth={1.8} />
+                          <span>{item.label}</span>
+                        </div>
+                        <span className={`transition-transform group-hover:translate-x-1 ${subTipoAtivo === item.id ? 'opacity-100' : 'opacity-0'}`}>→</span>
+                      </button>
+                    );
+                  })}
                   <div className="h-2" />
                 </div>
               ))}
             </div>
           </Card>
 
-          <Card className="p-5 bg-gradient-to-br from-[#055F6D] to-[#044a56] text-blue">
-            <h4 className="text-xs font-black uppercase tracking-widest opacity-80 mb-2">Resumo Rápido</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between items-baseline">
-                <span className="text-[10px] font-bold opacity-70 uppercase">Células Totais</span>
-                <span className="text-xl font-black">{celulas.length}</span>
+          <Card className="p-5 bg-gradient-to-br from-[#055F6D] via-[#044a56] to-[#033b45] text-white border-0 shadow-lg shadow-[#055f6d]/10 relative overflow-hidden rounded-3xl">
+            <div className="absolute top-0 right-0 p-3 opacity-10">
+              <TrendingUp size={60} />
+            </div>
+            <h4 className="text-xs font-black uppercase tracking-widest text-cyan-200 mb-3 relative z-10">Resumo Rápido</h4>
+            <div className="space-y-3 relative z-10">
+              <div className="flex justify-between items-baseline border-b border-white/10 pb-2">
+                <span className="text-[10px] font-extrabold text-cyan-100 uppercase tracking-wider">Células Totais</span>
+                <span className="text-2xl font-black text-white">{celulas.length}</span>
               </div>
-              <div className="flex justify-between items-baseline">
-                <span className="text-[10px] font-bold opacity-70 uppercase">Sem Célula</span>
-                <span className="text-xl font-black text-amber-300">{pessoas.filter(p => !p.celula_id && p.status !== 'inativo').length}</span>
+              <div className="flex justify-between items-baseline pt-1">
+                <span className="text-[10px] font-extrabold text-cyan-100 uppercase tracking-wider">Membros Sem Célula</span>
+                <span className="text-2xl font-black text-amber-300">{pessoas.filter(p => !p.celula_id && p.status !== 'inativo').length}</span>
               </div>
             </div>
           </Card>
@@ -922,12 +973,12 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
 
         {/* ÁREA DE RESULTADOS */}
         <main className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 rounded-2xl border border-slate-100 shadow-sm gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white p-4 rounded-3xl border border-slate-100 shadow-sm gap-4">
             <div>
               <h3 className="font-black text-slate-800 uppercase tracking-tight text-sm">
                 {categoriasRelatorios.find(c => c.id === tipoAtivo)?.itens.find(i => i.id === subTipoAtivo)?.label}
               </h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Resultados processados em tempo real</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Resultados processados in tempo real</p>
             </div>
 
             {subTipoAtivo !== 'cat_celulas' && (
@@ -936,7 +987,7 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
                   onClick={() => setCalendarioAberto(!calendarioAberto)}
                   className="flex items-center gap-3 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer transition-all hover:border-[#055F6D] group"
                 >
-                  <span className="text-slate-400 group-hover:text-[#055F6D] transition-colors">📅</span>
+                  <CalendarDays className="w-4 h-4 text-slate-400 group-hover:text-[#055F6D] transition-colors shrink-0" strokeWidth={1.8} />
                   <div className="flex items-center gap-2 text-xs font-black text-slate-700">
                     <span>{formatarExibicao(dataInicio)}</span>
                     <span className="text-slate-300">→</span>
@@ -948,10 +999,8 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
             )}
 
             <div className="flex gap-2">
-              <button onClick={() => window.print()} className="p-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition" title="Imprimir Relatório">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
+              <button onClick={() => window.print()} className="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 transition cursor-pointer" title="Imprimir Relatório">
+                <Printer className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -971,13 +1020,13 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
               return (
                 <div className="space-y-4">
                   {/* Gráfico meia rosca */}
-                  <Card className="p-6">
+                  <Card className="p-6 rounded-3xl border border-slate-100 shadow-sm">
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 text-center">Distribuição por Categoria</p>
                     <MeiaRosca dados={dadosRosca} categoriaHover={categoriaHover} setCategoriaHover={setCategoriaHover} />
                   </Card>
 
                   {/* Multipage por categoria */}
-                  <Card className="p-0 overflow-hidden">
+                  <Card className="p-0 overflow-hidden rounded-3xl border border-slate-100 shadow-sm">
                     {/* Abas */}
                     <div className="flex overflow-x-auto border-b border-slate-100 bg-slate-50/60 px-2 pt-2 gap-1 scrollbar-hide">
                       {todasCats.map((cat, i) => {
@@ -988,7 +1037,7 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
                             key={cat}
                             type="button"
                             onClick={() => setAbaCategoriaAtiva(cat)}
-                            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-t-xl text-[11px] font-bold whitespace-nowrap transition-all shrink-0 border-b-2 ${isAtivo ? 'bg-white border-b-2 text-slate-900 shadow-sm' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-white/60'}`}
+                            className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-t-xl text-[11px] font-bold whitespace-nowrap transition-all shrink-0 border-b-2 cursor-pointer ${isAtivo ? 'bg-white border-b-2 text-slate-900 shadow-sm' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-white/60'}`}
                             style={{ borderBottomColor: isAtivo ? cor : 'transparent' }}
                           >
                             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cor }} />
@@ -1006,7 +1055,7 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
                     <div className="overflow-x-auto">
                       <table className="table-mib">
                         <thead>
-                          <tr className="bg-slate-50">
+                          <tr className="bg-slate-50/80">
                             <th>Célula</th>
                             <th>Líder</th>
                             <th>Dia / Horário</th>
@@ -1021,10 +1070,20 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
                           ) : (
                             celulasDaAba.map(c => {
                               const membros = pessoas.filter(p => String(p.celula_id || '') === String(c.id) && p.status !== 'inativo');
+                              const lider = pessoas.find(p => p.id === c.lider_id);
                               return (
                                 <tr key={c.id}>
                                   <td className="font-bold text-slate-800">{c.nome}</td>
-                                  <td className="text-slate-500 text-xs">{nomePessoa(pessoas, c.lider_id)}</td>
+                                  <td className="text-slate-500 text-xs py-2">
+                                    {lider ? (
+                                      <div className="flex items-center gap-2">
+                                        <Avatar pessoa={lider} tamanho="w-6 h-6" />
+                                        <span className="font-medium text-slate-700">{lider.nome}</span>
+                                      </div>
+                                    ) : (
+                                      nomePessoa(pessoas, c.lider_id)
+                                    )}
+                                  </td>
                                   <td className="text-slate-500 text-xs">{c.dia_semana || '—'} {c.horario ? `· ${c.horario}` : ''}</td>
                                   <td className="text-right pr-6">
                                     <span className="text-xs font-black text-[#2563eb]">{membros.length}</span>
@@ -1047,11 +1106,11 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
               );
             })()
           ) : (
-            <Card className="p-0 overflow-hidden">
+            <Card className="p-0 overflow-hidden rounded-3xl border border-slate-100 shadow-sm">
               <div className="overflow-x-auto">
                 <table className="table-mib">
                   <thead>
-                    <tr className="bg-slate-50">
+                    <tr className="bg-slate-50/80">
                       {colunas.map((col, i) => <th key={i} className={i === 0 ? '' : i === 3 ? 'text-right pr-6' : ''}>{col}</th>)}
                     </tr>
                   </thead>
@@ -1067,13 +1126,31 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
                     ) : (
                       dadosRelatorio.map((row, idx) => (
                         <tr key={idx}>
-                          <td className="font-bold text-slate-700">{row.col1}</td>
-                          <td className="text-slate-500 text-xs font-medium">{row.col2}</td>
-                          <td className="text-slate-500 text-xs font-medium">{row.col3}</td>
+                          <td className="font-bold text-slate-700">
+                            {row.type === 'pessoa' && row.pessoa ? (
+                              <div className="flex items-center gap-3 py-1.5">
+                                <Avatar pessoa={row.pessoa} tamanho="w-8 h-8" />
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-slate-800 text-xs sm:text-sm leading-tight block">{row.col1}</span>
+                                  {row.pessoa.email && (
+                                    <span className="text-[10px] text-slate-400 font-bold block sm:hidden mt-0.5 truncate max-w-[150px]">{row.pessoa.email}</span>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              row.col1
+                            )}
+                          </td>
+                          <td className="text-slate-500 text-xs font-bold uppercase">{row.col2}</td>
+                          <td className="text-slate-500 text-xs font-semibold">{row.col3}</td>
                           <td className="text-right pr-6">
-                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${row.col4.includes('⚠️') || row.col4.includes('Inativa') ? 'bg-rose-50 text-rose-600' :
-                              row.col4.includes('✓') || row.col4.includes('Membro') ? 'bg-emerald-50 text-emerald-600' : 'text-slate-400'
-                              }`}>
+                            <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full tracking-wider ${
+                              row.col4.includes('⚠️') || row.col4.includes('Inativa') || row.col4.includes('Ausente')
+                                ? 'bg-rose-50 border border-rose-200 text-rose-600' 
+                                : row.col4.includes('✓') || row.col4.includes('Membro') || row.col4.includes('Ativo') || row.col4.includes('OK')
+                                ? 'bg-emerald-50 border border-emerald-200 text-emerald-600' 
+                                : 'bg-slate-50 border border-slate-200 text-slate-500'
+                            }`}>
                               {row.col4}
                             </span>
                           </td>
@@ -1088,8 +1165,8 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
 
           {/* DICAS DE ANÁLISE (CONTEXTUAL) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex gap-3">
-              <span className="text-xl">💡</span>
+            <div className="p-4 bg-blue-50 border border-blue-100 rounded-3xl flex gap-3 shadow-sm">
+              <Sparkles className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" strokeWidth={1.8} />
               <div>
                 <h5 className="text-xs font-bold text-blue-900 uppercase tracking-tight">Dica de Gestão</h5>
                 <p className="text-[11px] text-blue-700 mt-1 leading-relaxed">
@@ -1099,8 +1176,8 @@ function RelatoriosCelulas({ celulas, pessoas, relatoriosCelula, zonas, onNaviga
                 </p>
               </div>
             </div>
-            <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex gap-3">
-              <span className="text-xl">📊</span>
+            <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-3xl flex gap-3 shadow-sm">
+              <FileSpreadsheet className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" strokeWidth={1.8} />
               <div>
                 <h5 className="text-xs font-bold text-emerald-900 uppercase tracking-tight">Exportação</h5>
                 <p className="text-[11px] text-emerald-700 mt-1 leading-relaxed">

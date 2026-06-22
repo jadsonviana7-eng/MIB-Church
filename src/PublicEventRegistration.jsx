@@ -114,7 +114,7 @@ export default function PublicEventRegistration() {
   }
 
   if (carregando) return <div className="p-20 text-center text-slate-400 font-bold animate-pulse">Carregando detalhes do evento...</div>;
-  if (!evento) return <div className="p-20 text-center text-slate-400 font-bold italic">Evento não encontrado ou link expirado.</div>;
+  if (!evento || evento.publicado === false) return <div className="p-20 text-center text-slate-400 font-bold italic">Este evento não está disponível no momento ou foi despublicado.</div>;
 
   if (sucesso) {
     return (

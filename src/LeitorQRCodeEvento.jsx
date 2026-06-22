@@ -4,6 +4,12 @@ import { jsPDF } from 'jspdf';
 import { baixarCartaoPNG, baixarCartaoPDF } from './cartaoDigital';
 import { supabase } from './supabaseClient';
 import { Card, PageHeader } from './ui';
+import './LeitorQRCode.css';
+import { 
+  Camera, QrCode, CheckCircle, AlertCircle, 
+  RefreshCw, Loader2, Download, Share2, 
+  User, Calendar, DollarSign, Tag, Info, Clock
+} from 'lucide-react';
 
 export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizada }) {
   const [status, setStatus] = useState({ loading: false, msg: '', type: '' });
@@ -56,7 +62,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
     } catch (err) {
       console.error('Erro ao iniciar câmera:', err);
       setErroCamera(
-        'Não foi possível acessar a câmera. Verifique se o site está em HTTPS e se a permissão de câmera foi concedida ao navegador.'
+        'Não foi possível acessar a câmera. Verifique se o site está rodando em HTTPS e se a permissão de câmera foi concedida no navegador.'
       );
       setCameraAtiva(false);
     }
@@ -92,7 +98,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
         .eq('id', inscricaoId)
         .single();
 
-      if (errorFetch || !inscricao) throw new Error('Inscrição não encontrada.');
+      if (errorFetch || !inscricao) throw new Error('Inscrição do evento não encontrada.');
 
       const dados = inscricao.dados_inscricao || {};
       const parcelasPagas = dados.parcelas_pagas || [];
@@ -133,7 +139,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
 
       setStatus({
         loading: false,
-        msg: `✅ Baixa realizada! Parcela ${parcelaNum} de "${inscricao.agenda_eventos.titulo}" confirmada para ${dados.nome || 'Participante'}.`,
+        msg: `Baixa realizada com sucesso! Parcela ${parcelaNum} de "${inscricao.agenda_eventos.titulo}" confirmada para ${dados.nome || 'Participante'}.`,
         type: 'success',
       });
 
@@ -157,7 +163,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
       if (onBaixaRealizada) onBaixaRealizada();
     } catch (err) {
       setRecibo(null);
-      setStatus({ loading: false, msg: 'Erro: ' + err.message, type: 'error' });
+      setStatus({ loading: false, msg: 'Erro ao dar baixa: ' + err.message, type: 'error' });
     }
   }
 
@@ -376,9 +382,8 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
         return;
       }
     } catch (err) {
-      // Se o usuário cancelar o compartilhamento, não faz nada
       if (err?.name === 'AbortError') return;
-      console.warn('Compartilhamento não suportado, baixando arquivo:', err);
+      console.warn('Compartilhamento nativo não suportado, baixando arquivo:', err);
     }
     // Fallback: download direto
     baixarBlob(blob, nomeArquivo);
@@ -429,110 +434,244 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
   }
 
   return (
-    <div className="space-y-6 max-w-xl mx-auto p-4">
-      <PageHeader titulo="Baixa de Evento (QR)" onNavigate={onVoltar} />
+    <div className="max-w-xl mx-auto pt-0 px-0 pb-12 sm:px-6 space-y-6 mx-[-3px] sm:mx-auto">
+      <div className="mx-[3px] sm:mx-0">
+        <PageHeader titulo="Baixa de Evento (QR)" onNavigate={onVoltar} />
+      </div>
 
-      <Card className="p-0 overflow-hidden shadow-2xl border-none">
-        <div className="p-6 space-y-4">
-          <div className="relative">
-            <div id="reader-evento" className="overflow-hidden rounded-2xl border-2 border-slate-100 bg-slate-50 min-h-[280px]"></div>
+      <Card className="p-0 overflow-hidden shadow-xl border border-slate-100 rounded-[28px] bg-white">
+        <div className="p-6 space-y-6">
+          {/* Scanner Viewport Container */}
+          <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-inner">
+            <div 
+              id="reader-evento" 
+              className={`overflow-hidden rounded-2xl bg-slate-950 min-h-[300px] flex items-center justify-center transition-all ${
+                cameraAtiva ? 'scanner-viewport-active' : ''
+              }`}
+            >
+              {!cameraAtiva && !status.msg && (
+                <div className="flex flex-col items-center text-center p-8 space-y-4">
+                  <div className="w-16 h-16 bg-slate-800/50 text-slate-400 rounded-2xl flex items-center justify-center border border-slate-700/50">
+                    <QrCode size={32} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-300 uppercase tracking-wider">Câmera Desativada</h3>
+                    <p className="text-xs text-slate-500 mt-1 max-w-[240px] leading-relaxed">
+                      Ative o leitor para escanear o QR Code de baixa impresso no cartão digital.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={iniciarCamera}
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-500/10 cursor-pointer flex items-center gap-2"
+                  >
+                    <Camera size={14} />
+                    Ativar Câmera
+                  </button>
+                </div>
+              )}
+            </div>
 
-            {!cameraAtiva && !status.msg && (
-              <button
-                type="button"
-                onClick={iniciarCamera}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 py-10 text-slate-500 hover:text-[#202046] transition cursor-pointer"
-              >
-                <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h4M3 4v4M21 4a1 1 0 00-1-1h-4M21 4v4M3 20a1 1 0 001 1h4M3 20v-4M21 20a1 1 0 01-1 1h-4M21 20v-4M7 9h2v2H7V9zm0 6h2v2H7v-2zm6-6h4v4h-4V9zm0 8h2v2h-2v-2zm4-2h2v2h-2v-2z" />
-                </svg>
-                <span className="font-bold text-sm">Toque para abrir a câmera</span>
-              </button>
+            {/* HUD / Scanning Overlay when camera active */}
+            {cameraAtiva && (
+              <>
+                <div className="scanner-hud-corner scanner-hud-tl" />
+                <div className="scanner-hud-corner scanner-hud-tr" />
+                <div className="scanner-hud-corner scanner-hud-bl" />
+                <div className="scanner-hud-corner scanner-hud-br" />
+                <div className="scanner-laser" />
+                
+                {/* Status indicator floating */}
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-emerald-600/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-sm border border-emerald-400/20 z-10 animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white block" />
+                  Scanner de Eventos Ativo
+                </div>
+              </>
             )}
           </div>
 
+          {/* Camera Error Message */}
           {erroCamera && (
-            <div className="p-4 rounded-2xl text-sm font-bold text-center bg-rose-50 text-rose-700 border border-rose-100">
-              {erroCamera}
+            <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-xs rounded-2xl flex items-start gap-2.5">
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <div className="font-semibold leading-relaxed">{erroCamera}</div>
             </div>
           )}
 
-          {status.msg && (
-            <div
-              className={`p-4 rounded-2xl text-sm font-bold text-center animate-in fade-in zoom-in ${
-                status.type === 'success'
-                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                  : status.type === 'error'
-                  ? 'bg-rose-50 text-rose-700 border border-rose-100'
-                  : status.type === 'warning'
-                  ? 'bg-amber-50 text-amber-700 border border-amber-100'
-                  : 'bg-blue-50 text-blue-700 border border-blue-100'
-              }`}
-            >
-              {status.msg}
+          {/* Scanning status / Baixa Feedback details */}
+          {status.msg && !recibo && (
+            <div className="animate-in fade-in zoom-in duration-200">
+              {status.loading ? (
+                <div className="p-8 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col items-center justify-center text-center space-y-3">
+                  <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{status.msg}</p>
+                </div>
+              ) : (
+                <div 
+                  className={`p-6 rounded-2xl border flex flex-col items-center text-center space-y-4 ${
+                    status.type === 'success'
+                      ? 'bg-emerald-50/50 border-emerald-100 text-emerald-800'
+                      : status.type === 'error'
+                      ? 'bg-rose-50/50 border-rose-100 text-rose-800'
+                      : 'bg-amber-50/50 border-amber-100 text-amber-800'
+                  }`}
+                >
+                  <div 
+                    className={`w-12 h-12 rounded-full flex items-center justify-center shadow-inner ${
+                      status.type === 'success'
+                        ? 'bg-emerald-100 text-emerald-600'
+                        : status.type === 'error'
+                        ? 'bg-rose-100 text-rose-600'
+                        : 'bg-amber-100 text-amber-600'
+                    }`}
+                  >
+                    {status.type === 'success' ? (
+                      <CheckCircle size={24} />
+                    ) : (
+                      <AlertCircle size={24} />
+                    )}
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-extrabold text-sm uppercase tracking-wider">
+                      {status.type === 'success' 
+                        ? 'Baixa Processada' 
+                        : status.type === 'error' 
+                        ? 'Erro na Leitura' 
+                        : 'Aviso de Registro'}
+                    </h4>
+                    <p className="text-xs font-semibold mt-1.5 leading-relaxed max-w-[280px]">
+                      {status.msg}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
+          {/* Recibo Ticket Visually Structured */}
           {recibo && (
-            <div className="space-y-2">
-              <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 text-center">
-                Enviar Recibo (WhatsApp, e-mail, etc.)
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={handleEnviarReciboPDF}
-                  className="py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all cursor-pointer hover:opacity-90 flex items-center justify-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342A8.997 8.997 0 0021 12c0-4.97-4.03-9-9-9s-9 4.03-9 9c0 1.563.402 3.033 1.107 4.314L3 21l4.686-1.107A8.96 8.96 0 008.684 13.342z" />
-                  </svg>
-                  Recibo (PDF)
-                </button>
-                <button
-                  onClick={handleEnviarReciboPNG}
-                  className="py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all cursor-pointer hover:opacity-90 flex items-center justify-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342A8.997 8.997 0 0021 12c0-4.97-4.03-9-9-9s-9 4.03-9 9c0 1.563.402 3.033 1.107 4.314L3 21l4.686-1.107A8.96 8.96 0 008.684 13.342z" />
-                  </svg>
-                  Recibo (Imagem)
-                </button>
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-300">
+              
+              <div className="relative border border-slate-150 bg-slate-50/40 rounded-3xl p-5 space-y-4 overflow-hidden shadow-inner">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+                
+                <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+                  <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg">
+                    <CheckCircle size={16} />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Comprovante de Inscrição</h4>
+                    <p className="text-[9px] text-slate-400 font-medium font-semibold">Baixa realizada via QR Code</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 text-xs text-slate-700 font-medium">
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><User size={13} /> Participante</span>
+                    <span className="font-extrabold text-slate-800">{recibo.nome}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><Calendar size={13} /> Evento</span>
+                    <span className="font-bold text-slate-800 truncate max-w-[200px]">{recibo.evento}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><Tag size={13} /> Referência</span>
+                    <span className="font-bold text-slate-800">
+                      {recibo.ehParcela ? `Parcela ${recibo.parcelaNum} de ${recibo.totalParcelas}` : 'Pagamento Integral'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><DollarSign size={13} /> Valor da Parcela</span>
+                    <span className="font-extrabold text-emerald-600">R$ {recibo.valor.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><Clock size={13} /> Data de Baixa</span>
+                    <span className="font-semibold text-slate-600">{recibo.data.toLocaleDateString('pt-BR')}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="font-bold text-slate-400 flex items-center gap-1.5"><Info size={13} /> Situação</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                      recibo.statusPagamento === 'pago' 
+                        ? 'bg-emerald-100 text-emerald-800' 
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {recibo.statusPagamento === 'pago' ? 'Quitado' : 'Pendente'}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <p className="text-[10px] text-slate-400 text-center">
-                Em celulares, abre o menu de compartilhamento nativo. Em outros casos, o arquivo será baixado.
+
+              {/* Share Actions */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">
+                  Compartilhar Recibo
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handleEnviarReciboPDF}
+                    className="py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black uppercase text-[10px] tracking-wider shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Share2 size={13} />
+                    Recibo (PDF)
+                  </button>
+                  <button
+                    onClick={handleEnviarReciboPNG}
+                    className="py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black uppercase text-[10px] tracking-wider shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Share2 size={13} />
+                    Recibo (Imagem)
+                  </button>
+                </div>
+              </div>
+
+              {/* Download Actions */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">
+                  Download do Cartão Digital
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={handleBaixarCartaoPNG}
+                    className="py-3 bg-[#202046] hover:bg-[#2e2e5e] text-white rounded-xl font-black uppercase text-[10px] tracking-wider shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Download size={13} />
+                    Cartão (PNG)
+                  </button>
+                  <button
+                    onClick={handleBaixarCartaoPDF}
+                    className="py-3 bg-[#202046] hover:bg-[#2e2e5e] text-white rounded-xl font-black uppercase text-[10px] tracking-wider shadow-sm transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Download size={13} />
+                    Cartão (PDF)
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-[9px] text-slate-400 text-center font-medium leading-relaxed">
+                Em celulares, as opções de envio abrem o menu de compartilhamento do WhatsApp/sistema para envio direto.
               </p>
             </div>
           )}
 
-          {recibo && (
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={handleBaixarCartaoPNG}
-                className="py-4 bg-[#202046] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all cursor-pointer hover:opacity-90 flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Cartão (PNG)
-              </button>
-              <button
-                onClick={handleBaixarCartaoPDF}
-                className="py-4 bg-[#202046] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all cursor-pointer hover:opacity-90 flex items-center justify-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m-9 8h12a2 2 0 002-2V8a2 2 0 00-2-2h-3.5a1 1 0 01-.8-.4L13.2 4H10a1 1 0 00-.8.4L7.5 6H6a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                Cartão (PDF)
-              </button>
-            </div>
-          )}
-
+          {/* Action buttons */}
           {status.type && status.type !== 'info' && (
             <button
               onClick={handleProximaLeitura}
-              className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg transition-all cursor-pointer hover:opacity-90"
+              className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-md transition cursor-pointer flex items-center justify-center gap-2"
             >
-              Próxima Leitura 🔄
+              <RefreshCw size={14} />
+              Próxima Leitura
+            </button>
+          )}
+
+          {cameraAtiva && (
+            <button
+              type="button"
+              onClick={pararCamera}
+              className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-700 rounded-xl font-bold text-xs transition cursor-pointer"
+            >
+              Desligar Câmera
             </button>
           )}
         </div>

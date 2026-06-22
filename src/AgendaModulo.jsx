@@ -311,25 +311,25 @@ const RobotoStyle = () => (
 
 /* ─── SVG Icons ───────────────────────────────────────────────────────────── */
 const Icon = {
-  Plus:      () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  Trash:     () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>,
-  Back:      () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
-  Calendar:  () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-  ChevL:     () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>,
-  ChevR:     () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>,
-  Close:     () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  Check:     () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
-  Image:     () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
-  User:      () => <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-  MapPin:    () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
-  ChevDown:  () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>,
-  PlusCircle:() => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>,
-  ChevUp:    () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>,
-  Link:      () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>,
-  FileText:  () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
-  Printer:   () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 0-2-2v-5a2 2 0 0 0 2-2h16a2 2 0 0 0 2 2v5a2 2 0 0 0-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>,
-  Edit:      () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
-  Mural:     () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>,
+  Plus: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>,
+  Trash: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></svg>,
+  Back: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>,
+  Calendar: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>,
+  ChevL: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>,
+  ChevR: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>,
+  Close: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+  Check: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>,
+  Image: () => <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>,
+  User: () => <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>,
+  MapPin: () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>,
+  ChevDown: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>,
+  PlusCircle: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></svg>,
+  ChevUp: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15" /></svg>,
+  Link: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></svg>,
+  FileText: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>,
+  Printer: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 0-2-2v-5a2 2 0 0 0 2-2h16a2 2 0 0 0 2 2v5a2 2 0 0 0-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>,
+  Edit: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
+  Mural: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" /></svg>,
 };
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
@@ -418,9 +418,9 @@ function TiptapMenuBar({ editor, onImageUpload }) {
       <span className="tiptap-sep" />
 
       {/* Cor */}
-      <label title="Cor do texto" style={{ position: 'relative', display:'inline-flex', alignItems:'center', justifyContent:'center', width:28, height:28, border:'1.5px solid #e8edf5', borderRadius:6, background:'#fff', cursor:'pointer', fontSize:12, fontWeight:700 }}>
+      <label title="Cor do texto" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: '1.5px solid #e8edf5', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
         A
-        <input type="color" style={{ position:'absolute', inset:0, opacity:0, cursor:'pointer', width:'100%', height:'100%' }}
+        <input type="color" style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
           onChange={e => editor.chain().focus().setColor(e.target.value).run()} />
       </label>
       <span className="tiptap-sep" />
@@ -458,9 +458,9 @@ function TiptapMenuBar({ editor, onImageUpload }) {
         }}>🔗</button>
 
       {/* Upload de imagem */}
-      <label title="Upload de imagem" style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:28, height:28, border:'1.5px solid #e8edf5', borderRadius:6, background:'#fff', cursor:'pointer', fontSize:14 }}>
+      <label title="Upload de imagem" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: '1.5px solid #e8edf5', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 14 }}>
         🖼
-        <input type="file" accept="image/*" style={{ display:'none' }} onChange={onImageUpload} />
+        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={onImageUpload} />
       </label>
 
       {/* YouTube */}
@@ -553,12 +553,13 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
   const [carregando, setCarregando] = useState(false);
   const [modalEvento, setModalEvento] = useState({ aberto: false, dados: null });
   const [view, setView] = useState('lista'); // 'lista', 'form', 'dashboard'
-  const [subView, setSubView] = useState(null); 
+  const [subView, setSubView] = useState(null);
   const [inscritoParaCarne, setInscritoParaCarne] = useState(null);
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [membroParaVerId, setMembroParaVerId] = useState(null);
 
   const podeEditar = hasAccess('Agenda', 'Eventos', 'editar');
+  const eventosExibidos = eventos.filter(ev => podeEditar || ev.publicado !== false);
 
   const carregarEventos = async () => {
     setCarregando(true);
@@ -622,15 +623,38 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
     if (!(await window.confirmModal('Excluir Evento', 'Deseja excluir este evento?'))) return;
     const { error } = await supabase.from('agenda_eventos').delete().eq('id', id);
     if (error) alert(error.message);
-    else { setModalEvento({ aberto: false, dados: null }); carregarEventos(); }
+    else {
+      setModalEvento({ aberto: false, dados: null });
+      if (eventoSelecionado?.id === id) {
+        setEventoSelecionado(null);
+        setView('lista');
+      }
+      carregarEventos();
+    }
+  };
+
+  const alternarPublicacaoEvento = async (id, publicadoAtual) => {
+    const novoEstado = !publicadoAtual;
+    const { error } = await supabase
+      .from('agenda_eventos')
+      .update({ publicado: novoEstado })
+      .eq('id', id);
+    if (error) {
+      alert("Erro ao alterar status de publicação: " + error.message);
+    } else {
+      if (eventoSelecionado?.id === id) {
+        setEventoSelecionado(prev => prev && prev.id === id ? { ...prev, publicado: novoEstado } : prev);
+      }
+      carregarEventos();
+    }
   };
 
   // Se estiver visualizando a ficha de um membro, renderiza o componente de detalhes
   if (membroParaVerId) {
     return (
-      <DetalhesMembro 
-        pessoaId={membroParaVerId} 
-        onFechar={() => setMembroParaVerId(null)} 
+      <DetalhesMembro
+        pessoaId={membroParaVerId}
+        onFechar={() => setMembroParaVerId(null)}
         listaPessoas={pessoas}
         membroLogado={membroLogado}
       />
@@ -661,11 +685,40 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
   return (
     <div className="agenda-root space-y-6">
       <RobotoStyle /> {/* Mantido para estilos internos */}
-      <div className="hidden md:block print:hidden">
+      <div className="print:hidden">
         <PageHeader
-          titulo="Agenda"
-          breadcrumb={['Agenda', submenu === 'calendario' ? 'Calendário' : 'Lista de Eventos']}
-          onNavigate={() => onNavigate('calendario')}
+          titulo={
+            submenu === 'calendario'
+              ? 'Calendário'
+              : submenu === 'mural'
+              ? 'Mural de Avisos'
+              : view === 'form'
+              ? (eventoSelecionado ? 'Editar Evento' : 'Novo Evento')
+              : view === 'dashboard'
+              ? 'Painel do Evento'
+              : 'Eventos'
+          }
+          breadcrumb={
+            submenu === 'calendario'
+              ? ['Agenda', 'Calendário']
+              : submenu === 'mural'
+              ? ['Agenda', 'Mural']
+              : view === 'form'
+              ? ['Agenda', 'Eventos', eventoSelecionado ? 'Editar' : 'Novo']
+              : view === 'dashboard'
+              ? ['Agenda', 'Eventos', 'Painel']
+              : ['Agenda', 'Lista de Eventos']
+          }
+          onNavigate={(target) => {
+            const dest = target.toLowerCase();
+            if (dest === 'calendário' || dest === 'calendario' || dest === 'agenda') {
+              onNavigate('calendario');
+            } else if (dest === 'lista de eventos' || dest === 'eventos') {
+              onNavigate('eventos');
+            } else if (dest === 'mural') {
+              onNavigate('mural');
+            }
+          }}
         />
       </div>
 
@@ -691,7 +744,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
           </div>
           <CalendarioMensal
             data={dataAtual}
-            eventos={eventos}
+            eventos={eventosExibidos}
             onEditarEvento={(ev) => setModalEvento({ aberto: true, dados: ev })}
             podeEditar={podeEditar}
           />
@@ -712,16 +765,21 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
                 )}
               </div>
               <div className="grid grid-cols-1 gap-5">
-                {eventos.length === 0 ? (
+                {eventosExibidos.length === 0 ? (
                   <div className="ag-card text-center py-24 text-slate-400 italic">Nenhum evento publicado.</div>
                 ) : (
-                  eventos.map(ev => (
-                    <div key={ev.id} className="ag-horiz-card" onClick={() => { setEventoSelecionado(ev); setView('dashboard'); }}>
+                  eventosExibidos.map(ev => (
+                    <div key={ev.id} className="ag-horiz-card" style={ev.publicado === false ? { opacity: 0.75 } : {}} onClick={() => { setEventoSelecionado(ev); setView('dashboard'); }}>
                       <img src={ev.capa_url || 'https://via.placeholder.com/145x190?text=Sem+Capa'} className="ag-horiz-img" alt={ev.titulo} />
                       <div className="ag-horiz-body">
                         <div>
                           <div className="flex items-center justify-between mb-1.5">
-                            <span className="badge" style={{ background: ev.cor + '15', color: ev.cor }}>{ev.tipo}</span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="badge" style={{ background: ev.cor + '15', color: ev.cor }}>{ev.tipo}</span>
+                              {ev.publicado === false && (
+                                <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1' }}>Despublicado</span>
+                              )}
+                            </div>
                             <span className={`text-[10px] font-black uppercase ${ev.valor_tipo === 'pago' ? 'text-rose-600' : 'text-emerald-600'}`}>
                               {ev.valor_tipo === 'pago' ? 'Evento Pago' : 'Gratuito'}
                             </span>
@@ -732,8 +790,8 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
                         <div className="ag-horiz-footer">
                           <div className="flex items-center gap-2 sm:gap-4 text-[11px] font-bold text-slate-400 uppercase tracking-tight overflow-hidden">
                             <span className="flex items-center gap-1.5">
-                              <Icon.Calendar /> 
-                              {ev.data_inicio ? 
+                              <Icon.Calendar />
+                              {ev.data_inicio ?
                                 `${ev.data_inicio.split('T')[0].split('-').reverse().join('/')}` : '—'}
                             </span>
                             {ev.local_nome && <span className="hidden sm:flex items-center gap-1.5 truncate"><Icon.MapPin /> {ev.local_nome}</span>}
@@ -763,12 +821,15 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
             />
           ),
           dashboard: (
-            <DashboardEvento 
-              evento={eventoSelecionado} 
+            <DashboardEvento
+              evento={eventoSelecionado}
               pessoas={pessoas}
               membroLogado={membroLogado}
+              podeEditar={podeEditar}
               onVoltar={() => { setView('lista'); setEventoSelecionado(null); }}
               onEditar={() => setView('form')}
+              onExcluir={excluirEvento}
+              onAlternarPublicacao={alternarPublicacaoEvento}
               onVerMembro={setMembroParaVerId}
               onAbrirLeitor={() => setSubView('leitor')}
               onGerarCarne={(dados) => { setInscritoParaCarne(dados); setSubView('carne'); }}
@@ -834,8 +895,8 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
 
       {/* ── MURAL DE AVISOS ── */}
       {submenu === 'mural' && (
-        <GerenciadorMural 
-          onVoltar={() => onNavigate('calendario')} 
+        <GerenciadorMural
+          onVoltar={() => onNavigate('calendario')}
           membroLogado={membroLogado}
         />
       )}
@@ -870,9 +931,9 @@ function GerenciadorMural({ onVoltar, membroLogado }) {
 
   if (view === 'form') {
     return (
-      <FormularioAviso 
-        aviso={editando} 
-        onSucesso={() => { setView('lista'); setEditando(null); carregarAvisos(); }} 
+      <FormularioAviso
+        aviso={editando}
+        onSucesso={() => { setView('lista'); setEditando(null); carregarAvisos(); }}
         onCancelar={() => { setView('lista'); setEditando(null); }}
       />
     );
@@ -1069,7 +1130,7 @@ function FormularioAviso({ aviso, onSucesso, onCancelar }) {
               </Campo>
             </div>
             <div className="p-4 space-y-4">
-              <div 
+              <div
                 className="bg-slate-100 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden relative group"
                 style={{ aspectRatio: aspect }}
               >
@@ -1131,7 +1192,7 @@ function FormularioAviso({ aviso, onSucesso, onCancelar }) {
 }
 
 /* ─── DashboardEvento ──────────────────────────────────────────────────────── */
-function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onAbrirLeitor, onGerarCarne, membroLogado }) {
+function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlternarPublicacao, podeEditar, onVerMembro, onAbrirLeitor, onGerarCarne, membroLogado }) {
   const [inscritos, setInscritos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modalInscrito, setModalInscrito] = useState({ aberto: false, dados: null });
@@ -1176,7 +1237,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
     // Vagas ocupadas (considerando pagos e pendentes como reserva de vaga)
     const ocupadas = confirmados + pendentes;
     const disponiveis = evento.vagas ? Math.max(0, evento.vagas - ocupadas) : '∞';
-    
+
     return { confirmados, pendentes, cancelados, disponiveis, totalRecebido: totalArrecadado };
   }, [inscritos, evento]);
 
@@ -1202,16 +1263,16 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
     const insc = inscritos.find(i => i.id === id);
     const dados = insc?.dados_inscricao || {};
     const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || 1;
-    
+
     const patch = { status_pagamento: novoStatus };
     if (novoStatus === 'pago' && totalParc > 1) {
       patch.dados_inscricao = { ...dados, parcelas_pagas: Array.from({ length: totalParc }, (_, i) => i + 1) };
     }
 
     const { error } = await supabase.from('agenda_inscricoes').update(patch).eq('id', id);
-    if (!error) { 
+    if (!error) {
       setInscritos(prev => prev.map(ins => ins.id === id ? { ...ins, ...patch } : ins));
-      setModalInscrito({ aberto: false, dados: null }); 
+      setModalInscrito({ aberto: false, dados: null });
     }
   };
 
@@ -1247,10 +1308,10 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
   const handleExcluirInscricao = async (e, id) => {
     e.stopPropagation();
     if (!(await window.confirmModal('Excluir Inscrição', 'Deseja realmente excluir esta inscrição? Esta ação não pode ser desfeita.'))) return;
-    
+
     // Adicionamos .select() para validar se a linha foi realmente removida no servidor
     const { data, error } = await supabase.from('agenda_inscricoes').delete().eq('id', id).select();
-    
+
     if (!error && data && data.length > 0) {
       setInscritos(prev => prev.filter(ins => ins.id !== id));
       if (modalInscrito.dados?.id === id) setModalInscrito({ aberto: false, dados: null });
@@ -1265,27 +1326,27 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-center justify-between flex-wrap gap-y-4 print:hidden">
         <button className="btn-ghost !rounded-md text-xs sm:text-sm p-2 sm:px-4 sm:py-2" onClick={onVoltar}>
-          <Icon.Back /> 
+          <Icon.Back />
           <span className="hidden sm:inline">Voltar para lista</span>
           <span className="sm:hidden">Voltar</span>
         </button>
         <div className="flex items-center justify-end gap-1 sm:gap-2 flex-wrap">
           {['admin', 'pastor', 'tesouraria', 'financeiro', 'secretaria'].includes(membroLogado?.permissao) && (
-          <button
-            className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2 text-blue-600 border-blue-200 bg-blue-50 font-bold" 
-            onClick={onAbrirLeitor}
-            title="Leitor de Baixa (QR)"
-          >
-            <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.0} stroke="currentColor" className="size-6">
-  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
-  <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" />
-</svg>
+            <button
+              className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2 text-blue-600 border-blue-200 bg-blue-50 font-bold"
+              onClick={onAbrirLeitor}
+              title="Leitor de Baixa (QR)"
+            >
+              <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.0} stroke="currentColor" className="size-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" />
+              </svg>
 
-            <span className="hidden sm:inline ml-1">Leitor de Baixa (QR)</span>
-          </button>
+              <span className="hidden sm:inline ml-1">Leitor QRCode</span>
+            </button>
           )}
           <button
-            className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2" 
+            className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2"
             onClick={() => {
               const url = `${window.location.origin}/inscricao-evento/${evento.id}`;
               navigator.clipboard.writeText(url);
@@ -1296,25 +1357,47 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
             <Icon.Link />
             <span className="hidden sm:inline ml-1">Copiar Link</span>
           </button>
-          <button 
-            className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2" 
+          <button
+            className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2"
             onClick={() => window.open(`${window.location.origin}/inscricao-evento/${evento.id}`, '_blank')}
             title="Ver Form"
           >
             <Icon.FileText />
             <span className="hidden sm:inline ml-1">Ver Form</span>
           </button>
-          <button 
-            className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2" 
+          <button
+            className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2"
             onClick={() => window.print()}
             title="Imprimir Lista"
           >
             <Icon.Printer />
             <span className="hidden sm:inline ml-1">Imprimir Lista</span>
           </button>
-          <button 
-            className="btn-primary !rounded-md p-2.5 sm:px-4 sm:py-2" 
-            onClick={onEditar} 
+          {podeEditar && (
+            <>
+              <button
+                className={`btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2 font-bold ${evento.publicado === false
+                  ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'
+                  : 'text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200'
+                  }`}
+                onClick={() => onAlternarPublicacao(evento.id, evento.publicado !== false)}
+                title={evento.publicado === false ? 'Publicar Evento' : 'Despublicar Evento'}
+              >
+                {evento.publicado === false ? '🟢 Publicar' : '🟡 Despublicar'}
+              </button>
+              <button
+                className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2 text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 font-bold"
+                onClick={() => onExcluir(evento.id)}
+                title="Excluir Evento"
+              >
+                <Icon.Trash />
+                <span className="hidden sm:inline ml-1">Excluir Evento</span>
+              </button>
+            </>
+          )}
+          <button
+            className="btn-primary !rounded-md p-2.5 sm:px-4 sm:py-2"
+            onClick={onEditar}
             title="Editar Evento"
           >
             <Icon.Edit />
@@ -1330,7 +1413,12 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
           </div>
           <div className="flex-1 space-y-6">
             <div>
-              <span className="badge" style={{ background: 'var(--blue-900)', color: '#fff' }}>{evento.tipo}</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="badge" style={{ background: 'var(--blue-900)', color: '#fff' }}>{evento.tipo}</span>
+                {evento.publicado === false && (
+                  <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1' }}>Despublicado</span>
+                )}
+              </div>
               <h1 className="text-4xl font-black text-slate-800 mt-3 tracking-tight">{evento.titulo}</h1>
               <p className="text-slate-500 font-medium text-xl leading-snug">{evento.subtitulo}</p>
             </div>
@@ -1354,12 +1442,12 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:hidden">
         {/* CARD TOTAL RECEBIDO DESTACADO */}
-        <div 
+        <div
           className="lg:col-span-1 p-8 rounded-[24px] shadow-xl flex flex-col justify-center relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #059669 0%, #0d9488 100%)', color: '#ffffff' }}
         >
           <div className="absolute -right-6 -bottom-6 opacity-20 rotate-12">
-            <svg width="140" height="140" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.15 0 2.25-.56 2.25-1.75 0-.94-.74-1.55-2.45-1.99-2.31-.6-4.14-1.48-4.14-3.8 0-2.09 1.63-3.41 3.27-3.79V3.2h2.67v1.88c1.37.31 2.82 1.13 2.97 3.21h-1.93c-.14-.94-.84-1.68-2.38-1.68-1.37 0-2.1.72-2.1 1.51 0 .97.94 1.48 2.84 1.95 2.5.62 4.14 1.7 4.14 3.93 0 2.38-1.63 3.66-3.66 3.89z"/></svg>
+            <svg width="140" height="140" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.15 0 2.25-.56 2.25-1.75 0-.94-.74-1.55-2.45-1.99-2.31-.6-4.14-1.48-4.14-3.8 0-2.09 1.63-3.41 3.27-3.79V3.2h2.67v1.88c1.37.31 2.82 1.13 2.97 3.21h-1.93c-.14-.94-.84-1.68-2.38-1.68-1.37 0-2.1.72-2.1 1.51 0 .97.94 1.48 2.84 1.95 2.5.62 4.14 1.7 4.14 3.93 0 2.38-1.63 3.66-3.66 3.89z" /></svg>
           </div>
           <h3 style={{ margin: 0, fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', opacity: 0.9 }}>
             Total Recebido
@@ -1385,12 +1473,12 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
                   <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)' }} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    name="Inscrições" 
-                    stroke="var(--blue-900)" 
-                    strokeWidth={4} 
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    name="Inscrições"
+                    stroke="var(--blue-900)"
+                    strokeWidth={4}
                     dot={{ r: 4, fill: 'var(--blue-900)', strokeWidth: 2, stroke: '#fff' }}
                     activeDot={{ r: 6, strokeWidth: 0 }}
                   />
@@ -1482,7 +1570,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
                           )}
                         </td>
                         <td style={{ textAlign: 'right', paddingRight: '24px' }} className="print:hidden">
-                          <button 
+                          <button
                             onClick={(e) => handleExcluirInscricao(e, i.id)}
                             className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
                             title="Excluir Inscrição"
@@ -1523,7 +1611,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
                           ) : (
                             <span className="badge bg-amber-50 text-amber-700">pendente</span>
                           )}
-                          <button 
+                          <button
                             onClick={(e) => handleExcluirInscricao(e, i.id)}
                             className="p-1.5 text-rose-500 active:scale-95 cursor-pointer print:hidden"
                           >
@@ -1569,7 +1657,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
                 const email = findInJsonGlobal(modalInscrito.dados.dados_inscricao, 'email');
                 const nome = findInJsonGlobal(modalInscrito.dados.dados_inscricao, 'nome');
                 const membro = pessoas.find(p => (email && p.email?.toLowerCase() === email.toLowerCase()) || (nome && p.nome?.toLowerCase() === nome.toLowerCase()));
-                
+
                 if (membro) {
                   return (
                     <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-between">
@@ -1592,11 +1680,11 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onVerMembro, onA
                 const dados = modalInscrito.dados.dados_inscricao;
                 const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || 1;
                 if (totalParc <= 1) return null;
-                
+
                 const incluiTransporte = findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
                 const valorTransporte = incluiTransporte ? (Number(evento.valor_transporte) || 0) : 0;
                 const valorTotal = (Number(evento.valor) || 0) + valorTransporte;
-                
+
                 const pagas = dados.parcelas_pagas || [];
                 const valorPago = (valorTotal / totalParc) * pagas.length;
                 const saldoDevedor = valorTotal - valorPago;
@@ -1689,9 +1777,9 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
       setFormasDisponiveis(data);
     } else {
       setFormasDisponiveis([
-        { nome: 'Em espécie', permite_parcelamento: false }, 
-        { nome: 'Via Pix', permite_parcelamento: false }, 
-        { nome: 'Cartão de crédito', permite_parcelamento: true, max_parcelas: 12 }, 
+        { nome: 'Em espécie', permite_parcelamento: false },
+        { nome: 'Via Pix', permite_parcelamento: false },
+        { nome: 'Cartão de crédito', permite_parcelamento: true, max_parcelas: 12 },
         { nome: 'Local do evento', permite_parcelamento: false }
       ]);
     }
@@ -1727,7 +1815,7 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
       }]);
 
       if (error) throw error;
-      
+
       await carregarFormasDisponiveis();
       setIsModalNovaFormaAberta(false);
     } catch (err) {
@@ -1922,9 +2010,9 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                 {capaPreview
                   ? <img src={capaPreview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#94a3b8' }}>
-                      <Icon.Image />
-                      <span style={{ fontSize: 11, fontWeight: 600 }}>Clique para adicionar</span>
-                    </div>
+                    <Icon.Image />
+                    <span style={{ fontSize: 11, fontWeight: 600 }}>Clique para adicionar</span>
+                  </div>
                 }
                 <label style={{ position: 'absolute', inset: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.45)', opacity: 0, transition: 'opacity .2s' }}
                   onMouseEnter={e => e.currentTarget.style.opacity = 1}
@@ -1984,61 +2072,61 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                     + Novo Tipo
                   </button>
                 </div>
-                
+
                 {formasDisponiveis.map(f => {
                   const nomeForma = typeof f === 'object' ? f.nome : f;
                   return (
-                  <div key={nomeForma} style={{ background: '#fff', padding: '10px 12px', borderRadius: 10, border: '1px solid #dbeafe' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={formasPagamento.some(i => i.tipo === nomeForma)}
-                        onChange={e => e.target.checked
-                          ? setFormasPagamento([...formasPagamento, { tipo: nomeForma, instrucao: '', permite_parcelas: f.permite_parcelamento, max_parcelas: f.max_parcelas }])
-                          : setFormasPagamento(formasPagamento.filter(x => x.tipo !== nomeForma))}
-                        style={{ accentColor: '#1e3a8a', width: 14, height: 14 }} />
-                      <span style={{ fontSize: 13, fontWeight: 500, color: '#1e40af' }}>
-                        {nomeForma}
-                        {f.permite_parcelamento && <span style={{ fontSize: 10, marginLeft: 6, opacity: 0.6 }}>(Carnê/Parcelado até {f.max_parcelas}x)</span>}
-                      </span>
-                    </label>
-                    {formasPagamento.some(i => i.tipo === nomeForma) && (
-                      <div style={{ marginTop: 8 }}>
-                        {nomeForma.toLowerCase().includes('cartão') ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            <div>
-                              <label className="text-[10px] font-bold text-slate-400 uppercase">URL da Plataforma (Link de Pagamento)</label>
-                              <input
-                                type="url"
-                                placeholder="https://pagamento.com/seu-link"
-                                value={formasPagamento.find(x => x.tipo === nomeForma)?.link_pagamento || ''}
-                                onChange={e => setFormasPagamento(formasPagamento.map(x => x.tipo === nomeForma ? { ...x, link_pagamento: e.target.value } : x))}
-                                className="campo-input"
-                              />
+                    <div key={nomeForma} style={{ background: '#fff', padding: '10px 12px', borderRadius: 10, border: '1px solid #dbeafe' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={formasPagamento.some(i => i.tipo === nomeForma)}
+                          onChange={e => e.target.checked
+                            ? setFormasPagamento([...formasPagamento, { tipo: nomeForma, instrucao: '', permite_parcelas: f.permite_parcelamento, max_parcelas: f.max_parcelas }])
+                            : setFormasPagamento(formasPagamento.filter(x => x.tipo !== nomeForma))}
+                          style={{ accentColor: '#1e3a8a', width: 14, height: 14 }} />
+                        <span style={{ fontSize: 13, fontWeight: 500, color: '#1e40af' }}>
+                          {nomeForma}
+                          {f.permite_parcelamento && <span style={{ fontSize: 10, marginLeft: 6, opacity: 0.6 }}>(Carnê/Parcelado até {f.max_parcelas}x)</span>}
+                        </span>
+                      </label>
+                      {formasPagamento.some(i => i.tipo === nomeForma) && (
+                        <div style={{ marginTop: 8 }}>
+                          {nomeForma.toLowerCase().includes('cartão') ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">URL da Plataforma (Link de Pagamento)</label>
+                                <input
+                                  type="url"
+                                  placeholder="https://pagamento.com/seu-link"
+                                  value={formasPagamento.find(x => x.tipo === nomeForma)?.link_pagamento || ''}
+                                  onChange={e => setFormasPagamento(formasPagamento.map(x => x.tipo === nomeForma ? { ...x, link_pagamento: e.target.value } : x))}
+                                  className="campo-input"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] font-bold text-slate-400 uppercase">Instruções Adicionais</label>
+                                <textarea
+                                  placeholder="Ex: Após o pagamento, envie o comprovante..."
+                                  value={formasPagamento.find(x => x.tipo === nomeForma)?.instrucao || ''}
+                                  onChange={e => setFormasPagamento(formasPagamento.map(x => x.tipo === nomeForma ? { ...x, instrucao: e.target.value } : x))}
+                                  className="campo-input"
+                                  style={{ resize: 'none' }}
+                                  rows="2"
+                                />
+                              </div>
                             </div>
-                            <div>
-                              <label className="text-[10px] font-bold text-slate-400 uppercase">Instruções Adicionais</label>
-                              <textarea 
-                                placeholder="Ex: Após o pagamento, envie o comprovante..."
-                                value={formasPagamento.find(x => x.tipo === nomeForma)?.instrucao || ''}
-                                onChange={e => setFormasPagamento(formasPagamento.map(x => x.tipo === nomeForma ? { ...x, instrucao: e.target.value } : x))}
-                                className="campo-input" 
-                                style={{ resize: 'none' }}
-                                rows="2"
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <textarea 
-                            placeholder={`Instruções para ${nomeForma} (Ex: Chave Pix ou dados bancários)...`}
-                            value={formasPagamento.find(x => x.tipo === nomeForma)?.instrucao || ''}
-                            onChange={e => setFormasPagamento(formasPagamento.map(x => x.tipo === nomeForma ? { ...x, instrucao: e.target.value } : x))}
-                            className="campo-input" 
-                            style={{ resize: 'none' }}
-                            rows="2"
-                          />
-                        )}
-                      </div>
-                    )}
-                  </div>
+                          ) : (
+                            <textarea
+                              placeholder={`Instruções para ${nomeForma} (Ex: Chave Pix ou dados bancários)...`}
+                              value={formasPagamento.find(x => x.tipo === nomeForma)?.instrucao || ''}
+                              onChange={e => setFormasPagamento(formasPagamento.map(x => x.tipo === nomeForma ? { ...x, instrucao: e.target.value } : x))}
+                              className="campo-input"
+                              style={{ resize: 'none' }}
+                              rows="2"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -2096,9 +2184,9 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 110px 160px auto', gap: 12, alignItems: 'end' }}>
                   {/* Controles de Ordenação */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 2 }}>
-                    <button type="button" className="btn-icon" style={{ height: 22, width: 30, borderRadius: 6 }} 
+                    <button type="button" className="btn-icon" style={{ height: 22, width: 30, borderRadius: 6 }}
                       onClick={() => handleMoveCampoUp(idx)} disabled={idx === 0} title="Mover para cima"><Icon.ChevUp /></button>
-                    <button type="button" className="btn-icon" style={{ height: 22, width: 30, borderRadius: 6 }} 
+                    <button type="button" className="btn-icon" style={{ height: 22, width: 30, borderRadius: 6 }}
                       onClick={() => handleMoveCampoDown(idx)} disabled={idx === camposInscricao.length - 1} title="Mover para baixo"><Icon.ChevDown /></button>
                   </div>
 
@@ -2334,7 +2422,7 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                   <InputField label="Máximo de Parcelas" type="number" value={novaFormaMaxParcelas} onChange={setNovaFormaMaxParcelas} />
                 )}
                 <InputField label="Descrição Interna" value={novaFormaDesc} onChange={setNovaFormaDesc} placeholder="Notas sobre esta forma..." />
-                
+
                 <div className="flex gap-2 pt-2">
                   <button type="button" className="btn-ghost flex-1" onClick={() => setIsModalNovaFormaAberta(false)}>Cancelar</button>
                   <button type="submit" disabled={enviando} className="btn-primary flex-1 justify-center">

@@ -378,9 +378,9 @@ export default function QuizPersonalidade({ usuarioLogado }) {
   // ── RESULT VIEW ────────────────────────────────────────────────────────
   if (showResult) {
     return (
-      <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 8px' }}>
+      <div className="mx-[-3px] sm:mx-auto px-0" style={{ maxWidth: 760 }}>
         {/* Header */}
-        <div style={{
+        <div className="mx-[3px] sm:mx-0" style={{
           background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)',
           borderRadius: 20,
           padding: '28px 28px 24px',
@@ -515,9 +515,9 @@ export default function QuizPersonalidade({ usuarioLogado }) {
 
   // ── QUIZ VIEW ──────────────────────────────────────────────────────────
   return (
-    <div style={{ maxWidth: 680, margin: '0 auto', padding: '0 8px' }}>
+    <div className="mx-[-3px] sm:mx-auto px-0" style={{ maxWidth: 680 }}>
       {/* Header Card */}
-      <div style={{
+      <div className="mx-[3px] sm:mx-0" style={{
         background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)',
         borderRadius: 20,
         padding: '28px 28px 22px',

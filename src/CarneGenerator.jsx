@@ -3,7 +3,13 @@ import QRCode from 'qrcode';
 import { supabase } from './supabaseClient';
 import { mascaraCPF, mascaraTelefone, mascaraCEP } from './mascaras';
 import './CarneGenerator.css';
-import { baixarCartaoPNG, baixarCartaoPDF, baixarCartoesPDF } from './cartaoDigital';
+import { baixarCartaoPNG, baixarCartaoPDF, baixarCartoesPDF, compartilharCartaoPDF, compartilharCartoesPDF } from './cartaoDigital';
+import { PageHeader } from './ui';
+import {
+  User, Calendar, DollarSign, Building, Save, Printer,
+  Trash2, ChevronDown, ChevronUp, Link, AlertCircle,
+  Plus, Share2, Download, QrCode, X, FileText
+} from 'lucide-react';
 
 // ============================================================
 // Util: formatação de data e moeda
@@ -259,6 +265,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
 
   const [erro, setErro] = useState('');
   const [salvandoPadrao, setSalvandoPadrao] = useState(false);
+  const [showCedenteConfig, setShowCedenteConfig] = useState(false);
 
   const handleSalvarComoPadrao = async () => {
     setSalvandoPadrao(true);
@@ -309,7 +316,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
           telefoneCelular: data.telefone || '',
           localPagamento: data.carne_local_pagamento || 'PAGÁVEL NA SECRETARIA DA IGREJA'
         });
-        
+
         setDadosVenda(prev => ({
           ...prev,
           instrucoes: data.carne_instrucoes || ''
@@ -584,43 +591,88 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
     await baixarCartoesPDF(elegiveis.map(montarDadosCartaoParcela), nomeArquivo);
   }
 
-  const handleWhatsAppParcela = (parcela) => {
+  const handleWhatsAppParcela = async (parcela) => {
     const dataVenc = formatDate(parcela.vencimento);
     const valor = formatCurrency(parcela.valorPago);
     const nomeCliente = dadosCliente.nome;
     const igreja = dadosCedente.nome;
-    
+
     // Tenta encontrar um link de pagamento configurado na inscrição
     const linkPagamento = (inscricaoSelecionada?.agenda_eventos?.formas_pagamento || [])
       .find(f => f.link_pagamento)?.link_pagamento || '';
 
-    let msg = `*Olá ${nomeCliente}!* \n\nSegue os dados para pagamento da sua parcela do carnê da *${igreja}*:\n\n`;
-    msg += `📌 *Parcela:* ${parcela.parcelaLabel}\n`;
-    msg += `📅 *Vencimento:* ${dataVenc}\n`;
-    msg += `💰 *Valor:* R$ ${valor}\n`;
-    if (linkPagamento) msg += `\n🔗 *Link para pagamento:* ${linkPagamento}\n`;
-    msg += `\nCaso já tenha realizado o pagamento, favor desconsiderar.`;
+    const nomeArquivo = `cartao_${(dadosCliente.nome || 'participante').replace(/\s+/g, '_').toLowerCase()}_parcela${parcela.numero}.pdf`;
+    const dadosCartao = montarDadosCartaoParcela(parcela);
 
-    const telLimpo = (dadosCliente.telefone || '').replace(/\D/g, '');
-    const url = `https://wa.me/${telLimpo ? telLimpo : ''}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+    // Tenta compartilhar o PDF direto pelo menu nativo (funciona em mobile)
+    const compartilhado = await compartilharCartaoPDF(dadosCartao, nomeArquivo);
+
+    if (!compartilhado) {
+      // Se não for suportado (ex: Chrome desktop), tenta copiar a imagem PNG para a área de transferência
+      let copiado = false;
+      try {
+        const canvas = await desenharCartaoDigital(dadosCartao);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+        const item = new ClipboardItem({ 'image/png': blob });
+        await navigator.clipboard.write([item]);
+        copiado = true;
+      } catch (clipErr) {
+        console.warn('Erro ao copiar imagem para clipboard:', clipErr);
+      }
+
+      // Também baixa o PDF do cartão por conveniência
+      await baixarCartaoPDF(dadosCartao, nomeArquivo);
+
+      let msg = `*Olá ${nomeCliente}!* \n\nSegue os dados para pagamento da sua parcela do carnê da *${igreja}*:\n\n`;
+      msg += `📌 *Parcela:* ${parcela.parcelaLabel}\n`;
+      msg += `📅 *Vencimento:* ${dataVenc}\n`;
+      msg += `💰 *Valor:* R$ ${valor}\n`;
+      if (linkPagamento) msg += `\n🔗 *Link para pagamento:* ${linkPagamento}\n`;
+
+      if (copiado) {
+        msg += `\n*DICA:* A imagem do cartão digital correspondente a esta parcela foi copiada para sua área de transferência. Basta colar (Ctrl+V) no chat do WhatsApp para enviá-la! O arquivo PDF também foi baixado.`;
+        window.alert("Imagem do Cartão Digital copiada para a área de transferência!\n\nA conversa do WhatsApp será aberta em seguida. Basta colar (Ctrl+V) na conversa para enviar a imagem do cartão.");
+      } else {
+        msg += `\n*Nota:* O PDF do cartão digital correspondente a esta parcela foi baixado no seu dispositivo. Por favor, anexe o arquivo ao enviar esta mensagem.`;
+      }
+
+      const telLimpo = (dadosCliente.telefone || '').replace(/\D/g, '');
+      const url = `https://wa.me/${telLimpo ? telLimpo : ''}?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+    }
   };
 
-  const handleWhatsAppCarneCompleto = () => {
+  const handleWhatsAppCarneCompleto = async () => {
     const nomeCliente = dadosCliente.nome;
     const igreja = dadosCedente.nome;
     const totalParcelas = parcelas.length;
-    
-    let msg = `*Olá ${nomeCliente}!* \n\nSegue o resumo do seu carnê da *${igreja}*:\n\n`;
-    msg += `📊 *Total de Parcelas:* ${totalParcelas}\n`;
-    msg += `💰 *Valor Total:* R$ ${formatCurrency(valorTotal)}\n`;
-    msg += `💰 *Valor da Parcela:* R$ ${formatCurrency(dadosVenda.valorParcela)}\n`;
-    msg += `📅 *Vencimento Inicial:* ${formatDate(dadosVenda.vencimentoPrimeiraParcela)}\n\n`;
-    msg += `Para detalhes de cada parcela, solicite os cartões individuais.`;
+    const elegiveis = parcelas.filter((p) => p.codigo);
 
-    const telLimpo = (dadosCliente.telefone || '').replace(/\D/g, '');
-    const url = `https://wa.me/${telLimpo ? telLimpo : ''}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+    if (!elegiveis.length) return;
+
+    const nomeArquivo = `cartoes_${(dadosCliente.nome || 'participante').replace(/\s+/g, '_').toLowerCase()}.pdf`;
+    const listaCartoes = elegiveis.map(montarDadosCartaoParcela);
+
+    // Tenta compartilhar todos os cartões consolidados em PDF direto pelo menu nativo
+    const compartilhado = await compartilharCartoesPDF(listaCartoes, nomeArquivo);
+
+    if (!compartilhado) {
+      // Fallback: baixa o PDF completo e abre o WhatsApp
+      await baixarCartoesPDF(listaCartoes, nomeArquivo);
+
+      let msg = `*Olá ${nomeCliente}!* \n\nSegue o resumo do seu carnê da *${igreja}*:\n\n`;
+      msg += `📊 *Total de Parcelas:* ${totalParcelas}\n`;
+      msg += `💰 *Valor Total:* R$ ${formatCurrency(valorTotal)}\n`;
+      msg += `💰 *Valor da Parcela:* R$ ${formatCurrency(dadosVenda.valorParcela)}\n`;
+      msg += `📅 *Vencimento Inicial:* ${formatDate(dadosVenda.vencimentoPrimeiraParcela)}\n\n`;
+      msg += `*Nota:* O PDF contendo todas as parcelas consolidadas foi baixado no seu dispositivo. Por favor, anexe o arquivo ao enviar esta mensagem.`;
+
+      window.alert("O PDF com todos os cartões digitais foi baixado.\n\nA conversa do WhatsApp será aberta em seguida para que você possa anexar o arquivo PDF baixado.");
+
+      const telLimpo = (dadosCliente.telefone || '').replace(/\D/g, '');
+      const url = `https://wa.me/${telLimpo ? telLimpo : ''}?text=${encodeURIComponent(msg)}`;
+      window.open(url, '_blank');
+    }
   };
 
   const handleLimparGeral = () => {
@@ -642,564 +694,702 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
-      <div className="carne-print-page max-w-5xl mx-auto p-3 sm:p-6 space-y-6 print:p-0 print:max-w-none">
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-12">
+      <div className="carne-print-page max-w-7xl mx-auto pt-0 px-0 pb-3 sm:px-6 sm:pb-6 space-y-6 print:p-0 print:max-w-none mx-[-3px] sm:mx-auto">
         {/* Cabeçalho */}
-        <header className="print:hidden">
-          <h1 className="text-2xl font-bold text-slate-900">Gerador de Carnê de Pagamento</h1>
-          <p className="text-sm text-slate-500">
-            Baseado no modelo "Carnê - Congresso Nacional MIB". Preencha os dados abaixo e clique em
-            "Gerar Carnê".
-          </p>
-        </header>
-
-        {/* Busca de membro (Supabase) */}
-        <div className="bg-white border border-slate-200 rounded-lg p-4 print:hidden space-y-2">
-          <h2 className="font-semibold text-slate-700">Cliente (Sacado)</h2>
-
-          {membroSelecionado ? (
-            <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded px-3 py-2">
-              <div className="text-sm">
-                <p className="font-semibold text-slate-800">{membroSelecionado.nome}</p>
-                <p className="text-xs text-slate-500">{mascaraCPF(membroSelecionado.cpf || '') || 'CPF não informado'}</p>
-              </div>
-              <button
-                type="button"
-                onClick={limparMembroSelecionado}
-                className="text-xs font-semibold text-blue-700 hover:text-blue-900"
-              >
-                Trocar membro
-              </button>
-            </div>
-          ) : (
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Buscar membro pelo nome..."
-                className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={buscaMembro}
-                onChange={(e) => setBuscaMembro(e.target.value)}
-              />
-              {resultadosBusca.length > 0 && (
-                <ul className="absolute z-10 left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-56 overflow-y-auto">
-                  {resultadosBusca.map((p) => (
-                    <li key={p.id}>
-                      <button
-                        type="button"
-                        onClick={() => selecionarMembro(p)}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 flex justify-between"
-                      >
-                        <span>{p.nome}</span>
-                        <span className="text-xs text-slate-400">{mascaraCPF(p.cpf || '') || ''}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <p className="text-xs text-slate-400 mt-1">
-                Ou preencha os campos manualmente no formulário abaixo.
-              </p>
-            </div>
-          )}
-
-          {carregandoMembro && <p className="text-xs text-slate-400">Carregando dados do membro...</p>}
+        <div className="print:hidden mx-[3px] sm:mx-0">
+          <PageHeader
+            titulo="Gerador de Carnê"
+          />
         </div>
 
-        {/* Vínculo com inscrição de evento (habilita baixa por QR Code) */}
-        <div className="bg-white border border-slate-200 rounded-lg p-4 print:hidden space-y-2">
-          <h2 className="font-semibold text-slate-700">Baixa por QR Code (opcional)</h2>
-          <p className="text-xs text-slate-500">
-            Vincule este carnê a uma inscrição de evento para gerar um QR Code em cada parcela. O QR
-            pode ser lido em "Leitor QR" para dar baixa automática no pagamento.
-          </p>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start print:block">
+          {/* Coluna Esquerda: Formulários */}
+          <div className="lg:col-span-5 space-y-6 print:hidden">
 
-          {inscricaoSelecionada ? (
-            <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded px-3 py-2">
-              <div className="text-sm">
-                <p className="font-semibold text-slate-800">
-                  {inscricaoSelecionada.dados_inscricao?.nome ||
-                    inscricaoSelecionada.dados_inscricao?.['Nome Completo'] ||
-                    'Inscrição'}
-                </p>
-                <p className="text-xs text-slate-500">
-                  Evento: {inscricaoSelecionada.agenda_eventos?.titulo || '—'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={removerVinculoInscricao}
-                className="text-xs font-semibold text-emerald-700 hover:text-emerald-900"
-              >
-                Remover vínculo
-              </button>
-            </div>
-          ) : (
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Buscar inscrição por nome ou evento..."
-                className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={buscaInscricao}
-                onChange={(e) => setBuscaInscricao(e.target.value)}
-              />
-              {resultadosInscricao.length > 0 && (
-                <ul className="absolute z-10 left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg max-h-56 overflow-y-auto">
-                  {resultadosInscricao.map((insc) => (
-                    <li key={insc.id}>
-                      <button
-                        type="button"
-                        onClick={() => selecionarInscricao(insc)}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 flex justify-between"
-                      >
-                        <span>
-                          {insc.dados_inscricao?.nome || insc.dados_inscricao?.['Nome Completo'] || 'Sem nome'}
-                        </span>
-                        <span className="text-xs text-slate-400">{insc.agenda_eventos?.titulo}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </div>
-
-
-        <form onSubmit={handleGerar} className="grid md:grid-cols-2 gap-6 print:hidden">
-          {/* Dados do cliente */}
-          <fieldset className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
-            <legend className="font-semibold text-slate-700 px-1">Dados do Cliente</legend>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Nome do cliente</label>
-              <input
-                type="text"
-                className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={dadosCliente.nome}
-                onChange={(e) => setDadosCliente((d) => ({ ...d, nome: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Telefone / WhatsApp</label>
-              <input
-                type="text"
-                className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={dadosCliente.telefone}
-                onChange={(e) => setDadosCliente((d) => ({ ...d, telefone: mascaraTelefone(e.target.value) }))}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">CPF/CNPJ</label>
-              <input
-                type="text"
-                className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={dadosCliente.cpfCnpj}
-                onChange={(e) => setDadosCliente((d) => ({ ...d, cpfCnpj: mascaraCPF(e.target.value) }))}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Endereço</label>
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosCliente.endereco}
-                  onChange={(e) => setDadosCliente((d) => ({ ...d, endereco: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Bairro</label>
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosCliente.bairro}
-                  onChange={(e) => setDadosCliente((d) => ({ ...d, bairro: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <div className="col-span-1">
-                <label className="block text-xs font-medium text-slate-600 mb-1">Cidade</label>
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosCliente.cidade}
-                  onChange={(e) => setDadosCliente((d) => ({ ...d, cidade: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Estado</label>
-                <input
-                  type="text"
-                  maxLength={2}
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosCliente.estado}
-                  onChange={(e) => setDadosCliente((d) => ({ ...d, estado: e.target.value.toUpperCase() }))}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">CEP</label>
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosCliente.cep}
-                  onChange={(e) => setDadosCliente((d) => ({ ...d, cep: mascaraCEP(e.target.value) }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Nº Rua</label>
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosCliente.numeroRua}
-                  onChange={(e) => setDadosCliente((d) => ({ ...d, numeroRua: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Complemento</label>
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosCliente.complemento}
-                  onChange={(e) => setDadosCliente((d) => ({ ...d, complemento: e.target.value }))}
-                />
-              </div>
-            </div>
-          </fieldset>
-
-          {/* Dados da venda / financeiros */}
-          <fieldset className="bg-white border border-slate-200 rounded-lg p-4 space-y-3">
-            <legend className="font-semibold text-slate-700 px-1">Dados Financeiros (Venda)</legend>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Número da Venda</label>
-                <input
-                  type="number"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosVenda.numeroVenda}
-                  onChange={(e) => setDadosVenda((d) => ({ ...d, numeroVenda: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Título</label>
-                <input
-                  type="number"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosVenda.titulo}
-                  onChange={(e) => setDadosVenda((d) => ({ ...d, titulo: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Valor da Parcela (R$)</label>
-              <input
-                type="number"
-                step="0.01"
-                className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={dadosVenda.valorParcela}
-                onChange={(e) => setDadosVenda((d) => ({ ...d, valorParcela: e.target.value }))}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">(-) Descontos (R$)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosVenda.descontos}
-                  onChange={(e) => setDadosVenda((d) => ({ ...d, descontos: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">(+) Acréscimos (R$)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosVenda.acrescimos}
-                  onChange={(e) => setDadosVenda((d) => ({ ...d, acrescimos: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Data de Emissão</label>
-                <input
-                  type="date"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosVenda.dataEmissao}
-                  onChange={(e) => setDadosVenda((d) => ({ ...d, dataEmissao: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Venc. 1ª Parcela</label>
-                <input
-                  type="date"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosVenda.vencimentoPrimeiraParcela}
-                  onChange={(e) => setDadosVenda((d) => ({ ...d, vencimentoPrimeiraParcela: e.target.value }))}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">
-                Quantidade de Parcelas (Dividido)
-              </label>
-              <input
-                type="number"
-                min={1}
-                max={24}
-                className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={dadosVenda.quantidadeParcelas}
-                onChange={(e) => setDadosVenda((d) => ({ ...d, quantidadeParcelas: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Instruções</label>
-              <textarea
-                rows={2}
-                className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={dadosVenda.instrucoes}
-                onChange={(e) => setDadosVenda((d) => ({ ...d, instrucoes: e.target.value }))}
-              />
-            </div>
-          </fieldset>
-
-          {/* Dados do cedente */}
-          <fieldset className="bg-white border border-slate-200 rounded-lg p-4 space-y-3 md:col-span-2">
-            <legend className="font-semibold text-slate-700 px-1">Dados do Cedente (Emissor)</legend>
-
-            <div className="grid md:grid-cols-3 gap-2">
-              <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-slate-600 mb-1">Nome / Razão Social</label>
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosCedente.nome}
-                  onChange={(e) => setDadosCedente((d) => ({ ...d, nome: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Telefone Celular</label>
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosCedente.telefoneCelular}
-                  onChange={(e) => setDadosCedente((d) => ({ ...d, telefoneCelular: mascaraTelefone(e.target.value) }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-2">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Endereço</label>
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosCedente.endereco}
-                  onChange={(e) => setDadosCedente((d) => ({ ...d, endereco: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Bairro</label>
-                <input
-                  type="text"
-                  className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={dadosCedente.bairro}
-                  onChange={(e) => setDadosCedente((d) => ({ ...d, bairro: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1">Cidade / UF / CEP</label>
-                <div className="flex flex-wrap gap-1">
-                  <input
-                    type="text"
-                    className="flex-1 min-w-[100px] border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={dadosCedente.cidade}
-                    onChange={(e) => setDadosCedente((d) => ({ ...d, cidade: e.target.value }))}
-                  />
-                  <input
-                    type="text"
-                    maxLength={2}
-                    className="w-14 sm:w-16 border border-slate-300 rounded px-2 py-1.5 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={dadosCedente.estado}
-                    onChange={(e) => setDadosCedente((d) => ({ ...d, estado: e.target.value.toUpperCase() }))}
-                  />
-                  <input
-                    type="text"
-                    className="w-24 sm:w-28 border border-slate-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={dadosCedente.cep}
-                    onChange={(e) => setDadosCedente((d) => ({ ...d, cep: mascaraCEP(e.target.value) }))}
-                  />
+            {/* Passo 1: Identificação (Membro / Evento) */}
+            <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-4">
+              <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
+                  <User size={18} />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Passo 1: Identificação</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">Associe o sacado e vincule a um evento</p>
                 </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1">Local de Pagamento</label>
-              <input
-                type="text"
-                className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={dadosCedente.localPagamento}
-                onChange={(e) => setDadosCedente((d) => ({ ...d, localPagamento: e.target.value }))}
-              />
-            </div>
-          </fieldset>
-
-          {erro && (
-            <div className="md:col-span-2 bg-red-50 border border-red-300 text-red-700 text-sm rounded px-3 py-2">
-              ⚠ {erro}
-            </div>
-          )}
-
-          <div className="md:col-span-2 flex flex-col sm:flex-row gap-3">
-            <button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded transition w-full sm:w-auto"
-            >
-              Gerar Carnê
-            </button>
-            <button
-              type="button"
-              onClick={handleLimparGeral}
-              className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold px-4 py-2 rounded transition w-full sm:w-auto order-last sm:order-none"
-            >
-              Limpar Tudo
-            </button>
-            <button
-              type="button"
-              onClick={handleSalvarComoPadrao}
-              disabled={salvandoPadrao}
-              className="bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2 rounded transition w-full sm:w-auto flex items-center justify-center gap-2"
-            >
-              {salvandoPadrao ? 'Salvando...' : '💾 Salvar como Padrão'}
-            </button>
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="bg-slate-700 hover:bg-slate-800 text-white text-sm font-semibold px-4 py-2 rounded transition w-full sm:w-auto"
-            >
-              Imprimir / PDF
-            </button>
-          </div>
-        </form>
-
-        {/* Resumo */}
-        {parcelas.length > 0 && (
-          <div className="bg-white border border-slate-200 rounded-lg p-4 print:hidden">
-            <h2 className="font-semibold text-slate-700 mb-2">Resumo</h2>
-            <p className="text-sm text-slate-600">
-              {parcelas.length} parcela(s) de R$ {formatCurrency(dadosVenda.valorParcela)} — Total: R${' '}
-              {formatCurrency(valorTotal)}
-            </p>
-          </div>
-        )}
-
-        {/* Cartões Digitais (substituto do carnê físico) */}
-        {parcelas.length > 0 && (
-          <div className="bg-white border border-slate-200 rounded-lg p-4 print:hidden space-y-3">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
-                <h2 className="font-semibold text-slate-700">Cartões Digitais</h2>
-                <p className="text-xs text-slate-500">
-                  {inscricaoId
-                    ? 'Envie por WhatsApp/e-mail no lugar do carnê impresso. Cada cartão tem o QR Code da parcela.'
-                    : 'Vincule uma inscrição de evento (acima) para habilitar a geração dos cartões com QR Code.'}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleWhatsAppCarneCompleto}
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:opacity-90 transition shrink-0 flex items-center gap-1.5"
-                >
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.347-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.87 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                  WhatsApp
-                </button>
-                {inscricaoId && (
+              {/* Membro Selecionado ou Campo de Busca */}
+              {membroSelecionado ? (
+                <div className="flex items-center justify-between bg-blue-50/40 border border-blue-100/60 rounded-2xl px-4 py-3">
+                  <div className="text-xs">
+                    <span className="text-[9px] font-black uppercase text-blue-500 tracking-wider">Cliente / Sacado</span>
+                    <p className="font-extrabold text-slate-800 text-sm mt-0.5">{membroSelecionado.nome}</p>
+                    <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{mascaraCPF(membroSelecionado.cpf || '') || 'CPF não informado'}</p>
+                  </div>
                   <button
                     type="button"
-                    onClick={handleBaixarTodosCartoesPDF}
-                    className="px-4 py-2 bg-[#202046] text-white rounded-xl text-xs font-bold hover:opacity-90 transition shrink-0"
+                    onClick={limparMembroSelecionado}
+                    className="p-1.5 bg-white border border-slate-200 hover:border-red-300 hover:text-red-600 text-slate-500 rounded-lg transition cursor-pointer"
+                    title="Trocar membro"
                   >
-                    Baixar Todos (PDF)
+                    <X size={14} />
                   </button>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Buscar Membro</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Buscar membro pelo nome..."
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                      value={buscaMembro}
+                      onChange={(e) => setBuscaMembro(e.target.value)}
+                    />
+                    {resultadosBusca.length > 0 && (
+                      <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto divide-y divide-slate-50">
+                        {resultadosBusca.map((p) => (
+                          <li key={p.id}>
+                            <button
+                              type="button"
+                              onClick={() => selecionarMembro(p)}
+                              className="w-full text-left px-3 py-2.5 text-xs hover:bg-blue-50/50 flex justify-between items-center transition cursor-pointer"
+                            >
+                              <span className="font-bold text-slate-700">{p.nome}</span>
+                              <span className="text-[10px] text-slate-400 font-semibold">{mascaraCPF(p.cpf || '') || ''}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1 font-medium">
+                    Ou digite as informações do cliente manualmente abaixo.
+                  </p>
+                </div>
+              )}
+
+              {carregandoMembro && <p className="text-[10px] text-slate-400 italic">Carregando dados do membro...</p>}
+
+              {/* Vínculo de Evento (QR Code) */}
+              {inscricaoSelecionada ? (
+                <div className="flex items-center justify-between bg-emerald-50/40 border border-emerald-100/60 rounded-2xl px-4 py-3">
+                  <div className="text-xs">
+                    <span className="text-[9px] font-black uppercase text-emerald-600 tracking-wider">Inscrição Vinculada (QR Code)</span>
+                    <p className="font-extrabold text-slate-800 text-sm mt-0.5">
+                      {inscricaoSelecionada.dados_inscricao?.nome ||
+                        inscricaoSelecionada.dados_inscricao?.['Nome Completo'] ||
+                        'Inscrição'}
+                    </p>
+                    <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                      Evento: {inscricaoSelecionada.agenda_eventos?.titulo || '—'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removerVinculoInscricao}
+                    className="p-1.5 bg-white border border-slate-200 hover:border-red-300 hover:text-red-600 text-slate-500 rounded-lg transition cursor-pointer"
+                    title="Remover vínculo"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">QR Code / Evento (Opcional)</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Vincular inscrição de evento..."
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                      value={buscaInscricao}
+                      onChange={(e) => setBuscaInscricao(e.target.value)}
+                    />
+                    {resultadosInscricao.length > 0 && (
+                      <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto divide-y divide-slate-50">
+                        {resultadosInscricao.map((insc) => (
+                          <li key={insc.id}>
+                            <button
+                              type="button"
+                              onClick={() => selecionarInscricao(insc)}
+                              className="w-full text-left px-3 py-2.5 text-xs hover:bg-blue-50/50 flex justify-between items-center transition cursor-pointer"
+                            >
+                              <span className="font-bold text-slate-700">
+                                {insc.dados_inscricao?.nome || insc.dados_inscricao?.['Nome Completo'] || 'Sem nome'}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-semibold">{insc.agenda_eventos?.titulo}</span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {inscricaoId && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {parcelas.map((parcela) => (
-                  <div key={parcela.numero} className="border border-slate-200 rounded-xl p-2 flex flex-col items-center gap-1.5 text-center">
-                    <span className="text-xs font-bold text-slate-700">Parcela {parcela.parcelaLabel}</span>
-                    <span className="text-[11px] text-slate-400">R$ {formatCurrency(parcela.valorPago)}</span>
-                    <div className="flex gap-1 w-full">
-                      <button
-                        type="button"
-                        onClick={() => handleBaixarCartaoPNG(parcela)}
-                        className="flex-1 px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition"
-                      >
-                        PNG
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleBaixarCartaoPDF(parcela)}
-                        className="flex-1 px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition"
-                      >
-                        PDF
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleWhatsAppParcela(parcela)}
-                        className="flex-1 px-2 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-bold transition flex items-center justify-center"
-                        title="Enviar detalhes por WhatsApp"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.347-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.87 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                      </button>
+            {/* Passo 2: Faturamento & Dados Cliente */}
+            <form onSubmit={handleGerar} className="space-y-6">
+              <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-4">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+                    <DollarSign size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Passo 2: Dados do Carnê</h3>
+                    <p className="text-[10px] text-slate-400 font-medium">Preencha os valores e dados do sacado</p>
+                  </div>
+                </div>
+
+                {/* Dados Pessoais do Cliente */}
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Informações do Cliente</h4>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Nome do Cliente</label>
+                    <input
+                      type="text"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                      value={dadosCliente.nome}
+                      onChange={(e) => setDadosCliente((d) => ({ ...d, nome: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">WhatsApp / Telefone</label>
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosCliente.telefone}
+                        onChange={(e) => setDadosCliente((d) => ({ ...d, telefone: mascaraTelefone(e.target.value) }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">CPF / CNPJ</label>
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosCliente.cpfCnpj}
+                        onChange={(e) => setDadosCliente((d) => ({ ...d, cpfCnpj: mascaraCPF(e.target.value) }))}
+                      />
                     </div>
                   </div>
-                ))}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Endereço</label>
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosCliente.endereco}
+                        onChange={(e) => setDadosCliente((d) => ({ ...d, endereco: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Bairro</label>
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosCliente.bairro}
+                        onChange={(e) => setDadosCliente((d) => ({ ...d, bairro: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-12 gap-3">
+                    <div className="col-span-5">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Cidade</label>
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosCliente.cidade}
+                        onChange={(e) => setDadosCliente((d) => ({ ...d, cidade: e.target.value }))}
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">UF</label>
+                      <input
+                        type="text"
+                        maxLength={2}
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium uppercase text-center"
+                        value={dadosCliente.estado}
+                        onChange={(e) => setDadosCliente((d) => ({ ...d, estado: e.target.value.toUpperCase() }))}
+                      />
+                    </div>
+                    <div className="col-span-4">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">CEP</label>
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosCliente.cep}
+                        onChange={(e) => setDadosCliente((d) => ({ ...d, cep: mascaraCEP(e.target.value) }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Nº Rua</label>
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosCliente.numeroRua}
+                        onChange={(e) => setDadosCliente((d) => ({ ...d, numeroRua: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Complemento</label>
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosCliente.complemento}
+                        onChange={(e) => setDadosCliente((d) => ({ ...d, complemento: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <hr className="border-slate-100 my-4" />
+
+                {/* Dados Financeiros */}
+                <div className="space-y-3">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Informações de Cobrança</h4>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Nº Venda / Pedido</label>
+                      <input
+                        type="number"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosVenda.numeroVenda}
+                        onChange={(e) => setDadosVenda((d) => ({ ...d, numeroVenda: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Título</label>
+                      <input
+                        type="number"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosVenda.titulo}
+                        onChange={(e) => setDadosVenda((d) => ({ ...d, titulo: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Valor da Parcela (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                      value={dadosVenda.valorParcela}
+                      onChange={(e) => setDadosVenda((d) => ({ ...d, valorParcela: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">(-) Descontos (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosVenda.descontos}
+                        onChange={(e) => setDadosVenda((d) => ({ ...d, descontos: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">(+) Acréscimos (R$)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosVenda.acrescimos}
+                        onChange={(e) => setDadosVenda((d) => ({ ...d, acrescimos: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Data de Emissão</label>
+                      <input
+                        type="date"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosVenda.dataEmissao}
+                        onChange={(e) => setDadosVenda((d) => ({ ...d, dataEmissao: e.target.value }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Venc. 1ª Parcela</label>
+                      <input
+                        type="date"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosVenda.vencimentoPrimeiraParcela}
+                        onChange={(e) => setDadosVenda((d) => ({ ...d, vencimentoPrimeiraParcela: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">
+                        Quantidade de Parcelas
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={24}
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosVenda.quantidadeParcelas}
+                        onChange={(e) => setDadosVenda((d) => ({ ...d, quantidadeParcelas: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Instruções</label>
+                    <textarea
+                      rows={2}
+                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                      value={dadosVenda.instrucoes}
+                      onChange={(e) => setDadosVenda((d) => ({ ...d, instrucoes: e.target.value }))}
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* Dados do Emissor (Igreja) - Accordion */}
+              <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCedenteConfig(!showCedenteConfig)}
+                  className="w-full flex items-center justify-between border-b border-slate-100 pb-3 text-left focus:outline-none cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-slate-50 text-slate-600 rounded-xl">
+                      <Building size={18} />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Dados do Cedente (Igreja)</h3>
+                      <p className="text-[10px] text-slate-400 font-medium">Configurações do emissor do carnê</p>
+                    </div>
+                  </div>
+                  <div className="text-slate-400 hover:text-slate-600">
+                    {showCedenteConfig ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </div>
+                </button>
+
+                {showCedenteConfig && (
+                  <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Nome da Igreja / Cedente</label>
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosCedente.nome}
+                        onChange={(e) => setDadosCedente((d) => ({ ...d, nome: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Telefone Celular</label>
+                        <input
+                          type="text"
+                          className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                          value={dadosCedente.telefoneCelular}
+                          onChange={(e) => setDadosCedente((d) => ({ ...d, telefoneCelular: mascaraTelefone(e.target.value) }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">E-mail</label>
+                        <input
+                          type="email"
+                          className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                          value={dadosCedente.email}
+                          onChange={(e) => setDadosCedente((d) => ({ ...d, email: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Endereço</label>
+                        <input
+                          type="text"
+                          className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                          value={dadosCedente.endereco}
+                          onChange={(e) => setDadosCedente((d) => ({ ...d, endereco: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Bairro</label>
+                        <input
+                          type="text"
+                          className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                          value={dadosCedente.bairro}
+                          onChange={(e) => setDadosCedente((d) => ({ ...d, bairro: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-12 gap-3">
+                      <div className="col-span-5">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Cidade</label>
+                        <input
+                          type="text"
+                          className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                          value={dadosCedente.cidade}
+                          onChange={(e) => setDadosCedente((d) => ({ ...d, cidade: e.target.value }))}
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">UF</label>
+                        <input
+                          type="text"
+                          maxLength={2}
+                          className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium uppercase text-center"
+                          value={dadosCedente.estado}
+                          onChange={(e) => setDadosCedente((d) => ({ ...d, estado: e.target.value.toUpperCase() }))}
+                        />
+                      </div>
+                      <div className="col-span-4">
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">CEP</label>
+                        <input
+                          type="text"
+                          className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                          value={dadosCedente.cep}
+                          onChange={(e) => setDadosCedente((d) => ({ ...d, cep: mascaraCEP(e.target.value) }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Local de Pagamento</label>
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosCedente.localPagamento}
+                        onChange={(e) => setDadosCedente((d) => ({ ...d, localPagamento: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {erro && (
+                <div className="bg-red-50 border border-red-100 text-red-600 text-xs rounded-2xl px-4 py-3 flex items-center gap-2">
+                  <AlertCircle size={16} className="shrink-0" />
+                  <span className="font-semibold">{erro}</span>
+                </div>
+              )}
+
+              {/* Bloco de Botões de Ações */}
+              <div className="flex flex-col gap-2">
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Plus size={16} />
+                  Gerar Carnê
+                </button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSalvarComoPadrao}
+                    disabled={salvandoPadrao}
+                    className="py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Save size={14} />
+                    {salvandoPadrao ? 'Salvando...' : 'Salvar Padrão'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleLimparGeral}
+                    className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Trash2 size={14} />
+                    Limpar Tudo
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="w-full py-2.5 bg-gradient-to-r from-slate-700 to-slate-800 hover:from-slate-800 hover:to-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <Printer size={15} />
+                  Imprimir / Exportar PDF
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Coluna Direita: Preview / Resumo */}
+          <div className="lg:col-span-7 space-y-6 print:w-full print:p-0 print:m-0">
+            {parcelas.length === 0 ? (
+              /* Empty State Premium */
+              <div className="bg-white border border-slate-100 rounded-[28px] p-12 shadow-sm text-center flex flex-col items-center justify-center min-h-[400px] print:hidden">
+                <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-2xl flex items-center justify-center mb-4">
+                  <FileText size={32} />
+                </div>
+                <h3 className="font-extrabold text-slate-800 text-base">Pré-visualização do Carnê</h3>
+                <p className="text-xs text-slate-400 mt-2 max-w-xs leading-relaxed font-medium">
+                  Preencha a data de vencimento e valores à esquerda, e clique em <strong>Gerar Carnê</strong> para visualizar os cupons e opções de compartilhamento digital.
+                </p>
+              </div>
+            ) : (
+              /* Seção Ativa */
+              <>
+                {/* Resumo Card */}
+                <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-950 text-white border border-indigo-900/40 rounded-[28px] p-6 shadow-md print:hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-indigo-500/10 blur-3xl -translate-y-12 translate-x-12 pointer-events-none" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.25em] bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full border border-indigo-400/10 inline-block mb-3">
+                    Resumo do Carnê
+                  </span>
+
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div>
+                      <p className="text-[10px] text-indigo-200/60 uppercase font-black tracking-wider">Total do Faturamento</p>
+                      <h4 className="text-2xl font-extrabold text-white">R$ {formatCurrency(valorTotal)}</h4>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-indigo-200/60 uppercase font-black tracking-wider">Valor da Parcela</p>
+                      <h4 className="text-xl font-extrabold text-indigo-100">R$ {formatCurrency(dadosVenda.valorParcela)}</h4>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-indigo-900/60 my-4 pt-3 flex flex-wrap justify-between gap-2 text-xs font-semibold text-indigo-200/80">
+                    <p>🔢 Parcela(s): <span className="font-extrabold text-white">{parcelas.length}</span></p>
+                    <p>📅 Vencimento Inicial: <span className="font-extrabold text-white">{formatDate(dadosVenda.vencimentoPrimeiraParcela)}</span></p>
+                  </div>
+                </div>
+
+                {/* Cartões Digitais */}
+                <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-4 print:hidden">
+                  <div className="flex items-center justify-between flex-wrap gap-3 border-b border-slate-100 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <QrCode size={18} />
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Cartões Digitais</h3>
+                        <p className="text-[10px] text-slate-400 font-medium">
+                          {inscricaoId
+                            ? 'Envie as parcelas por WhatsApp com códigos QR integrados'
+                            : 'Associe uma inscrição de evento para gerar os QR Codes'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleWhatsAppCarneCompleto}
+                        className="px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-emerald-200"
+                      >
+                        <Share2 size={13} />
+                        Enviar Resumo
+                      </button>
+                      {inscricaoId && (
+                        <button
+                          type="button"
+                          onClick={handleBaixarTodosCartoesPDF}
+                          className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        >
+                          <Download size={13} />
+                          Baixar Todos
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {inscricaoId ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {parcelas.map((parcela) => (
+                        <div key={parcela.numero} className="border border-slate-100 bg-slate-50/50 rounded-2xl p-3 flex flex-col items-center justify-between text-center gap-3">
+                          <div>
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Parcela</span>
+                            <p className="text-sm font-black text-slate-800 mt-0.5">{parcela.parcelaLabel}</p>
+                            <p className="text-xs font-bold text-slate-600 mt-1">R$ {formatCurrency(parcela.valorPago)}</p>
+                          </div>
+
+                          <div className="flex flex-col gap-1.5 w-full">
+                            <div className="flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleBaixarCartaoPNG(parcela)}
+                                className="flex-1 py-1.5 bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 rounded-lg text-[9px] font-extrabold uppercase transition cursor-pointer"
+                              >
+                                PNG
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleBaixarCartaoPDF(parcela)}
+                                className="flex-1 py-1.5 bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 rounded-lg text-[9px] font-extrabold uppercase transition cursor-pointer"
+                              >
+                                PDF
+                              </button>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleWhatsAppParcela(parcela)}
+                              className="w-full py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[9px] font-extrabold uppercase transition flex items-center justify-center gap-1.5 cursor-pointer"
+                              title="Enviar por WhatsApp"
+                            >
+                              <Share2 size={11} />
+                              WhatsApp
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
+                      <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                        Para habilitar a geração de cartões digitais de parcelas e códigos QR para baixa automática, vincule o carnê a uma <strong>Inscrição de Evento</strong> no Passo 1.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pré-visualização Real das Lâminas do Carnê */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 px-1 print:hidden">
+                    <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+                      <FileText size={16} />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Lâminas do Carnê</h3>
+                      <p className="text-[10px] text-slate-400 font-medium font-semibold">Visualização fiel dos cupons de pagamento</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 lg:max-h-[900px] lg:overflow-y-auto print:max-h-none print:overflow-visible pr-1">
+                    {parcelas.map((parcela, idx) => (
+                      <div
+                        key={parcela.numero}
+                        className={`bg-white p-3 rounded-2xl shadow-sm border border-slate-100 hover:border-slate-200 transition print:p-0 print:border-none print:shadow-none print:rounded-none print:break-inside-avoid print:mb-4 ${(idx + 1) % 3 === 0 && idx !== parcelas.length - 1 ? 'print:break-after-page' : ''
+                          }`}
+                      >
+                        <CupomCarne
+                          dadosCedente={dadosCedente}
+                          dadosCliente={dadosCliente}
+                          dadosVenda={dadosVenda}
+                          parcela={parcela}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </div>
-        )}
-
-        {/* Carnê gerado */}
-        {parcelas.length > 0 && (
-          <div className="space-y-4 print:space-y-0">
-            {parcelas.map((parcela, idx) => (
-              <div
-                key={parcela.numero}
-                className={`print:break-inside-avoid print:mb-4 ${
-                  (idx + 1) % 3 === 0 && idx !== parcelas.length - 1 ? 'print:break-after-page' : ''
-                }`}
-              >
-                <CupomCarne
-                  dadosCedente={dadosCedente}
-                  dadosCliente={dadosCliente}
-                  dadosVenda={dadosVenda}
-                  parcela={parcela}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

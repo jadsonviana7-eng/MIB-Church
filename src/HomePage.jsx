@@ -303,7 +303,7 @@ export default function HomePage({
       { id: 'financeiro', label: 'Financeiro', accessLabel: 'Financeiro', icon: MenuIcons.financeiro, submenu: 'resumo', desc: 'Fluxo e transações' },
       { id: 'escolas', label: 'Escolas', accessLabel: 'Escolas', icon: MenuIcons.escolas, submenu: 'resumo', desc: 'Ensino bíblico e turmas' },
       { id: 'agenda', label: 'Agenda', accessLabel: 'Agenda', icon: MenuIcons.agenda, submenu: 'calendario', desc: 'Eventos e compromissos' },
-      { id: 'utilitarios', label: 'Utilitários', accessLabel: 'Utilitários', icon: MenuIcons.utilitarios, submenu: 'escalas', desc: 'Ferramentas e testes' },
+      { id: 'utilitarios', label: 'Utilitários', accessLabel: 'Utilitários', icon: MenuIcons.utilitarios, submenu: 'resumo', desc: 'Ferramentas e testes' },
       { id: 'gestao', label: 'Gestor Ministerial', accessLabel: 'Gestão Ministerial', icon: MenuIcons.gestaoMinisterial, submenu: 'escalas', desc: 'Equipes e escalas' },
     ];
     return rawModules.filter(mod => hasAccess(mod.accessLabel));

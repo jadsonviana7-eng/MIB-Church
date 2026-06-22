@@ -737,7 +737,8 @@ export default function App() {
   const mostrarBotaoVoltarMobile = 
     (moduloAtual === 'pessoas' && !!(filtros.cargo || filtros.zona || filtros.atuacao || filtros.relatorioCampo)) ||
     (moduloAtual === 'celulas' && !!celulaSelecionadaId) ||
-    (moduloAtual === 'escolas' && (escolasSubmenu !== 'resumo' || !!turmaSelecionadaId || !!filtroCursoTurmas || !!alunoSelecionadoParaCadernetaId));
+    (moduloAtual === 'escolas' && (escolasSubmenu !== 'resumo' || !!turmaSelecionadaId || !!filtroCursoTurmas || !!alunoSelecionadoParaCadernetaId)) ||
+    (moduloAtual === 'utilitarios' && utilitariosSubmenu !== 'resumo');
 
   const handleVoltarMobile = () => {
     if (moduloAtual === 'pessoas') {
@@ -772,6 +773,8 @@ export default function App() {
       } else {
         navegar('escolas', 'resumo');
       }
+    } else if (moduloAtual === 'utilitarios') {
+      navegar('utilitarios', 'resumo');
     }
   };
 
@@ -1052,10 +1055,6 @@ export default function App() {
           </button>
         </div>
         <nav className="flex-1 py-0 space-y-0 overflow-y-auto">
-          {hasAccess('Configurações') && (
-            <MenuButton ativo={moduloAtual === 'configuracoes'} onClick={() => navegar('configuracoes')} icon={MenuIcons.configuracoes}>Configurações</MenuButton>
-          )}
-
           {hasAccess('Visão Geral') && ( /* Removido o div wrapper */
             <MenuButton ativo={moduloAtual === 'dashboard'} onClick={() => navegar('dashboard')} icon={MenuIcons.dashboard}>
               Visão Geral
@@ -1216,7 +1215,7 @@ export default function App() {
           <div>
             <MenuButton 
               ativo={moduloAtual === 'utilitarios'} 
-              onClick={() => navegar('utilitarios', 'escalas')} 
+              onClick={() => navegar('utilitarios', 'resumo')} 
               icon={MenuIcons.utilitarios}
               hasSubmenu={submenusUtilitarios.length > 0}
               expanded={mobileDropdownAberto === 'utilitarios'}

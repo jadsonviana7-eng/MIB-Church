@@ -81,18 +81,103 @@ export default function ModuloUtilitarios(props) {
 
   if (submenu === 'resumo' || !submenu) {
     conteudo = (
-      <div className="space-y-6">
-        <div className="hidden md:block">
+      <div className="space-y-6 animate-in fade-in duration-300 mx-[-3px] sm:mx-0">
+        {/* Page Header (visível em todos os tamanhos) */}
+        <div className="print:hidden mx-[3px] sm:mx-0">
           <PageHeader
             titulo="Utilitários"
-            subtitulo="Ferramentas de apoio à gestão e operação da igreja."
           />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-5 px-1">
-          {utilitarios.map((u) => (
-            <CardBotton key={u.id} {...u} onNavigate={onNavigate} />
-          ))}
+        {/* ── BANNER PREMIUM DE INTRODUÇÃO ── */}
+        <div className="relative rounded-[24px] overflow-hidden p-6 md:p-8 bg-gradient-to-r from-[#1e3a8a] via-[#14296b] to-[#1e3a8a] text-white shadow-lg border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-3 max-w-xl text-center md:text-left">
+            <span className="text-[10px] font-black uppercase tracking-[0.25em] bg-blue-500/30 text-blue-200 px-3 py-1 rounded-full border border-blue-400/20">
+              Central de Operações
+            </span>
+            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">Equipados para Toda Boa Obra</h2>
+            <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-medium">
+              A Central de Utilitários reúne ferramentas administrativas, financeiras e de intercessão da MIB Church. Utilize esses recursos para simplificar sua rotina e aproximar a igreja.
+            </p>
+          </div>
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shrink-0 text-center md:text-right max-w-[240px]">
+            <p className="text-xs italic text-blue-100 font-medium leading-relaxed">
+              "Servi uns aos outros, cada um conforme o dom que recebeu, como bons despenseiros da multiforme graça de Deus."
+            </p>
+            <span className="text-[10px] font-bold text-blue-300 uppercase block mt-2 tracking-widest">— 1 Pedro 4:10</span>
+          </div>
+        </div>
+
+        {/* Grid de Ferramentas */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-base font-extrabold text-slate-800 uppercase tracking-wider">Ferramentas Disponíveis</h3>
+            <span className="text-xs font-bold text-slate-400">{utilitarios.length} Ativas</span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-5 px-1">
+            {utilitarios.map((u) => (
+              <CardBotton key={u.id} {...u} onNavigate={onNavigate} />
+            ))}
+          </div>
+        </div>
+
+        {/* ── DIRETÓRIO DE USO & ENGATAMENTO ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-1">
+          {/* O Que Fazer - Guia */}
+          <div className="lg:col-span-2 bg-white rounded-[24px] border border-slate-100 p-6 space-y-4 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">💡</div>
+              <h3 className="text-base font-extrabold text-slate-800 uppercase tracking-wider">Como aproveitar este módulo?</h3>
+            </div>
+            <div className="divide-y divide-slate-100">
+              <div className="py-3 flex gap-3 items-start">
+                <span className="text-xs font-black text-blue-600 bg-blue-50 w-6 h-6 rounded-lg flex items-center justify-center shrink-0">01</span>
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm">Desenvolvimento Pessoal e Ministerial</h4>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                    Faça o **Teste de Temperamento** para mapear suas aptidões emocionais e comportamentais. Com os resultados, converse com os líderes sobre quais atuações ministeriais você se encaixaria melhor.
+                  </p>
+                </div>
+              </div>
+              <div className="py-3 flex gap-3 items-start">
+                <span className="text-xs font-black text-blue-600 bg-blue-50 w-6 h-6 rounded-lg flex items-center justify-center shrink-0">02</span>
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm">Suporte em Finanças & Transparência</h4>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                    A **Calculadora de Tributos** e o **Gerador/Leitor de Carnês** ajudam na organização individual e corporativa dos dízimos, campanhas e eventos.
+                  </p>
+                </div>
+              </div>
+              <div className="py-3 flex gap-3 items-start">
+                <span className="text-xs font-black text-blue-600 bg-blue-50 w-6 h-6 rounded-lg flex items-center justify-center shrink-0">03</span>
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm">Comunhão e Intercessão Direta</h4>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                    Não carregue fardos sozinhos. Envie um **Pedido de Oração** diretamente aos pastores de forma restrita, ou acesse o **Mural de Orações** para ver petições públicas e interceder em comunidade.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Destaque Interativo / Dica de Ouro */}
+          <div className="bg-gradient-to-br from-[#eff6ff] to-[#dbeafe] rounded-[24px] border border-[#bfdbfe] p-6 flex flex-col justify-between gap-6 shadow-sm">
+            <div className="space-y-2">
+              <span className="text-[9px] font-black text-blue-700 bg-blue-200/50 border border-blue-300/30 px-2 py-0.5 rounded-full uppercase tracking-wider inline-block">
+                Destaque Interativo
+              </span>
+              <h4 className="text-base font-extrabold text-blue-900">Descubra Seus Dons</h4>
+              <p className="text-xs text-blue-700 leading-relaxed font-medium">
+                Você sabia que o temperamento influencia diretamente o seu estilo de liderança e serviço? Faça o teste rápido agora e obtenha um relatório completo do seu perfil!
+              </p>
+            </div>
+            <button
+              onClick={() => onNavigate('quiz')}
+              className="w-full py-3 bg-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider hover:bg-blue-700 transition active:scale-95 shadow-md shadow-blue-300/30 cursor-pointer text-center"
+            >
+              🚀 Fazer Teste de Temperamento
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -133,11 +218,10 @@ export default function ModuloUtilitarios(props) {
                 <button
                   key={u.id}
                   onClick={() => onNavigate(u.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-left transition-all group cursor-pointer ${
-                    ativo
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-left transition-all group cursor-pointer ${ativo
                       ? 'bg-slate-900 text-white shadow-md'
                       : 'text-slate-600 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   <span
                     className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center text-base bg-gradient-to-br ${u.gradient} text-white shadow-sm transition-transform group-hover:scale-105`}
@@ -168,7 +252,7 @@ function CardBotton({ id, label, desc, icon, gradient, onNavigate }) {
   return (
     <button
       onClick={() => onNavigate(id)}
-      className="relative p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-left group flex flex-col h-full cursor-pointer overflow-hidden"
+      className="relative p-6 bg-white rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-center group flex flex-col items-center h-full cursor-pointer overflow-hidden"
     >
       {/* Glow decorativo de fundo */}
       <div
@@ -176,19 +260,18 @@ function CardBotton({ id, label, desc, icon, gradient, onNavigate }) {
       />
 
       <div
-        className={`relative w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-4 shrink-0 bg-gradient-to-br ${gradient} text-white shadow-lg shadow-slate-200 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}
+        className={`relative w-16 h-16 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-3xl sm:text-2xl mb-4 shrink-0 bg-gradient-to-br ${gradient} text-white shadow-lg shadow-slate-200 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}
       >
         {icon}
       </div>
 
-      <div className="relative flex-1 min-w-0">
-        <h3 className="font-bold text-slate-800 text-lg leading-tight truncate">{label}</h3>
-        <p className="text-slate-500 text-sm mt-2 leading-relaxed line-clamp-3">{desc}</p>
+      <div className="relative flex-1 min-w-0 flex flex-col items-center">
+        <h3 className="font-bold text-slate-800 text-lg leading-tight whitespace-normal sm:truncate">{label}</h3>
+        <p className="text-slate-500 text-sm mt-2 leading-relaxed line-clamp-3 hidden sm:block">{desc}</p>
       </div>
 
-      <div className="relative mt-4 text-slate-400 group-hover:text-slate-700 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-colors">
-        Acessar Ferramenta
-        <span className="group-hover:translate-x-1.5 transition-transform text-base">→</span>
+      <div className="relative mt-4 text-slate-400 group-hover:text-slate-700 text-[10px] font-black uppercase tracking-widest transition-colors">
+        Clique para acessar
       </div>
     </button>
   );

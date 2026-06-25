@@ -28,7 +28,7 @@ export default function PublicEventRegistration() {
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (data) {
         setEvento(data);
         // Inicializa o estado das respostas com base nos campos dinâmicos
@@ -84,7 +84,7 @@ export default function PublicEventRegistration() {
     setEnviando(true);
 
     try {
-      const detalhesPagamento = metodoPagamentoSelecionado ? 
+      const detalhesPagamento = metodoPagamentoSelecionado ?
         `${metodoPagamentoSelecionado}${parcelas[metodoPagamentoSelecionado] > 1 ? ` (${parcelas[metodoPagamentoSelecionado]}x de ${formatarMoeda(valorTotal / parcelas[metodoPagamentoSelecionado])})` : ''}` :
         "Nenhum método selecionado";
 
@@ -124,7 +124,7 @@ export default function PublicEventRegistration() {
           <div className="text-6xl">🎉</div>
           <h2 className="text-2xl font-black text-slate-800 tracking-tight">Inscrição Confirmada!</h2>
           <p className="text-sm text-slate-600 leading-relaxed">Sua participação no evento <strong>{evento.titulo}</strong> foi registrada com sucesso.</p>
-          
+
           {evento.valor_tipo === 'pago' && (
             <div className="bg-blue-50 border border-blue-200 p-5 rounded-2xl text-left space-y-4">
               <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest">⚠️ Pendente de Pagamento</p>
@@ -136,7 +136,7 @@ export default function PublicEventRegistration() {
                       {f.tipo} {parcelas[f.tipo] > 1 ? `(${parcelas[f.tipo]}x de ${formatarMoeda(valorTotal / (parcelas[f.tipo] || 1))})` : ''}
                     </p>
                     {f.link_pagamento && (
-                      <button 
+                      <button
                         onClick={() => window.open(f.link_pagamento, '_blank')}
                         className="w-full mb-3 py-2.5 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-blue-700 transition-all"
                       >
@@ -149,7 +149,7 @@ export default function PublicEventRegistration() {
               </div>
             </div>
           )}
-          
+
           <button onClick={() => window.location.reload()} className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-lg transition active:scale-95">
             Fazer Outra Inscrição
           </button>
@@ -167,51 +167,51 @@ export default function PublicEventRegistration() {
           <img src={evento.capa_url || 'https://via.placeholder.com/1200x600?text=Capa+do+Evento'} className="w-full aspect-[16/7] object-cover" alt="Cartaz" />
           <div className="p-4 sm:p-8 space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-4">
-               <span className="px-3 py-1 bg-blue-50 text-blue-700 text-[10px] font-black uppercase rounded-full border border-blue-100 tracking-widest">{evento.tipo}</span>
-               <span className={`text-[10px] font-black uppercase tracking-widest ${evento.valor_tipo === 'pago' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'} px-3 py-1 rounded-full`}>
-                 {evento.valor_tipo === 'pago' ? `Valor: R$ ${evento.valor?.toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : 'Inscrição Gratuita'}
-               </span>
+              <span className="px-3 py-1 bg-blue-50 text-blue-700 text-[10px] font-black uppercase rounded-full border border-blue-100 tracking-widest">{evento.tipo}</span>
+              <span className={`text-[10px] font-black uppercase tracking-widest ${evento.valor_tipo === 'pago' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'} px-3 py-1 rounded-full`}>
+                {evento.valor_tipo === 'pago' ? `Valor: R$ ${evento.valor?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'Inscrição Gratuita'}
+              </span>
             </div>
-            
+
             <div>
               <h1 className="text-4xl font-black text-slate-800 tracking-tight leading-none mb-2">{evento.titulo}</h1>
               <p className="text-lg text-slate-500 font-medium">{evento.subtitulo}</p>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6 border-t border-slate-100">
-               <div className="flex items-center gap-3">
-                 <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500">
-                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-                     <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                   </svg>
-                 </div>
-                 <div className="text-xs">
-                    <p className="font-black text-slate-400 uppercase tracking-widest">Início</p>
-                    <p className="font-bold text-slate-700 mt-0.5">{formatarDataHoraExibicao(evento.data_inicio)}</p>
-                 </div>
-               </div>
-               {evento.local_nome && (
-                 <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500">
-                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                       <circle cx="12" cy="10" r="3"/>
-                     </svg>
-                   </div>
-                   <div className="text-xs">
-                      <p className="font-black text-slate-400 uppercase tracking-widest">Onde</p>
-                      <p className="font-bold text-slate-700 mt-0.5 underline cursor-pointer hover:text-blue-600 transition" onClick={() => evento.local_url && window.open(evento.local_url, '_blank')}>{evento.local_nome}</p>
-                   </div>
-                 </div>
-               )}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                </div>
+                <div className="text-xs">
+                  <p className="font-black text-slate-400 uppercase tracking-widest">Início</p>
+                  <p className="font-bold text-slate-700 mt-0.5">{formatarDataHoraExibicao(evento.data_inicio)}</p>
+                </div>
+              </div>
+              {evento.local_nome && (
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                  </div>
+                  <div className="text-xs">
+                    <p className="font-black text-slate-400 uppercase tracking-widest">Onde</p>
+                    <p className="font-bold text-slate-700 mt-0.5 underline cursor-pointer hover:text-blue-600 transition" onClick={() => evento.local_url && window.open(evento.local_url, '_blank')}>{evento.local_nome}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </Card>
 
         {/* MENU DE ABAS */}
         <div className="flex bg-white p-1 rounded-xl sm:p-1.5 sm:rounded-2xl shadow-sm border border-slate-100 gap-1">
-          <button 
+          <button
             onClick={() => setAbaAtiva('sobre')}
             className={`flex-1 py-2 text-[8px] sm:py-3 sm:text-[10px] font-bold sm:font-black uppercase tracking-normal sm:tracking-widest rounded-lg sm:rounded-xl transition-all duration-300 ${abaAtiva === 'sobre' ? 'bg-[#1e3a8a] text-white shadow-md sm:shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
           >
@@ -219,7 +219,7 @@ export default function PublicEventRegistration() {
             <span className="hidden sm:inline">Sobre o Evento</span>
           </button>
           {evento.programacao?.length > 0 && (
-            <button 
+            <button
               onClick={() => setAbaAtiva('programacao')}
               className={`flex-1 py-2 text-[8px] sm:py-3 sm:text-[10px] font-bold sm:font-black uppercase tracking-normal sm:tracking-widest rounded-lg sm:rounded-xl transition-all duration-300 ${abaAtiva === 'programacao' ? 'bg-[#1e3a8a] text-white shadow-md sm:shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
             >
@@ -228,7 +228,7 @@ export default function PublicEventRegistration() {
             </button>
           )}
           {evento.palestrantes?.length > 0 && (
-            <button 
+            <button
               onClick={() => setAbaAtiva('palestrantes')}
               className={`flex-1 py-2 text-[8px] sm:py-3 sm:text-[10px] font-bold sm:font-black uppercase tracking-normal sm:tracking-widest rounded-lg sm:rounded-xl transition-all duration-300 ${abaAtiva === 'palestrantes' ? 'bg-[#1e3a8a] text-white shadow-md sm:shadow-lg' : 'text-slate-500 hover:bg-slate-50'}`}
             >
@@ -243,8 +243,8 @@ export default function PublicEventRegistration() {
           {abaAtiva === 'sobre' && (
             <Card className="p-8 animate-in fade-in duration-300">
               {evento.detalhes_ricos ? (
-                <div className="prose prose-slate max-w-none prose-headings:font-black prose-p:text-slate-600 prose-p:leading-relaxed prose-p:text-sm" 
-                     dangerouslySetInnerHTML={{ __html: evento.detalhes_ricos }} />
+                <div className="prose prose-slate max-w-none prose-headings:font-black prose-p:text-slate-600 prose-p:leading-relaxed prose-p:text-sm"
+                  dangerouslySetInnerHTML={{ __html: evento.detalhes_ricos }} />
               ) : (
                 <p className="text-center text-slate-400 italic text-sm py-10">Nenhuma descrição detalhada disponível.</p>
               )}
@@ -253,34 +253,34 @@ export default function PublicEventRegistration() {
 
           {abaAtiva === 'programacao' && evento.programacao?.length > 0 && (
             <Card className="p-0 overflow-hidden shadow-sm animate-in fade-in duration-300">
-               <CardHeader titulo="Cronograma do Evento" />
-               <div className="divide-y divide-slate-100">
-                 {evento.programacao.map(item => (
-                   <div key={item.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                      <div>
-                        <p className="text-sm font-black text-slate-700">{item.titulo}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{new Date(item.data + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
-                      </div>
-                      <span className="text-[11px] font-black text-[#1e3a8a] bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 shadow-sm">{item.horario}</span>
-                   </div>
-                 ))}
-               </div>
+              <CardHeader titulo="Cronograma do Evento" />
+              <div className="divide-y divide-slate-100">
+                {evento.programacao.map(item => (
+                  <div key={item.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                    <div>
+                      <p className="text-sm font-black text-slate-700">{item.titulo}</p>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{new Date(item.data + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <span className="text-[11px] font-black text-[#1e3a8a] bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100 shadow-sm">{item.horario}</span>
+                  </div>
+                ))}
+              </div>
             </Card>
           )}
 
           {abaAtiva === 'palestrantes' && evento.palestrantes?.length > 0 && (
             <div className="space-y-4 animate-in fade-in duration-300">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {evento.palestrantes.map(p => (
-                    <Card key={p.id} className="p-4 flex gap-4 items-center bg-white border-none shadow-sm">
-                      <img src={p.preview || 'https://via.placeholder.com/80x80?text=👤'} className="w-16 h-16 rounded-2xl object-cover border border-slate-100 shadow-sm" alt={p.nome} />
-                      <div className="min-w-0">
-                        <p className="font-black text-slate-800 truncate">{p.nome}</p>
-                        <p className="text-xs text-slate-500 line-clamp-2">{p.descricao}</p>
-                      </div>
-                    </Card>
-                  ))}
-               </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {evento.palestrantes.map(p => (
+                  <Card key={p.id} className="p-4 flex gap-4 items-center bg-white border-none shadow-sm">
+                    <img src={p.preview || 'https://via.placeholder.com/80x80?text=👤'} className="w-16 h-16 rounded-2xl object-cover border border-slate-100 shadow-sm" alt={p.nome} />
+                    <div className="min-w-0">
+                      <p className="font-black text-slate-800 truncate">{p.nome}</p>
+                      <p className="text-xs text-slate-500 line-clamp-2">{p.descricao}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -303,8 +303,8 @@ export default function PublicEventRegistration() {
               {evento.valor_transporte > 0 && (
                 <label className={`flex items-center justify-between p-4 rounded-2xl border transition-all cursor-pointer ${incluirTransporte ? 'bg-amber-50 border-amber-300 shadow-sm' : 'bg-white border-slate-200'}`}>
                   <div className="flex items-center gap-3">
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className="w-4 h-4 text-amber-600 rounded border-slate-300"
                       checked={incluirTransporte}
                       onChange={(e) => setIncluirTransporte(e.target.checked)}
@@ -324,7 +324,7 @@ export default function PublicEventRegistration() {
                   return (
                     <div key={f.tipo} className="group">
                       <label className={`flex items-center gap-3 p-4 rounded-2xl border transition-all cursor-pointer ${isSelected ? 'bg-white border-blue-500 shadow-md scale-[1.01]' : 'bg-white/50 border-slate-200 hover:border-blue-200'}`}>
-                        <input 
+                        <input
                           type="radio" // Alterado para radio
                           className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
                           checked={isSelected}
@@ -341,7 +341,7 @@ export default function PublicEventRegistration() {
                           {f.link_pagamento && (
                             <div className="pb-4 border-b border-blue-100">
                               <p className="text-[10px] font-black text-blue-400 uppercase mb-2">Pagamento Online</p>
-                              <button 
+                              <button
                                 type="button"
                                 onClick={() => window.open(f.link_pagamento, '_blank')}
                                 className="w-full py-3 bg-blue-600 text-white rounded-xl text-[11px] font-black uppercase tracking-[0.15em] shadow-lg shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-all"
@@ -354,7 +354,7 @@ export default function PublicEventRegistration() {
                             <div className="flex flex-col sm:flex-row sm:items-center gap-3 pb-3 border-b border-blue-100">
                               <div className="shrink-0">
                                 <p className="text-[10px] font-black text-blue-400 uppercase mb-1">Parcelamento</p>
-                                <select 
+                                <select
                                   value={parcelas[f.tipo] || 1}
                                   onChange={(e) => handleParcelaChange(f.tipo, e.target.value)}
                                   className="bg-white border border-blue-200 rounded-lg px-2 py-1 text-xs font-bold text-blue-900 outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -387,46 +387,46 @@ export default function PublicEventRegistration() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-8">
-             {(evento.campos_inscricao || []).map((campo, idx) => (
-               <div key={idx} className="space-y-3">
-                 <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block">
-                    {campo.nome} {campo.obrigatorio && <span className="text-rose-500">*</span>}
-                 </label>
-                 
-                 {campo.tipo === 'texto' && (
-                    <input type="text" required={campo.obrigatorio} value={respostas[campo.nome] || ''} onChange={e => handleFieldChange(campo.nome, e.target.value)} className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-medium" placeholder={`Digite seu ${campo.nome.toLowerCase()}`} />
-                 )}
+            {(evento.campos_inscricao || []).map((campo, idx) => (
+              <div key={idx} className="space-y-3">
+                <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block">
+                  {campo.nome} {campo.obrigatorio && <span className="text-rose-500">*</span>}
+                </label>
 
-                 {campo.tipo === 'área de texto' && (
-                    <textarea required={campo.obrigatorio} rows={4} value={respostas[campo.nome] || ''} onChange={e => handleFieldChange(campo.nome, e.target.value)} className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all resize-none text-sm font-medium" placeholder={`Detalhes sobre ${campo.nome.toLowerCase()}`} />
-                 )}
+                {campo.tipo === 'texto' && (
+                  <input type="text" required={campo.obrigatorio} value={respostas[campo.nome] || ''} onChange={e => handleFieldChange(campo.nome, e.target.value)} className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-sm font-medium" placeholder={`Digite seu ${campo.nome.toLowerCase()}`} />
+                )}
 
-                 {campo.tipo === 'seleção' && (
-                   <select required={campo.obrigatorio} value={respostas[campo.nome] || ''} onChange={e => handleFieldChange(campo.nome, e.target.value)} className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none bg-white text-sm font-medium appearance-none">
-                     <option value="">Escolha uma opção</option>
-                     {(campo.opcoes || []).map(opt => <option key={opt.id} value={opt.label}>{opt.label}</option>)}
-                   </select>
-                 )}
+                {campo.tipo === 'área de texto' && (
+                  <textarea required={campo.obrigatorio} rows={4} value={respostas[campo.nome] || ''} onChange={e => handleFieldChange(campo.nome, e.target.value)} className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all resize-none text-sm font-medium" placeholder={`Detalhes sobre ${campo.nome.toLowerCase()}`} />
+                )}
 
-                 {(campo.tipo === 'radio' || campo.tipo === 'checkbox') && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                       {(campo.opcoes || []).map(opt => (
-                         <label key={opt.id} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${respostas[campo.nome]?.includes(opt.label) || respostas[campo.nome] === opt.label ? 'border-blue-600 bg-blue-50/50 shadow-sm' : 'border-slate-100 hover:border-slate-300 bg-slate-50/30'}`}>
-                           <input type={campo.tipo} name={campo.nome} checked={campo.tipo === 'checkbox' ? (respostas[campo.nome] || []).includes(opt.label) : respostas[campo.nome] === opt.label} onChange={e => campo.tipo === 'checkbox' ? handleCheckboxChange(campo.nome, opt.label, e.target.checked) : handleFieldChange(campo.nome, opt.label)} className="w-4 h-4 text-blue-600" />
-                           <span className="text-xs font-black text-slate-700 uppercase">{opt.label}</span>
-                         </label>
-                       ))}
-                    </div>
-                 )}
-               </div>
-             ))}
+                {campo.tipo === 'seleção' && (
+                  <select required={campo.obrigatorio} value={respostas[campo.nome] || ''} onChange={e => handleFieldChange(campo.nome, e.target.value)} className="w-full px-4 py-3.5 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none bg-white text-sm font-medium appearance-none">
+                    <option value="">Escolha uma opção</option>
+                    {(campo.opcoes || []).map(opt => <option key={opt.id} value={opt.label}>{opt.label}</option>)}
+                  </select>
+                )}
 
-             <div className="pt-8 flex flex-col gap-6">
-                <button type="submit" disabled={enviando} className="w-full py-5 bg-[#1e3a8a] text-white rounded-3xl font-black uppercase tracking-[0.25em] text-xs shadow-2xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
-                  {enviando ? 'Processando...' : 'Finalizar Inscrição'}
-                </button>
-                <p className="text-[9px] text-center text-slate-300 font-black uppercase tracking-[0.3em]">Ambiente Seguro · MIB Church</p>
-             </div>
+                {(campo.tipo === 'radio' || campo.tipo === 'checkbox') && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {(campo.opcoes || []).map(opt => (
+                      <label key={opt.id} className={`flex items-center gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${respostas[campo.nome]?.includes(opt.label) || respostas[campo.nome] === opt.label ? 'border-blue-600 bg-blue-50/50 shadow-sm' : 'border-slate-100 hover:border-slate-300 bg-slate-50/30'}`}>
+                        <input type={campo.tipo} name={campo.nome} checked={campo.tipo === 'checkbox' ? (respostas[campo.nome] || []).includes(opt.label) : respostas[campo.nome] === opt.label} onChange={e => campo.tipo === 'checkbox' ? handleCheckboxChange(campo.nome, opt.label, e.target.checked) : handleFieldChange(campo.nome, opt.label)} className="w-4 h-4 text-blue-600" />
+                        <span className="text-xs font-black text-slate-700 uppercase">{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            <div className="pt-8 flex flex-col gap-6">
+              <button type="submit" disabled={enviando} className="w-full py-5 bg-[#1e3a8a] text-white rounded-3xl font-black uppercase tracking-[0.25em] text-xs shadow-2xl shadow-blue-200 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50">
+                {enviando ? 'Processando...' : 'Finalizar Inscrição'}
+              </button>
+              <p className="text-[9px] text-center text-slate-300 font-black uppercase tracking-[0.3em]">Ambiente Seguro · MIB Church</p>
+            </div>
           </form>
         </Card>
       </div>

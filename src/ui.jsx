@@ -313,8 +313,8 @@ export function Recentes({ titulo, itens, render }) {
 export function PageHeader({ titulo, subtitulo, breadcrumb = [], onNavigate, children }) {
   return (
     <div className="mb-6 xl:mb-2 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between pt-0 w-full">
-      <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 pl-0 md:pl-0 w-full md:w-auto">
-        <div className="md:contents flex flex-col w-full bg-white border border-t-0 border-slate-100 md:bg-transparent md:border-0 rounded-t-none rounded-b-2xl p-4 md:p-0 shadow-sm md:shadow-none text-center md:text-left items-center md:items-start">
+      <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 w-full md:w-auto">
+        <div className="flex flex-col w-full bg-white border border-t-0 border-slate-100 md:bg-transparent md:border-0 rounded-t-none rounded-b-2xl p-4 md:p-0 shadow-sm md:shadow-none text-center md:text-left items-center md:items-start">
           <h2 className="mt-0 text-base sm:text-3xl xl:text-[18px] font-bold text-slate-800 tracking-tight">{titulo}</h2>
           {subtitulo && <p className="mt-1 md:mt-2 text-[11px] md:text-sm text-[var(--text-muted)] max-w-3xl">{subtitulo}</p>}
         </div>
@@ -322,7 +322,6 @@ export function PageHeader({ titulo, subtitulo, breadcrumb = [], onNavigate, chi
           <nav className="hidden md:flex items-center gap-2 text-[11px] font-bold tracking-tight text-slate-400" aria-label="Breadcrumb">
             {breadcrumb.map((item, index) => {
               const isLast = index === breadcrumb.length - 1;
-              // Formata para "Somente a primeira maiúscula"
               const label = item.toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
               return (
                 <div key={index} className="flex items-center gap-2">
@@ -345,6 +344,8 @@ export function PageHeader({ titulo, subtitulo, breadcrumb = [], onNavigate, chi
     </div>
   );
 }
+
+
 
 export function Avatar({ pessoa, tamanho = 'w-10 h-10' }) {
   if (!pessoa) return null;

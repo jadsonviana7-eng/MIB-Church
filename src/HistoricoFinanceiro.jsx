@@ -34,8 +34,8 @@ export default function HistoricoFinanceiro({ onVoltar }) {
     <div className="space-y-6">
       <div className="hidden md:block">
         <PageHeader 
-          titulo="Histórico de Ações" 
-          breadcrumb={['Resumo', 'Histórico']}
+          titulo="Logs de Ações" 
+          breadcrumb={['Resumo', 'Logs']}
           onNavigate={onVoltar}
         />
       </div>

@@ -20,7 +20,7 @@ import { Settings, Bell } from 'lucide-react';
 import { normalizarTexto, faixaDaIdade, meses, valorCampoRelatorio } from './churchUtils';
 
 const filtrosIniciais = {
-  busca: '', genero: '', estadoCivil: '', faixaEtaria: '', zona: '', cargo: '', 
+  busca: '', genero: '', estadoCivil: '', faixaEtaria: '', zona: '', cargo: '',
   atuacao: '', batizado: '', relatorioCampo: '', relatorioValor: ''
 };
 
@@ -68,6 +68,12 @@ export default function App() {
   const [gestaoMinisterialSubmenu, setGestaoMinisterialSubmenu] = useState('escalas');
   const [agendaSubmenu, setAgendaSubmenu] = useState('calendario');
   const [utilitariosSubmenu, setUtilitariosSubmenu] = useState('resumo');
+
+  // ── Busca Global ─────────────────────────────────────────────────────────
+  const [buscaGlobal, setBuscaGlobal] = useState('');
+  const [buscaAberta, setBuscaAberta] = useState(false);
+  const [buscaMobileAberta, setBuscaMobileAberta] = useState(false);
+  const [buscaMobile, setBuscaMobile] = useState('');
   const [filtrosFinanceiroAberto, setFiltrosFinanceiroAberto] = useState(false); // Novo estado para filtros financeiros mobile
   const [pessoas, setPessoas] = useState([]);
   const [filtrosPessoasAberto, setFiltrosPessoasAberto] = useState(false);
@@ -313,8 +319,8 @@ export default function App() {
             const eventTitle = esc.eventos_ministeriais?.titulo || 'Evento';
             const ministerioNome = esc.ministerios?.nome || 'Ministério';
             const funcaoNome = esc.ministerio_funcoes?.nome || 'Função';
-            const dataEvento = esc.eventos_ministeriais?.data_evento 
-              ? new Date(esc.eventos_ministeriais.data_evento).toLocaleDateString('pt-BR') 
+            const dataEvento = esc.eventos_ministeriais?.data_evento
+              ? new Date(esc.eventos_ministeriais.data_evento).toLocaleDateString('pt-BR')
               : 'Sem data';
 
             lista.push({
@@ -433,13 +439,13 @@ export default function App() {
         if (!bloco) return true;
         return ['Lista de células'].includes(bloco);
       }
-      return false; 
+      return false;
     }
 
     if (p === 'pastor') {
       return true; // Pastor visualiza todos os módulos e submenus, incluindo Gerador de Carnê
     }
-    
+
     if (p === 'pastor') {
       return true;
     }
@@ -528,7 +534,7 @@ export default function App() {
   const alterarFiltro = (campo, valor) => setFiltros(prev => ({ ...prev, [campo]: valor }));
 
   const submenusPessoas = useMemo(() => [
-    ['todos', 'Ver todos'], 
+    ['todos', 'Ver todos'],
     ['adicionar', 'Adicionar pessoa'],
     ['link_publico', 'Link de Autocadastro'],
     ['inativos', 'Membros Inativos'],
@@ -540,20 +546,20 @@ export default function App() {
   ].filter(([id, label]) => hasAccess('Pessoas', label)), [hasAccess]);
 
   const submenusCelulas = useMemo(() => [
-    ['lista', 'Lista de células'], 
-    ['adicionar', 'Nova célula'], 
-    ['reunioes', 'Reuniões'], 
+    ['lista', 'Lista de células'],
+    ['adicionar', 'Nova célula'],
+    ['reunioes', 'Reuniões'],
     ['relatorios', 'Relatórios']
   ].filter(([id, label]) => hasAccess('Células', label)), [hasAccess]);
 
   const submenusFinanceiro = useMemo(() => [
-    ['resumo', 'Resumo'], 
-    ['transacoes', 'Transações'], 
-    ['relatorios', 'Relatórios financeiros'], 
-    ['historico', 'Histórico'], 
-    ['categorias', 'Categorias'], 
-    ['contas', 'Contas/Caixas'],
-    ['importar', 'Importar']
+    ['resumo', 'Resumo'],
+    ['transacoes', 'Transações'],
+    ['relatorios', 'Relatórios financeiros'],
+    ['categorias', 'Categorias'],
+    ['contas', 'Contas'],
+    ['importar', 'Importar'],
+    ['historico', 'Logs']
   ].filter(([id, label]) => hasAccess('Financeiro', label)), [hasAccess]);
 
   const submenusEscolas = useMemo(() => [
@@ -586,10 +592,10 @@ export default function App() {
 
   const submenusUtilitarios = useMemo(() => [
     ['resumo', 'Visão Geral'],
-    ['escalas', 'Escalas Ministerial'], 
+    ['escalas', 'Escalas Ministerial'],
     ['relatorio-semanal', 'Relatório Semanal'],
     ['calculadora', 'Calculadora de Tributos'],
-    ['quiz', 'Teste de Temperamento'], 
+    ['quiz', 'Teste de Temperamento'],
     ['carne-generator', 'Gerador de Carnê'], // New item
     ['leitor-carne', 'Leitor de Carnê'],
     ['pedido-oracao', 'Pedido de Oração'],
@@ -677,7 +683,7 @@ export default function App() {
     setOrigemVerReuniao(null);
     setTurmaSelecionadaId(null);
     setFiltroCursoTurmas('');
-    
+
     if (submenu !== 'ficha-aluno') {
       setAlunoSelecionadoParaCadernetaId(null);
     }
@@ -734,9 +740,10 @@ export default function App() {
     }
   };
 
-  const mostrarBotaoVoltarMobile = 
+  const mostrarBotaoVoltarMobile =
     (moduloAtual === 'pessoas' && !!(filtros.cargo || filtros.zona || filtros.atuacao || filtros.relatorioCampo)) ||
     (moduloAtual === 'celulas' && !!celulaSelecionadaId) ||
+    (moduloAtual === 'financeiro' && financeiroSubmenu !== 'resumo') ||
     (moduloAtual === 'escolas' && (escolasSubmenu !== 'resumo' || !!turmaSelecionadaId || !!filtroCursoTurmas || !!alunoSelecionadoParaCadernetaId)) ||
     (moduloAtual === 'utilitarios' && utilitariosSubmenu !== 'resumo');
 
@@ -773,6 +780,8 @@ export default function App() {
       } else {
         navegar('escolas', 'resumo');
       }
+    } else if (moduloAtual === 'financeiro') {
+      navegar('financeiro', 'resumo');
     } else if (moduloAtual === 'utilitarios') {
       navegar('utilitarios', 'resumo');
     }
@@ -781,7 +790,7 @@ export default function App() {
   return (
     <div className="flex flex-col min-h-screen bg-[var(--surface-muted)] font-sans text-[var(--text-primary)] antialiased">
       {/* ── CABEÇALHO SUPERIOR PREMIUM — visível apenas em desktop (md+) ── */}
-      <header className="hidden md:flex print:hidden fixed top-0 inset-x-0 z-50 h-14 bg-gradient-to-r from-[#0d1e52] via-[#14296b] to-[#0d1e52] border-b border-blue-900/40 items-center justify-between px-6 shadow-sm backdrop-blur-md">
+      <header className="hidden md:flex print:hidden fixed top-0 inset-x-0 z-50 h-14 bg-gradient-to-r from-[#0d1e52] via-[#14296b] to-[#0d1e52] border-b border-blue-900/40 items-center justify-between px-6 shadow-sm backdrop-blur-md gap-4">
         {/* Logo e Nome do Sistema */}
         <button type="button" onClick={() => navegar('dashboard')} className="flex items-center gap-3 transition hover:opacity-90 shrink-0">
           <img src="/logo-mib-mundau.png" alt="Logo" className="h-10 w-10 object-contain bg-white rounded-xl p-1.5 shadow-md shadow-blue-950/20 border border-blue-900/10" />
@@ -790,6 +799,30 @@ export default function App() {
             <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest block -mt-1">Sistema de Gestão</span>
           </div>
         </button>
+
+        {/* ── BUSCA GLOBAL ──────────────────────────────────────────────────── */}
+        <BuscaGlobal
+          pessoas={pessoas}
+          celulas={celulas}
+          buscaGlobal={buscaGlobal}
+          setBuscaGlobal={setBuscaGlobal}
+          buscaAberta={buscaAberta}
+          setBuscaAberta={setBuscaAberta}
+          onSelecionarPessoa={(id) => {
+            setBuscaGlobal('');
+            setBuscaAberta(false);
+            setFiltros(filtrosIniciais);
+            navegar('pessoas', 'todos');
+            setMembroSelecionadoId(id);
+          }}
+          onSelecionarCelula={(id) => {
+            setBuscaGlobal('');
+            setBuscaAberta(false);
+            navegar('celulas', 'lista');
+            setCelulaSelecionadaId(id);
+          }}
+          normalizarTexto={normalizarTexto}
+        />
 
         {/* Configurações e Perfil do Usuário */}
         <div className="flex items-center gap-4 shrink-0">
@@ -812,145 +845,128 @@ export default function App() {
             <button
               type="button"
               onClick={() => navegar('configuracoes')}
-              className={`p-1.5 rounded-xl transition cursor-pointer flex items-center justify-center border ${
-                moduloAtual === 'configuracoes'
-                  ? 'bg-blue-600/10 border-blue-500/20 text-blue-400'
-                  : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
+              className={`p-1.5 rounded-xl transition cursor-pointer flex items-center justify-center border ${moduloAtual === 'configuracoes'
+                ? 'bg-blue-600/10 border-blue-500/20 text-blue-400'
+                : 'border-transparent text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
               title="Configurações do Sistema"
             >
               <Settings size={18} />
             </button>
           )}
-          
+
           <div className="border-l border-slate-800 pl-4 h-8 flex items-center">
-            <UserAvatarDropdown 
-              usuarioLogado={usuarioLogado} 
-              membroLogado={membroLogado} 
-              onSair={handleSair} 
+            <UserAvatarDropdown
+              usuarioLogado={usuarioLogado}
+              membroLogado={membroLogado}
+              onSair={handleSair}
               onVerPerfil={() => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(membroLogado?.id); }}
             />
           </div>
         </div>
       </header>
 
-      {/* ── MENU PRINCIPAL DE NAVEGAÇÃO — visível apenas em desktop (md+) ── */}
-      <div className="hidden md:flex print:hidden fixed top-14 inset-x-0 z-40 h-12 bg-[#1e3a8a]/95 backdrop-blur-md border-b border-white/10 items-center px-6 shadow-md">
-        <nav className="flex items-center gap-1.5 flex-1">
-          {/* Dashboard */}
+
+      {/* ── SIDEBAR LATERAL DESKTOP — ícones + nomes retraída ── */}
+      <aside className="hidden md:flex print:hidden fixed left-0 top-14 bottom-0 z-40 w-16 flex-col bg-slate-200 border-r border-slate-300 overflow-visible">
+        <nav className="flex-1 flex flex-col items-center py-2 gap-0.5 px-1">
           {hasAccess('Visão Geral') && (
-          <TopNavBtn ativo={moduloAtual === 'dashboard'} onClick={() => navegar('dashboard')} icon={MenuIcons.dashboard}>
-            Visão Geral
-            <span className="ml-1.5 text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full">{indicadores.totalPessoas}</span>
-          </TopNavBtn>
+            <SideNavBtn ativo={moduloAtual === 'dashboard'} onClick={() => navegar('dashboard')} icon={MenuIcons.dashboard} label="Visão Geral" />
           )}
-
-          {/* Pessoas com dropdown */}
           {hasAccess('Pessoas') && (
-          <TopNavDropdown
-            icon={MenuIcons.pessoas}
-            label={<>Pessoas <span className="ml-1 text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full">{pessoas.length}</span></>}
-            ativo={moduloAtual === 'pessoas'}
-          >
-            {submenusPessoas.map(([id, label]) => (
-              <DropdownItem key={id} ativo={moduloAtual === 'pessoas' && pessoasSubmenu === id} onClick={() => { if (id === 'todos') setFiltros(filtrosIniciais); navegar('pessoas', id); }} icon={MenuIcons[submenuIconKey.pessoas[id]]}>
-                {label}
-              </DropdownItem>
-            ))}
-          </TopNavDropdown>
+            <SideNavBtn
+              ativo={moduloAtual === 'pessoas'}
+              onClick={() => { setFiltros(filtrosIniciais); navegar('pessoas', 'todos'); }}
+              icon={MenuIcons.pessoas}
+              label="Pessoas"
+              submenu={submenusPessoas}
+              submenuAtivo={pessoasSubmenu}
+              onSubmenuClick={(id) => { if (id === 'todos') setFiltros(filtrosIniciais); navegar('pessoas', id); }}
+              moduloAtual={moduloAtual}
+              moduloKey="pessoas"
+            />
           )}
-
-          {/* Células com dropdown */}
           {hasAccess('Células') && (
-          <TopNavDropdown
-            icon={MenuIcons.celulas}
-            label={<>Células <span className="ml-1 text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full">{celulas.length}</span></>}
-            ativo={moduloAtual === 'celulas'}
-          >
-            {submenusCelulas.map(([id, label]) => (
-              <DropdownItem key={id} ativo={moduloAtual === 'celulas' && celulasSubmenu === id} onClick={() => navegar('celulas', id)} icon={MenuIcons[submenuIconKey.celulas[id]]}>
-                {label}
-              </DropdownItem>
-            ))}
-          </TopNavDropdown>
+            <SideNavBtn
+              ativo={moduloAtual === 'celulas'}
+              onClick={() => navegar('celulas', 'lista')}
+              icon={MenuIcons.celulas}
+              label="Células"
+              submenu={submenusCelulas}
+              submenuAtivo={celulasSubmenu}
+              onSubmenuClick={(id) => navegar('celulas', id)}
+              moduloAtual={moduloAtual}
+              moduloKey="celulas"
+            />
           )}
-
-          {/* Financeiro com dropdown */}
           {hasAccess('Financeiro') && (
-          <TopNavDropdown
-            icon={MenuIcons.financeiro}
-            label="Financeiro"
-            ativo={moduloAtual === 'financeiro'}
-          >
-            {submenusFinanceiro.map(([id, label]) => (
-              <DropdownItem key={id} ativo={moduloAtual === 'financeiro' && financeiroSubmenu === id} onClick={() => navegar('financeiro', id)} icon={MenuIcons[submenuIconKey.financeiro[id]]}>
-                {label}
-              </DropdownItem>
-            ))}
-          </TopNavDropdown>
+            <SideNavBtn
+              ativo={moduloAtual === 'financeiro'}
+              onClick={() => navegar('financeiro', 'resumo')}
+              icon={MenuIcons.financeiro}
+              label="Financeiro"
+              submenu={submenusFinanceiro}
+              submenuAtivo={financeiroSubmenu}
+              onSubmenuClick={(id) => navegar('financeiro', id)}
+              moduloAtual={moduloAtual}
+              moduloKey="financeiro"
+            />
           )}
-
-          {/* Gestão Ministerial com dropdown */}
           {hasAccess('Gestão Ministerial') && (
-          <TopNavDropdown
-            icon={MenuIcons.gestaoMinisterial}
-            label="Gestor Ministerial"
-            ativo={moduloAtual === 'gestao'}
-          >
-            {submenusGestao.map(([id, label]) => (
-              <DropdownItem key={id} ativo={moduloAtual === 'gestao' && gestaoMinisterialSubmenu === id} onClick={() => navegar('gestao', id)} icon={MenuIcons[submenuIconKey.gestao[id]]}>
-                {label}
-              </DropdownItem>
-            ))}
-          </TopNavDropdown>
+            <SideNavBtn
+              ativo={moduloAtual === 'gestao'}
+              onClick={() => navegar('gestao', 'escalas')}
+              icon={MenuIcons.gestaoMinisterial}
+              label="Ministerial"
+              submenu={submenusGestao}
+              submenuAtivo={gestaoMinisterialSubmenu}
+              onSubmenuClick={(id) => navegar('gestao', id)}
+              moduloAtual={moduloAtual}
+              moduloKey="gestao"
+            />
           )}
-
-          {/* Escolas com dropdown */}
           {hasAccess('Escolas') && (
-          <TopNavDropdown
-            icon={MenuIcons.escolas}
-            label="Escolas"
-            ativo={moduloAtual === 'escolas'}
-          >
-            {submenusEscolas.map(([id, label]) => (
-              <DropdownItem key={id} ativo={moduloAtual === 'escolas' && escolasSubmenu === id} onClick={() => navegar('escolas', id)} icon={MenuIcons[submenuIconKey.escolas[id]]}>
-                {label}
-              </DropdownItem>
-            ))}
-          </TopNavDropdown>
+            <SideNavBtn
+              ativo={moduloAtual === 'escolas'}
+              onClick={() => navegar('escolas', 'resumo')}
+              icon={MenuIcons.escolas}
+              label="Escolas"
+              submenu={submenusEscolas}
+              submenuAtivo={escolasSubmenu}
+              onSubmenuClick={(id) => navegar('escolas', id)}
+              moduloAtual={moduloAtual}
+              moduloKey="escolas"
+            />
           )}
-
-          {/* Agenda com dropdown */}
           {hasAccess('Agenda') && (
-          <TopNavDropdown
-            icon={MenuIcons.agenda}
-            label="Agenda"
-            ativo={moduloAtual === 'agenda'}
-          >
-            {submenusAgenda.map(([id, label]) => (
-              <DropdownItem key={id} ativo={moduloAtual === 'agenda' && agendaSubmenu === id} onClick={() => navegar('agenda', id)} icon={MenuIcons[submenuIconKey.agenda[id]]}>
-                {label}
-              </DropdownItem>
-            ))}
-          </TopNavDropdown>
+            <SideNavBtn
+              ativo={moduloAtual === 'agenda'}
+              onClick={() => navegar('agenda', 'calendario')}
+              icon={MenuIcons.agenda}
+              label="Agenda"
+              submenu={submenusAgenda}
+              submenuAtivo={agendaSubmenu}
+              onSubmenuClick={(id) => navegar('agenda', id)}
+              moduloAtual={moduloAtual}
+              moduloKey="agenda"
+            />
           )}
-
-          {/* Utilitários com dropdown */}
           {hasAccess('Utilitários') && (
-          <TopNavDropdown
-            icon={MenuIcons.utilitarios}
-            label="Utilitários"
-            ativo={moduloAtual === 'utilitarios'}
-          >
-            {submenusUtilitarios.map(([id, label]) => (
-              <DropdownItem key={id} ativo={moduloAtual === 'utilitarios' && utilitariosSubmenu === id} onClick={() => navegar('utilitarios', id)} icon={MenuIcons[submenuIconKey.utilitarios[id]]}>
-                {label}
-              </DropdownItem>
-            ))}
-          </TopNavDropdown>
+            <SideNavBtn
+              ativo={moduloAtual === 'utilitarios'}
+              onClick={() => navegar('utilitarios', 'resumo')}
+              icon={MenuIcons.utilitarios}
+              label="Utilitários"
+              submenu={submenusUtilitarios}
+              submenuAtivo={utilitariosSubmenu}
+              onSubmenuClick={(id) => navegar('utilitarios', id)}
+              moduloAtual={moduloAtual}
+              moduloKey="utilitarios"
+            />
           )}
         </nav>
-      </div>
+      </aside>
+
 
       {/* ── SIDEBAR LATERAL — visível apenas no mobile ── */}
       {/* Mobile Header */}
@@ -973,10 +989,10 @@ export default function App() {
           {getModuloTitle(moduloAtual)}
         </span>
         <div className="flex items-center gap-1.5">
-          {/* Sino de Notificações no Mobile */}
-          <button 
+          {/* 🔔 Sino de Notificações no Mobile */}
+          <button
             onClick={() => setNotificacoesAberto(true)}
-            className="p-1.5 active:scale-95 transition-transform relative text-white"
+            className="p-1.5 active:scale-95 transition-transform relative text-white cursor-pointer"
             title="Alertas e Notificações"
           >
             <Bell size={20} />
@@ -1016,7 +1032,7 @@ export default function App() {
           )}
 
           {/* Avatar clicável no mobile */}
-          <button 
+          <button
             onClick={() => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(membroLogado?.id); }}
             className="p-1 active:scale-95 transition-transform"
             title="Meu Perfil"
@@ -1025,6 +1041,31 @@ export default function App() {
           </button>
         </div>
       </div>
+      {/* 🔍 Overlay de Busca Mobile */}
+      {buscaMobileAberta && (
+        <BuscaMobileOverlay
+          pessoas={pessoas}
+          celulas={celulas}
+          busca={buscaMobile}
+          setBusca={setBuscaMobile}
+          onFechar={() => setBuscaMobileAberta(false)}
+          onSelecionarPessoa={(id) => {
+            setBuscaMobileAberta(false);
+            setBuscaMobile('');
+            setFiltros(filtrosIniciais);
+            navegar('pessoas', 'todos');
+            setMembroSelecionadoId(id);
+          }}
+          onSelecionarCelula={(id) => {
+            setBuscaMobileAberta(false);
+            setBuscaMobile('');
+            navegar('celulas', 'lista');
+            setCelulaSelecionadaId(id);
+          }}
+          normalizarTexto={normalizarTexto}
+        />
+      )}
+
       {/* Original mobile menu toggle button removed */}
       {menuAberto && (
         <button
@@ -1043,8 +1084,8 @@ export default function App() {
               <p className="text-[10px] font-medium text-teal-200/70 uppercase tracking-wider">Gestão da Igreja</p>
             </div>
           </div>
-          <button 
-            type="button" 
+          <button
+            type="button"
             onClick={() => setMenuAberto(false)}
             className="p-2 -mr-2 text-white/50 hover:text-white transition-colors cursor-pointer"
             aria-label="Fechar menu"
@@ -1060,180 +1101,180 @@ export default function App() {
               Visão Geral
             </MenuButton>
           )}
-          
+
           {hasAccess('Pessoas') && (
-          <div>
-            <MenuButton 
-              ativo={moduloAtual === 'pessoas'} 
-              onClick={() => { setFiltros(filtrosIniciais); navegar('pessoas', 'todos'); }} 
-              icon={MenuIcons.pessoas}
-              hasSubmenu={submenusPessoas.length > 0}
-              expanded={mobileDropdownAberto === 'pessoas'}
-              onToggle={() => toggleMobileDropdown('pessoas')}
-            >
-              Pessoas
-            </MenuButton>
-            {mobileDropdownAberto === 'pessoas' && (
-              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                {submenusPessoas.map(([id, label]) => (
-                  <button key={id} type="button" onClick={() => { if (id === 'todos') setFiltros(filtrosIniciais); navegar('pessoas', id); }}
-                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'pessoas' && pessoasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
-                    {MenuIcons[submenuIconKey.pessoas[id]]} {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            <div>
+              <MenuButton
+                ativo={moduloAtual === 'pessoas'}
+                onClick={() => { setFiltros(filtrosIniciais); navegar('pessoas', 'todos'); }}
+                icon={MenuIcons.pessoas}
+                hasSubmenu={submenusPessoas.length > 0}
+                expanded={mobileDropdownAberto === 'pessoas'}
+                onToggle={() => toggleMobileDropdown('pessoas')}
+              >
+                Pessoas
+              </MenuButton>
+              {mobileDropdownAberto === 'pessoas' && (
+                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                  {submenusPessoas.map(([id, label]) => (
+                    <button key={id} type="button" onClick={() => { if (id === 'todos') setFiltros(filtrosIniciais); navegar('pessoas', id); }}
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'pessoas' && pessoasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      {MenuIcons[submenuIconKey.pessoas[id]]} {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {hasAccess('Células') && (
-          <div>
-            <MenuButton 
-              ativo={moduloAtual === 'celulas'} 
-              onClick={() => navegar('celulas', 'lista')} 
-              icon={MenuIcons.celulas}
-              hasSubmenu={submenusCelulas.length > 0}
-              expanded={mobileDropdownAberto === 'celulas'}
-              onToggle={() => toggleMobileDropdown('celulas')}
-            >
-              Células
-            </MenuButton>
-            {mobileDropdownAberto === 'celulas' && (
-              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                {submenusCelulas.map(([id, label]) => (
-                  <button key={id} type="button" onClick={() => navegar('celulas', id)}
-                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'celulas' && celulasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
-                    {MenuIcons[submenuIconKey.celulas[id]]} {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            <div>
+              <MenuButton
+                ativo={moduloAtual === 'celulas'}
+                onClick={() => navegar('celulas', 'lista')}
+                icon={MenuIcons.celulas}
+                hasSubmenu={submenusCelulas.length > 0}
+                expanded={mobileDropdownAberto === 'celulas'}
+                onToggle={() => toggleMobileDropdown('celulas')}
+              >
+                Células
+              </MenuButton>
+              {mobileDropdownAberto === 'celulas' && (
+                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                  {submenusCelulas.map(([id, label]) => (
+                    <button key={id} type="button" onClick={() => navegar('celulas', id)}
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'celulas' && celulasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      {MenuIcons[submenuIconKey.celulas[id]]} {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {hasAccess('Financeiro') && (
-          <div>
-            <MenuButton 
-              ativo={moduloAtual === 'financeiro'} 
-              onClick={() => navegar('financeiro', 'resumo')} 
-              icon={MenuIcons.financeiro}
-              hasSubmenu={submenusFinanceiro.length > 0}
-              expanded={mobileDropdownAberto === 'financeiro'}
-              onToggle={() => toggleMobileDropdown('financeiro')}
-            >
-              Financeiro
-            </MenuButton>
-            {mobileDropdownAberto === 'financeiro' && (
-              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                {submenusFinanceiro.map(([id, label]) => (
-                  <button key={id} type="button" onClick={() => navegar('financeiro', id)}
-                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'financeiro' && financeiroSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
-                    {MenuIcons[submenuIconKey.financeiro[id]]} {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            <div>
+              <MenuButton
+                ativo={moduloAtual === 'financeiro'}
+                onClick={() => navegar('financeiro', 'resumo')}
+                icon={MenuIcons.financeiro}
+                hasSubmenu={submenusFinanceiro.length > 0}
+                expanded={mobileDropdownAberto === 'financeiro'}
+                onToggle={() => toggleMobileDropdown('financeiro')}
+              >
+                Financeiro
+              </MenuButton>
+              {mobileDropdownAberto === 'financeiro' && (
+                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                  {submenusFinanceiro.map(([id, label]) => (
+                    <button key={id} type="button" onClick={() => navegar('financeiro', id)}
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'financeiro' && financeiroSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      {MenuIcons[submenuIconKey.financeiro[id]]} {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {hasAccess('Gestão Ministerial') && (
-          <div>
-            <MenuButton 
-              ativo={moduloAtual === 'gestao'} 
-               onClick={() => navegar('gestao', 'escalas')} 
-              icon={MenuIcons.gestaoMinisterial}
-              hasSubmenu={submenusGestao.length > 0}
-              expanded={mobileDropdownAberto === 'gestao'}
-              onToggle={() => toggleMobileDropdown('gestao')}
-            >
-              Gestor Ministerial
-            </MenuButton>
-            {mobileDropdownAberto === 'gestao' && (
-              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                {submenusGestao.map(([id, label]) => (
-                  <button key={id} type="button" onClick={() => navegar('gestao', id)}
-                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'gestao' && gestaoMinisterialSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
-                    {MenuIcons[submenuIconKey.gestao[id]]} {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            <div>
+              <MenuButton
+                ativo={moduloAtual === 'gestao'}
+                onClick={() => navegar('gestao', 'escalas')}
+                icon={MenuIcons.gestaoMinisterial}
+                hasSubmenu={submenusGestao.length > 0}
+                expanded={mobileDropdownAberto === 'gestao'}
+                onToggle={() => toggleMobileDropdown('gestao')}
+              >
+                Gestor Ministerial
+              </MenuButton>
+              {mobileDropdownAberto === 'gestao' && (
+                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                  {submenusGestao.map(([id, label]) => (
+                    <button key={id} type="button" onClick={() => navegar('gestao', id)}
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'gestao' && gestaoMinisterialSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      {MenuIcons[submenuIconKey.gestao[id]]} {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {hasAccess('Escolas') && (
-          <div>
-            <MenuButton 
-              ativo={moduloAtual === 'escolas'} 
-              onClick={() => navegar('escolas', 'resumo')} 
-              icon={MenuIcons.escolas}
-              hasSubmenu={submenusEscolas.length > 0}
-              expanded={mobileDropdownAberto === 'escolas'}
-              onToggle={() => toggleMobileDropdown('escolas')}
-            >
-              Escolas
-            </MenuButton>
-            {mobileDropdownAberto === 'escolas' && (
-              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                {submenusEscolas.map(([id, label]) => (
-                  <button key={id} type="button" onClick={() => navegar('escolas', id)}
-                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'escolas' && escolasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
-                    {MenuIcons[submenuIconKey.escolas[id]]} {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            <div>
+              <MenuButton
+                ativo={moduloAtual === 'escolas'}
+                onClick={() => navegar('escolas', 'resumo')}
+                icon={MenuIcons.escolas}
+                hasSubmenu={submenusEscolas.length > 0}
+                expanded={mobileDropdownAberto === 'escolas'}
+                onToggle={() => toggleMobileDropdown('escolas')}
+              >
+                Escolas
+              </MenuButton>
+              {mobileDropdownAberto === 'escolas' && (
+                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                  {submenusEscolas.map(([id, label]) => (
+                    <button key={id} type="button" onClick={() => navegar('escolas', id)}
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'escolas' && escolasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      {MenuIcons[submenuIconKey.escolas[id]]} {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {hasAccess('Agenda') && (
-          <div>
-            <MenuButton 
-              ativo={moduloAtual === 'agenda'} 
-              onClick={() => navegar('agenda', 'calendario')} 
-              icon={MenuIcons.agenda}
-              hasSubmenu={submenusAgenda.length > 0}
-              expanded={mobileDropdownAberto === 'agenda'}
-              onToggle={() => toggleMobileDropdown('agenda')}
-            >
-              Agenda
-            </MenuButton>
-            {mobileDropdownAberto === 'agenda' && (
-              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                {submenusAgenda.map(([id, label]) => (
-                  <button key={id} type="button" onClick={() => navegar('agenda', id)}
-                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'agenda' && agendaSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
-                    {MenuIcons[submenuIconKey.agenda[id]]} {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            <div>
+              <MenuButton
+                ativo={moduloAtual === 'agenda'}
+                onClick={() => navegar('agenda', 'calendario')}
+                icon={MenuIcons.agenda}
+                hasSubmenu={submenusAgenda.length > 0}
+                expanded={mobileDropdownAberto === 'agenda'}
+                onToggle={() => toggleMobileDropdown('agenda')}
+              >
+                Agenda
+              </MenuButton>
+              {mobileDropdownAberto === 'agenda' && (
+                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                  {submenusAgenda.map(([id, label]) => (
+                    <button key={id} type="button" onClick={() => navegar('agenda', id)}
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'agenda' && agendaSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      {MenuIcons[submenuIconKey.agenda[id]]} {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {hasAccess('Utilitários') && (
-          <div>
-            <MenuButton 
-              ativo={moduloAtual === 'utilitarios'} 
-              onClick={() => navegar('utilitarios', 'resumo')} 
-              icon={MenuIcons.utilitarios}
-              hasSubmenu={submenusUtilitarios.length > 0}
-              expanded={mobileDropdownAberto === 'utilitarios'}
-              onToggle={() => toggleMobileDropdown('utilitarios')}
-            >
-              Utilitários
-            </MenuButton>
-            {mobileDropdownAberto === 'utilitarios' && (
-              <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
-                {submenusUtilitarios.map(([id, label]) => (
-                  <button key={id} type="button" onClick={() => navegar('utilitarios', id)}
-                    className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'utilitarios' && utilitariosSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
-                    {MenuIcons[submenuIconKey.utilitarios[id]]} {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+            <div>
+              <MenuButton
+                ativo={moduloAtual === 'utilitarios'}
+                onClick={() => navegar('utilitarios', 'resumo')}
+                icon={MenuIcons.utilitarios}
+                hasSubmenu={submenusUtilitarios.length > 0}
+                expanded={mobileDropdownAberto === 'utilitarios'}
+                onToggle={() => toggleMobileDropdown('utilitarios')}
+              >
+                Utilitários
+              </MenuButton>
+              {mobileDropdownAberto === 'utilitarios' && (
+                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                  {submenusUtilitarios.map(([id, label]) => (
+                    <button key={id} type="button" onClick={() => navegar('utilitarios', id)}
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'utilitarios' && utilitariosSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      {MenuIcons[submenuIconKey.utilitarios[id]]} {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </nav>
         <div className="p-4 border-t border-white/10">
@@ -1254,61 +1295,64 @@ export default function App() {
       <nav className="fixed bottom-0 inset-x-0 z-40 h-16 bg-white border-t border-slate-200 flex items-center justify-around px-4 md:hidden print:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         {/* Botão Menu (Canto Esquerdo) */}
         <button onClick={() => setMenuAberto(true)} className="flex flex-col items-center gap-1 text-slate-400 active:scale-95 transition-transform">
-           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-             <path fillRule="evenodd" d="M3 6.75A.75.75 0 0 1 3.75 6h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 6.75ZM3 12a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 12Zm0 5.25a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
-           </svg>
-           <span className="text-[10px] font-bold uppercase tracking-tight">Menu</span>
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path fillRule="evenodd" d="M3 6.75A.75.75 0 0 1 3.75 6h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 6.75ZM3 12a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 12Zm0 5.25a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+          </svg>
+          <span className="text-[10px] font-bold uppercase tracking-tight">Menu</span>
         </button>
 
-         {/* Botão Início (Casinha no meio) */}
+        {/* Botão Início (Casinha no meio) */}
         <button onClick={() => navegar('dashboard')} className={`flex flex-col items-center gap-1 transition-colors ${moduloAtual === 'dashboard' ? 'text-[#1e3a8a]' : 'text-slate-400'}`}>
-           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-             <path d="M11.47 3.84a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.06l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 0 0 1.061 1.06l8.69-8.69Z" />
-             <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.25 0 0 0 .091-.086L12 5.432Z" />
-           </svg>
-           <span className="text-[10px] font-bold uppercase tracking-tight">Início</span>
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M11.47 3.84a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.06l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 0 0 1.061 1.06l8.69-8.69Z" />
+            <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.25 0 0 0 .091-.086L12 5.432Z" />
+          </svg>
+          <span className="text-[10px] font-bold uppercase tracking-tight">Início</span>
         </button>
 
-        {/* Botão Notificações */}
-        <button className="flex flex-col items-center gap-1 text-slate-400 relative active:scale-95 transition-transform">
-           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-             <path fillRule="evenodd" d="M5.25 9a6.75 6.75 0 0 1 13.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 0 1-.297 1.206c-1.544.57-3.16.99-4.831 1.243a3.75 3.75 0 1 1-7.48 0 24.585 24.585 0 0 1-4.831-1.244.75.75 0 0 1-.298-1.205A8.217 8.217 0 0 0 5.25 9.75V9Zm4.502 8.9a2.25 2.25 0 1 0 4.496 0 25.057 25.057 0 0 1-4.496 0Z" clipRule="evenodd" />
-           </svg>
-           <span className="text-[10px] font-bold uppercase tracking-tight">Alertas</span>
-        </button>       
+        {/* Botão Busca */}
+        <button
+          onClick={() => { setBuscaMobile(''); setBuscaMobileAberta(true); }}
+          className="flex flex-col items-center gap-1 text-slate-400 relative active:scale-95 transition-transform cursor-pointer"
+        >
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 15.75-2.489-2.489m0 0a3.375 3.375 0 1 0-4.773-4.773 3.375 3.375 0 0 0 4.774 4.774ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+          <span className="text-[10px] font-bold uppercase tracking-tight">Busca</span>
+        </button>
 
         {/* Botão Configurações */}
         <button onClick={() => navegar('configuracoes')} className={`flex flex-col items-center gap-1 transition-colors ${moduloAtual === 'configuracoes' ? 'text-[#1e3a8a]' : 'text-slate-400'}`}>
-           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-             <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.11-.414.03L6.463 5.01a1.875 1.875 0 0 0-2.652 0l-.825.825a1.875 1.875 0 0 0 0 2.652l.828.828c.08.08.084.248-.03.414a7.446 7.446 0 0 0-.57.986c-.088.182-.228.277-.348.297L1.817 11.078a1.875 1.875 0 0 0-1.567 1.85v1.144c0 .917.663 1.699 1.567 1.85l1.051.176c.12.02.26.115.348.297.252.522.583 1.008.986 1.45a.447.447 0 0 1 .03.415l-.828.828a1.875 1.875 0 0 0 0 2.652l.825.825a1.875 1.875 0 0 0 2.652 0l.828-.828c.08-.08.248-.084.415-.03.442.403.928.734 1.45.986.182.088.277.228.297.348l.176 1.051a1.875 1.875 0 0 0 1.85 1.567h1.144a1.875 1.875 0 0 0 1.85-1.567l.176-1.051c.02-.12.115-.26.297-.348a7.493 7.493 0 0 0 .986-.57c.166-.115.334-.11.414-.03l.828.828a1.875 1.875 0 0 0 2.652 0l.825-.825a1.875 1.875 0 0 0 0-2.652l-.828-.828c-.08-.08-.084-.248.03-.414a7.446 7.446 0 0 0 .57-.986c.088-.182.228-.277.348-.297l1.051-.176a1.875 1.875 0 0 0 1.567-1.85v-1.144a1.875 1.875 0 0 0-1.567-1.85l-1.051-.176c-.12-.02-.26-.115-.348-.297a7.446 7.446 0 0 0-.57-.986.447.447 0 0 1-.03-.414l.828-.828a1.875 1.875 0 0 0 0-2.652l-.825-.825a1.875 1.875 0 0 0-2.652 0l-.828.828c-.08.08-.248.084-.414.03a7.493 7.493 0 0 0-1.45-.986c-.182-.088-.277-.228-.297-.348l-.176-1.051a1.875 1.875 0 0 0-1.85-1.567h-1.144ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
-           </svg>
-           <span className="text-[10px] font-bold uppercase tracking-tight">Ajustes</span>
+          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+            <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.11-.414.03L6.463 5.01a1.875 1.875 0 0 0-2.652 0l-.825.825a1.875 1.875 0 0 0 0 2.652l.828.828c.08.08.084.248-.03.414a7.446 7.446 0 0 0-.57.986c-.088.182-.228.277-.348.297L1.817 11.078a1.875 1.875 0 0 0-1.567 1.85v1.144c0 .917.663 1.699 1.567 1.85l1.051.176c.12.02.26.115.348.297.252.522.583 1.008.986 1.45a.447.447 0 0 1 .03.415l-.828.828a1.875 1.875 0 0 0 0 2.652l.825.825a1.875 1.875 0 0 0 2.652 0l.828-.828c.08-.08.248-.084.415-.03.442.403.928.734 1.45.986.182.088.277.228.297.348l.176 1.051a1.875 1.875 0 0 0 1.85 1.567h1.144a1.875 1.875 0 0 0 1.85-1.567l.176-1.051c.02-.12.115-.26.297-.348a7.493 7.493 0 0 0 .986-.57c.166-.115.334-.11.414-.03l.828.828a1.875 1.875 0 0 0 2.652 0l.825-.825a1.875 1.875 0 0 0 0-2.652l-.828-.828c-.08-.08-.084-.248.03-.414a7.446 7.446 0 0 0 .57-.986c.088-.182.228-.277.348-.297l1.051-.176a1.875 1.875 0 0 0 1.567-1.85v-1.144a1.875 1.875 0 0 0-1.567-1.85l-1.051-.176c-.12-.02-.26-.115-.348-.297a7.446 7.446 0 0 0-.57-.986.447.447 0 0 1-.03-.414l.828-.828a1.875 1.875 0 0 0 0-2.652l-.825-.825a1.875 1.875 0 0 0-2.652 0l-.828.828c-.08.08-.248.084-.414.03a7.493 7.493 0 0 0-1.45-.986c-.182-.088-.277-.228-.297-.348l-.176-1.051a1.875 1.875 0 0 0-1.85-1.567h-1.144ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
+          </svg>
+          <span className="text-[10px] font-bold uppercase tracking-tight">Ajustes</span>
         </button>
       </nav>
 
-      {/* ── CONTEÚDO PRINCIPAL — offset do topbar no desktop ── */}
-      <main className="min-w-0 px-2 pb-20 pt-14 sm:px-6 sm:pb-6 md:pt-[104px] lg:px-10 lg:pb-8 lg:pt-[104px] flex-1 overflow-y-auto">
+      {/* ── CONTEÚDO PRINCIPAL — offset do header + sidebar ── */}
+      <main className="min-w-0 px-2 pb-20 pt-14 sm:px-6 sm:pb-6 md:pl-20 md:pr-6 md:pt-16 lg:pl-20 lg:pr-10 lg:pt-16 lg:pb-8 flex-1 overflow-y-auto">
         {/* Nova HomePage como a tela principal do dashboard */}
         {moduloAtual === 'dashboard' && (
           <>
             {/* Mobile: Exibe os cartões de navegação rápida */}
             <div className="md:hidden">
-              <HomePage 
-                onNavigate={navegar} 
-                hasAccess={hasAccess} 
-                membroLogado={membroLogado} 
+              <HomePage
+                onNavigate={navegar}
+                hasAccess={hasAccess}
+                membroLogado={membroLogado}
                 pessoas={pessoas}
                 celulas={celulas}
                 zonas={zonas}
                 relatoriosCelula={relatoriosCelula}
                 reunioesVistas={reunioesVistas}
                 onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
-                onVerReuniao={(id) => { 
+                onVerReuniao={(id) => {
                   marcarReuniaoComoVista(id);
-                  setOrigemVerReuniao('dashboard'); 
-                  setModuloAtual('celulas'); 
-                  setCelulasSubmenu('reunioes'); 
-                  handleSetReuniaoSelecionadaId(id); 
+                  setOrigemVerReuniao('dashboard');
+                  setModuloAtual('celulas');
+                  setCelulasSubmenu('reunioes');
+                  handleSetReuniaoSelecionadaId(id);
                 }}
                 abaDashboard={abaDashboard}
                 setAbaDashboard={setAbaDashboard}
@@ -1328,12 +1372,12 @@ export default function App() {
                 setPeriodoConvertidos={setPeriodoConvertidos}
                 reunioesVistas={reunioesVistas}
                 onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
-                onVerReuniao={(id) => { 
+                onVerReuniao={(id) => {
                   marcarReuniaoComoVista(id);
-                  setOrigemVerReuniao('dashboard'); 
-                  setModuloAtual('celulas'); 
-                  setCelulasSubmenu('reunioes'); 
-                  handleSetReuniaoSelecionadaId(id); 
+                  setOrigemVerReuniao('dashboard');
+                  setModuloAtual('celulas');
+                  setCelulasSubmenu('reunioes');
+                  handleSetReuniaoSelecionadaId(id);
                 }}
                 membroLogado={membroLogado}
                 usuarioLogado={usuarioLogado}
@@ -1395,10 +1439,10 @@ export default function App() {
         )}
 
         {moduloAtual === 'financeiro' && (
-          <ModuloFinanceiro 
-            meses={meses} 
-            submenu={financeiroSubmenu} 
-            usuarioLogado={usuarioLogado} 
+          <ModuloFinanceiro
+            meses={meses}
+            submenu={financeiroSubmenu}
+            usuarioLogado={usuarioLogado}
             membroLogado={membroLogado}
             hasAccess={hasAccess}
             filtrosMobileAberto={filtrosFinanceiroAberto}
@@ -1418,10 +1462,10 @@ export default function App() {
         )}
 
         {moduloAtual === 'escolas' && escolasSubmenu !== 'ficha-aluno' && (
-          <EscolasModulo 
-            submenu={escolasSubmenu} 
-            onNavigate={(sub) => navegar('escolas', sub)} 
-            pessoas={pessoas} 
+          <EscolasModulo
+            submenu={escolasSubmenu}
+            onNavigate={(sub) => navegar('escolas', sub)}
+            pessoas={pessoas}
             alunoSelecionadoParaCadernetaId={alunoSelecionadoParaCadernetaId} // Passa o ID do aluno
             setAlunoSelecionadoParaCadernetaId={setAlunoSelecionadoParaCadernetaId} // Passa o setter
             membroLogado={membroLogado}
@@ -1443,15 +1487,15 @@ export default function App() {
               /* Ajusta o peso das abas da ficha para Segoe Black */
               .escolas-root .tab-btn { font-weight: 900 !important; }
             `}</style>
-          <DetalhesMembro
-            pessoaId={alunoSelecionadoParaCadernetaId}
-            onFechar={() => navegar('escolas', 'turmas')} // Volta para a lista de turmas ou alunos
-            listaPessoas={pessoas}
-            onDadosAtualizados={obterDados}
-            isStudentCadernetaView={true} // Indica que é a visão de caderneta do aluno
-            membroLogado={membroLogado}
-            hasAccess={hasAccess}
-          />
+            <DetalhesMembro
+              pessoaId={alunoSelecionadoParaCadernetaId}
+              onFechar={() => navegar('escolas', 'turmas')} // Volta para a lista de turmas ou alunos
+              listaPessoas={pessoas}
+              onDadosAtualizados={obterDados}
+              isStudentCadernetaView={true} // Indica que é a visão de caderneta do aluno
+              membroLogado={membroLogado}
+              hasAccess={hasAccess}
+            />
           </div>
         )}
 
@@ -1466,8 +1510,8 @@ export default function App() {
         )}
 
         {moduloAtual === 'utilitarios' && (
-          <ModuloUtilitarios 
-            submenu={utilitariosSubmenu} 
+          <ModuloUtilitarios
+            submenu={utilitariosSubmenu}
             onNavigate={(sub) => navegar('utilitarios', sub)}
             usuarioLogado={usuarioLogado}
             membroLogado={membroLogado}
@@ -1493,20 +1537,20 @@ export default function App() {
         )}
 
         {notificacoesAberto && (
-          <ModalWrapper 
-            titulo="Central de Notificações" 
+          <ModalWrapper
+            titulo="Central de Notificações"
             onFechar={() => setNotificacoesAberto(false)}
           >
             <div className="flex flex-col flex-1 overflow-hidden">
               <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between shrink-0">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  {notificacoesAtivas.length === 0 
-                    ? 'Nenhum alerta pendente' 
+                  {notificacoesAtivas.length === 0
+                    ? 'Nenhum alerta pendente'
                     : `${notificacoesAtivas.length} alerta(s) pendente(s)`}
                 </span>
                 {notificacoesAtivas.length > 0 && (
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={marcarTodasComoLidas}
                     className="text-xs font-extrabold text-blue-600 hover:text-blue-800 cursor-pointer"
                   >
@@ -1570,8 +1614,8 @@ export default function App() {
                     };
 
                     return (
-                      <div 
-                        key={n.id} 
+                      <div
+                        key={n.id}
                         className="flex gap-3 p-3 rounded-xl border border-slate-100 bg-white shadow-2xs hover:bg-slate-50 transition active:scale-[0.99] group cursor-pointer relative animate-fade-in"
                         onClick={handleNotifClick}
                       >
@@ -1735,9 +1779,8 @@ function TopNavBtn({ ativo, onClick, icon, children }) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
-        ativo ? 'bg-white/15 text-white' : 'text-slate-300 hover:text-white hover:bg-white/10'
-      }`}
+      className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${ativo ? 'bg-white/15 text-white' : 'text-slate-300 hover:text-white hover:bg-white/10'
+        }`}
     >
       {icon && <span className="opacity-80">{icon}</span>}
       {children}
@@ -1752,9 +1795,8 @@ function TopNavDropdown({ label, ativo, icon, children }) {
       <button
         type="button"
         onClick={() => setAberto(!aberto)}
-        className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${
-          ativo ? 'bg-white/15 text-white' : 'text-slate-300 hover:text-white hover:bg-white/10'
-        }`}
+        className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer ${ativo ? 'bg-white/15 text-white' : 'text-slate-300 hover:text-white hover:bg-white/10'
+          }`}
       >
         {icon && <span className="opacity-80">{icon}</span>}{label}
       </button>
@@ -1772,9 +1814,8 @@ function DropdownItem({ ativo, onClick, icon, children }) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left px-3 py-2 text-xs font-semibold transition cursor-pointer flex items-center gap-2.5 ${
-        ativo ? 'bg-[#2563eb] text-white' : 'text-slate-300 hover:text-white hover:bg-white/10'
-      }`}
+      className={`w-full text-left px-3 py-2 text-xs font-semibold transition cursor-pointer flex items-center gap-2.5 ${ativo ? 'bg-[#2563eb] text-white' : 'text-slate-300 hover:text-white hover:bg-white/10'
+        }`}
     >
       {icon && <span className={`shrink-0 ${ativo ? 'opacity-100' : 'opacity-50 group-hover:opacity-80'}`}>{icon}</span>}
       {children}
@@ -1782,28 +1823,406 @@ function DropdownItem({ ativo, onClick, icon, children }) {
   );
 }
 
+/* ── Sidebar item: ícone + nome pequeno + flyout de submenu ao hover ── */
+function SideNavBtn({ ativo, onClick, icon, label, submenu, submenuAtivo, onSubmenuClick, moduloAtual, moduloKey }) {
+  const temSubmenu = submenu && submenu.length > 0;
+  const [hovered, setHovered] = React.useState(false);
+  const [abreParaCima, setAbreParaCima] = React.useState(false);
+  const containerRef = React.useRef(null);
+
+  function handleMouseEnter() {
+    if (temSubmenu && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const alturaEstimada = (submenu.length * 36) + 48; // ~36px/item + header
+      const espacoAbaixo = window.innerHeight - rect.bottom;
+      setAbreParaCima(espacoAbaixo < alturaEstimada);
+    }
+    setHovered(true);
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <button
+        type="button"
+        onClick={onClick}
+        className={`w-full flex flex-col items-center gap-1 px-1 py-2.5 rounded-xl transition-all
+          ${ativo
+            ? 'bg-slate-400/30 text-slate-900'
+            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-300/60'
+          }`}
+      >
+        <span className="leading-none">{icon}</span>
+        <span className="text-[7px] font-normal uppercase tracking-tight leading-tight text-center w-full truncate px-0.5">{label}</span>
+      </button>
+
+      {/* Flyout de submenu — abre para cima ou para baixo conforme espaço disponível */}
+      {temSubmenu && hovered && (
+        <div className={`absolute left-full z-50 pl-1 ${abreParaCima ? 'bottom-0' : 'top-0'}`}>
+          <div className="w-48 bg-slate-200 border border-slate-300 rounded-xl shadow-2xl overflow-hidden py-1">
+            <p className="px-3 pt-2 pb-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
+            {submenu.map(([id, lbl]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onSubmenuClick(id)}
+                className={`w-full text-left px-3 py-2 text-xs font-semibold transition cursor-pointer flex items-center gap-2
+                  ${moduloAtual === moduloKey && submenuAtivo === id
+                    ? 'bg-[#2563eb] text-white'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/60'
+                  }`}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function MenuButton({ ativo, onClick, contador, icon, children, hasSubmenu, expanded, onToggle }) {
   return (
     <div className={`group flex flex-col w-full transition-all duration-200 ${expanded ? 'bg-white/5' : ''}`}>
       <div className={`w-full flex items-center justify-between px-6 py-4 text-xl font-bold transition-all cursor-pointer ${ // Removida a borda inferior
         ativo ? 'bg-[#1e3a8a] text-white' : 'text-slate-200 hover:bg-[#1e3a8a]/30 hover:text-white'
-      }`}
-    >
-      <button type="button" onClick={onClick} className="flex flex-1 items-center gap-4 text-left outline-none">
-        {icon && <span className={`shrink-0 scale-[1.1] ${ativo ? 'opacity-100' : 'opacity-60'}`}>{icon}</span>}
-        <span className="truncate tracking-tight">{children}</span>
-      </button>
-      {hasSubmenu && (
-        <button 
-          type="button" 
-          onClick={(e) => { e.stopPropagation(); onToggle(); }}
-          className={`p-2 ml-1 transition-all duration-300 outline-none ${expanded ? 'rotate-180' : ''} ${ativo ? 'text-white/70' : 'text-slate-500 hover:text-white'}`}
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-          </svg>
+        }`}
+      >
+        <button type="button" onClick={onClick} className="flex flex-1 items-center gap-4 text-left outline-none">
+          {icon && <span className={`shrink-0 [&_svg]:w-6 [&_svg]:h-6 ${ativo ? 'opacity-100' : 'opacity-60'}`}>{icon}</span>}
+          <span className="truncate tracking-tight">{children}</span>
         </button>
+        {hasSubmenu && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onToggle(); }}
+            className={`p-2 ml-1 transition-all duration-300 outline-none ${expanded ? 'rotate-180' : ''} ${ativo ? 'text-white/70' : 'text-slate-500 hover:text-white'}`}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Busca Global ──────────────────────────────────────────────────────────────
+function BuscaGlobal({ pessoas, celulas, buscaGlobal, setBuscaGlobal, buscaAberta, setBuscaAberta, onSelecionarPessoa, onSelecionarCelula, normalizarTexto }) {
+  const inputRef = React.useRef(null);
+  const wrapperRef = React.useRef(null);
+
+  // Fecha ao clicar fora
+  useEffect(() => {
+    const handler = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setBuscaAberta(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [setBuscaAberta]);
+
+  // Resultados calculados
+  const resultados = useMemo(() => {
+    const q = normalizarTexto(buscaGlobal.trim());
+    if (q.length < 2) return { pessoas: [], celulas: [] };
+
+    const rPessoas = pessoas
+      .filter(p => normalizarTexto(p.status) !== 'inativo' && normalizarTexto(p.nome).includes(q))
+      .slice(0, 6);
+
+    const rCelulas = celulas
+      .filter(c => normalizarTexto(c.nome).includes(q))
+      .slice(0, 4);
+
+    return { pessoas: rPessoas, celulas: rCelulas };
+  }, [buscaGlobal, pessoas, celulas, normalizarTexto]);
+
+  const temResultados = resultados.pessoas.length > 0 || resultados.celulas.length > 0;
+  const semResultados = buscaGlobal.trim().length >= 2 && !temResultados;
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      setBuscaAberta(false);
+      setBuscaGlobal('');
+      inputRef.current?.blur();
+    }
+    if (e.key === 'Enter' && resultados.pessoas.length > 0) {
+      onSelecionarPessoa(resultados.pessoas[0].id);
+    }
+  };
+
+  return (
+    <div ref={wrapperRef} className="flex-1 max-w-md relative">
+      {/* Campo */}
+      <div className="relative">
+        {/* ícone lupa moderno */}
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 15.75-2.489-2.489m0 0a3.375 3.375 0 1 0-4.773-4.773 3.375 3.375 0 0 0 4.774 4.774ZM21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
+        </span>
+
+        <input
+          ref={inputRef}
+          type="text"
+          value={buscaGlobal}
+          onChange={e => { setBuscaGlobal(e.target.value); setBuscaAberta(true); }}
+          onFocus={() => setBuscaAberta(true)}
+          onKeyDown={handleKeyDown}
+          placeholder="Pesquisar pessoas, células..."
+          className="w-full pl-9 pr-8 py-2 bg-white/10 border border-white/15 rounded-xl text-sm text-white placeholder-slate-400 outline-none focus:bg-white/15 focus:border-white/30 focus:ring-0 transition"
+        />
+
+        {/* X limpar */}
+        {buscaGlobal && (
+          <button
+            type="button"
+            onClick={() => { setBuscaGlobal(''); setBuscaAberta(false); inputRef.current?.focus(); }}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition cursor-pointer"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path fillRule="evenodd" d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z" clipRule="evenodd" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Dropdown de resultados */}
+      {buscaAberta && (buscaGlobal.trim().length >= 2) && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[200] animate-in fade-in slide-in-from-top-2 duration-150">
+
+          {semResultados && (
+            <div className="px-4 py-6 text-center">
+              <p className="text-sm font-bold text-slate-500">Nenhum resultado para</p>
+              <p className="text-xs text-slate-400 mt-0.5">"{buscaGlobal}"</p>
+            </div>
+          )}
+
+          {/* Pessoas */}
+          {resultados.pessoas.length > 0 && (
+            <div>
+              <div className="px-4 pt-3 pb-1.5 flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pessoas</span>
+                <span className="text-[10px] font-black text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-full">{resultados.pessoas.length}</span>
+              </div>
+              {resultados.pessoas.map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => onSelecionarPessoa(p.id)}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition text-left group cursor-pointer"
+                >
+                  {/* avatar inicial */}
+                  <span className="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-black shrink-0 uppercase">
+                    {p.nome?.charAt(0) || '?'}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-800 truncate">{p.nome}</p>
+                    {(p.cargo || p.celulas?.nome) && (
+                      <p className="text-[11px] text-slate-400 truncate">
+                        {[p.cargo, p.celulas?.nome].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
+                  </div>
+                  <svg className="w-4 h-4 text-slate-300 group-hover:text-slate-500 shrink-0 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Células */}
+          {resultados.celulas.length > 0 && (
+            <div className={resultados.pessoas.length > 0 ? 'border-t border-slate-100' : ''}>
+              <div className="px-4 pt-3 pb-1.5 flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Células</span>
+                <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">{resultados.celulas.length}</span>
+              </div>
+              {resultados.celulas.map(c => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => onSelecionarCelula(c.id)}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 transition text-left group cursor-pointer"
+                >
+                  <span className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-black shrink-0">
+                    🏠
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-slate-800 truncate">{c.nome}</p>
+                    {c.dia_semana && (
+                      <p className="text-[11px] text-slate-400">{c.dia_semana}{c.horario ? ` · ${c.horario}` : ''}</p>
+                    )}
+                  </div>
+                  <svg className="w-4 h-4 text-slate-300 group-hover:text-slate-500 shrink-0 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                  </svg>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* dica teclado */}
+          {temResultados && (
+            <div className="px-4 py-2.5 border-t border-slate-50 flex items-center gap-3">
+              <span className="text-[10px] text-slate-300 font-medium">
+                <kbd className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[10px] font-mono">↵</kbd> seleciona · <kbd className="bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded text-[10px] font-mono">Esc</kbd> fecha
+              </span>
+            </div>
+          )}
+        </div>
       )}
+    </div>
+  );
+}
+
+// ── Busca Mobile — Overlay full-screen ──────────────────────────────────────
+function BuscaMobileOverlay({ pessoas, celulas, busca, setBusca, onFechar, onSelecionarPessoa, onSelecionarCelula, normalizarTexto }) {
+  const inputRef = React.useRef(null);
+
+  // autofocus ao abrir
+  useEffect(() => {
+    setTimeout(() => inputRef.current?.focus(), 80);
+  }, []);
+
+  // fechar com Escape
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onFechar(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onFechar]);
+
+  const resultados = useMemo(() => {
+    const q = normalizarTexto(busca.trim());
+    if (q.length < 2) return { pessoas: [], celulas: [] };
+    return {
+      pessoas: pessoas.filter(p => normalizarTexto(p.status) !== 'inativo' && normalizarTexto(p.nome).includes(q)).slice(0, 8),
+      celulas: celulas.filter(c => normalizarTexto(c.nome).includes(q)).slice(0, 5),
+    };
+  }, [busca, pessoas, celulas, normalizarTexto]);
+
+  const temResultados = resultados.pessoas.length > 0 || resultados.celulas.length > 0;
+  const semResultados = busca.trim().length >= 2 && !temResultados;
+
+  return (
+    <div className="md:hidden fixed inset-0 z-[300] bg-[#1e3a8a] flex flex-col animate-in slide-in-from-top-2 duration-200">
+
+      {/* barra de busca */}
+      <div className="flex items-center gap-3 px-4 h-14 border-b border-white/10 shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-white/50 shrink-0">
+          <path fillRule="evenodd" d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z" clipRule="evenodd" />
+        </svg>
+        <input
+          ref={inputRef}
+          type="search"
+          value={busca}
+          onChange={e => setBusca(e.target.value)}
+          placeholder="Pesquisar pessoas, células..."
+          className="flex-1 bg-transparent text-white placeholder-white/40 text-base outline-none"
+        />
+        <button
+          type="button"
+          onClick={onFechar}
+          className="text-white/70 hover:text-white text-sm font-bold px-1 py-1 shrink-0 cursor-pointer transition"
+        >
+          Cancelar
+        </button>
+      </div>
+
+      {/* resultados */}
+      <div className="flex-1 overflow-y-auto bg-white">
+
+        {/* estado inicial — dica */}
+        {busca.trim().length < 2 && (
+          <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+            <span className="text-4xl mb-4">🔍</span>
+            <p className="text-sm font-bold text-slate-500">Digite para pesquisar</p>
+            <p className="text-xs text-slate-400 mt-1">Busque por nome de pessoas ou células</p>
+          </div>
+        )}
+
+        {/* sem resultados */}
+        {semResultados && (
+          <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+            <span className="text-4xl mb-4">😕</span>
+            <p className="text-sm font-bold text-slate-500">Nenhum resultado</p>
+            <p className="text-xs text-slate-400 mt-1">Nada encontrado para "{busca}"</p>
+          </div>
+        )}
+
+        {/* Pessoas */}
+        {resultados.pessoas.length > 0 && (
+          <div>
+            <div className="px-4 pt-4 pb-2 flex items-center gap-2 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pessoas</span>
+              <span className="text-[10px] font-black text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded-full">{resultados.pessoas.length}</span>
+            </div>
+            {resultados.pessoas.map(p => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => onSelecionarPessoa(p.id)}
+                className="w-full flex items-center gap-4 px-4 py-3.5 border-b border-slate-50 active:bg-slate-50 transition text-left cursor-pointer"
+              >
+                <span className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-base font-black shrink-0 uppercase">
+                  {p.nome?.charAt(0) || '?'}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-slate-800 truncate">{p.nome}</p>
+                  {(p.cargo || p.celulas?.nome) && (
+                    <p className="text-xs text-slate-400 truncate mt-0.5">
+                      {[p.cargo, p.celulas?.nome].filter(Boolean).join(' · ')}
+                    </p>
+                  )}
+                </div>
+                <svg className="w-4 h-4 text-slate-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Células */}
+        {resultados.celulas.length > 0 && (
+          <div className={resultados.pessoas.length > 0 ? 'mt-2' : ''}>
+            <div className="px-4 pt-4 pb-2 flex items-center gap-2 sticky top-0 bg-white/95 backdrop-blur-sm z-10">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Células</span>
+              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">{resultados.celulas.length}</span>
+            </div>
+            {resultados.celulas.map(c => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => onSelecionarCelula(c.id)}
+                className="w-full flex items-center gap-4 px-4 py-3.5 border-b border-slate-50 active:bg-slate-50 transition text-left cursor-pointer"
+              >
+                <span className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-xl shrink-0">
+                  🏠
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-slate-800 truncate">{c.nome}</p>
+                  {c.dia_semana && (
+                    <p className="text-xs text-slate-400 mt-0.5">{c.dia_semana}{c.horario ? ` · ${c.horario}` : ''}</p>
+                  )}
+                </div>
+                <svg className="w-4 h-4 text-slate-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                </svg>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

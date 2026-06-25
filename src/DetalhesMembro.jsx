@@ -47,52 +47,52 @@ import './DetalhesMembro.css';
 const TabIcons = {
   informacoes: (
     <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   ), // Ícone de pessoas
   adicionais: (
     <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   ), // Ícone de adição
   escola: (
     <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
     </svg>
   ), // Ícone de escolas
   frequencia: (
     <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-      <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
     </svg>
   ), // Ícone de calendário
   financeiro: (
     <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
     </svg>
   ), // Ícone de finanças
   permissoes: (
     <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
   ), // Ícone de configurações/permissões
   caderneta: (
     <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-      <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
-      <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" />
     </svg>
   ), // Ícone de caderneta (documento)
   faltas: (
     <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+      <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
     </svg>
   ), // Ícone de proibido/falta
   crescimento: (
     <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
-      <line x1="6" y1="20" x2="6" y2="14"/>
+      <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
     </svg>
   ), // Ícone de gráfico de barras
 };
@@ -103,7 +103,7 @@ function vinculosPermissaoMembro(membro) {
     const list = [];
     const entries = Object.entries(membro.permissoes_json).filter(([_, v]) => v === true);
     if (entries.length === 0) return calcularPermissoesPorCargo(membro);
-    
+
     // Agrupa por módulo e bloco para exibir na tabela de resumo de forma legível
     const groups = {};
     entries.forEach(([key]) => {
@@ -112,7 +112,7 @@ function vinculosPermissaoMembro(membro) {
       const mod = parts[0];
       const blc = parts[1];
       const act = parts[2]; // ver, editar, excluir (opcional)
-      
+
       const groupKey = `${mod}|${blc}`;
       if (!groups[groupKey]) groups[groupKey] = [];
       if (act) groups[groupKey].push(act);
@@ -218,7 +218,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
     if (!parente) return null;
     const foto = parente.foto_url;
     const inicial = parente.nome ? parente.nome.charAt(0).toUpperCase() : '?';
-    
+
     // SVG Icons
     const iconRings = (
       <svg className="w-3.5 h-3.5 shrink-0 text-[#055F6D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
@@ -331,7 +331,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
   const [abaAtiva, setAbaAtiva] = useState('informacoes');
   const [modoEdicao, setModoEdicao] = useState(false);
   const [salvando, setSalvando] = useState(false);
-  
+
   const [isModalReceitaAberto, setIsModalReceitaAberto] = useState(false);
   const [contasFinanceiras, setContasFinanceiras] = useState([]);
   const [categoriasFinanceiras, setCategoriasFinanceiras] = useState([]);
@@ -391,7 +391,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
   const isMembro = membroLogado?.permissao === 'membro';
   const [historicoPresenca, setHistoricoPresenca] = useState([]);
   const [carregandoPresenca, setCarregandoPresenca] = useState(false);
-  
+
   // Estados para Gestão Escolar
   const [turmasDisponiveis, setTurmasDisponiveis] = useState([]);
   const [matriculasMembro, setMatriculasMembro] = useState([]);
@@ -416,7 +416,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
       .select('*, categorias_financeiras(nome), contas_financeiras(nome)')
       .eq('pessoa_id', pessoaId)
       .order('data', { ascending: false });
-    
+
     if (!error && transacoes) {
       setContribuicoes(transacoes);
     } else if (error) {
@@ -464,7 +464,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
 
   const carregarDadosEscolares = useCallback(async () => {
     if (!pessoaId) return;
-    
+
     setMatriculasMembro([]); // Limpa antes de buscar novos dados
     try {
       // 1. Carregar turmas abertas (Escolas)
@@ -476,7 +476,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
 
       // 2. Carregar matrículas atuais do membro
       const { data: alunoData } = await supabase.from('alunos').select('id').eq('pessoa_id', pessoaId).maybeSingle();
-      
+
       if (alunoData) {
         const { data: matriculas } = await supabase
           .from('alunos_turmas')
@@ -675,7 +675,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
             .from('relacoes_familiares')
             .select('id_filho')
             .in('id_pai_mae', idsPais);
-          
+
           if (relacoesIrmaos?.length > 0) {
             const idsIrmaosFiltrados = relacoesIrmaos
               .map((r) => r.id_filho)
@@ -715,7 +715,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
       } catch (err) {
         console.error('Erro ao carregar ficha do membro:', err);
       } finally {
-      setCarregandoMembro(false); // Já estava correto, mas mantendo para revisão
+        setCarregandoMembro(false); // Já estava correto, mas mantendo para revisão
       }
     }
     carregarFichaDoMembro();
@@ -990,12 +990,12 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
 
   async function handleMatricularEmTurma(turmaId) {
     if (!(await window.confirmModal('Matricular em Turma', 'Deseja matricular este membro nesta turma?'))) return;
-    
+
     setSalvando(true);
     try {
       // 1. Garantir que a pessoa existe na tabela de alunos
       let { data: aluno } = await supabase.from('alunos').select('id').eq('pessoa_id', pessoaId).maybeSingle();
-      
+
       if (!aluno) {
         const { data: novoAluno, error: errA } = await supabase.from('alunos').insert([{ pessoa_id: pessoaId }]).select().single();
         if (errA) throw errA;
@@ -1010,7 +1010,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
       }]);
 
       if (errT) throw errT;
-      
+
       await carregarDadosEscolares();
       window.alert('Matrícula realizada com sucesso!');
     } catch (err) {
@@ -1051,7 +1051,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
     try {
       // Remove relações familiares vinculadas antes de deletar a pessoa
       await supabase.from('relacoes_familiares').delete().or(`id_pai_mae.eq.${pessoaId},id_filho.eq.${pessoaId}`);
-      
+
       const { error } = await supabase.from('pessoas').delete().eq('id', pessoaId);
       if (error) throw error;
 
@@ -1124,109 +1124,109 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
         </div>
       )}
       <div className="member-header flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
-          <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start w-full">
-            <div className="relative shrink-0 w-28 h-28 rounded-2xl border-2 border-[var(--border)] overflow-hidden bg-[var(--surface-muted)] shadow-sm">
-              {fotoExibir ? (
-                <img src={fotoExibir} alt={nome} className="w-full h-full object-cover" />
-              ) : (
-                <span className="w-full h-full flex items-center justify-center text-4xl font-semibold text-[var(--text-muted)]">{nome.charAt(0).toUpperCase()}</span>
-              )}
-              {modoEdicao && (
-                <label className="absolute inset-0 bg-slate-950/60 flex flex-col items-center justify-center text-[10px] font-medium text-white cursor-pointer">
-                  Alterar foto
-                  <input type="file" accept="image/*" onChange={onFileChange} className="hidden" />
-                </label>
-              )}
-            </div>
-
-            <div className="flex-1 text-center sm:text-left min-w-0">
-              <div className="flex items-center justify-center sm:justify-start gap-2 text-[11px] font-bold tracking-tight text-slate-400 mb-1">
-                {historicoNavegacao.length > 0 ? (
-                  <button
-                    type="button"
-                    onClick={voltarMembroAnterior}
-                    className="flex items-center gap-1 text-[#055F6D] hover:text-[#044c57] font-bold bg-[#055F6D]/5 hover:bg-[#055F6D]/10 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
-                  >
-                    ← Voltar para {listaPessoas.find(p => String(p.id) === String(historicoNavegacao[historicoNavegacao.length - 1]))?.nome || 'anterior'}
-                  </button>
-                ) : (
-                  <>
-                    <button type="button" onClick={() => onFechar()} className="hover:text-slate-600">Pessoas</button>
-                    <span className="text-slate-200">/</span>
-                    <span className="text-[#055F6D]">Ficha</span>
-                  </>
-                )}
-              </div>
-              <h1 className="text-2xl sm:text-4xl font-semibold text-[var(--text-heading)] tracking-tight leading-tight">{nome}</h1>
-              
-              {/* Info Detalhada: Oculta em mobile (hidden), visível em telas pequenas+ (sm:grid) */}
-              <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm mt-4">
-                <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Zona de moradia</span> <span className="font-medium text-[var(--text-heading)]">{nomeZona}</span></p>
-                <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Célula</span> 
-                  <span className="font-medium text-[#055F6D]">
-                    {nomeCelula} 
-                  </span>
-                </p>
-                <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Cargo</span> <span className="font-medium text-[var(--text-heading)] capitalize">{cargo || 'Membro'}</span></p>
-                <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Telefone</span> <span className="font-medium text-[var(--text-heading)]">{telefone || '—'}</span></p>
-                <p className="sm:col-span-2"><span className="text-[var(--text-muted)]">Endereço:</span> <span className="font-medium text-[var(--text-heading)]">{enderecoCompleto}</span></p>
-              </div>
-
-              {/* Status Minimalista: Visível apenas em mobile (sm:hidden) */}
-              <div className="flex flex-wrap justify-center gap-2 mt-2 sm:hidden">
-                {celulaId && (
-                  <span className="text-[9px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded border border-teal-100 font-black uppercase">Ativo</span>
-                )}
-                <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 font-bold capitalize">{cargo || 'Membro'}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
-            {!modoEdicao ? (
-              <>
-                {hasAccess && hasAccess('Pessoas', 'Ficha do membro', 'editar') && (
-                  <button 
-                    type="button" 
-                    onClick={() => setModoEdicao(true)} 
-                    className="flex items-center justify-center gap-2 bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-xs font-semibold p-2.5 sm:px-4 sm:py-2 rounded-xl transition shadow-sm"
-                    title="Editar Membro"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg> 
-                    <span className="hidden sm:block">Editar</span>
-                  </button>
-                )}
-                {hasAccess && hasAccess('Pessoas', 'Ficha do membro', 'excluir') && (
-                  <>
-                    <button 
-                      type="button" 
-                      onClick={() => setModalExclusaoAberto(true)} 
-                      className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold p-2.5 sm:px-4 sm:py-2 rounded-xl transition shadow-sm"
-                      title="Inativar Membro"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                      </svg>
-                      <span className="hidden sm:block">Inativar</span>
-                    </button>
-                    <button type="button" onClick={handleExcluirPermanente} className="px-2 text-slate-400 hover:text-rose-600 transition-colors" title="Excluir Permanentemente">
-                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </>
-                )}
-                <button type="button" onClick={onFechar} className="px-4 py-2 rounded-xl border border-[var(--border)] text-xs font-medium text-[var(--text-primary)]">Fechar</button>
-              </>
+        <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start w-full">
+          <div className="relative shrink-0 w-36 h-36 rounded-2xl border-2 border-[var(--border)] overflow-hidden bg-[var(--surface-muted)] shadow-sm">
+            {fotoExibir ? (
+              <img src={fotoExibir} alt={nome} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-xs text-amber-700 font-medium px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
-                {membro?.status === 'pendente' ? 'Revisando para aprovação' : 'Modo edição'}
-              </span>
+              <span className="w-full h-full flex items-center justify-center text-4xl font-semibold text-[var(--text-muted)]">{nome.charAt(0).toUpperCase()}</span>
+            )}
+            {modoEdicao && (
+              <label className="absolute inset-0 bg-slate-950/60 flex flex-col items-center justify-center text-[10px] font-medium text-white cursor-pointer">
+                Alterar foto
+                <input type="file" accept="image/*" onChange={onFileChange} className="hidden" />
+              </label>
             )}
           </div>
+
+          <div className="flex-1 text-center sm:text-left min-w-0">
+            <div className="hidden sm:flex items-center justify-start gap-2 text-[11px] font-bold tracking-tight text-slate-400 mb-1">
+              {historicoNavegacao.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={voltarMembroAnterior}
+                  className="flex items-center gap-1 text-[#055F6D] hover:text-[#044c57] font-bold bg-[#055F6D]/5 hover:bg-[#055F6D]/10 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                >
+                  ← Voltar para {listaPessoas.find(p => String(p.id) === String(historicoNavegacao[historicoNavegacao.length - 1]))?.nome || 'anterior'}
+                </button>
+              ) : (
+                <>
+                  <button type="button" onClick={() => onFechar()} className="hover:text-slate-600">Pessoas</button>
+                  <span className="text-slate-200">/</span>
+                  <span className="text-[#055F6D]">Ficha</span>
+                </>
+              )}
+            </div>
+            <h1 className="text-2xl sm:text-4xl font-semibold text-[var(--text-heading)] tracking-tight leading-tight">{nome}</h1>
+
+            {/* Info Detalhada: Oculta em mobile (hidden), visível em telas pequenas+ (sm:grid) */}
+            <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm mt-4">
+              <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Zona de moradia</span> <span className="font-medium text-[var(--text-heading)]">{nomeZona}</span></p>
+              <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Célula</span>
+                <span className="font-medium text-[#055F6D]">
+                  {nomeCelula}
+                </span>
+              </p>
+              <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Cargo</span> <span className="font-medium text-[var(--text-heading)] capitalize">{cargo || 'Membro'}</span></p>
+              <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Telefone</span> <span className="font-medium text-[var(--text-heading)]">{telefone || '—'}</span></p>
+              <p className="sm:col-span-2"><span className="text-[var(--text-muted)]">Endereço:</span> <span className="font-medium text-[var(--text-heading)]">{enderecoCompleto}</span></p>
+            </div>
+
+            {/* Status Minimalista: Visível apenas em mobile (sm:hidden) */}
+            <div className="flex flex-wrap justify-center gap-2 mt-2 sm:hidden">
+              {celulaId && (
+                <span className="text-[9px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded border border-teal-100 font-black uppercase">Ativo</span>
+              )}
+              <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 font-bold capitalize">{cargo || 'Membro'}</span>
+            </div>
+          </div>
         </div>
+
+        <div className="flex flex-wrap gap-2 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
+          {!modoEdicao ? (
+            <>
+              {hasAccess && hasAccess('Pessoas', 'Ficha do membro', 'editar') && (
+                <button
+                  type="button"
+                  onClick={() => setModoEdicao(true)}
+                  className="flex items-center justify-center gap-2 bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-xs font-semibold p-2.5 sm:px-4 sm:py-2 rounded-xl transition shadow-sm"
+                  title="Editar Membro"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  <span className="hidden sm:block">Editar</span>
+                </button>
+              )}
+              {hasAccess && hasAccess('Pessoas', 'Ficha do membro', 'excluir') && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setModalExclusaoAberto(true)}
+                    className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold p-2.5 sm:px-4 sm:py-2 rounded-xl transition shadow-sm"
+                    title="Inativar Membro"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                    </svg>
+                    <span className="hidden sm:block">Inativar</span>
+                  </button>
+                  <button type="button" onClick={handleExcluirPermanente} className="px-2 text-slate-400 hover:text-rose-600 transition-colors" title="Excluir Permanentemente">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </>
+              )}
+              <button type="button" onClick={onFechar} className="px-4 py-2 rounded-xl border border-[var(--border)] text-xs font-medium text-[var(--text-primary)]">Fechar</button>
+            </>
+          ) : (
+            <span className="text-xs text-amber-700 font-medium px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
+              {membro?.status === 'pendente' ? 'Revisando para aprovação' : 'Modo edição'}
+            </span>
+          )}
+        </div>
+      </div>
       <div className="ficha-layout">
         <nav className="tabs-sidebar" aria-label="Abas da ficha">
           {dynamicAbas.map((aba) => (
@@ -1234,11 +1234,10 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
               key={aba.id}
               type="button"
               onClick={() => setAbaAtiva(aba.id)}
-              className={`tab-item flex items-center gap-3 px-4 py-3 text-xs font-semibold transition-all whitespace-nowrap ${
-                abaAtiva === aba.id 
-                  ? 'tab-item-active' 
-                  : 'tab-item-inactive'
-              }`}
+              className={`tab-item flex items-center gap-3 px-4 py-3 text-xs font-semibold transition-all whitespace-nowrap ${abaAtiva === aba.id
+                ? 'tab-item-active'
+                : 'tab-item-inactive'
+                }`}
             >
               <span className="tab-icon shrink-0">{aba.icon}</span>
               <span className="tab-label">{aba.label}</span>
@@ -1246,1019 +1245,1015 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
           ))}
         </nav>
         <div className="ficha-body">
-        <form onSubmit={handleSalvarEdicao} className="ficha-content w-full space-y-4">
-          {abaAtiva === 'informacoes' && (
-            <div className="space-y-4">
-              {membro.status === 'pendente' && (
-                <div className="p-5 bg-amber-50 border border-amber-200 rounded-[24px] flex gap-4 animate-in slide-in-from-top-2 duration-300">
-                  <span className="text-2xl">📋</span>
-                  <div>
-                    <h4 className="text-sm font-black text-amber-900 uppercase tracking-tight">Análise de Novo Cadastro</h4>
-                    <p className="text-xs text-amber-700 mt-1 leading-relaxed">Este membro se cadastrou pelo formulário público. Verifique as sugestões abaixo e preencha os dados oficiais antes de aprovar.</p>
-                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                      <p className="text-[10px] font-bold text-amber-800 uppercase">Cargo Escolhido: <span className="text-slate-900">{membro.cargo || 'Não informado'}</span></p>
-                      <p className="text-[10px] font-bold text-amber-800 uppercase">Célula Vinculada: <span className="text-slate-900">{nomeCelula !== '—' ? nomeCelula : 'Nenhuma'}</span></p>
-                      <p className="text-[10px] font-bold text-amber-800 uppercase">Zona Vinculada: <span className="text-slate-900">{nomeZona !== '—' ? nomeZona : 'Nenhuma'}</span></p>
-                      {membro.atuacao && <p className="text-[10px] font-bold text-amber-800 uppercase">Aptidão/Ministério: <span className="text-slate-900">{membro.atuacao}</span></p>}
-                      {membro.conjuge_sugerido && <p className="text-[10px] font-bold text-amber-800 uppercase">Cônjuge sugerido: <span className="text-slate-900">{membro.conjuge_sugerido}</span>{!conjugeId && <span className="text-amber-600 font-normal italic ml-1">— confirme em Vínculo Familiar</span>}</p>}
-                      {membro.filhos_sugeridos && <p className="text-[10px] font-bold text-amber-800 uppercase">Filhos sugeridos: <span className="text-slate-900">{membro.filhos_sugeridos}</span><span className="text-amber-600 font-normal italic ml-1">— busque e vincule em Vínculo Familiar</span></p>}
+          <form onSubmit={handleSalvarEdicao} className="ficha-content w-full space-y-4">
+            {abaAtiva === 'informacoes' && (
+              <div className="space-y-4">
+                {membro.status === 'pendente' && (
+                  <div className="p-5 bg-amber-50 border border-amber-200 rounded-[24px] flex gap-4 animate-in slide-in-from-top-2 duration-300">
+                    <span className="text-2xl">📋</span>
+                    <div>
+                      <h4 className="text-sm font-black text-amber-900 uppercase tracking-tight">Análise de Novo Cadastro</h4>
+                      <p className="text-xs text-amber-700 mt-1 leading-relaxed">Este membro se cadastrou pelo formulário público. Verifique as sugestões abaixo e preencha os dados oficiais antes de aprovar.</p>
+                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                        <p className="text-[10px] font-bold text-amber-800 uppercase">Cargo Escolhido: <span className="text-slate-900">{membro.cargo || 'Não informado'}</span></p>
+                        <p className="text-[10px] font-bold text-amber-800 uppercase">Célula Vinculada: <span className="text-slate-900">{nomeCelula !== '—' ? nomeCelula : 'Nenhuma'}</span></p>
+                        <p className="text-[10px] font-bold text-amber-800 uppercase">Zona Vinculada: <span className="text-slate-900">{nomeZona !== '—' ? nomeZona : 'Nenhuma'}</span></p>
+                        {membro.atuacao && <p className="text-[10px] font-bold text-amber-800 uppercase">Aptidão/Ministério: <span className="text-slate-900">{membro.atuacao}</span></p>}
+                        {membro.conjuge_sugerido && <p className="text-[10px] font-bold text-amber-800 uppercase">Cônjuge sugerido: <span className="text-slate-900">{membro.conjuge_sugerido}</span>{!conjugeId && <span className="text-amber-600 font-normal italic ml-1">— confirme em Vínculo Familiar</span>}</p>}
+                        {membro.filhos_sugeridos && <p className="text-[10px] font-bold text-amber-800 uppercase">Filhos sugeridos: <span className="text-slate-900">{membro.filhos_sugeridos}</span><span className="text-amber-600 font-normal italic ml-1">— busque e vincule em Vínculo Familiar</span></p>}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-              <div className="section-group">
-                <h3 className="section-title">Dados Pessoais</h3>
-                <div className="section-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  <CampoInput label="Nome completo" value={nome} onChange={setNome} disabled={dis} />
-                  <CampoInput label="Gênero" value={genero} onChange={setGenero} disabled={dis} />
-                  {!dis ? (
-                    <div>
-                      <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Estado civil</label>
-                      <select disabled={dis} value={estadoCivil} onChange={(e) => setEstadoCivil(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
-                        <option value="Solteiro(a)">Solteiro(a)</option>
-                        <option value="Casado(a)">Casado(a)</option>
-                        <option value="Divorciado(a)">Divorciado(a)</option>
-                        <option value="Viuvo(a)">Viúvo(a)</option>
-                        <option value="Outro">Outro</option>
-                      </select>
-                    </div>
-                  ) : (
-                    <CampoLinha label="Estado civil" valor={estadoCivil} />
-                  )}
-                  {!dis ? (
-                    <CampoInput label="Data de nascimento" value={dataNascimento} onChange={setDataNascimento} disabled={dis} mask={mascaraDataBR} />
-                  ) : (
-                    <CampoLinha 
-                      label="Data de nascimento" 
-                      valor={dataNascimento ? `${dataNascimento} (${calcularIdade(membro?.data_nascimento)} anos)` : '—'} 
-                    />
-                  )}
-                  <CampoInput label="CPF" value={cpf} onChange={setCpf} disabled={dis} mask={mascaraCPF} />
-                  <CampoInput label="RG" value={rg} onChange={setRg} disabled={dis} />
-                  {!dis ? (
-                    <div>
-                      <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Escolaridade</label>
-                      <select value={escolaridade} onChange={(e) => setEscolaridade(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
-                        <option value="">Selecione</option>
-                        <option value="Ensino Medio">Ensino Fundamental</option>
-                        <option value="Ensino Medio">Ensino Medio</option>
-                        <option value="Ensino Superior">Ensino Superior</option>
-                        <option value="Ensino Superior">Superior Técnico</option>
-                        <option value="Pos-graduacao">Pos-graduacao</option>
-                        <option value="Mestrado/Doutorado">Mestrado/Doutorado</option>
-                      </select>
-                    </div>
-                  ) : (
-                    <CampoLinha label="Escolaridade" valor={escolaridade} />
-                  )}
-                  <CampoInput label="Profissão" value={profissao} onChange={setProfissao} disabled={dis} />
-                  <CampoInput label="E-mail" value={email} onChange={setEmail} disabled={dis} />
-                  <CampoInput label="Telefone" value={telefone} onChange={setTelefone} disabled={dis} mask={mascaraTelefone} />
-                  {!dis ? (
-                    <div>
-                      <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Status</label>
-                      <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-3 py-1.5 text-xs font-medium border border-[var(--border)] rounded-xl bg-white focus:outline-none">
-                        <option value="ativo">Ativo</option>
-                        <option value="inativo">Inativo</option>
-                        <option value="afastado">Afastado</option>
-                        <option value="transferido">Transferido</option>
-                      </select>
-                    </div>
-                  ) : (
-                    <CampoLinha label="Status" valor={status} />
-                  )}
-                </div>
-              </div>
-
-              <div className="section-group">
-                <h3 className="section-title">Endereço</h3>
-                <div className="section-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  <CampoInput label="CEP" value={cep} onChange={setCep} disabled={dis} mask={mascaraCEP} />
-                  <CampoInput label="Logradouro" value={endereco} onChange={setEndereco} disabled={dis} />
-                  <CampoInput label="Número" value={numero} onChange={setNumero} disabled={dis} />
-                  <CampoInput label="Bairro" value={bairro} onChange={setBairro} disabled={dis} />
-                  <CampoInput label="Cidade" value={cidade} onChange={setCidade} disabled={dis} />
-                  <CampoInput label="UF" value={estado} onChange={setEstado} disabled={dis} />
-                </div>
-              </div>
-
-              <div className="section-group">
-                <h3 className="section-title">Vida na Igreja</h3>
-                <div className="section-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {!dis ? (
-                    <>
+                )}
+                <div className="section-group">
+                  <h3 className="section-title">Dados Pessoais</h3>
+                  <div className="section-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <CampoInput label="Nome completo" value={nome} onChange={setNome} disabled={dis} />
+                    <CampoInput label="Gênero" value={genero} onChange={setGenero} disabled={dis} />
+                    {!dis ? (
                       <div>
-                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Cargo</label>
-                        <select value={cargo} onChange={(e) => setCargo(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
-                          <option value="">Selecione o cargo</option>
-                          {cargos.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
-                          {cargo && !cargos.some((c) => c.nome === cargo) && <option value={cargo}>{cargo}</option>}
+                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Estado civil</label>
+                        <select disabled={dis} value={estadoCivil} onChange={(e) => setEstadoCivil(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
+                          <option value="Solteiro(a)">Solteiro(a)</option>
+                          <option value="Casado(a)">Casado(a)</option>
+                          <option value="Divorciado(a)">Divorciado(a)</option>
+                          <option value="Viuvo(a)">Viúvo(a)</option>
+                          <option value="Outro">Outro</option>
                         </select>
                       </div>
+                    ) : (
+                      <CampoLinha label="Estado civil" valor={estadoCivil} />
+                    )}
+                    {!dis ? (
+                      <CampoInput label="Data de nascimento" value={dataNascimento} onChange={setDataNascimento} disabled={dis} mask={mascaraDataBR} />
+                    ) : (
+                      <CampoLinha
+                        label="Data de nascimento"
+                        valor={dataNascimento ? `${dataNascimento} (${calcularIdade(membro?.data_nascimento)} anos)` : '—'}
+                      />
+                    )}
+                    <CampoInput label="CPF" value={cpf} onChange={setCpf} disabled={dis} mask={mascaraCPF} />
+                    <CampoInput label="RG" value={rg} onChange={setRg} disabled={dis} />
+                    {!dis ? (
                       <div>
-                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Célula</label>
-                        <select value={celulaId} onChange={(e) => setCelulaId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
-                          <option value="">Nenhuma</option>
-                          {celulas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Escolaridade</label>
+                        <select value={escolaridade} onChange={(e) => setEscolaridade(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
+                          <option value="">Selecione</option>
+                          <option value="Ensino Medio">Ensino Fundamental</option>
+                          <option value="Ensino Medio">Ensino Medio</option>
+                          <option value="Ensino Superior">Ensino Superior</option>
+                          <option value="Ensino Superior">Superior Técnico</option>
+                          <option value="Pos-graduacao">Pos-graduacao</option>
+                          <option value="Mestrado/Doutorado">Mestrado/Doutorado</option>
                         </select>
                       </div>
+                    ) : (
+                      <CampoLinha label="Escolaridade" valor={escolaridade} />
+                    )}
+                    <CampoInput label="Profissão" value={profissao} onChange={setProfissao} disabled={dis} />
+                    <CampoInput label="E-mail" value={email} onChange={setEmail} disabled={dis} />
+                    <CampoInput label="Telefone" value={telefone} onChange={setTelefone} disabled={dis} mask={mascaraTelefone} />
+                    {!dis ? (
                       <div>
-                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Zona</label>
-                        <select value={zonaId} onChange={(e) => setZonaId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
-                          <option value="">Nenhuma</option>
-                          {zonas.map((z) => <option key={z.id} value={z.id}>{z.nome}</option>)}
+                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Status</label>
+                        <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-3 py-1.5 text-xs font-medium border border-[var(--border)] rounded-xl bg-white focus:outline-none">
+                          <option value="ativo">Ativo</option>
+                          <option value="inativo">Inativo</option>
+                          <option value="afastado">Afastado</option>
+                          <option value="transferido">Transferido</option>
                         </select>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <CampoLinha label="Cargo" valor={cargo} />
-                      <CampoLinha label="Célula" valor={nomeCelula} />
-                      <CampoLinha label="Zona" valor={nomeZona} />
-                    </>
-                  )}
-                  <CampoInput label="Data de conversão" value={dataConversao} onChange={setDataConversao} disabled={dis} mask={mascaraDataBR} />
-                  <CampoInput label="Data de batismo" value={dataBatismo} onChange={setDataBatismo} disabled={dis} mask={mascaraDataBR} />
-                  {!dis ? (
-                    <label className="flex items-center gap-2 text-xs font-medium text-[var(--text-primary)] pt-5">
-                      <input type="checkbox" checked={batizadoAguas} onChange={(e) => setBatizadoAguas(e.target.checked)} className="rounded" />
-                      Batizado nas águas
-                    </label>
-                  ) : (
-                    <CampoLinha label="Batizado nas águas" valor={batizadoAguas ? 'Sim' : 'Não'} />
-                  )}
+                    ) : (
+                      <CampoLinha label="Status" valor={status} />
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div className="section-group !bg-gradient-to-br !from-[#055F6D] !to-[#034c57] border border-[#034c57] shadow-lg">
-                <h3 className="section-title !text-white !border-b !border-white/10">Vínculo Familiar</h3>
-                <div className="section-body space-y-3">
-                  {!dis ? (
-                    <>
-                      <div>
-                        <label className="block text-[11px] font-semibold text-teal-100 mb-0.5">Cônjuge</label>
-                        <select value={conjugeId} onChange={(e) => setConjugeId(e.target.value)} className="w-full px-3 py-1.5 text-sm border rounded-xl bg-white">
-                          <option value="">Sem cônjuge vinculado</option>
-                          {listaPessoas.filter((p) => String(p.id) !== String(pessoaId)).map((p) => (
-                            <option key={p.id} value={p.id}>{p.nome}</option>
-                          ))}
-                        </select>
-                      </div>
+                <div className="section-group">
+                  <h3 className="section-title">Endereço</h3>
+                  <div className="section-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <CampoInput label="CEP" value={cep} onChange={setCep} disabled={dis} mask={mascaraCEP} />
+                    <CampoInput label="Logradouro" value={endereco} onChange={setEndereco} disabled={dis} />
+                    <CampoInput label="Número" value={numero} onChange={setNumero} disabled={dis} />
+                    <CampoInput label="Bairro" value={bairro} onChange={setBairro} disabled={dis} />
+                    <CampoInput label="Cidade" value={cidade} onChange={setCidade} disabled={dis} />
+                    <CampoInput label="UF" value={estado} onChange={setEstado} disabled={dis} />
+                  </div>
+                </div>
 
-                      <div className="space-y-2">
-                        <label className="block text-[11px] font-semibold text-teal-100 mb-0.5">Pais / Responsáveis</label>
-                        <input type="text" value={filtroBuscaPai} onChange={(e) => setFiltroBuscaPai(e.target.value)} placeholder="Buscar pai/mãe na base..." className="w-full px-3 py-1.5 text-xs border rounded-xl mb-1 bg-white text-slate-800" />
-                        {filtroBuscaPai && (
-                          <div className="border rounded-xl max-h-32 overflow-y-auto divide-y bg-white shadow-sm text-slate-800">
-                            {pessoasParaPais.slice(0, 8).map((p) => (
-                              <button key={p.id} type="button" onClick={() => { togglePaiMae(p.id); setFiltroBuscaPai(''); }} className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--surface-muted)] flex justify-between">
-                                <span>{p.nome}</span>
-                                <span className={idsPaisEdit.includes(p.id) ? 'text-[#055F6D] font-bold' : ''}>
-                                  {idsPaisEdit.includes(p.id) ? '✓ Vinculado' : '+ Adicionar'}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {pais.map((p) => (
-                            <span key={p.id} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-slate-200/50 text-xs bg-white/95 text-slate-800">
-                              {String(p.genero || '').toLowerCase().startsWith('f') ? (
-                                <svg className="w-3.5 h-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M18 21a6 6 0 0 0-12 0" />
-                                  <circle cx="12" cy="10" r="4" />
-                                  <path d="M12 2v2M12 18h.01" />
-                                </svg>
-                              ) : (
-                                <svg className="w-3.5 h-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                  <circle cx="12" cy="7" r="4" />
-                                </svg>
-                              )}
-                              <span>{p.nome}</span>
-                              <button type="button" onClick={() => togglePaiMae(p.id)} className="text-slate-400 hover:text-red-500 font-bold ml-1 cursor-pointer">✕</button>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="block text-[11px] font-semibold text-teal-100 mb-0.5">Filhos</label>
-                        <input type="text" value={filtroBuscaFilho} onChange={(e) => setFiltroBuscaFilho(e.target.value)} placeholder="Buscar filho na base..." className="w-full px-3 py-1.5 text-xs border rounded-xl mb-1 bg-white text-slate-800" />
-                        {filtroBuscaFilho && (
-                          <div className="border rounded-xl max-h-32 overflow-y-auto divide-y bg-white shadow-sm text-slate-800">
-                            {pessoasParaFilhos.slice(0, 8).map((p) => (
-                              <button key={p.id} type="button" onClick={() => { toggleFilho(p.id); setFiltroBuscaFilho(''); }} className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--surface-muted)] flex justify-between">
-                                <span>{p.nome}</span>
-                                <span className={idsFilhosEdit.includes(p.id) ? 'text-[#055F6D] font-bold' : ''}>
-                                  {idsFilhosEdit.includes(p.id) ? '✓ Vinculado' : '+ Adicionar'}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {filhos.map((p) => (
-                            <span key={p.id} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-slate-200/50 text-xs bg-white/95 text-slate-800">
-                              {String(p.genero || '').toLowerCase().startsWith('f') ? (
-                                <svg className="w-3.5 h-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                                  <circle cx="12" cy="12" r="10" />
-                                  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                                  <line x1="9" y1="9" x2="9.01" y2="9" />
-                                  <line x1="15" y1="9" x2="15.01" y2="9" />
-                                  <path d="M12 2a4 4 0 0 1 4 4" />
-                                </svg>
-                              ) : (
-                                <svg className="w-3.5 h-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                                  <circle cx="12" cy="12" r="10" />
-                                  <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                                  <line x1="9" y1="9" x2="9.01" y2="9" />
-                                  <line x1="15" y1="9" x2="15.01" y2="9" />
-                                </svg>
-                              )}
-                              <span>{p.nome}</span>
-                              <button type="button" onClick={() => toggleFilho(p.id)} className="text-slate-400 hover:text-red-500 font-bold ml-1 cursor-pointer">✕</button>
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="space-y-4 pt-1">
-                      {conjugeObj && (
+                <div className="section-group">
+                  <h3 className="section-title">Vida na Igreja</h3>
+                  <div className="section-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {!dis ? (
+                      <>
                         <div>
-                          <p className="text-[10px] font-bold uppercase text-teal-200 tracking-wider mb-2">Cônjuge</p>
-                          <div className="flex flex-wrap gap-3">
-                            <RenderCardParente parente={conjugeObj} relacao="Cônjuge" />
-                          </div>
+                          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Cargo</label>
+                          <select value={cargo} onChange={(e) => setCargo(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
+                            <option value="">Selecione o cargo</option>
+                            {cargos.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+                            {cargo && !cargos.some((c) => c.nome === cargo) && <option value={cargo}>{cargo}</option>}
+                          </select>
                         </div>
-                      )}
-                      
-                      {pais.length > 0 && (
                         <div>
-                          <p className="text-[10px] font-bold uppercase text-teal-200 tracking-wider mb-2">Pais / Responsáveis</p>
-                          <div className="flex flex-wrap gap-3">
+                          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Célula</label>
+                          <select value={celulaId} onChange={(e) => setCelulaId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
+                            <option value="">Nenhuma</option>
+                            {celulas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Zona</label>
+                          <select value={zonaId} onChange={(e) => setZonaId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
+                            <option value="">Nenhuma</option>
+                            {zonas.map((z) => <option key={z.id} value={z.id}>{z.nome}</option>)}
+                          </select>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <CampoLinha label="Cargo" valor={cargo} />
+                        <CampoLinha label="Célula" valor={nomeCelula} />
+                        <CampoLinha label="Zona" valor={nomeZona} />
+                      </>
+                    )}
+                    <CampoInput label="Data de conversão" value={dataConversao} onChange={setDataConversao} disabled={dis} mask={mascaraDataBR} />
+                    <CampoInput label="Data de batismo" value={dataBatismo} onChange={setDataBatismo} disabled={dis} mask={mascaraDataBR} />
+                    {!dis ? (
+                      <label className="flex items-center gap-2 text-xs font-medium text-[var(--text-primary)] pt-5">
+                        <input type="checkbox" checked={batizadoAguas} onChange={(e) => setBatizadoAguas(e.target.checked)} className="rounded" />
+                        Batizado nas águas
+                      </label>
+                    ) : (
+                      <CampoLinha label="Batizado nas águas" valor={batizadoAguas ? 'Sim' : 'Não'} />
+                    )}
+                  </div>
+                </div>
+
+                <div className="section-group !bg-gradient-to-br !from-[#055F6D] !to-[#034c57] border border-[#034c57] shadow-lg">
+                  <h3 className="section-title !text-white !border-b !border-white/10">Vínculo Familiar</h3>
+                  <div className="section-body space-y-3">
+                    {!dis ? (
+                      <>
+                        <div>
+                          <label className="block text-[11px] font-semibold text-teal-100 mb-0.5">Cônjuge</label>
+                          <select value={conjugeId} onChange={(e) => setConjugeId(e.target.value)} className="w-full px-3 py-1.5 text-sm border rounded-xl bg-white">
+                            <option value="">Sem cônjuge vinculado</option>
+                            {listaPessoas.filter((p) => String(p.id) !== String(pessoaId)).map((p) => (
+                              <option key={p.id} value={p.id}>{p.nome}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="block text-[11px] font-semibold text-teal-100 mb-0.5">Pais / Responsáveis</label>
+                          <input type="text" value={filtroBuscaPai} onChange={(e) => setFiltroBuscaPai(e.target.value)} placeholder="Buscar pai/mãe na base..." className="w-full px-3 py-1.5 text-xs border rounded-xl mb-1 bg-white text-slate-800" />
+                          {filtroBuscaPai && (
+                            <div className="border rounded-xl max-h-32 overflow-y-auto divide-y bg-white shadow-sm text-slate-800">
+                              {pessoasParaPais.slice(0, 8).map((p) => (
+                                <button key={p.id} type="button" onClick={() => { togglePaiMae(p.id); setFiltroBuscaPai(''); }} className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--surface-muted)] flex justify-between">
+                                  <span>{p.nome}</span>
+                                  <span className={idsPaisEdit.includes(p.id) ? 'text-[#055F6D] font-bold' : ''}>
+                                    {idsPaisEdit.includes(p.id) ? '✓ Vinculado' : '+ Adicionar'}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-2 mt-1">
                             {pais.map((p) => (
-                              <RenderCardParente key={p.id} parente={p} relacao="Pai / Responsável" />
+                              <span key={p.id} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-slate-200/50 text-xs bg-white/95 text-slate-800">
+                                {String(p.genero || '').toLowerCase().startsWith('f') ? (
+                                  <svg className="w-3.5 h-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M18 21a6 6 0 0 0-12 0" />
+                                    <circle cx="12" cy="10" r="4" />
+                                    <path d="M12 2v2M12 18h.01" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3.5 h-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                  </svg>
+                                )}
+                                <span>{p.nome}</span>
+                                <button type="button" onClick={() => togglePaiMae(p.id)} className="text-slate-400 hover:text-red-500 font-bold ml-1 cursor-pointer">✕</button>
+                              </span>
                             ))}
                           </div>
                         </div>
-                      )}
 
-                      {irmaos.length > 0 && (
-                        <div>
-                          <p className="text-[10px] font-bold uppercase text-teal-200 tracking-wider mb-2">Irmãos</p>
-                          <div className="flex flex-wrap gap-3">
-                            {irmaos.map((irm) => (
-                              <RenderCardParente key={irm.id} parente={irm} relacao="Irmão(a)" />
+                        <div className="space-y-2">
+                          <label className="block text-[11px] font-semibold text-teal-100 mb-0.5">Filhos</label>
+                          <input type="text" value={filtroBuscaFilho} onChange={(e) => setFiltroBuscaFilho(e.target.value)} placeholder="Buscar filho na base..." className="w-full px-3 py-1.5 text-xs border rounded-xl mb-1 bg-white text-slate-800" />
+                          {filtroBuscaFilho && (
+                            <div className="border rounded-xl max-h-32 overflow-y-auto divide-y bg-white shadow-sm text-slate-800">
+                              {pessoasParaFilhos.slice(0, 8).map((p) => (
+                                <button key={p.id} type="button" onClick={() => { toggleFilho(p.id); setFiltroBuscaFilho(''); }} className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--surface-muted)] flex justify-between">
+                                  <span>{p.nome}</span>
+                                  <span className={idsFilhosEdit.includes(p.id) ? 'text-[#055F6D] font-bold' : ''}>
+                                    {idsFilhosEdit.includes(p.id) ? '✓ Vinculado' : '+ Adicionar'}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {filhos.map((p) => (
+                              <span key={p.id} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-slate-200/50 text-xs bg-white/95 text-slate-800">
+                                {String(p.genero || '').toLowerCase().startsWith('f') ? (
+                                  <svg className="w-3.5 h-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                                    <line x1="9" y1="9" x2="9.01" y2="9" />
+                                    <line x1="15" y1="9" x2="15.01" y2="9" />
+                                    <path d="M12 2a4 4 0 0 1 4 4" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-3.5 h-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                                    <line x1="9" y1="9" x2="9.01" y2="9" />
+                                    <line x1="15" y1="9" x2="15.01" y2="9" />
+                                  </svg>
+                                )}
+                                <span>{p.nome}</span>
+                                <button type="button" onClick={() => toggleFilho(p.id)} className="text-slate-400 hover:text-red-500 font-bold ml-1 cursor-pointer">✕</button>
+                              </span>
                             ))}
                           </div>
                         </div>
-                      )}
-
-                      {filhos.length > 0 && (
-                        <div>
-                          <p className="text-[10px] font-bold uppercase text-teal-200 tracking-wider mb-2">Filhos</p>
-                          <div className="flex flex-wrap gap-3">
-                            {filhos.map((f) => (
-                              <RenderCardParente key={f.id} parente={f} relacao="Filho(a)" />
-                            ))}
+                      </>
+                    ) : (
+                      <div className="space-y-4 pt-1">
+                        {conjugeObj && (
+                          <div>
+                            <p className="text-[10px] font-bold uppercase text-teal-200 tracking-wider mb-2">Cônjuge</p>
+                            <div className="flex flex-wrap gap-3">
+                              <RenderCardParente parente={conjugeObj} relacao="Cônjuge" />
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
-                      {!conjugeObj && pais.length === 0 && irmaos.length === 0 && filhos.length === 0 && (
-                        <div className="text-sm text-teal-200/70 italic py-2">
-                          Nenhum vínculo familiar cadastrado.
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {abaAtiva === 'adicionais' && !isStudentCadernetaView && (
-            <div className="space-y-6">
-              {/* Novo Ambiente: Perfil Comportamental */}
-              <div className="section-group">
-                <div><h3 className="section-title">Perfil Comportamental</h3><p className="section-subtitle">Valores numéricos baseados no teste de perfil (0 a 100).</p></div>
-                <div className="section-body grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center gap-3 p-3 rounded-xl border border-blue-100 bg-blue-50/30">
-                    <span className="text-xl">🦅</span>
-                    <span className="font-bold text-slate-700 text-sm flex-1">Águia</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={perfilAguia}
-                      onChange={(e) => setPerfilAguia(e.target.value)}
-                      disabled={dis}
-                      className="w-20 px-2 py-1 border border-blue-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-blue-500/20 outline-none"
-                    />
-                  </div>
-                  <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-100 bg-purple-50/30">
-                    <span className="text-xl">🐈</span>
-                    <span className="font-bold text-slate-700 text-sm flex-1">Gato</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={perfilGato}
-                      onChange={(e) => setPerfilGato(e.target.value)}
-                      disabled={dis}
-                      className="w-20 px-2 py-1 border border-purple-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-purple-500/20 outline-none"
-                    />
-                  </div>
-                  <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/30">
-                    <span className="text-xl">🐺</span>
-                    <span className="font-bold text-slate-700 text-sm flex-1">Lobo</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={perfilLobo}
-                      onChange={(e) => setPerfilLobo(e.target.value)}
-                      disabled={dis}
-                      className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-gray-500/20 outline-none"
-                    />
-                  </div>
-                  <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 bg-red-50/30">
-                    <span className="text-xl">🦈</span>
-                    <span className="font-bold text-slate-700 text-sm flex-1">Tubarão</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={perfilTubarao}
-                      onChange={(e) => setPerfilTubarao(e.target.value)}
-                      disabled={dis}
-                      className="w-20 px-2 py-1 border border-red-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Novo Ambiente: Personalidade (Temperamentos) */}
-              <div className="section-group">
-                <div><h3 className="section-title">Personalidade</h3><p className="section-subtitle">Temperamentos baseados no último teste realizado (Escala 7-35).</p></div>
-                <div className="section-body">
-                  {testePersonalidade ? (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 bg-red-50/30">
-                          <span className="text-xl">🔥</span>
-                          <span className="font-bold text-slate-700 text-sm flex-1">Colérico</span>
-                          <span className="text-lg font-black text-red-600">{testePersonalidade.colerico}</span>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-100 bg-purple-50/30">
-                          <span className="text-xl">📋</span>
-                          <span className="font-bold text-slate-700 text-sm flex-1">Melancólico</span>
-                          <span className="text-lg font-black text-purple-600">{testePersonalidade.melancolico}</span>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 rounded-xl border border-amber-100 bg-amber-50/30">
-                          <span className="text-xl">☀️</span>
-                          <span className="font-bold text-slate-700 text-sm flex-1">Sanguíneo</span>
-                          <span className="text-lg font-black text-amber-600">{testePersonalidade.sanguineo}</span>
-                        </div>
-                        <div className="flex items-center gap-3 p-3 rounded-xl border border-cyan-100 bg-cyan-50/30">
-                          <span className="text-xl">💧</span>
-                          <span className="font-bold text-slate-700 text-sm flex-1">Fleumático</span>
-                          <span className="text-lg font-black text-cyan-600">{testePersonalidade.fleumatico}</span>
-                        </div>
-                      </div>
-                      <div className="p-3 bg-[#055F6D]/5 rounded-xl border border-[#055F6D]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Perfil Dominante:</span>
-                          <span className="text-xs font-black text-[#055F6D] uppercase">{testePersonalidade.dominant} + {testePersonalidade.secondary}</span>
-                        </div>
-                        <span className="text-[9px] text-slate-400 font-bold">Realizado em: {new Date(testePersonalidade.created_at).toLocaleDateString('pt-BR')}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-400 italic py-4 text-center">Nenhum teste de personalidade registrado para este membro.</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Novo Ambiente: Atividade Cerebral */}
-              <div className="section-group">
-                <div><h3 className="section-title">Atividade Cerebral</h3><p className="section-subtitle">Valores numéricos para os quadrantes cerebrais (0 a 100).</p></div>
-                <div className="section-body flex flex-col items-center justify-center gap-3">
-                  {/* Pensante (Topo) */}
-                  <div className="flex flex-col items-center gap-2 w-full max-w-xs">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pensante</span>
-                    <div className="flex items-center gap-2 p-2 rounded-xl border border-blue-100 bg-blue-50/30 w-full">
-                      <span className="text-xl">🧠</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={perfilPensante}
-                        onChange={(e) => setPerfilPensante(e.target.value)}
-                        disabled={dis}
-                        className="flex-1 px-2 py-1 border border-blue-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-blue-500/20 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Razão (Esquerda) e Emoção (Direita) */}
-                  <div className="flex items-center justify-between w-full max-w-md gap-4">
-                    <div className="flex flex-col items-center gap-2 flex-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Razão</span>
-                      <div className="flex items-center gap-2 p-2 rounded-xl border border-green-100 bg-green-50/30 w-full">
-                        <span className="text-xl">⚖️</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={perfilRazao}
-                          onChange={(e) => setPerfilRazao(e.target.value)}
-                          disabled={dis}
-                          className="flex-1 px-2 py-1 border border-green-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-green-500/20 outline-none"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-center gap-2 flex-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Emoção</span>
-                      <div className="flex items-center gap-2 p-2 rounded-xl border border-red-100 bg-red-50/30 w-full">
-                        <span className="text-xl">❤️</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={perfilEmocao}
-                          onChange={(e) => setPerfilEmocao(e.target.value)}
-                          disabled={dis}
-                          className="flex-1 px-2 py-1 border border-red-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Atuante (Inferior) */}
-                  <div className="flex flex-col items-center gap-2 w-full max-w-xs">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atuante</span>
-                    <div className="flex items-center gap-2 p-2 rounded-xl border border-yellow-100 bg-yellow-50/30 w-full">
-                      <span className="text-xl">💪</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={perfilAtuante}
-                        onChange={(e) => setPerfilAtuante(e.target.value)}
-                        disabled={dis}
-                        className="flex-1 px-2 py-1 border border-yellow-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-yellow-500/20 outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Novo Ambiente: Área de Atuação */}
-              <div className="section-group">
-                <div><h3 className="section-title">Área de Atuação</h3><p className="section-subtitle">Selecione os ministérios e departamentos onde o membro serve ou tem aptidão.</p></div>
-                <div className="section-body">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {atuacoes.map((a) => {
-                      const selecionado = Array.isArray(atuacao) && atuacao.includes(a.nome);
-                      return (
-                        <button
-                          key={a.id}
-                          type="button"
-                          disabled={dis}
-                          onClick={() => {
-                            const novaLista = selecionado 
-                              ? atuacao.filter(item => item !== a.nome)
-                              : [...atuacao, a.nome];
-                            setAtuacao(novaLista);
-                          }}
-                          className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all ${
-                            selecionado 
-                              ? 'bg-emerald-50 border-emerald-200 text-emerald-900 ring-2 ring-emerald-500/10' 
-                              : 'bg-white border-slate-200 hover:border-emerald-200 text-slate-600'
-                          } ${dis ? 'cursor-default opacity-80' : 'cursor-pointer hover:shadow-sm'}`}
-                        >
-                          <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selecionado ? 'bg-emerald-600 border-emerald-600' : 'bg-white border-slate-300'}`}>
-                            {selecionado && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                        {pais.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-bold uppercase text-teal-200 tracking-wider mb-2">Pais / Responsáveis</p>
+                            <div className="flex flex-wrap gap-3">
+                              {pais.map((p) => (
+                                <RenderCardParente key={p.id} parente={p} relacao="Pai / Responsável" />
+                              ))}
+                            </div>
                           </div>
-                          <span className="text-xs font-bold">{a.nome}</span>
-                        </button>
-                      );
-                    })}
-                    {atuacoes.length === 0 && (
-                      <p className="col-span-full text-center text-sm text-slate-400 italic py-4">Nenhuma atuação cadastrada nas configurações.</p>
+                        )}
+
+                        {irmaos.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-bold uppercase text-teal-200 tracking-wider mb-2">Irmãos</p>
+                            <div className="flex flex-wrap gap-3">
+                              {irmaos.map((irm) => (
+                                <RenderCardParente key={irm.id} parente={irm} relacao="Irmão(a)" />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {filhos.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-bold uppercase text-teal-200 tracking-wider mb-2">Filhos</p>
+                            <div className="flex flex-wrap gap-3">
+                              {filhos.map((f) => (
+                                <RenderCardParente key={f.id} parente={f} relacao="Filho(a)" />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {!conjugeObj && pais.length === 0 && irmaos.length === 0 && filhos.length === 0 && (
+                          <div className="text-sm text-teal-200/70 italic py-2">
+                            Nenhum vínculo familiar cadastrado.
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
+            )}
 
-              <div className="section-group">
-                <h3 className="section-title">Observações Acadêmicas e Perfil</h3>
-                <div className="section-body grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Avaliações da Escola de Discípulos</label>
-                    <textarea disabled={dis} value={avaliacaoEscola} onChange={(e) => setAvaliacaoEscola(e.target.value)} rows={4} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" placeholder="Registros de avaliação, módulos concluídos..." />
+            {abaAtiva === 'adicionais' && !isStudentCadernetaView && (
+              <div className="space-y-6">
+                {/* Novo Ambiente: Perfil Comportamental */}
+                <div className="section-group">
+                  <div><h3 className="section-title">Perfil Comportamental</h3><p className="section-subtitle">Valores numéricos baseados no teste de perfil (0 a 100).</p></div>
+                  <div className="section-body grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-blue-100 bg-blue-50/30">
+                      <span className="text-xl">🦅</span>
+                      <span className="font-bold text-slate-700 text-sm flex-1">Águia</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={perfilAguia}
+                        onChange={(e) => setPerfilAguia(e.target.value)}
+                        disabled={dis}
+                        className="w-20 px-2 py-1 border border-blue-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-blue-500/20 outline-none"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-100 bg-purple-50/30">
+                      <span className="text-xl">🐈</span>
+                      <span className="font-bold text-slate-700 text-sm flex-1">Gato</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={perfilGato}
+                        onChange={(e) => setPerfilGato(e.target.value)}
+                        disabled={dis}
+                        className="w-20 px-2 py-1 border border-purple-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-purple-500/20 outline-none"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/30">
+                      <span className="text-xl">🐺</span>
+                      <span className="font-bold text-slate-700 text-sm flex-1">Lobo</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={perfilLobo}
+                        onChange={(e) => setPerfilLobo(e.target.value)}
+                        disabled={dis}
+                        className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-gray-500/20 outline-none"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 bg-red-50/30">
+                      <span className="text-xl">🦈</span>
+                      <span className="font-bold text-slate-700 text-sm flex-1">Tubarão</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={perfilTubarao}
+                        onChange={(e) => setPerfilTubarao(e.target.value)}
+                        disabled={dis}
+                        className="w-20 px-2 py-1 border border-red-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Atividade cerebral</label>
-                    <textarea disabled={dis} value={atividadeCerebral} onChange={(e) => setAtividadeCerebral(e.target.value)} rows={3} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" />
+                </div>
+
+                {/* Novo Ambiente: Personalidade (Temperamentos) */}
+                <div className="section-group">
+                  <div><h3 className="section-title">Personalidade</h3><p className="section-subtitle">Temperamentos baseados no último teste realizado (Escala 7-35).</p></div>
+                  <div className="section-body">
+                    {testePersonalidade ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 bg-red-50/30">
+                            <span className="text-xl">🔥</span>
+                            <span className="font-bold text-slate-700 text-sm flex-1">Colérico</span>
+                            <span className="text-lg font-black text-red-600">{testePersonalidade.colerico}</span>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-100 bg-purple-50/30">
+                            <span className="text-xl">📋</span>
+                            <span className="font-bold text-slate-700 text-sm flex-1">Melancólico</span>
+                            <span className="text-lg font-black text-purple-600">{testePersonalidade.melancolico}</span>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-xl border border-amber-100 bg-amber-50/30">
+                            <span className="text-xl">☀️</span>
+                            <span className="font-bold text-slate-700 text-sm flex-1">Sanguíneo</span>
+                            <span className="text-lg font-black text-amber-600">{testePersonalidade.sanguineo}</span>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 rounded-xl border border-cyan-100 bg-cyan-50/30">
+                            <span className="text-xl">💧</span>
+                            <span className="font-bold text-slate-700 text-sm flex-1">Fleumático</span>
+                            <span className="text-lg font-black text-cyan-600">{testePersonalidade.fleumatico}</span>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-[#055F6D]/5 rounded-xl border border-[#055F6D]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Perfil Dominante:</span>
+                            <span className="text-xs font-black text-[#055F6D] uppercase">{testePersonalidade.dominant} + {testePersonalidade.secondary}</span>
+                          </div>
+                          <span className="text-[9px] text-slate-400 font-bold">Realizado em: {new Date(testePersonalidade.created_at).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-400 italic py-4 text-center">Nenhum teste de personalidade registrado para este membro.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Novo Ambiente: Atividade Cerebral */}
+                <div className="section-group">
+                  <div><h3 className="section-title">Atividade Cerebral</h3><p className="section-subtitle">Valores numéricos para os quadrantes cerebrais (0 a 100).</p></div>
+                  <div className="section-body flex flex-col items-center justify-center gap-3">
+                    {/* Pensante (Topo) */}
+                    <div className="flex flex-col items-center gap-2 w-full max-w-xs">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pensante</span>
+                      <div className="flex items-center gap-2 p-2 rounded-xl border border-blue-100 bg-blue-50/30 w-full">
+                        <span className="text-xl">🧠</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={perfilPensante}
+                          onChange={(e) => setPerfilPensante(e.target.value)}
+                          disabled={dis}
+                          className="flex-1 px-2 py-1 border border-blue-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-blue-500/20 outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Razão (Esquerda) e Emoção (Direita) */}
+                    <div className="flex items-center justify-between w-full max-w-md gap-4">
+                      <div className="flex flex-col items-center gap-2 flex-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Razão</span>
+                        <div className="flex items-center gap-2 p-2 rounded-xl border border-green-100 bg-green-50/30 w-full">
+                          <span className="text-xl">⚖️</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={perfilRazao}
+                            onChange={(e) => setPerfilRazao(e.target.value)}
+                            disabled={dis}
+                            className="flex-1 px-2 py-1 border border-green-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-green-500/20 outline-none"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-center gap-2 flex-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Emoção</span>
+                        <div className="flex items-center gap-2 p-2 rounded-xl border border-red-100 bg-red-50/30 w-full">
+                          <span className="text-xl">❤️</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={perfilEmocao}
+                            onChange={(e) => setPerfilEmocao(e.target.value)}
+                            disabled={dis}
+                            className="flex-1 px-2 py-1 border border-red-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Atuante (Inferior) */}
+                    <div className="flex flex-col items-center gap-2 w-full max-w-xs">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atuante</span>
+                      <div className="flex items-center gap-2 p-2 rounded-xl border border-yellow-100 bg-yellow-50/30 w-full">
+                        <span className="text-xl">💪</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={perfilAtuante}
+                          onChange={(e) => setPerfilAtuante(e.target.value)}
+                          disabled={dis}
+                          className="flex-1 px-2 py-1 border border-yellow-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-yellow-500/20 outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Novo Ambiente: Área de Atuação */}
+                <div className="section-group">
+                  <div><h3 className="section-title">Área de Atuação</h3><p className="section-subtitle">Selecione os ministérios e departamentos onde o membro serve ou tem aptidão.</p></div>
+                  <div className="section-body">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {atuacoes.map((a) => {
+                        const selecionado = Array.isArray(atuacao) && atuacao.includes(a.nome);
+                        return (
+                          <button
+                            key={a.id}
+                            type="button"
+                            disabled={dis}
+                            onClick={() => {
+                              const novaLista = selecionado
+                                ? atuacao.filter(item => item !== a.nome)
+                                : [...atuacao, a.nome];
+                              setAtuacao(novaLista);
+                            }}
+                            className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all ${selecionado
+                              ? 'bg-emerald-50 border-emerald-200 text-emerald-900 ring-2 ring-emerald-500/10'
+                              : 'bg-white border-slate-200 hover:border-emerald-200 text-slate-600'
+                              } ${dis ? 'cursor-default opacity-80' : 'cursor-pointer hover:shadow-sm'}`}
+                          >
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selecionado ? 'bg-emerald-600 border-emerald-600' : 'bg-white border-slate-300'}`}>
+                              {selecionado && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                            </div>
+                            <span className="text-xs font-bold">{a.nome}</span>
+                          </button>
+                        );
+                      })}
+                      {atuacoes.length === 0 && (
+                        <p className="col-span-full text-center text-sm text-slate-400 italic py-4">Nenhuma atuação cadastrada nas configurações.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="section-group">
+                  <h3 className="section-title">Observações Acadêmicas e Perfil</h3>
+                  <div className="section-body grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Avaliações da Escola de Discípulos</label>
+                      <textarea disabled={dis} value={avaliacaoEscola} onChange={(e) => setAvaliacaoEscola(e.target.value)} rows={4} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" placeholder="Registros de avaliação, módulos concluídos..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Atividade cerebral</label>
+                      <textarea disabled={dis} value={atividadeCerebral} onChange={(e) => setAtividadeCerebral(e.target.value)} rows={3} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {abaAtiva === 'escola' && !isStudentCadernetaView && (
-            <div className="space-y-6">
-              <div className="section-group">
-                <div><h3 className="section-title">Matrículas Ativas</h3><p className="section-subtitle">Cursos e turmas que o membro está frequentando.</p></div>
-                <div className="section-body">
-                  {matriculasMembro.length === 0 ? (
-                    <p className="text-sm text-slate-400 italic">Este membro não possui matrículas ativas.</p>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {matriculasMembro.map(m => {
-                        const isDesistente = m.status === 'desistente';
-                        return (
-                          <div key={m.id} className={`p-3 rounded-xl border flex justify-between items-center ${
-                            isDesistente ? 'border-rose-100 bg-rose-50/30' : 'border-emerald-100 bg-emerald-50/30'
-                          }`}>
-                            <div>
-                              <p className={`text-[10px] font-bold uppercase ${
-                                isDesistente ? 'text-rose-600' : 'text-emerald-600'
-                              }`}>{m.turmas?.escolas?.nome}</p>
-                              <p className="text-sm font-bold text-slate-700">{m.turmas?.nome}</p>
+            {abaAtiva === 'escola' && !isStudentCadernetaView && (
+              <div className="space-y-6">
+                <div className="section-group">
+                  <div><h3 className="section-title">Matrículas Ativas</h3><p className="section-subtitle">Cursos e turmas que o membro está frequentando.</p></div>
+                  <div className="section-body">
+                    {matriculasMembro.length === 0 ? (
+                      <p className="text-sm text-slate-400 italic">Este membro não possui matrículas ativas.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {matriculasMembro.map(m => {
+                          const isDesistente = m.status === 'desistente';
+                          return (
+                            <div key={m.id} className={`p-3 rounded-xl border flex justify-between items-center ${isDesistente ? 'border-rose-100 bg-rose-50/30' : 'border-emerald-100 bg-emerald-50/30'
+                              }`}>
+                              <div>
+                                <p className={`text-[10px] font-bold uppercase ${isDesistente ? 'text-rose-600' : 'text-emerald-600'
+                                  }`}>{m.turmas?.escolas?.nome}</p>
+                                <p className="text-sm font-bold text-slate-700">{m.turmas?.nome}</p>
+                              </div>
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${isDesistente ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+                                }`}>
+                                {m.status}
+                              </span>
                             </div>
-                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
-                              isDesistente ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
-                            }`}>
-                              {m.status}
-                            </span>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="section-group">
+                  <div><h3 className="section-title">Nova Matrícula</h3><p className="section-subtitle">Vincular membro a uma turma aberta.</p></div>
+                  <div className="section-body">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {turmasDisponiveis
+                        .filter(t => !matriculasMembro.some(m => m.turmas?.id === t.id))
+                        .map(turma => (
+                          <button
+                            key={turma.id}
+                            type="button"
+                            onClick={() => handleMatricularEmTurma(turma.id)}
+                            className="text-left p-3 rounded-xl border border-slate-200 hover:border-[#055F6D] hover:bg-slate-50 transition group cursor-pointer"
+                          >
+                            <p className="text-[9px] font-bold text-slate-400 uppercase">{turma.escolas?.nome}</p>
+                            <p className="text-xs font-bold text-slate-700 group-hover:text-[#055F6D]">{turma.nome}</p>
+                            <p className="text-[10px] text-[#055F6D] mt-2 font-bold">+ Matricular agora</p>
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {abaAtiva === 'frequencia' && (
+              <div className="section-group">
+                <div><h3 className="section-title">Minha Frequência na Célula</h3><p className="section-subtitle">Histórico de presença nos encontros de célula.</p></div>
+                <div className="section-body">
+                  {carregandoPresenca ? (
+                    <p className="text-sm text-slate-400 italic">Carregando histórico...</p>
+                  ) : historicoPresenca.length === 0 ? (
+                    <p className="text-sm text-slate-400 italic">Nenhum registro de reunião para sua célula encontrado no sistema.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="table-mib">
+                        <thead>
+                          <tr>
+                            <th>Data da Reunião</th>
+                            <th className="text-right pr-6">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {historicoPresenca.map(item => (
+                            <tr key={item.id}>
+                              <td className="font-medium text-slate-700">
+                                {new Date(item.data + 'T00:00:00').toLocaleDateString('pt-BR')}
+                              </td>
+                              <td className="text-right pr-6">
+                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${item.presente ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                  {item.presente ? '✅ PRESENTE' : '❌ AUSENTE'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>
               </div>
+            )}
 
-              <div className="section-group">
-                <div><h3 className="section-title">Nova Matrícula</h3><p className="section-subtitle">Vincular membro a uma turma aberta.</p></div>
-                <div className="section-body">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {turmasDisponiveis
-                      .filter(t => !matriculasMembro.some(m => m.turmas?.id === t.id))
-                      .map(turma => (
-                        <button
-                          key={turma.id}
-                          type="button"
-                          onClick={() => handleMatricularEmTurma(turma.id)}
-                          className="text-left p-3 rounded-xl border border-slate-200 hover:border-[#055F6D] hover:bg-slate-50 transition group cursor-pointer"
-                        >
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">{turma.escolas?.nome}</p>
-                          <p className="text-xs font-bold text-slate-700 group-hover:text-[#055F6D]">{turma.nome}</p>
-                          <p className="text-[10px] text-[#055F6D] mt-2 font-bold">+ Matricular agora</p>
-                        </button>
-                      ))}
+            {abaAtiva === 'financeiro' && !isStudentCadernetaView && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 p-4 rounded-2xl">
+                  <div>
+                    <h4 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Histórico Contribuitivo</h4>
+                    <p className="text-xs text-emerald-600 mt-0.5">Lançamentos vinculados a este membro no ano corrente.</p>
                   </div>
+                  {!isMembro && (
+                    <button
+                      type="button"
+                      onClick={() => setIsModalReceitaAberto(true)}
+                      className="px-3 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition shadow-sm"
+                    >
+                      + Nova Receita
+                    </button>
+                  )}
+                </div>
+
+                {/* Tabela de Transações do Membro */}
+                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <th className="p-3">Data</th>
+                        <th className="p-3">Categoria</th>
+                        <th className="p-3">Descrição</th>
+                        <th className="p-3 text-right">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                      {contribuicoes.length === 0 ? (
+                        <tr><td colSpan={4} className="p-8 text-center text-slate-400 italic">Nenhum lançamento vinculado a este membro.</td></tr>
+                      ) : (
+                        contribuicoes.map((t) => (
+                          <tr key={t.id}>
+                            <td className="p-3 font-medium">{new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                            <td className="p-3">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${t.tipo === 'receita' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                {t.categorias_financeiras?.nome || '—'}
+                              </span>
+                            </td>
+                            <td className="p-3">{t.descricao || '—'}</td>
+                            <td className={`p-3 text-right font-bold ${t.tipo === 'receita' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              R$ {Number(t.valor).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {abaAtiva === 'frequencia' && (
-            <div className="section-group">
-              <div><h3 className="section-title">Minha Frequência na Célula</h3><p className="section-subtitle">Histórico de presença nos encontros de célula.</p></div>
-              <div className="section-body">
-                {carregandoPresenca ? (
-                  <p className="text-sm text-slate-400 italic">Carregando histórico...</p>
-                ) : historicoPresenca.length === 0 ? (
-                  <p className="text-sm text-slate-400 italic">Nenhum registro de reunião para sua célula encontrado no sistema.</p>
-                ) : (
+            {abaAtiva === 'caderneta' && (
+              <div className="section-group">
+                <div><h3 className="section-title">Caderneta Escolar</h3><p className="section-subtitle">Notas e desempenho do aluno nos módulos do curso.</p></div>
+                <div className="section-body">
+                  {carregandoAcademicos ? (
+                    <p className="text-sm text-slate-400 italic">Carregando caderneta...</p>
+                  ) : cadernetaDados?.modulos?.length === 0 ? (
+                    <p className="text-sm text-slate-400 italic">Nenhuma avaliação registrada ainda.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {cadernetaDados?.modulos?.map((modulo, idx) => (
+                        <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                          <h4 className="font-bold text-slate-800 mb-2">{modulo.nome}</h4>
+                          <table className="w-full text-left text-xs">
+                            <thead>
+                              <tr className="text-slate-500 uppercase font-semibold">
+                                <th className="py-1">Avaliação</th>
+                                <th className="py-1 text-right">Nota</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {modulo.avaliacoes.map((aval, aIdx) => (
+                                <tr key={aIdx}>
+                                  <td className="py-1">{aval.tipo}</td>
+                                  <td className="py-1 text-right font-bold text-slate-700">
+                                    {modoEdicao ? (
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="10"
+                                        step="0.1"
+                                        value={aval.nota}
+                                        onChange={(e) => handleNotaChange(idx, aIdx, e.target.value)}
+                                        className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-[#055F6D]/20 outline-none"
+                                      />
+                                    ) : (
+                                      aval.nota.toFixed(1)
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                              <tr className={`font-bold border-t border-slate-200 ${modulo.media < 7 ? 'text-rose-600' : 'text-[#055F6D]'}`}>
+                                <td className="py-1">Média do Módulo</td>
+                                <td className="py-1 text-right">{modulo.media.toFixed(1)}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {abaAtiva === 'faltas' && (
+              <div className="section-group">
+                <div><h3 className="section-title">Registro de Faltas</h3><p className="section-subtitle">Controle de ausências do aluno por módulo.</p></div>
+                <div className="section-body space-y-4">
+                  {carregandoAcademicos ? (
+                    <p className="text-sm text-slate-400 italic">Carregando faltas...</p>
+                  ) : faltasDados?.modulos?.length === 0 ? (
+                    <p className="text-sm text-slate-400 italic">Nenhuma falta registrada.</p>
+                  ) : (
+                    <>
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <h4 className="font-bold text-slate-800 mb-2">Faltas por Módulo</h4>
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="text-slate-500 uppercase font-semibold">
+                              <th className="py-1">Módulo</th>
+                              <th className="py-1 text-right">Faltas</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {faltasDados?.modulos?.map((modulo, idx) => (
+                              <tr key={idx}>
+                                <td className="py-1">{modulo.nome}</td>
+                                <td className="py-1 text-right font-bold text-rose-600">
+                                  {modoEdicao ? (
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={modulo.faltas}
+                                      onChange={(e) => handleFaltasChange(idx, e.target.value)}
+                                      className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-rose-500/20 outline-none"
+                                    />
+                                  ) : (
+                                    modulo.faltas
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div className="bg-rose-50 p-4 rounded-xl border border-rose-100 text-sm font-bold text-rose-700">
+                        Total de Faltas: {faltasDados?.total}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {abaAtiva === 'crescimento' && (
+              <div className="section-group">
+                <div><h3 className="section-title">Avaliação de Crescimento</h3><p className="section-subtitle">Observações sobre o desenvolvimento do aluno na escola.</p></div>
+                <div className="section-body space-y-4">
+                  {carregandoAcademicos ? (
+                    <p className="text-sm text-slate-400 italic">Carregando avaliação...</p>
+                  ) : (
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <h4 className="font-bold text-slate-800 mb-2">Observações do Professor</h4>
+                      <textarea
+                        value={crescimentoDados?.observacoes || ''}
+                        onChange={(e) => setCrescimentoDados({ ...crescimentoDados, observacoes: e.target.value })}
+                        rows="5"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        placeholder="Registre aqui as observações sobre o crescimento e desenvolvimento do aluno..."
+                        disabled={!modoEdicao} // Apenas editável em modo de edição
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {abaAtiva === 'permissoes' && !isStudentCadernetaView && !isMembro && (
+              <div className="section-group">
+                <CardHeader
+                  titulo="Permissões"
+                  subtitulo={`Módulos vinculados ao perfil ${permissao || cargo || 'membro'}.`}
+                />
+                <div className="section-body space-y-3">
+                  {!dis && (
+                    <AcessoSistemaPanel
+                      membro={membro}
+                      email={email}
+                      permissao={permissao}
+                      setPermissao={setPermissao}
+                      senhaNovoAcesso={senhaNovoAcesso}
+                      setSenhaNovoAcesso={setSenhaNovoAcesso}
+                      confirmarSenhaNovoAcesso={confirmarSenhaNovoAcesso}
+                      setConfirmarSenhaNovoAcesso={setConfirmarSenhaNovoAcesso}
+                      criandoAcesso={criandoAcesso}
+                      mensagemAcesso={mensagemAcesso}
+                      onCriarAcesso={handleCriarAcessoSistema}
+                    />
+                  )}
+
+                  {membroLogado?.permissao === 'admin' && (
+                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mt-4">
+                      <h4 className="text-sm font-black text-slate-800 uppercase mb-4 tracking-tight flex items-center gap-2">
+                        <span className="text-lg">🛡️</span> Gerenciamento Manual de Acessos
+                      </h4>
+                      <p className="text-xs text-slate-500 mb-6">Como administrador, você pode ligar/desligar módulos específicos para este membro, ignorando o perfil padrão.</p>
+
+                      <div className="space-y-3">
+                        {MODULOS_SISTEMA.map((m) => {
+                          const isOpen = !!modulosExpandidos[m.modulo];
+                          const blocosAtivosCount = m.blocos.filter(bloco => permissoesJson[`${m.modulo}|${bloco}`] === true).length;
+
+                          return (
+                            <div key={m.modulo} className="bg-white rounded-2xl border border-slate-200 overflow-hidden transition-all duration-200">
+                              {/* Cabeçalho do Acordeão */}
+                              <button
+                                type="button"
+                                onClick={() => setModulosExpandidos(prev => ({ ...prev, [m.modulo]: !isOpen }))}
+                                className="w-full flex items-center justify-between p-4 hover:bg-slate-50/80 transition-colors text-left focus:outline-none"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm font-extrabold text-slate-800 tracking-tight">{m.modulo}</span>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${blocosAtivosCount > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+                                    {blocosAtivosCount > 0 ? `🟢 ${blocosAtivosCount} ativo(s)` : '⚪ inativo'}
+                                  </span>
+                                </div>
+                                <svg
+                                  className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                </svg>
+                              </button>
+
+                              {/* Corpo do Acordeão */}
+                              {isOpen && (
+                                <div className="p-4 border-t border-slate-100 bg-slate-50/30 animate-in fade-in duration-200">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {m.blocos.map((bloco) => {
+                                      const keyBase = `${m.modulo}|${bloco}`;
+                                      const ativo = permissoesJson[keyBase] === true;
+                                      return (
+                                        <div key={bloco} className={`p-3 rounded-xl border transition-all duration-200 ${ativo ? 'bg-white border-emerald-200 shadow-xs' : 'bg-white border-slate-200'}`}>
+                                          <div className="flex items-center justify-between">
+                                            <span className={`text-[11px] font-bold ${ativo ? 'text-slate-800' : 'text-slate-400'}`}>{bloco}</span>
+                                            <button
+                                              type="button"
+                                              disabled={dis}
+                                              onClick={() => setPermissoesJson(prev => {
+                                                const novoEstado = !ativo;
+                                                const next = { ...prev, [keyBase]: novoEstado };
+                                                if (!novoEstado) {
+                                                  // Limpa sub-permissões ao desativar o bloco
+                                                  delete next[`${keyBase}|ver`];
+                                                  delete next[`${keyBase}|editar`];
+                                                  delete next[`${keyBase}|excluir`];
+                                                } else {
+                                                  // Ativa 'ver' por padrão ao ligar o bloco
+                                                  next[`${keyBase}|ver`] = true;
+                                                }
+                                                return next;
+                                              })}
+                                              className={`w-10 h-6 rounded-full relative transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${ativo ? 'bg-emerald-500' : 'bg-slate-200'}`}
+                                            >
+                                              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-xs transition-all duration-200 ${ativo ? 'right-1' : 'left-1'}`} />
+                                            </button>
+                                          </div>
+
+                                          {ativo && (
+                                            <div className="flex gap-1 pt-3 border-t border-slate-100 mt-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                                              {['ver', 'editar', 'excluir'].map(action => {
+                                                const subKey = `${keyBase}|${action}`;
+                                                const subAtivo = permissoesJson[subKey] === true;
+
+                                                let activeClass = '';
+                                                let inactiveClass = 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600';
+
+                                                if (action === 'ver') {
+                                                  activeClass = 'bg-blue-500 border-blue-500 text-white shadow-xs shadow-blue-500/20';
+                                                } else if (action === 'editar') {
+                                                  activeClass = 'bg-amber-500 border-amber-500 text-white shadow-xs shadow-amber-500/20';
+                                                } else if (action === 'excluir') {
+                                                  activeClass = 'bg-rose-500 border-rose-500 text-white shadow-xs shadow-rose-500/20';
+                                                }
+
+                                                return (
+                                                  <button
+                                                    key={action}
+                                                    type="button"
+                                                    disabled={dis}
+                                                    onClick={() => setPermissoesJson(p => ({ ...p, [subKey]: !subAtivo }))}
+                                                    className={`flex-1 py-1 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all duration-150 ${subAtivo ? activeClass : inactiveClass}`}
+                                                  >
+                                                    {action}
+                                                  </button>
+                                                );
+                                              })}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="overflow-x-auto">
                     <table className="table-mib">
                       <thead>
                         <tr>
-                          <th>Data da Reunião</th>
-                          <th className="text-right pr-6">Status</th>
+                          <th>Módulo</th>
+                          <th>Bloco / recurso</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {historicoPresenca.map(item => (
-                          <tr key={item.id}>
-                            <td className="font-medium text-slate-700">
-                              {new Date(item.data + 'T00:00:00').toLocaleDateString('pt-BR')}
-                            </td>
-                            <td className="text-right pr-6">
-                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${item.presente ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                                {item.presente ? '✅ PRESENTE' : '❌ AUSENTE'}
-                              </span>
-                            </td>
+                        {permissoesVinculadas.length === 0 ? (
+                          <tr>
+                            <td colSpan={2} className="text-center py-6 text-[var(--text-muted)]">Nenhum vínculo de permissão definido.</td>
                           </tr>
-                        ))}
+                        ) : (
+                          permissoesVinculadas.map((item, idx) => (
+                            <tr key={`${item.modulo}-${item.bloco}-${idx}`}>
+                              <td className="font-medium text-[var(--text-heading)]">{item.modulo}</td>
+                              <td>{item.bloco}</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {abaAtiva === 'financeiro' && !isStudentCadernetaView && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 p-4 rounded-2xl">
-                <div>
-                  <h4 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Histórico Contribuitivo</h4>
-                  <p className="text-xs text-emerald-600 mt-0.5">Lançamentos vinculados a este membro no ano corrente.</p>
                 </div>
-                {!isMembro && (
+              </div>
+            )}
+
+            {modoEdicao && (
+              <>
+                {/* Botão flutuante — visível em qualquer posição da página */}
+                <div className="fixed bottom-6 right-6 z-50 flex gap-2 items-center print:hidden">
                   <button
                     type="button"
-                    onClick={() => setIsModalReceitaAberto(true)}
-                    className="px-3 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition shadow-sm"
+                    onClick={() => { setModoEdicao(false); preencherFormulario(membro); }}
+                    className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-medium shadow-lg hover:bg-slate-50 transition"
                   >
-                    + Nova Receita
+                    Cancelar
                   </button>
-                )}
-              </div>
-
-              {/* Tabela de Transações do Membro */}
-              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      <th className="p-3">Data</th>
-                      <th className="p-3">Categoria</th>
-                      <th className="p-3">Descrição</th>
-                      <th className="p-3 text-right">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
-                    {contribuicoes.length === 0 ? (
-                      <tr><td colSpan={4} className="p-8 text-center text-slate-400 italic">Nenhum lançamento vinculado a este membro.</td></tr>
+                  <button
+                    type="submit"
+                    disabled={salvando}
+                    className="flex items-center gap-2 bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-xs font-semibold px-6 py-2.5 rounded-xl disabled:opacity-50 shadow-xl transition"
+                  >
+                    {salvando ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" /></svg>
+                        {membro?.status === 'pendente' ? 'Aprovando...' : 'Salvando...'}
+                      </>
                     ) : (
-                      contribuicoes.map((t) => (
-                        <tr key={t.id}>
-                          <td className="p-3 font-medium">{new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-                          <td className="p-3">
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${t.tipo === 'receita' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                              {t.categorias_financeiras?.nome || '—'}
-                            </span>
-                          </td>
-                          <td className="p-3">{t.descricao || '—'}</td>
-                          <td className={`p-3 text-right font-bold ${t.tipo === 'receita' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            R$ {Number(t.valor).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))
+                      <>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {membro?.status === 'pendente' ? 'Aprovar Cadastro' : 'Salvar Alterações'}
+                      </>
                     )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {abaAtiva === 'caderneta' && (
-            <div className="section-group">
-              <div><h3 className="section-title">Caderneta Escolar</h3><p className="section-subtitle">Notas e desempenho do aluno nos módulos do curso.</p></div>
-                  <div className="section-body">
-                {carregandoAcademicos ? (
-                  <p className="text-sm text-slate-400 italic">Carregando caderneta...</p>
-                ) : cadernetaDados?.modulos?.length === 0 ? (
-                  <p className="text-sm text-slate-400 italic">Nenhuma avaliação registrada ainda.</p>
-                ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {cadernetaDados?.modulos?.map((modulo, idx) => (
-                    <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                      <h4 className="font-bold text-slate-800 mb-2">{modulo.nome}</h4>
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="text-slate-500 uppercase font-semibold">
-                            <th className="py-1">Avaliação</th>
-                            <th className="py-1 text-right">Nota</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {modulo.avaliacoes.map((aval, aIdx) => (
-                            <tr key={aIdx}>
-                              <td className="py-1">{aval.tipo}</td>
-                                    <td className="py-1 text-right font-bold text-slate-700">
-                                      {modoEdicao ? (
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          max="10"
-                                          step="0.1"
-                                          value={aval.nota}
-                                          onChange={(e) => handleNotaChange(idx, aIdx, e.target.value)}
-                                          className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-[#055F6D]/20 outline-none"
-                                        />
-                                      ) : (
-                                        aval.nota.toFixed(1)
-                                      )}
-                                    </td>
-                            </tr>
-                          ))}
-                          <tr className={`font-bold border-t border-slate-200 ${modulo.media < 7 ? 'text-rose-600' : 'text-[#055F6D]'}`}>
-                            <td className="py-1">Média do Módulo</td>
-                            <td className="py-1 text-right">{modulo.media.toFixed(1)}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  ))}
-                      </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {abaAtiva === 'faltas' && (
-            <div className="section-group">
-              <div><h3 className="section-title">Registro de Faltas</h3><p className="section-subtitle">Controle de ausências do aluno por módulo.</p></div>
-              <div className="section-body space-y-4">
-                {carregandoAcademicos ? (
-                  <p className="text-sm text-slate-400 italic">Carregando faltas...</p>
-                ) : faltasDados?.modulos?.length === 0 ? (
-                  <p className="text-sm text-slate-400 italic">Nenhuma falta registrada.</p>
-                ) : (
-                  <>
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                      <h4 className="font-bold text-slate-800 mb-2">Faltas por Módulo</h4>
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="text-slate-500 uppercase font-semibold">
-                            <th className="py-1">Módulo</th>
-                            <th className="py-1 text-right">Faltas</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {faltasDados?.modulos?.map((modulo, idx) => (
-                            <tr key={idx}>
-                              <td className="py-1">{modulo.nome}</td>
-                                    <td className="py-1 text-right font-bold text-rose-600">
-                                      {modoEdicao ? (
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          value={modulo.faltas}
-                                          onChange={(e) => handleFaltasChange(idx, e.target.value)}
-                                          className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-rose-500/20 outline-none"
-                                        />
-                                      ) : (
-                                        modulo.faltas
-                                      )}
-                                    </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <div className="bg-rose-50 p-4 rounded-xl border border-rose-100 text-sm font-bold text-rose-700">
-                      Total de Faltas: {faltasDados?.total}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {abaAtiva === 'crescimento' && (
-            <div className="section-group">
-              <div><h3 className="section-title">Avaliação de Crescimento</h3><p className="section-subtitle">Observações sobre o desenvolvimento do aluno na escola.</p></div>
-              <div className="section-body space-y-4">
-                {carregandoAcademicos ? (
-                  <p className="text-sm text-slate-400 italic">Carregando avaliação...</p>
-                ) : (
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <h4 className="font-bold text-slate-800 mb-2">Observações do Professor</h4>
-                    <textarea
-                      value={crescimentoDados?.observacoes || ''}
-                      onChange={(e) => setCrescimentoDados({ ...crescimentoDados, observacoes: e.target.value })}
-                      rows="5"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      placeholder="Registre aqui as observações sobre o crescimento e desenvolvimento do aluno..."
-                      disabled={!modoEdicao} // Apenas editável em modo de edição
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {abaAtiva === 'permissoes' && !isStudentCadernetaView && !isMembro && (
-            <div className="section-group">
-              <CardHeader
-                titulo="Permissões"
-                subtitulo={`Módulos vinculados ao perfil ${permissao || cargo || 'membro'}.`}
-              />
-              <div className="section-body space-y-3">
-              {!dis && (
-                <AcessoSistemaPanel
-                  membro={membro}
-                  email={email}
-                  permissao={permissao}
-                  setPermissao={setPermissao}
-                  senhaNovoAcesso={senhaNovoAcesso}
-                  setSenhaNovoAcesso={setSenhaNovoAcesso}
-                  confirmarSenhaNovoAcesso={confirmarSenhaNovoAcesso}
-                  setConfirmarSenhaNovoAcesso={setConfirmarSenhaNovoAcesso}
-                  criandoAcesso={criandoAcesso}
-                  mensagemAcesso={mensagemAcesso}
-                  onCriarAcesso={handleCriarAcessoSistema}
-                />
-              )}
-              
-              {membroLogado?.permissao === 'admin' && (
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mt-4">
-                  <h4 className="text-sm font-black text-slate-800 uppercase mb-4 tracking-tight flex items-center gap-2">
-                    <span className="text-lg">🛡️</span> Gerenciamento Manual de Acessos
-                  </h4>
-                  <p className="text-xs text-slate-500 mb-6">Como administrador, você pode ligar/desligar módulos específicos para este membro, ignorando o perfil padrão.</p>
-                  
-                  <div className="space-y-3">
-                    {MODULOS_SISTEMA.map((m) => {
-                      const isOpen = !!modulosExpandidos[m.modulo];
-                      const blocosAtivosCount = m.blocos.filter(bloco => permissoesJson[`${m.modulo}|${bloco}`] === true).length;
-                      
-                      return (
-                        <div key={m.modulo} className="bg-white rounded-2xl border border-slate-200 overflow-hidden transition-all duration-200">
-                          {/* Cabeçalho do Acordeão */}
-                          <button
-                            type="button"
-                            onClick={() => setModulosExpandidos(prev => ({ ...prev, [m.modulo]: !isOpen }))}
-                            className="w-full flex items-center justify-between p-4 hover:bg-slate-50/80 transition-colors text-left focus:outline-none"
-                          >
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm font-extrabold text-slate-800 tracking-tight">{m.modulo}</span>
-                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${blocosAtivosCount > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
-                                {blocosAtivosCount > 0 ? `🟢 ${blocosAtivosCount} ativo(s)` : '⚪ inativo'}
-                              </span>
-                            </div>
-                            <svg
-                              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                            </svg>
-                          </button>
-                          
-                          {/* Corpo do Acordeão */}
-                          {isOpen && (
-                            <div className="p-4 border-t border-slate-100 bg-slate-50/30 animate-in fade-in duration-200">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {m.blocos.map((bloco) => {
-                                  const keyBase = `${m.modulo}|${bloco}`;
-                                  const ativo = permissoesJson[keyBase] === true;
-                                  return (
-                                    <div key={bloco} className={`p-3 rounded-xl border transition-all duration-200 ${ativo ? 'bg-white border-emerald-200 shadow-xs' : 'bg-white border-slate-200'}`}>
-                                      <div className="flex items-center justify-between">
-                                        <span className={`text-[11px] font-bold ${ativo ? 'text-slate-800' : 'text-slate-400'}`}>{bloco}</span>
-                                        <button
-                                          type="button"
-                                          disabled={dis}
-                                          onClick={() => setPermissoesJson(prev => {
-                                            const novoEstado = !ativo;
-                                            const next = { ...prev, [keyBase]: novoEstado };
-                                            if (!novoEstado) {
-                                              // Limpa sub-permissões ao desativar o bloco
-                                              delete next[`${keyBase}|ver`];
-                                              delete next[`${keyBase}|editar`];
-                                              delete next[`${keyBase}|excluir`];
-                                            } else {
-                                              // Ativa 'ver' por padrão ao ligar o bloco
-                                              next[`${keyBase}|ver`] = true;
-                                            }
-                                            return next;
-                                          })}
-                                          className={`w-10 h-6 rounded-full relative transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${ativo ? 'bg-emerald-500' : 'bg-slate-200'}`}
-                                        >
-                                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-xs transition-all duration-200 ${ativo ? 'right-1' : 'left-1'}`} />
-                                        </button>
-                                      </div>
-                                      
-                                      {ativo && (
-                                        <div className="flex gap-1 pt-3 border-t border-slate-100 mt-2 animate-in fade-in slide-in-from-top-1 duration-150">
-                                          {['ver', 'editar', 'excluir'].map(action => {
-                                            const subKey = `${keyBase}|${action}`;
-                                            const subAtivo = permissoesJson[subKey] === true;
-                                            
-                                            let activeClass = '';
-                                            let inactiveClass = 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600';
-                                            
-                                            if (action === 'ver') {
-                                              activeClass = 'bg-blue-500 border-blue-500 text-white shadow-xs shadow-blue-500/20';
-                                            } else if (action === 'editar') {
-                                              activeClass = 'bg-amber-500 border-amber-500 text-white shadow-xs shadow-amber-500/20';
-                                            } else if (action === 'excluir') {
-                                              activeClass = 'bg-rose-500 border-rose-500 text-white shadow-xs shadow-rose-500/20';
-                                            }
-                                            
-                                            return (
-                                              <button
-                                                key={action}
-                                                type="button"
-                                                disabled={dis}
-                                                onClick={() => setPermissoesJson(p => ({ ...p, [subKey]: !subAtivo }))}
-                                                className={`flex-1 py-1 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all duration-150 ${subAtivo ? activeClass : inactiveClass}`}
-                                              >
-                                                {action}
-                                              </button>
-                                            );
-                                          })}
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                  </button>
                 </div>
-              )}
-
-              <div className="overflow-x-auto">
-                <table className="table-mib">
-                  <thead>
-                    <tr>
-                      <th>Módulo</th>
-                      <th>Bloco / recurso</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {permissoesVinculadas.length === 0 ? (
-                      <tr>
-                        <td colSpan={2} className="text-center py-6 text-[var(--text-muted)]">Nenhum vínculo de permissão definido.</td>
-                      </tr>
-                    ) : (
-                      permissoesVinculadas.map((item, idx) => (
-                        <tr key={`${item.modulo}-${item.bloco}-${idx}`}>
-                          <td className="font-medium text-[var(--text-heading)]">{item.modulo}</td>
-                          <td>{item.bloco}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              </div>
-            </div>
-          )}
-
-          {modoEdicao && (
-            <>
-              {/* Botão flutuante — visível em qualquer posição da página */}
-              <div className="fixed bottom-6 right-6 z-50 flex gap-2 items-center print:hidden">
-                <button
-                  type="button"
-                  onClick={() => { setModoEdicao(false); preencherFormulario(membro); }}
-                  className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-medium shadow-lg hover:bg-slate-50 transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={salvando}
-                  className="flex items-center gap-2 bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-xs font-semibold px-6 py-2.5 rounded-xl disabled:opacity-50 shadow-xl transition"
-                >
-                  {salvando ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg>
-                      {membro?.status === 'pendente' ? 'Aprovando...' : 'Salvando...'}
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      {membro?.status === 'pendente' ? 'Aprovar Cadastro' : 'Salvar Alterações'}
-                    </>
-                  )}
-                </button>
-              </div>
-              {/* Espaço no rodapé para não sobrepor conteúdo */}
-              <div className="h-20" />
-            </>
-          )}
-        </form>
-        <div className="vinculos-sidebar hidden lg:block">
-          <SidebarVinculos
-            pessoaId={pessoaId}
-            pessoaData={membro}
-            matriculasEscolares={matriculasMembro}
-            listaPessoas={listaPessoas}
-            onAbrirMembro={onFechar ? (id) => { onFechar(); setTimeout(() => onDadosAtualizados?.(id), 50); } : undefined}
-          />
-        </div>
+                {/* Espaço no rodapé para não sobrepor conteúdo */}
+                <div className="h-20" />
+              </>
+            )}
+          </form>
+          <div className="vinculos-sidebar hidden lg:block">
+            <SidebarVinculos
+              pessoaId={pessoaId}
+              pessoaData={membro}
+              matriculasEscolares={matriculasMembro}
+              listaPessoas={listaPessoas}
+              onAbrirMembro={onFechar ? (id) => { onFechar(); setTimeout(() => onDadosAtualizados?.(id), 50); } : undefined}
+            />
+          </div>
         </div>
       </div>
 
@@ -2276,7 +2271,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
           }}
         />
       )}
-      </div>
+    </div>
   );
 }
 
@@ -2352,7 +2347,7 @@ function AcessoSistemaPanel({
           </p>
         )}
       </div>
-      </div>
+    </div>
   );
 }
 

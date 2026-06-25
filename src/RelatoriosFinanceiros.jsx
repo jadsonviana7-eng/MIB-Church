@@ -1,6 +1,19 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { PageHeader, Card, CardHeader, Avatar } from './ui';
+import { 
+  CalendarDays, 
+  ChevronLeft, 
+  ChevronRight, 
+  SlidersHorizontal, 
+  Printer, 
+  FileSpreadsheet, 
+  TrendingUp, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Sparkles,
+  DollarSign
+} from 'lucide-react';
 
 export default function RelatoriosFinanceiros({ onVoltar }) {
   // Estados dos Filtros
@@ -30,6 +43,7 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
   // Estados do Calendário
   const [calendarioAberto, setCalendarioAberto] = useState(false);
   const [viewDate, setViewDate] = useState(new Date());
+  const [mostrarFiltrosAvancados, setMostrarFiltrosAvancados] = useState(false);
 
   // Dados Auxiliares
   const [contas, setContas] = useState([]);
@@ -198,11 +212,15 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
   };
 
   const CalendarPopup = () => (
-    <div className="absolute top-full left-0 mt-2 z-[100] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 w-72">
+    <div className="absolute top-full left-0 mt-2 z-[100] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 w-72 animate-in fade-in zoom-in duration-200">
       <div className="flex items-center justify-between mb-4">
-        <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg">‹</button>
-        <span className="text-sm font-bold text-slate-700">{viewDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</span>
-        <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))} className="p-1 hover:bg-slate-100 rounded-lg">›</button>
+        <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 flex items-center justify-center transition-colors">
+          <ChevronLeft size={16} />
+        </button>
+        <span className="text-sm font-bold text-slate-700 capitalize">{viewDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}</span>
+        <button type="button" onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))} className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 flex items-center justify-center transition-colors">
+          <ChevronRight size={16} />
+        </button>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-300 mb-2">
         {['S','T','Q','Q','S','S','D'].map(d => <div key={d}>{d}</div>)}
@@ -227,84 +245,139 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
   );
 
   return (
-    <div className="space-y-6 mx-2">
-      <div className="print:hidden">
-        <div className="hidden md:block">
-          <PageHeader titulo="Relatórios Financeiros" breadcrumb={['Resumo', 'Relatórios']} onNavigate={onVoltar} />
-        </div>
+    <div className="max-w-6xl pt-0 px-0 pb-12 sm:px-6 space-y-6 mx-[-3px] sm:mx-auto">
+      <div className="print:hidden mx-[3px] sm:mx-0">
+        <PageHeader titulo="Relatórios Financeiros" breadcrumb={['Resumo', 'Relatórios']} onNavigate={onVoltar} />
       </div>
       
       {/* 1. Elementos de Filtros (Sem Card) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-8 gap-3 items-end print:hidden">
-        {/* Seletor de Período Estilizado */}
-        <div className="relative xl:col-span-2">
-          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">Data do Relatório</label>
-          <div 
-            onClick={() => setCalendarioAberto(!calendarioAberto)}
-            className="flex items-center gap-3 px-4 py-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer transition-all shadow-sm group hover:border-slate-300"
-          >
-            <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-              <span>{formatarExibicao(dataInicio)}</span>
-              <span className="text-slate-300">→</span>
-              <span>{formatarExibicao(dataFim)}</span>
+      <div className="space-y-3 px-[3px] sm:px-0 print:hidden">
+        <div className="flex flex-col md:flex-row gap-3 items-end">
+          {/* Seletor de Período Estilizado */}
+          <div className="relative w-full md:w-auto md:min-w-[240px]">
+            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">Data do Relatório</label>
+            <div 
+              onClick={() => setCalendarioAberto(!calendarioAberto)}
+              className="flex items-center gap-3 px-4 py-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer transition-all shadow-sm group hover:border-slate-300"
+            >
+              <CalendarDays className="w-4 h-4 text-slate-400 shrink-0" strokeWidth={1.8} />
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+                <span>{formatarExibicao(dataInicio)}</span>
+                <span className="text-slate-300">→</span>
+                <span>{formatarExibicao(dataFim)}</span>
+              </div>
             </div>
+            {calendarioAberto && <CalendarPopup />}
           </div>
-          {calendarioAberto && <CalendarPopup />}
+
+          {/* Toggle de Filtros Avançados para Mobile */}
+          <div className="md:hidden flex gap-2 w-full">
+            <button
+              type="button"
+              onClick={() => setMostrarFiltrosAvancados(!mostrarFiltrosAvancados)}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all shadow-sm ${mostrarFiltrosAvancados ? 'bg-[#055F6D] text-white border-[#055F6D]' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+            >
+              <SlidersHorizontal className="w-4 h-4" strokeWidth={2} />
+              {mostrarFiltrosAvancados ? 'Ocultar Filtros' : 'Filtros Avançados'}
+            </button>
+            {(tipo.length > 0 || status.length > 0 || conta.length > 0 || catReceita.length > 0 || catDespesa.length > 0) && (
+              <button
+                type="button"
+                onClick={() => { setTipo([]); setStatus([]); setConta([]); setCatReceita([]); setCatDespesa([]); }}
+                className="px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 text-xs font-bold transition-all shadow-sm"
+              >
+                Limpar
+              </button>
+            )}
+          </div>
         </div>
 
-        <MultiSelectFiltro 
-          label="Tipo" 
-          valor={tipo} 
-          onChange={setTipo} 
-          opcoes={['Receita', 'Despesa', 'Transferência']} 
-        />
-        
-        <MultiSelectFiltro 
-          label="Status" 
-          valor={status} 
-          onChange={setStatus} 
-          opcoes={['Pago', 'Pendente', 'Cancelado']} 
-        />
+        {/* Linha de Filtros Avançados */}
+        <div className={`${mostrarFiltrosAvancados ? 'grid' : 'hidden'} md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-8 gap-3 items-end`}>
+          <MultiSelectFiltro 
+            label="Tipo" 
+            valor={tipo} 
+            onChange={setTipo} 
+            opcoes={['Receita', 'Despesa', 'Transferência']} 
+          />
+          
+          <MultiSelectFiltro 
+            label="Status" 
+            valor={status} 
+            onChange={setStatus} 
+            opcoes={['Pago', 'Pendente', 'Cancelado']} 
+          />
 
-        <MultiSelectFiltro 
-          label="Contas" 
-          valor={conta} 
-          onChange={setConta} 
-          opcoes={contas.map(c => ({ valor: c.id, label: c.nome }))} 
-        />
+          <MultiSelectFiltro 
+            label="Contas" 
+            valor={conta} 
+            onChange={setConta} 
+            opcoes={contas.map(c => ({ valor: c.id, label: c.nome }))} 
+          />
 
-        <MultiSelectFiltro 
-          label="Cat. Receitas" 
-          valor={catReceita} 
-          onChange={setCatReceita} 
-          opcoes={categorias.filter(c => c.tipo === 'receita').map(c => ({ valor: c.id, label: c.nome }))} 
-        />
+          <MultiSelectFiltro 
+            label="Cat. Receitas" 
+            valor={catReceita} 
+            onChange={setCatReceita} 
+            opcoes={categorias.filter(c => c.tipo === 'receita').map(c => ({ valor: c.id, label: c.nome }))} 
+          />
 
-        <MultiSelectFiltro 
-          label="Cat. Despesas" 
-          valor={catDespesa} 
-          onChange={setCatDespesa} 
-          opcoes={categorias.filter(c => c.tipo === 'despesa').map(c => ({ valor: c.id, label: c.nome }))} 
-        />
+          <MultiSelectFiltro 
+            label="Cat. Despesas" 
+            valor={catDespesa} 
+            onChange={setCatDespesa} 
+            opcoes={categorias.filter(c => c.tipo === 'despesa').map(c => ({ valor: c.id, label: c.nome }))} 
+          />
 
-        <button 
-          type="button" 
-          onClick={() => { setTipo([]); setStatus([]); setConta([]); setCatReceita([]); setCatDespesa([]); setRelatorioAtivo(''); setTransacoes([]); }}
-          className="text-[9px] font-black text-rose-500 hover:bg-rose-50 border border-rose-100 rounded-xl px-2 py-2.5 transition-colors uppercase tracking-widest h-fit mb-0.5"
-        >
-          Limpar
-        </button>
+          <button 
+            type="button" 
+            onClick={() => { setTipo([]); setStatus([]); setConta([]); setCatReceita([]); setCatDespesa([]); setRelatorioAtivo(''); setTransacoes([]); }}
+            className="hidden md:block text-[9px] font-black text-rose-500 hover:bg-rose-50 border border-rose-100 rounded-xl px-2 py-2.5 transition-colors uppercase tracking-widest h-fit mb-0.5"
+          >
+            Limpar Filtros
+          </button>
+        </div>
       </div>
 
+
       {/* 2. Conteúdo Inferior - Relatório à esquerda e Painel à direita */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6 items-start px-[3px] sm:px-0">
         <div className="space-y-4">
+          {/* Seletor Mobile de Relatórios no Topo */}
+          <div className="xl:hidden bg-white p-4 rounded-3xl border border-slate-100 shadow-sm space-y-2">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-[#055F6D]">Selecione o Relatório</label>
+            <select
+              value={relatorioAtivo}
+              onChange={(e) => setRelatorioAtivo(e.target.value)}
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 outline-none font-bold text-slate-700"
+            >
+              <option value="">-- Escolha um Relatório --</option>
+              <optgroup label="Fluxo de Caixa">
+                <option value="fluxo-extrato">Extrato de Fluxo de Caixa</option>
+                <option value="fluxo-receitas-despesas">Demonstrativo de Receitas/Despesas</option>
+                <option value="fluxo-resumo-categoria">Resumo Geral por Categoria</option>
+              </optgroup>
+              <optgroup label="Receitas">
+                <option value="receitas-extrato-diario">Extrato Diário de Receitas</option>
+                <option value="receitas-resumo-anual">Resumo Anual de Receitas</option>
+                {categorias.filter(c => c.tipo === 'receita').map(cat => (
+                  <option key={cat.id} value={`cat-receita-${cat.id}`}>Receita: {cat.nome}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Despesas">
+                <option value="despesas-extrato-diario">Extrato Diário de Despesas</option>
+                <option value="despesas-a-pagar">Contas a Pagar (Pendentes)</option>
+                <option value="despesas-resumo-anual">Resumo Anual de Despesas</option>
+                {categorias.filter(c => c.tipo === 'despesa').map(cat => (
+                  <option key={cat.id} value={`cat-despesa-${cat.id}`}>Despesa: {cat.nome}</option>
+                ))}
+              </optgroup>
+            </select>
+          </div>
+
           {/* Área de exibição do relatório selecionado */}
           {relatorioAtivo ? (
-            <Card className="p-8 min-h-[600px] print:p-0 print:border-none print:shadow-none print:bg-white">
+            <Card className="p-4 sm:p-8 min-h-[600px] print:p-0 print:border-none print:shadow-none print:bg-white rounded-3xl border border-slate-100 shadow-sm">
               {/* Ações de Exportação */}
               {/* Estilos de impressão para margens A4 */}
               <style>{`
@@ -363,78 +436,161 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
               ) : transacoes.length === 0 ? (
                 <div className="py-20 text-center text-slate-300 italic text-sm">Nenhum lançamento encontrado para os filtros selecionados.</div>
               ) : (
-                <div className="w-full overflow-x-auto print:overflow-visible print:w-full" style={{ fontFamily: 'Roboto, sans-serif' }}>
-                  <table className="table-mib">
-                    <thead>
-                      <tr>
-                        <th className="w-[10%]">Data</th>
-                        <th className="w-[42%] text-left">Descrição / Pessoa</th>
-                        <th className="w-[16%] whitespace-nowrap">Categoria</th>
-                        <th className="w-[16%] whitespace-nowrap">Conta</th>
-                        <th className="text-right pr-6 w-[16%] whitespace-nowrap">Valor</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {transacoes.map(t => (
-                        <tr key={t.id}>
-                          <td className="whitespace-nowrap">{t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
-                          <td>
-                            <div className="flex items-center gap-2">
-                              <Avatar pessoa={t.pessoas} tamanho="w-8 h-8" />
-                              <div className="flex flex-col">
-                                <span className="font-bold text-slate-700">{t.descricao}</span>
-                                <span className="text-[10px] text-slate-400">{t.pessoas?.nome || 'Lançamento Avulso'}</span>
+                <div className="w-full print:overflow-visible print:w-full" style={{ fontFamily: 'Roboto, sans-serif' }}>
+                  {/* TABELA - Visível apenas em telas maiores (Desktop) */}
+                  <div className="overflow-x-auto hidden md:block">
+                    <table className="table-mib">
+                      <thead>
+                        <tr>
+                          <th className="w-[10%]">Data</th>
+                          <th className="w-[42%] text-left">Descrição / Pessoa</th>
+                          <th className="w-[16%] whitespace-nowrap">Categoria</th>
+                          <th className="w-[16%] whitespace-nowrap">Conta</th>
+                          <th className="text-right pr-6 w-[16%] whitespace-nowrap">Valor</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {transacoes.map(t => (
+                          <tr key={t.id}>
+                            <td className="whitespace-nowrap">{t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
+                            <td>
+                              <div className="flex items-center gap-2">
+                                <Avatar pessoa={t.pessoas} tamanho="w-8 h-8" />
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-slate-700">{t.descricao}</span>
+                                  <span className="text-[10px] text-slate-400">{t.pessoas?.nome || 'Lançamento Avulso'}</span>
+                                </div>
                               </div>
-                            </div>
-                          </td>
-                          <td className="whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${t.tipo === 'receita' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-                              {t.categorias_financeiras?.nome}
-                            </span>
-                          </td>
-                          <td className="text-slate-500 whitespace-nowrap">{t.contas_financeiras?.nome}</td>
-                          <td className={`text-right pr-6 font-bold whitespace-nowrap ${t.tipo === 'receita' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            {t.tipo === 'receita' ? '+' : '-'} R$ {Number(t.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${t.tipo === 'receita' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                                {t.categorias_financeiras?.nome}
+                              </span>
+                            </td>
+                            <td className="text-slate-500 whitespace-nowrap">{t.contas_financeiras?.nome}</td>
+                            <td className={`text-right pr-6 font-bold whitespace-nowrap ${t.tipo === 'receita' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {t.tipo === 'receita' ? '+' : '-'} R$ {Number(t.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-slate-50/50 border-t-2 border-slate-200">
+                          <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-slate-500">Saldo anterior (até {dataInicio ? new Date(new Date(dataInicio + 'T00:00:00').getTime() - 86400000).toLocaleDateString('pt-BR') : '—'}):</td>
+                          <td className="text-right py-2 pr-6 font-normal text-slate-600 text-[14px]">R$ {formatarValor(saldoAnterior)}</td>
+                        </tr>
+                        <tr className="bg-white border-t border-slate-100">
+                          <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-emerald-600">Total de receitas no período (+):</td>
+                          <td className="text-right py-2 pr-6 font-normal text-emerald-600 text-[14px]">R$ {formatarValor(resumoCalculado.receitas)}</td>
+                        </tr>
+                        <tr className="bg-white border-t border-slate-100">
+                          <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-rose-600">Total de despesas no período (-):</td>
+                          <td className="text-right py-2 pr-6 font-normal text-rose-600 text-[14px]">R$ {formatarValor(resumoCalculado.despesas)}</td>
+                        </tr>
+                        <tr className="bg-slate-50/30 border-t border-slate-100">
+                          <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-slate-900">Soma de receitas e despesas (líquido):</td>
+                          <td className={`text-right py-2 pr-6 font-normal text-[14px] ${resumoCalculado.movimentacao >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            R$ {formatarValor(resumoCalculado.movimentacao)}
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="bg-slate-50/50 border-t-2 border-slate-200">
-                        <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-slate-500">Saldo anterior (até {dataInicio ? new Date(new Date(dataInicio + 'T00:00:00').getTime() - 86400000).toLocaleDateString('pt-BR') : '—'}):</td>
-                        <td className="text-right py-2 pr-6 font-normal text-slate-600 text-[14px]">R$ {formatarValor(saldoAnterior)}</td>
-                      </tr>
-                      <tr className="bg-white border-t border-slate-100">
-                        <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-emerald-600">Total de receitas no período (+):</td>
-                        <td className="text-right py-2 pr-6 font-normal text-emerald-600 text-[14px]">R$ {formatarValor(resumoCalculado.receitas)}</td>
-                      </tr>
-                      <tr className="bg-white border-t border-slate-100">
-                        <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-rose-600">Total de despesas no período (-):</td>
-                        <td className="text-right py-2 pr-6 font-normal text-rose-600 text-[14px]">R$ {formatarValor(resumoCalculado.despesas)}</td>
-                      </tr>
-                      <tr className="bg-slate-50/30 border-t border-slate-100">
-                        <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-slate-900">Soma de receitas e despesas (líquido):</td>
-                        <td className={`text-right py-2 pr-6 font-normal text-[14px] ${resumoCalculado.movimentacao >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        <tr className="bg-white border-t border-slate-100">
+                          <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-amber-500">Contas a pagar (pendentes):</td>
+                          <td className="text-right py-2 pr-6 font-normal text-amber-500 text-[14px]">R$ {formatarValor(resumoCalculado.aPagar)}</td>
+                        </tr>
+                        <tr className="bg-[#055F6D]/5 border-t-2 border-[#055F6D]/20">
+                          <td colSpan="4" className="text-right py-3 pr-4 text-[14px] font-bold text-[#055F6D] tracking-tighter">Saldo final em {dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}:</td>
+                          <td className="text-right py-3 pr-6 font-bold text-[14px] text-[#055F6D]">
+                            R$ {formatarValor(saldoAnterior + resumoCalculado.movimentacao)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+
+                  {/* CARDS LIST - Visível em Mobile */}
+                  <div className="md:hidden space-y-4">
+                    <div className="divide-y divide-slate-100 bg-slate-50/40 rounded-2xl border border-slate-100">
+                      {transacoes.map(t => {
+                        const isReceita = t.tipo === 'receita';
+                        return (
+                          <div key={t.id} className="p-4 space-y-2.5">
+                            <div className="flex justify-between items-start">
+                              <span className="text-[10px] font-extrabold text-slate-400">
+                                {t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
+                              </span>
+                              <span className={`text-xs font-black ${isReceita ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                {isReceita ? '+' : '-'} R$ {Number(t.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2.5">
+                              <Avatar pessoa={t.pessoas} tamanho="w-8 h-8" />
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-bold text-slate-800 text-xs truncate">{t.descricao}</span>
+                                <span className="text-[10px] text-slate-400 truncate">{t.pessoas?.nome || 'Lançamento Avulso'}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${isReceita ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                                {t.categorias_financeiras?.nome || 'Sem Categoria'}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full bg-slate-50 border border-slate-200 text-slate-500 text-[9px] font-black uppercase tracking-wider">
+                                {t.contas_financeiras?.nome || 'Sem Conta'}
+                              </span>
+                              {t.status && (
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${t.status === 'pago' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
+                                  {t.status}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Resumo/Totais para Mobile */}
+                    <div className="bg-white border border-slate-100 rounded-2xl p-4 space-y-3 text-xs shadow-sm">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">Sumário do Relatório</h4>
+                      
+                      <div className="flex justify-between items-center text-slate-500">
+                        <span className="font-medium">Saldo anterior:</span>
+                        <span className="font-bold">R$ {formatarValor(saldoAnterior)}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-emerald-600">
+                        <span className="font-medium">Total de receitas (+):</span>
+                        <span className="font-bold">R$ {formatarValor(resumoCalculado.receitas)}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-rose-600">
+                        <span className="font-medium">Total de despesas (-):</span>
+                        <span className="font-bold">R$ {formatarValor(resumoCalculado.despesas)}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-slate-700 border-t border-slate-100 pt-2 font-bold">
+                        <span>Líquido do período:</span>
+                        <span className={resumoCalculado.movimentacao >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
                           R$ {formatarValor(resumoCalculado.movimentacao)}
-                        </td>
-                      </tr>
-                      <tr className="bg-white border-t border-slate-100">
-                        <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-amber-500">Contas a pagar (pendentes):</td>
-                        <td className="text-right py-2 pr-6 font-normal text-amber-500 text-[14px]">R$ {formatarValor(resumoCalculado.aPagar)}</td>
-                      </tr>
-                      <tr className="bg-[#055F6D]/5 border-t-2 border-[#055F6D]/20">
-                        <td colSpan="4" className="text-right py-3 pr-4 text-[14px] font-bold text-[#055F6D] tracking-tighter">Saldo final em {dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}:</td>
-                        <td className="text-right py-3 pr-6 font-bold text-[14px] text-[#055F6D]">
-                          R$ {formatarValor(saldoAnterior + resumoCalculado.movimentacao)}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-amber-500">
+                        <span className="font-medium">Contas a pagar (pendentes):</span>
+                        <span className="font-bold">R$ {formatarValor(resumoCalculado.aPagar)}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center text-[#055F6D] border-t-2 border-[#055F6D]/20 pt-2.5 text-sm font-black">
+                        <span>Saldo final:</span>
+                        <span>R$ {formatarValor(saldoAnterior + resumoCalculado.movimentacao)}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </Card>
           ) : (
-            <Card className="p-12 text-center h-[600px] flex items-center justify-center">
+            <Card className="p-12 text-center h-[350px] sm:h-[600px] flex items-center justify-center rounded-3xl border border-slate-100 shadow-sm">
               <div className="max-w-xs mx-auto space-y-3">
                 <div className="text-4xl">📊</div>
                 <h3 className="font-bold text-slate-800">Selecione um relatório</h3>
@@ -445,8 +601,8 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
         </div>
 
         {/* Coluna Direita: Painel de Controle de Relatórios */}
-        <div className="space-y-4 print:hidden">
-          <Card className="p-0">
+        <div className="space-y-4 print:hidden hidden xl:block">
+          <Card className="p-0 rounded-3xl border border-slate-100 shadow-sm">
             <CardHeader titulo="Painel de Controle" subtitulo="Escolha o tipo de relatório financeiro." />
             <div className="p-4 space-y-4">
               {/* Fluxo de Caixa */}

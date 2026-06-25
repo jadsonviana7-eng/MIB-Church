@@ -38,15 +38,15 @@ import {
 
 export const MenuIcons = {
   // Menu principal
-  dashboard: <LayoutDashboard className="w-4 h-4 shrink-0" strokeWidth={1.8} />,
-  pessoas: <Users className="w-4 h-4 shrink-0" strokeWidth={1.8} />,
-  celulas: <Network className="w-4 h-4 shrink-0" strokeWidth={1.8} />,
-  financeiro: <DollarSign className="w-4 h-4 shrink-0" strokeWidth={1.8} />,
-  escolas: <BookOpen className="w-4 h-4 shrink-0" strokeWidth={1.8} />,
-  agenda: <Calendar className="w-4 h-4 shrink-0" strokeWidth={1.8} />,
-  utilitarios: <Compass className="w-4 h-4 shrink-0" strokeWidth={1.8} />,
-  configuracoes: <Settings className="w-4 h-4 shrink-0" strokeWidth={1.8} />,
-  gestaoMinisterial: <ShieldAlert className="w-4 h-4 shrink-0" strokeWidth={1.8} />,
+  dashboard: <LayoutDashboard className="w-7 h-7 shrink-0" strokeWidth={1.5} />,
+  pessoas: <Users className="w-7 h-7 shrink-0" strokeWidth={1.5} />,
+  celulas: <Network className="w-7 h-7 shrink-0" strokeWidth={1.5} />,
+  financeiro: <DollarSign className="w-7 h-7 shrink-0" strokeWidth={1.5} />,
+  escolas: <BookOpen className="w-7 h-7 shrink-0" strokeWidth={1.5} />,
+  agenda: <Calendar className="w-7 h-7 shrink-0" strokeWidth={1.5} />,
+  utilitarios: <Compass className="w-7 h-7 shrink-0" strokeWidth={1.5} />,
+  configuracoes: <Settings className="w-7 h-7 shrink-0" strokeWidth={1.5} />,
+  gestaoMinisterial: <ShieldAlert className="w-7 h-7 shrink-0" strokeWidth={1.5} />,
 
   // Submenus Pessoas
   'p-todos': <Users className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,

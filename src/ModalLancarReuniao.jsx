@@ -4,7 +4,7 @@ import { Avatar, AvatarCelula } from './ui';
 import { montarObservacoesComMetadados, extrairMetadadosReuniao } from './reuniaoHelpers';
 import { mascaraMoeda, desmascararMoeda } from './mascaras';
 
-export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '', onFechar, onSalvo, reuniaoParaEditar }) {
+export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '', onFechar, onSalvo, reuniaoParaEditar, visitantesCadastrados: visitantesProp = null }) {
   const [celulaId, setCelulaId] = useState(celulaInicial || reuniaoParaEditar?.celula_id || '');
   const [dataReuniao, setDataReuniao] = useState(reuniaoParaEditar?.data_reuniao || new Date().toLocaleDateString('en-CA'));
   const [oferta, setOferta] = useState(reuniaoParaEditar?.oferta ? mascaraMoeda(reuniaoParaEditar.oferta * 100) : '');
@@ -14,6 +14,8 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
   const [nomesVisitantes, setNomesVisitantes] = useState([]);
   const [novoVisitante, setNovoVisitante] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [visitantesCadastrados, setVisitantesCadastrados] = useState([]);
+  const [visitantesCadastradosSelecionados, setVisitantesCadastradosSelecionados] = useState([]);
 
   const celulaAtiva = useMemo(() => {
     return celulas.find(c => String(c.id) === String(celulaId));
@@ -38,6 +40,56 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
     }
   }, [reuniaoParaEditar]);
 
+  // Carrega visitantes cadastrados da célula selecionada
+  useEffect(() => {
+    if (visitantesProp) {
+      setVisitantesCadastrados(visitantesProp);
+      return;
+    }
+    if (!celulaId) { setVisitantesCadastrados([]); return; }
+    supabase
+      .from('visitantes')
+      .select('id, nome, telefone, endereco')
+      .eq('celula_id', celulaId)
+      .order('nome')
+      .then(({ data }) => setVisitantesCadastrados(data ?? []));
+  }, [celulaId, visitantesProp]);
+
+  // Sincroniza seleção de visitantes cadastrados ao editar reunião existente
+  useEffect(() => {
+    if (!reuniaoParaEditar || !visitantesCadastrados.length) {
+      if (!reuniaoParaEditar) setVisitantesCadastradosSelecionados([]);
+      return;
+    }
+    const { nomesVisitantes: visitantesSalvos } = extrairMetadadosReuniao(reuniaoParaEditar.observacoes);
+    const ids = visitantesCadastrados
+      .filter((v) => visitantesSalvos.some((n) => n.toLowerCase() === v.nome.toLowerCase()))
+      .map((v) => v.id);
+    setVisitantesCadastradosSelecionados(ids);
+  }, [visitantesCadastrados, reuniaoParaEditar]);
+
+  function toggleVisitanteCadastrado(visitante) {
+    const jaSelecionado = visitantesCadastradosSelecionados.includes(visitante.id);
+    if (jaSelecionado) {
+      setVisitantesCadastradosSelecionados((prev) => prev.filter((id) => id !== visitante.id));
+      setNomesVisitantes((prev) => prev.filter((n) => n.toLowerCase() !== visitante.nome.toLowerCase()));
+    } else {
+      setVisitantesCadastradosSelecionados((prev) => [...prev, visitante.id]);
+      if (!nomesVisitantes.some((n) => n.toLowerCase() === visitante.nome.toLowerCase())) {
+        setNomesVisitantes((prev) => [...prev, visitante.nome]);
+      }
+    }
+  }
+
+  function removerNomeVisitante(index) {
+    const nome = nomesVisitantes[index];
+    setNomesVisitantes((prev) => prev.filter((_, j) => j !== index));
+    const visitante = visitantesCadastrados.find((v) => v.nome.toLowerCase() === nome.toLowerCase());
+    if (visitante) {
+      setVisitantesCadastradosSelecionados((prev) => prev.filter((id) => id !== visitante.id));
+    }
+  }
+
   const handleAdicionarVisitante = () => {
     if (!novoVisitante.trim()) return;
     const nomes = novoVisitante.split(',')
@@ -54,7 +106,7 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
 
   useEffect(() => {
     let montado = true;
-    
+
     async function inicializarPresencas() {
       // Se já temos presenças e não mudamos de reunião/célula, não resetamos
       if (Object.keys(presencas).length > 0 && !reuniaoParaEditar) return;
@@ -93,7 +145,7 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
     setEnviando(true);
     try {
       const observacoesFinal = montarObservacoesComMetadados(obs, temaMinistrado, nomesVisitantes);
-      
+
       if (reuniaoParaEditar) {
         // Modo Edição
         const { error } = await supabase
@@ -106,7 +158,7 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
             observacoes: observacoesFinal,
           })
           .eq('id', reuniaoParaEditar.id);
-        
+
         if (error) throw error;
 
         await supabase.from('presencas_relatorio').delete().eq('relatorio_id', reuniaoParaEditar.id);
@@ -197,24 +249,63 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
               </div>
             </div>
 
-            <div className="bg-[var(--surface-muted)] p-3 rounded-xl border space-y-2">
+            <div className="bg-[var(--surface-muted)] p-3 rounded-xl border space-y-3">
               <label className="text-xs font-medium">Visitantes ({nomesVisitantes.length})</label>
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  value={novoVisitante} 
-                  onChange={(e) => setNovoVisitante(e.target.value)} 
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdicionarVisitante(); } }}
-                  placeholder="Nome(s) (use vírgula para separar)" 
-                  className="flex-1 px-3 py-1.5 border rounded-xl text-xs bg-white" 
-                />
-                <button type="button" onClick={handleAdicionarVisitante} className="btn-primary text-xs px-3 rounded-xl cursor-pointer">+</button>
+
+              {visitantesCadastrados.length > 0 && (
+                <div className="space-y-1">
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cadastrados na célula</span>
+                  <div className="max-h-36 overflow-y-auto space-y-1 border border-slate-100 rounded-xl p-1.5 bg-white">
+                    {visitantesCadastrados.map((v) => {
+                      const selecionado = visitantesCadastradosSelecionados.includes(v.id);
+                      return (
+                        <div
+                          key={v.id}
+                          onClick={() => toggleVisitanteCadastrado(v)}
+                          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition select-none ${selecionado ? 'bg-amber-50 border border-amber-200' : 'hover:bg-slate-50 border border-transparent'
+                            }`}
+                        >
+                          <div className="min-w-0">
+                            <span className="text-xs font-semibold text-slate-700 block truncate">{v.nome}</span>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={selecionado}
+                            readOnly
+                            className="w-4 h-4 rounded border-slate-300 text-amber-500 cursor-pointer shrink-0 ml-2"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Outros visitantes (nome avulso)</span>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={novoVisitante}
+                    onChange={(e) => setNovoVisitante(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdicionarVisitante(); } }}
+                    placeholder="Nome(s) (use vírgula para separar)"
+                    className="flex-1 px-3 py-1.5 border rounded-xl text-xs bg-white"
+                  />
+                  <button type="button" onClick={handleAdicionarVisitante} className="btn-primary text-xs px-3 rounded-xl cursor-pointer">+</button>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-1">
-                {nomesVisitantes.map((n, i) => (
-                  <span key={i} className="text-[11px] bg-white border px-2 py-0.5 rounded-lg">{n} <button type="button" onClick={() => setNomesVisitantes(nomesVisitantes.filter((_, j) => j !== i))} className="cursor-pointer">×</button></span>
-                ))}
-              </div>
+
+              {nomesVisitantes.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {nomesVisitantes.map((n, i) => (
+                    <span key={i} className="text-[11px] bg-white border px-2 py-0.5 rounded-lg">
+                      {n}{' '}
+                      <button type="button" onClick={() => removerNomeVisitante(i)} className="cursor-pointer">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {membros.length > 0 && (
@@ -222,8 +313,8 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Chamada da Célula</label>
                 <div className="sm:border sm:border-slate-100 sm:rounded-2xl sm:p-2 sm:bg-slate-50/30 sm:space-y-1"> {/* Reverte para o estilo de contêiner no desktop */}
                   {membros.map((m) => (
-                    <div key={m.id} 
-                      onClick={() => setPresencas((p) => ({ ...p, [m.id]: !p[m.id] }))} 
+                    <div key={m.id}
+                      onClick={() => setPresencas((p) => ({ ...p, [m.id]: !p[m.id] }))}
                       className="mb-1 bg-white border border-slate-100 rounded-xl p-3 shadow-sm
                                  flex items-center justify-between cursor-pointer transition active:scale-[0.98] select-none
                                  sm:mb-0 sm:bg-transparent sm:border-transparent sm:shadow-none sm:p-2 sm:hover:bg-white sm:hover:shadow-sm sm:hover:border-slate-100"
@@ -232,9 +323,9 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
                         <Avatar pessoa={m} tamanho="w-8 h-8" />
                         <span className="text-sm font-bold text-slate-700">{m.nome}</span>
                       </div>
-                      <input 
-                        type="checkbox" 
-                        checked={!!presencas[m.id]} 
+                      <input
+                        type="checkbox"
+                        checked={!!presencas[m.id]}
                         readOnly
                         className="w-5 h-5 rounded-md border-slate-300 text-[#055F6D] focus:ring-[#055F6D]/20 cursor-pointer"
                       />

@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 import { Card, CardHeader, AvatarCelula, PageHeader, Avatar, SelectFiltro, uploadImagemCelula } from './ui';
 import { nomePessoa, nomeZona, valorOfertaRelatorio, agrupamentoPor } from './churchUtils';
 import { extrairMetadadosReuniao, montarObservacoesComMetadados } from './reuniaoHelpers';
-import { mascaraMoeda, desmascararMoeda } from './mascaras';
+import { mascaraMoeda, desmascararMoeda, mascaraTelefone, desmascararTelefone } from './mascaras';
 import ModalEditarCelula from './ModalEditarCelula';
 import ModalExcluirCelula from './ModalExcluirCelula';
 import ModalLancarReuniao from './ModalLancarReuniao';
@@ -26,7 +26,9 @@ import {
   TrendingUp, 
   ChevronLeft, 
   ChevronRight,
-  TrendingDown
+  TrendingDown,
+  UserPlus,
+  Pencil
 } from 'lucide-react';
 
 export default function CelulasModulo({
@@ -1209,6 +1211,13 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
   const [abaAtiva, setAbaAtiva] = useState('informacoes');
   const [isModalAberto, setIsModalAberto] = useState(false);
   const [isModalReuniaoAberto, setIsModalReuniaoAberto] = useState(false);
+  const [visitantes, setVisitantes] = useState([]);
+  const [carregandoVisitantes, setCarregandoVisitantes] = useState(false);
+  const [isModalVisitanteAberto, setIsModalVisitanteAberto] = useState(false);
+  const [visitanteEditando, setVisitanteEditando] = useState(null);
+  const [formVisitante, setFormVisitante] = useState({ nome: '', telefone: '', endereco: '' });
+  const [salvandoVisitante, setSalvandoVisitante] = useState(false);
+  const [excluindoVisitanteId, setExcluindoVisitanteId] = useState(null);
   const [imagemPreview, setImagemPreview] = useState('');
   const [arquivoImagem, setArquivoImagem] = useState(null);
   const [salvandoImagem, setSalvandoImagem] = useState(false);
@@ -1226,6 +1235,22 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
   const membros = useMemo(() => {
     return celula ? pessoas.filter((pessoa) => String(pessoa.celula_id || '') === String(celula.id) && pessoa.status !== 'inativo') : [];
   }, [celula, pessoas]);
+
+  async function carregarVisitantes() {
+    if (!celula?.id) return;
+    setCarregandoVisitantes(true);
+    const { data, error } = await supabase
+      .from('visitantes')
+      .select('id, nome, telefone, endereco, created_at')
+      .eq('celula_id', celula.id)
+      .order('nome');
+    if (!error) setVisitantes(data ?? []);
+    setCarregandoVisitantes(false);
+  }
+
+  useEffect(() => {
+    carregarVisitantes();
+  }, [celula?.id]);
 
   const lider = useMemo(() => {
     return pessoas.find(p => String(p.id) === String(celula?.lider_id));
@@ -1291,6 +1316,63 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
       console.error(error);
     } finally {
       setExcluindoId(null);
+    }
+  }
+
+  function abrirModalVisitante(visitante = null) {
+    setVisitanteEditando(visitante);
+    setFormVisitante(
+      visitante
+        ? {
+            nome: visitante.nome,
+            telefone: mascaraTelefone(visitante.telefone || ''),
+            endereco: visitante.endereco || '',
+          }
+        : { nome: '', telefone: '', endereco: '' }
+    );
+    setIsModalVisitanteAberto(true);
+  }
+
+  async function handleSalvarVisitante(e) {
+    e.preventDefault();
+    if (!formVisitante.nome.trim()) return;
+    setSalvandoVisitante(true);
+    try {
+      const payload = {
+        celula_id: celula.id,
+        nome: formVisitante.nome.trim(),
+        telefone: desmascararTelefone(formVisitante.telefone) || null,
+        endereco: formVisitante.endereco.trim() || null,
+        updated_at: new Date().toISOString(),
+      };
+      if (visitanteEditando) {
+        const { error } = await supabase.from('visitantes').update(payload).eq('id', visitanteEditando.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('visitantes').insert([payload]);
+        if (error) throw error;
+      }
+      await carregarVisitantes();
+      setIsModalVisitanteAberto(false);
+      setVisitanteEditando(null);
+    } catch (error) {
+      window.alert(`Erro ao salvar visitante: ${error.message}`);
+    } finally {
+      setSalvandoVisitante(false);
+    }
+  }
+
+  async function handleExcluirVisitante(id, nome) {
+    if (!(await window.confirmModal('Excluir Visitante', `Tem certeza que deseja excluir ${nome}?`))) return;
+    setExcluindoVisitanteId(id);
+    try {
+      const { error } = await supabase.from('visitantes').delete().eq('id', id);
+      if (error) throw error;
+      await carregarVisitantes();
+    } catch (error) {
+      window.alert(`Erro ao excluir visitante: ${error.message}`);
+    } finally {
+      setExcluindoVisitanteId(null);
     }
   }
 
@@ -1474,6 +1556,13 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                   badge: relatorios.length
                 },
                 {
+                  id: 'visitantes',
+                  label: 'Visitantes',
+                  icon: <UserPlus className="w-4 h-4" strokeWidth={1} />,
+                  cor: '#f59e0b',
+                  badge: visitantes.length
+                },
+                {
                   id: 'filhas',
                   label: 'Gerações',
                   icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>,
@@ -1514,6 +1603,11 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
             {abaAtiva === 'reunioes' && !isMembro && (
               <button type="button" onClick={() => setIsModalReuniaoAberto(true)} className="w-full sm:w-auto px-4 py-2 bg-[#055F6D] text-white rounded-xl text-xs font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">
                 📅 Nova Reunião
+              </button>
+            )}
+            {abaAtiva === 'visitantes' && !isMembro && (
+              <button type="button" onClick={() => abrirModalVisitante()} className="w-full sm:w-auto px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">
+                + Adicionar Visitante
               </button>
             )}
           </div>
@@ -1712,6 +1806,78 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
             </Card>
           )}
 
+          {abaAtiva === 'visitantes' && (
+            <Card className="p-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="p-1 border-t border-[var(--border)]">
+                {carregandoVisitantes ? (
+                  <p className="p-10 text-center text-sm text-[var(--text-muted)] italic">Carregando visitantes...</p>
+                ) : visitantes.length === 0 ? (
+                  <p className="p-10 text-center text-sm text-[var(--text-muted)] italic">Nenhum visitante cadastrado nesta célula.</p>
+                ) : (
+                  <table className="table-mib">
+                    <thead className="hidden md:table-header-group">
+                      <tr>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Endereço</th>
+                        {!isMembro && <th className="text-right">Ação</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visitantes.map((visitante) => (
+                        <tr key={visitante.id} className="group">
+                          <td>
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                                <UserPlus size={14} />
+                              </div>
+                              <span className="font-medium text-[var(--text-heading)] text-sm">{visitante.nome}</span>
+                            </div>
+                            <div className="md:hidden mt-1 ml-11 space-y-0.5 text-xs text-[var(--text-muted)]">
+                              {visitante.telefone && <p>{mascaraTelefone(visitante.telefone)}</p>}
+                              {visitante.endereco && <p>{visitante.endereco}</p>}
+                            </div>
+                          </td>
+                          <td className="hidden md:table-cell text-[var(--text-muted)] text-xs">
+                            {visitante.telefone ? mascaraTelefone(visitante.telefone) : '—'}
+                          </td>
+                          <td className="hidden md:table-cell text-[var(--text-muted)] text-xs max-w-[200px] truncate">
+                            {visitante.endereco || '—'}
+                          </td>
+                          {!isMembro && (
+                            <td className="text-right pr-6">
+                              <div className="flex justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => abrirModalVisitante(visitante)}
+                                  className="text-[#055F6D] hover:text-[#044a56] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
+                                  title="Editar visitante"
+                                >
+                                  <Pencil size={18} />
+                                </button>
+                                <button
+                                  type="button"
+                                  disabled={excluindoVisitanteId === visitante.id}
+                                  onClick={() => handleExcluirVisitante(visitante.id, visitante.nome)}
+                                  className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer disabled:opacity-50"
+                                  title="Excluir visitante"
+                                >
+                                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </Card>
+          )}
+
           {abaAtiva === 'filhas' && (
             <Card className="p-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="overflow-x-auto border-t border-[var(--border)]">
@@ -1796,12 +1962,84 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
           celulas={[celula]}
           pessoas={pessoas}
           celulaInicial={celula.id}
+          visitantesCadastrados={visitantes}
           onFechar={() => setIsModalReuniaoAberto(false)}
           onSalvo={async () => {
             await obterDados();
             setIsModalReuniaoAberto(false);
           }}
         />
+      )}
+
+      {isModalVisitanteAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div>
+                <h4 className="font-semibold text-slate-950 text-base">
+                  {visitanteEditando ? 'Editar Visitante' : 'Adicionar Visitante'}
+                </h4>
+                <p className="text-xs text-slate-400">Célula <strong>{celula.nome}</strong></p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setIsModalVisitanteAberto(false); setVisitanteEditando(null); }}
+                className="text-slate-400 hover:text-slate-600 font-bold p-1 text-sm cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleSalvarVisitante} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Nome *</label>
+                <input
+                  type="text"
+                  value={formVisitante.nome}
+                  onChange={(e) => setFormVisitante((prev) => ({ ...prev, nome: e.target.value }))}
+                  required
+                  placeholder="Nome completo"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Telefone</label>
+                <input
+                  type="text"
+                  value={formVisitante.telefone}
+                  onChange={(e) => setFormVisitante((prev) => ({ ...prev, telefone: mascaraTelefone(e.target.value) }))}
+                  placeholder="(00) 00000-0000"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Endereço</label>
+                <input
+                  type="text"
+                  value={formVisitante.endereco}
+                  onChange={(e) => setFormVisitante((prev) => ({ ...prev, endereco: e.target.value }))}
+                  placeholder="Rua, número, bairro"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setIsModalVisitanteAberto(false); setVisitanteEditando(null); }}
+                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={salvandoVisitante || !formVisitante.nome.trim()}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition disabled:opacity-50 shadow-sm cursor-pointer"
+                >
+                  {salvandoVisitante ? 'Salvando...' : 'Salvar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
     </div>
@@ -1816,6 +2054,8 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
   const [editPresencas, setEditPresencas] = useState({});
   const [editNomesVisitantes, setEditNomesVisitantes] = useState([]);
   const [editNovoVisitante, setEditNovoVisitante] = useState('');
+  const [visitantesCadastrados, setVisitantesCadastrados] = useState([]);
+  const [visitantesCadastradosSelecionados, setVisitantesCadastradosSelecionados] = useState([]);
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
   const [modoEdicao, setModoEdicao] = useState(false);
 
@@ -1835,6 +2075,25 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
     }
     buscarPresencas();
   }, [reuniao, membros]);
+
+  useEffect(() => {
+    if (!celula?.id) { setVisitantesCadastrados([]); return; }
+    supabase
+      .from('visitantes')
+      .select('id, nome, telefone, endereco')
+      .eq('celula_id', celula.id)
+      .order('nome')
+      .then(({ data }) => setVisitantesCadastrados(data ?? []));
+  }, [celula?.id]);
+
+  useEffect(() => {
+    if (!visitantesCadastrados.length) return;
+    const { nomesVisitantes: visitantesSalvos } = extrairMetadadosReuniao(reuniao.observacoes);
+    const ids = visitantesCadastrados
+      .filter((v) => visitantesSalvos.some((n) => n.toLowerCase() === v.nome.toLowerCase()))
+      .map((v) => v.id);
+    setVisitantesCadastradosSelecionados(ids);
+  }, [visitantesCadastrados, reuniao.id, reuniao.observacoes]);
 
   const podeEditar = useMemo(() => {
     if (!membroLogado) return false;
@@ -1900,6 +2159,28 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
       setEditNovoVisitante('');
     }
   };
+
+  function toggleVisitanteCadastradoEdicao(visitante) {
+    const jaSelecionado = visitantesCadastradosSelecionados.includes(visitante.id);
+    if (jaSelecionado) {
+      setVisitantesCadastradosSelecionados((prev) => prev.filter((id) => id !== visitante.id));
+      setEditNomesVisitantes((prev) => prev.filter((n) => n.toLowerCase() !== visitante.nome.toLowerCase()));
+    } else {
+      setVisitantesCadastradosSelecionados((prev) => [...prev, visitante.id]);
+      if (!editNomesVisitantes.some((n) => n.toLowerCase() === visitante.nome.toLowerCase())) {
+        setEditNomesVisitantes((prev) => [...prev, visitante.nome]);
+      }
+    }
+  }
+
+  function removerNomeVisitanteEdicao(index) {
+    const nome = editNomesVisitantes[index];
+    setEditNomesVisitantes((prev) => prev.filter((_, j) => j !== index));
+    const visitante = visitantesCadastrados.find((v) => v.nome.toLowerCase() === nome.toLowerCase());
+    if (visitante) {
+      setVisitantesCadastradosSelecionados((prev) => prev.filter((id) => id !== visitante.id));
+    }
+  }
 
   const togglePresencaEdicao = (id) => {
     setEditPresencas(prev => ({ ...prev, [id]: !prev[id] }));
@@ -2097,6 +2378,39 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
                       Contagem: {editNomesVisitantes.length}
                     </span>
                   </label>
+
+                  {visitantesCadastrados.length > 0 && (
+                    <div className="space-y-1 mb-3">
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cadastrados na célula</span>
+                      <div className="max-h-36 overflow-y-auto space-y-1 border border-slate-100 rounded-xl p-1.5 bg-white">
+                        {visitantesCadastrados.map((v) => {
+                          const selecionado = visitantesCadastradosSelecionados.includes(v.id);
+                          return (
+                            <div
+                              key={v.id}
+                              onClick={() => toggleVisitanteCadastradoEdicao(v)}
+                              className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition select-none ${
+                                selecionado ? 'bg-amber-50 border border-amber-200' : 'hover:bg-slate-50 border border-transparent'
+                              }`}
+                            >
+                              <div className="min-w-0">
+                                <span className="text-xs font-semibold text-slate-700 block truncate">{v.nome}</span>
+                                {v.telefone && <span className="text-[10px] text-slate-400">{v.telefone}</span>}
+                              </div>
+                              <input
+                                type="checkbox"
+                                checked={selecionado}
+                                readOnly
+                                className="w-4 h-4 rounded border-slate-300 text-amber-500 cursor-pointer shrink-0 ml-2"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Outros visitantes (nome avulso)</span>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -2115,7 +2429,7 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
                     {editNomesVisitantes.map((nome, index) => (
                       <div key={index} className="bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-700 flex items-center gap-1.5 shadow-sm">
                         👤 {nome}
-                        <button type="button" onClick={() => setEditNomesVisitantes(prev => prev.filter((_, i) => i !== index))} className="text-slate-400 hover:text-rose-500 font-bold text-[12px] pl-0.5">×</button>
+                        <button type="button" onClick={() => removerNomeVisitanteEdicao(index)} className="text-slate-400 hover:text-rose-500 font-bold text-[12px] pl-0.5 cursor-pointer">×</button>
                       </div>
                     ))}
                   </div>

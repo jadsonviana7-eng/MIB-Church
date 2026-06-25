@@ -236,20 +236,94 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
     complemento: '',
   });
 
-  const [dadosCedente, setDadosCedente] = useState({
-    nome: '',
-    endereco: '',
-    bairro: '',
-    cidade: '',
-    estado: '',
-    cep: '',
-    numeroRua: '',
-    complemento: '',
-    telefoneFixo: '',
-    telefoneCelular: '',
-    email: '',
-    localPagamento: '',
+  // ── Perfis de Cedente (multi-perfil, independente da Igreja) ──
+  const CEDENTE_VAZIO = {
+    nome: '', endereco: '', bairro: '', cidade: '', estado: '',
+    cep: '', numeroRua: '', complemento: '', telefoneFixo: '',
+    telefoneCelular: '', email: '', localPagamento: '',
+  };
+
+  const [perfisCedente, setPerfisCedente] = useState(() => {
+    try {
+      const salvo = localStorage.getItem('carne_perfis_cedente');
+      if (salvo) return JSON.parse(salvo);
+    } catch (_) {}
+    return []; // vazio até carregar da Igreja no useEffect
   });
+
+  const [perfilSelecionadoId, setPerfilSelecionadoId] = useState(() => {
+    return localStorage.getItem('carne_perfil_ativo') || null;
+  });
+
+  const [dadosCedente, setDadosCedente] = useState(CEDENTE_VAZIO);
+  const [showCedenteEditor, setShowCedenteEditor] = useState(false);
+  const [nomeNovoPerfil, setNomeNovoPerfil] = useState('');
+  const [modoNovoPerfil, setModoNovoPerfil] = useState(false); // true = criando novo
+
+  // Persiste perfis e seleção no localStorage
+  function salvarPerfis(perfis, ativoId) {
+    localStorage.setItem('carne_perfis_cedente', JSON.stringify(perfis));
+    if (ativoId !== undefined) localStorage.setItem('carne_perfil_ativo', ativoId || '');
+  }
+
+  // Aplica o perfil selecionado nos dadosCedente
+  function aplicarPerfil(id, perfis) {
+    const lista = perfis || perfisCedente;
+    const perfil = lista.find(p => p.id === id);
+    if (perfil) {
+      setDadosCedente({ ...CEDENTE_VAZIO, ...perfil.dados });
+      setPerfilSelecionadoId(id);
+      localStorage.setItem('carne_perfil_ativo', id);
+    }
+  }
+
+  function handleSelecionarPerfil(id) {
+    if (id === '__novo__') {
+      setModoNovoPerfil(true);
+      setShowCedenteEditor(true);
+      setDadosCedente({ ...CEDENTE_VAZIO });
+      setNomeNovoPerfil('');
+      setPerfilSelecionadoId(null);
+    } else {
+      setModoNovoPerfil(false);
+      setShowCedenteEditor(false);
+      aplicarPerfil(id, perfisCedente);
+    }
+  }
+
+  function handleSalvarPerfil() {
+    if (!nomeNovoPerfil.trim()) {
+      alert('Informe um nome para o perfil!');
+      return;
+    }
+    const id = `perfil_${Date.now()}`;
+    const novo = { id, label: nomeNovoPerfil.trim(), dados: { ...dadosCedente } };
+    const atualizados = [...perfisCedente, novo];
+    setPerfisCedente(atualizados);
+    salvarPerfis(atualizados, id);
+    setPerfilSelecionadoId(id);
+    setModoNovoPerfil(false);
+    setShowCedenteEditor(false);
+  }
+
+  function handleAtualizarPerfil() {
+    const atualizados = perfisCedente.map(p =>
+      p.id === perfilSelecionadoId ? { ...p, dados: { ...dadosCedente } } : p
+    );
+    setPerfisCedente(atualizados);
+    salvarPerfis(atualizados, perfilSelecionadoId);
+    alert('Perfil atualizado com sucesso!');
+  }
+
+  function handleExcluirPerfil(id) {
+    if (!window.confirm('Excluir este perfil de Cedente?')) return;
+    const atualizados = perfisCedente.filter(p => p.id !== id);
+    setPerfisCedente(atualizados);
+    const novoAtivo = atualizados.length > 0 ? atualizados[0].id : null;
+    salvarPerfis(atualizados, novoAtivo);
+    if (novoAtivo) aplicarPerfil(novoAtivo, atualizados);
+    else { setDadosCedente({ ...CEDENTE_VAZIO }); setPerfilSelecionadoId(null); }
+  }
 
   const [dadosVenda, setDadosVenda] = useState({
     numeroVenda: 1,
@@ -264,33 +338,6 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
   });
 
   const [erro, setErro] = useState('');
-  const [salvandoPadrao, setSalvandoPadrao] = useState(false);
-  const [showCedenteConfig, setShowCedenteConfig] = useState(false);
-
-  const handleSalvarComoPadrao = async () => {
-    setSalvandoPadrao(true);
-    try {
-      const { error } = await supabase.from('dados_igreja').update({
-        nome_igreja: dadosCedente.nome,
-        endereco: dadosCedente.endereco,
-        numero: dadosCedente.numeroRua,
-        bairro: dadosCedente.bairro,
-        cidade: dadosCedente.cidade,
-        estado: dadosCedente.estado,
-        cep: dadosCedente.cep,
-        telefone: dadosCedente.telefoneCelular,
-        email_contato: dadosCedente.email,
-        carne_instrucoes: dadosVenda.instrucoes,
-        carne_local_pagamento: dadosCedente.localPagamento
-      }).eq('id', 1);
-      if (error) throw error;
-      window.alert('Configurações do Cedente e Instruções salvas como padrão!');
-    } catch (err) {
-      alert('Erro ao salvar padrões: ' + err.message);
-    } finally {
-      setSalvandoPadrao(false);
-    }
-  };
 
   // ── Busca de membros (Supabase) ──────────────────────────
   const [pessoaSelecionadaId, setPessoaSelecionadaId] = useState(pessoaIdInicial);
@@ -299,12 +346,25 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
   const [carregandoMembro, setCarregandoMembro] = useState(false);
   const [membroSelecionado, setMembroSelecionado] = useState(null);
 
-  // Carrega configurações automáticas do Emissor (Cedente)
+  // No primeiro uso (sem perfis salvos), cria automaticamente um perfil inicial
+  // com os dados da Igreja. NÃO altera dados_igreja nunca — só lê.
   useEffect(() => {
-    async function carregarConfiguracoesPadrao() {
+    async function inicializarPerfis() {
+      const salvo = localStorage.getItem('carne_perfis_cedente');
+      if (salvo) {
+        // Já tem perfis: só garante que o ativo está aplicado
+        try {
+          const lista = JSON.parse(salvo);
+          const ativoId = localStorage.getItem('carne_perfil_ativo');
+          if (ativoId && lista.length > 0) aplicarPerfil(ativoId, lista);
+          else if (lista.length > 0) aplicarPerfil(lista[0].id, lista);
+        } catch (_) {}
+        return;
+      }
+      // Primeiro uso: cria perfil "Igreja" com dados do Supabase
       const { data, error } = await supabase.from('dados_igreja').select('*').eq('id', 1).single();
       if (!error && data) {
-        setDadosCedente({
+        const dadosIgreja = {
           nome: (data.nome_igreja || '').toUpperCase(),
           endereco: (data.endereco || '').toUpperCase(),
           numeroRua: data.numero || '',
@@ -314,16 +374,20 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
           cep: data.cep || '',
           email: data.email_contato || '',
           telefoneCelular: data.telefone || '',
-          localPagamento: data.carne_local_pagamento || 'PAGÁVEL NA SECRETARIA DA IGREJA'
-        });
-
-        setDadosVenda(prev => ({
-          ...prev,
-          instrucoes: data.carne_instrucoes || ''
-        }));
+          telefoneFixo: '',
+          complemento: '',
+          localPagamento: data.carne_local_pagamento || 'PAGÁVEL NA SECRETARIA DA IGREJA',
+        };
+        const id = `perfil_${Date.now()}`;
+        const perfis = [{ id, label: 'Igreja (padrão)', dados: dadosIgreja }];
+        setPerfisCedente(perfis);
+        salvarPerfis(perfis, id);
+        aplicarPerfil(id, perfis);
+        setDadosVenda(prev => ({ ...prev, instrucoes: data.carne_instrucoes || '' }));
       }
     }
-    carregarConfiguracoesPadrao();
+    inicializarPerfis();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Busca incremental por nome (debounced)
@@ -643,34 +707,47 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
   };
 
   const handleWhatsAppCarneCompleto = async () => {
-    const nomeCliente = dadosCliente.nome;
-    const igreja = dadosCedente.nome;
+    const nomeCliente = dadosCliente.nome || 'Prezado(a)';
+    // Nome do evento: prioriza a inscrição vinculada, depois o nome do cedente
+    const nomeEvento = inscricaoSelecionada?.agenda_eventos?.titulo || dadosCedente.nome || 'Carnê';
     const totalParcelas = parcelas.length;
-    const elegiveis = parcelas.filter((p) => p.codigo);
 
-    if (!elegiveis.length) return;
-
-    const nomeArquivo = `cartoes_${(dadosCliente.nome || 'participante').replace(/\s+/g, '_').toLowerCase()}.pdf`;
-    const listaCartoes = elegiveis.map(montarDadosCartaoParcela);
-
-    // Tenta compartilhar todos os cartões consolidados em PDF direto pelo menu nativo
-    const compartilhado = await compartilharCartoesPDF(listaCartoes, nomeArquivo);
-
-    if (!compartilhado) {
-      // Fallback: baixa o PDF completo e abre o WhatsApp
-      await baixarCartoesPDF(listaCartoes, nomeArquivo);
-
-      let msg = `*Olá ${nomeCliente}!* \n\nSegue o resumo do seu carnê da *${igreja}*:\n\n`;
+    // Monta a mensagem no formato padrão solicitado
+    const buildMsg = (comNota) => {
+      let msg = `Olá *${nomeCliente}*!\n`;
+      msg += `Segue o resumo do seu carnê da *${nomeEvento}*:\n\n`;
       msg += `📊 *Total de Parcelas:* ${totalParcelas}\n`;
       msg += `💰 *Valor Total:* R$ ${formatCurrency(valorTotal)}\n`;
       msg += `💰 *Valor da Parcela:* R$ ${formatCurrency(dadosVenda.valorParcela)}\n`;
-      msg += `📅 *Vencimento Inicial:* ${formatDate(dadosVenda.vencimentoPrimeiraParcela)}\n\n`;
-      msg += `*Nota:* O PDF contendo todas as parcelas consolidadas foi baixado no seu dispositivo. Por favor, anexe o arquivo ao enviar esta mensagem.`;
+      msg += `📅 *Vencimento Inicial:* ${formatDate(dadosVenda.vencimentoPrimeiraParcela)}\n`;
+      if (comNota) {
+        msg += `\n_Nota: O PDF contendo todas as parcelas consolidadas segue em anexo nesta mensagem._`;
+      }
+      return msg;
+    };
 
-      window.alert("O PDF com todos os cartões digitais foi baixado.\n\nA conversa do WhatsApp será aberta em seguida para que você possa anexar o arquivo PDF baixado.");
+    const telLimpo = (dadosCliente.telefone || '').replace(/\D/g, '');
 
-      const telLimpo = (dadosCliente.telefone || '').replace(/\D/g, '');
-      const url = `https://wa.me/${telLimpo ? telLimpo : ''}?text=${encodeURIComponent(msg)}`;
+    // Caso haja inscrições vinculadas com QR, gera PDF dos cartões digitais
+    const elegiveis = parcelas.filter((p) => p.codigo);
+    if (elegiveis.length) {
+      const nomeArquivo = `carne_${(nomeEvento).replace(/\s+/g, '_').toLowerCase()}_${(dadosCliente.nome || 'participante').replace(/\s+/g, '_').toLowerCase()}.pdf`;
+      const listaCartoes = elegiveis.map(montarDadosCartaoParcela);
+
+      // Tenta compartilhar nativamente (mobile) — já inclui o PDF junto com a mensagem
+      const compartilhado = await compartilharCartoesPDF(listaCartoes, nomeArquivo);
+      if (compartilhado) return;
+
+      // Fallback desktop: baixa o PDF e abre o WhatsApp com a mensagem + nota sobre o anexo
+      await baixarCartoesPDF(listaCartoes, nomeArquivo);
+      window.alert(
+        'O PDF com todos os cartões digitais foi baixado.\n\nA conversa do WhatsApp será aberta em seguida. Por favor, anexe o arquivo PDF baixado antes de enviar.'
+      );
+      const url = `https://wa.me/${telLimpo ? telLimpo : ''}?text=${encodeURIComponent(buildMsg(true))}`;
+      window.open(url, '_blank');
+    } else {
+      // Sem QR codes: envia apenas a mensagem de resumo (sem PDF)
+      const url = `https://wa.me/${telLimpo ? telLimpo : ''}?text=${encodeURIComponent(buildMsg(false))}`;
       window.open(url, '_blank');
     }
   };
@@ -1061,31 +1138,94 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                 </div>
               </div>
 
-              {/* Dados do Emissor (Igreja) - Accordion */}
+              {/* Passo 3: Cedente — multi-perfil, completamente independente da Igreja */}
               <div className="bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCedenteConfig(!showCedenteConfig)}
-                  className="w-full flex items-center justify-between border-b border-slate-100 pb-3 text-left focus:outline-none cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-slate-50 text-slate-600 rounded-xl">
-                      <Building size={18} />
-                    </div>
-                    <div>
-                      <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Dados do Cedente (Igreja)</h3>
-                      <p className="text-[10px] text-slate-400 font-medium">Configurações do emissor do carnê</p>
-                    </div>
+                {/* Cabeçalho fixo */}
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+                  <div className="p-2 bg-violet-50 text-violet-600 rounded-xl">
+                    <Building size={18} />
                   </div>
-                  <div className="text-slate-400 hover:text-slate-600">
-                    {showCedenteConfig ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Passo 3: Cedente / Evento</h3>
+                    <p className="text-[10px] text-slate-400 font-medium">Escolha um perfil ou crie um novo — independente das Configurações da Igreja</p>
                   </div>
-                </button>
+                </div>
 
-                {showCedenteConfig && (
-                  <div className="space-y-4 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                {/* Select de perfis */}
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">Perfil do Cedente</label>
+                  <div className="flex gap-2">
+                    <select
+                      className="flex-1 bg-slate-50 border-2 border-slate-100 focus:border-violet-400/50 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none transition cursor-pointer"
+                      value={modoNovoPerfil ? '__novo__' : (perfilSelecionadoId || '')}
+                      onChange={(e) => handleSelecionarPerfil(e.target.value)}
+                    >
+                      {perfisCedente.length === 0 && !modoNovoPerfil && (
+                        <option value="">Nenhum perfil criado</option>
+                      )}
+                      {perfisCedente.map(p => (
+                        <option key={p.id} value={p.id}>{p.label}</option>
+                      ))}
+                      <option value="__novo__">➕ Criar novo perfil...</option>
+                    </select>
+                    {/* Botão editar/recolher o perfil ativo */}
+                    {!modoNovoPerfil && perfilSelecionadoId && (
+                      <button
+                        type="button"
+                        onClick={() => setShowCedenteEditor(v => !v)}
+                        className="px-3 py-2 bg-slate-50 border-2 border-slate-100 hover:border-violet-300 text-slate-500 hover:text-violet-600 rounded-xl text-[10px] font-black uppercase tracking-wider transition cursor-pointer whitespace-nowrap"
+                        title={showCedenteEditor ? 'Fechar editor' : 'Editar perfil'}
+                      >
+                        {showCedenteEditor ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                      </button>
+                    )}
+                    {/* Botão excluir perfil */}
+                    {!modoNovoPerfil && perfilSelecionadoId && (
+                      <button
+                        type="button"
+                        onClick={() => handleExcluirPerfil(perfilSelecionadoId)}
+                        className="px-3 py-2 bg-red-50 border-2 border-red-100 hover:border-red-300 text-red-400 hover:text-red-600 rounded-xl transition cursor-pointer"
+                        title="Excluir perfil"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Preview rápido do perfil ativo (quando editor fechado) */}
+                  {!showCedenteEditor && !modoNovoPerfil && perfilSelecionadoId && dadosCedente.nome && (
+                    <div className="bg-violet-50/60 border border-violet-100 rounded-2xl px-4 py-2.5 text-[10px] text-violet-800 font-semibold leading-relaxed">
+                      <p className="font-black text-xs text-violet-900">{dadosCedente.nome}</p>
+                      {dadosCedente.localPagamento && <p className="text-violet-600 mt-0.5">{dadosCedente.localPagamento}</p>}
+                      {(dadosCedente.telefoneCelular || dadosCedente.email) && (
+                        <p className="text-violet-500 mt-0.5">
+                          {dadosCedente.telefoneCelular}{dadosCedente.telefoneCelular && dadosCedente.email ? ' · ' : ''}{dadosCedente.email}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Editor de perfil (novo ou edição do existente) */}
+                {(showCedenteEditor || modoNovoPerfil) && (
+                  <div className="space-y-4 pt-1 border-t border-slate-100 animate-in fade-in slide-in-from-top-1 duration-200">
+
+                    {/* Nome do perfil (só ao criar novo) */}
+                    {modoNovoPerfil && (
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Nome do Perfil</label>
+                        <input
+                          type="text"
+                          placeholder="Ex: Congresso MIB 2026, Retiro 2025..."
+                          className="w-full bg-violet-50 border-2 border-violet-200 focus:border-violet-400 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-bold text-slate-700"
+                          value={nomeNovoPerfil}
+                          onChange={(e) => setNomeNovoPerfil(e.target.value)}
+                        />
+                      </div>
+                    )}
+
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Nome da Igreja / Cedente</label>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Nome do Cedente / Evento</label>
                       <input
                         type="text"
                         className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
@@ -1176,6 +1316,38 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                         onChange={(e) => setDadosCedente((d) => ({ ...d, localPagamento: e.target.value }))}
                       />
                     </div>
+
+                    {/* Ações do editor */}
+                    <div className="flex gap-2 pt-1">
+                      {modoNovoPerfil ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleSalvarPerfil}
+                            className="flex-1 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                          >
+                            <Save size={13} />
+                            Salvar Novo Perfil
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setModoNovoPerfil(false); setShowCedenteEditor(false); if (perfilSelecionadoId) aplicarPerfil(perfilSelecionadoId, perfisCedente); }}
+                            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-wider transition cursor-pointer"
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={handleAtualizarPerfil}
+                          className="flex-1 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                        >
+                          <Save size={13} />
+                          Salvar Alterações no Perfil
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1197,24 +1369,14 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                   Gerar Carnê
                 </button>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={handleSalvarComoPadrao}
-                    disabled={salvandoPadrao}
-                    className="py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
-                  >
-                    <Save size={14} />
-                    {salvandoPadrao ? 'Salvando...' : 'Salvar Padrão'}
-                  </button>
-
+                <div className="grid grid-cols-1 gap-2">
                   <button
                     type="button"
                     onClick={handleLimparGeral}
                     className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <Trash2 size={14} />
-                    Limpar Tudo
+                    Limpar Formulário
                   </button>
                 </div>
 
@@ -1293,7 +1455,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                         className="px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-emerald-200"
                       >
                         <Share2 size={13} />
-                        Enviar Resumo
+                        Enviar WhatsApp
                       </button>
                       {inscricaoId && (
                         <button

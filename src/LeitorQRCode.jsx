@@ -15,14 +15,30 @@ export default function LeitorQRCode({ onVoltar }) {
 
   const html5QrCodeRef = useRef(null);
   const processandoRef = useRef(false);
+  const desmontadoRef = useRef(false);
 
   useEffect(() => {
-    html5QrCodeRef.current = new Html5Qrcode('reader-geral');
+    desmontadoRef.current = false;
+    const scanner = new Html5Qrcode('reader-geral');
+    html5QrCodeRef.current = scanner;
 
     return () => {
-      pararCamera();
+      desmontadoRef.current = true;
+      // Para a câmera e destrói a instância de forma assíncrona
+      // antes que o React remova o nó do DOM
+      (async () => {
+        try {
+          const estado = scanner.getState ? scanner.getState() : null;
+          if (estado === 2) {
+            await scanner.stop();
+          }
+          // clear() remove os elementos que a lib injetou no DOM
+          await scanner.clear();
+        } catch (_) {
+          // Ignora erros de cleanup
+        }
+      })();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function pararCamera() {
@@ -30,7 +46,6 @@ export default function LeitorQRCode({ onVoltar }) {
     if (instancia) {
       try {
         const estado = instancia.getState ? instancia.getState() : null;
-        // 2 = SCANNING (constante interna da lib)
         if (estado === 2) {
           await instancia.stop();
         }
@@ -38,29 +53,32 @@ export default function LeitorQRCode({ onVoltar }) {
         // Câmera já parada
       }
     }
-    setCameraAtiva(false);
+    if (!desmontadoRef.current) setCameraAtiva(false);
   }
 
+
   async function iniciarCamera() {
+    if (desmontadoRef.current) return;
     setErroCamera('');
     const instancia = html5QrCodeRef.current;
     if (!instancia) return;
 
     try {
-      // Solicita explicitamente a permissão/câmera traseira do dispositivo
       await instancia.start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         onScanSuccess,
         onScanError
       );
-      setCameraAtiva(true);
+      if (!desmontadoRef.current) setCameraAtiva(true);
     } catch (err) {
       console.error('Erro ao iniciar câmera:', err);
-      setErroCamera(
-        'Não foi possível acessar a câmera. Verifique se o site está rodando em HTTPS e se a permissão de câmera foi concedida no navegador.'
-      );
-      setCameraAtiva(false);
+      if (!desmontadoRef.current) {
+        setErroCamera(
+          'Não foi possível acessar a câmera. Verifique se o site está rodando em HTTPS e se a permissão de câmera foi concedida no navegador.'
+        );
+        setCameraAtiva(false);
+      }
     }
   }
 
@@ -130,35 +148,36 @@ export default function LeitorQRCode({ onVoltar }) {
       <Card className="p-0 overflow-hidden shadow-xl border border-slate-100 rounded-[28px] bg-white">
         <div className="p-6 space-y-6">
           {/* Scanner Viewport Container */}
-          <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-inner">
-            <div 
-              id="reader-geral" 
-              className={`overflow-hidden rounded-2xl bg-slate-950 min-h-[300px] flex items-center justify-center transition-all ${
+          <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-inner min-h-[300px]">
+            {/* Container exclusivo da lib — React não deve renderizar filhos aqui */}
+            <div
+              id="reader-geral"
+              className={`overflow-hidden rounded-2xl bg-slate-950 min-h-[300px] transition-all ${
                 cameraAtiva ? 'scanner-viewport-active' : ''
               }`}
-            >
-              {!cameraAtiva && !status.msg && (
-                <div className="flex flex-col items-center text-center p-8 space-y-4">
-                  <div className="w-16 h-16 bg-slate-800/50 text-slate-400 rounded-2xl flex items-center justify-center border border-slate-700/50">
-                    <QrCode size={32} />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-sm text-slate-300 uppercase tracking-wider">Câmera Desativada</h3>
-                    <p className="text-xs text-slate-500 mt-1 max-w-[240px] leading-relaxed">
-                      Ative o leitor para escanear o QR Code de pagamento impresso no cupom.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={iniciarCamera}
-                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-500/10 cursor-pointer flex items-center gap-2"
-                  >
-                    <Camera size={14} />
-                    Ativar Câmera
-                  </button>
+            />
+
+            {!cameraAtiva && !status.msg && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-8 space-y-4 bg-slate-950">
+                <div className="w-16 h-16 bg-slate-800/50 text-slate-400 rounded-2xl flex items-center justify-center border border-slate-700/50">
+                  <QrCode size={32} />
                 </div>
-              )}
-            </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-300 uppercase tracking-wider">Câmera Desativada</h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-[240px] leading-relaxed">
+                    Ative o leitor para escanear o QR Code de pagamento impresso no cupom.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={iniciarCamera}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-500/10 cursor-pointer flex items-center gap-2"
+                >
+                  <Camera size={14} />
+                  Ativar Câmera
+                </button>
+              </div>
+            )}
 
             {/* HUD / Scanning Overlay when camera active */}
             {cameraAtiva && (

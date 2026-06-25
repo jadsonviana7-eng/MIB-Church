@@ -20,7 +20,7 @@ import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
-import { mascaraTelefone } from './mascaras';
+import { mascaraTelefone, mascaraCPF } from './mascaras';
 
 /* ─── Roboto via Google Fonts ─────────────────────────────────────────────── */
 const RobotoStyle = () => (
@@ -1642,7 +1642,12 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
               <div className="grid grid-cols-2 gap-4">
                 {Object.entries(modalInscrito.dados.dados_inscricao).map(([label, valor]) => {
                   const isPhone = ['telefone', 'celular', 'whatsapp', 'contato'].some(k => label.toLowerCase().includes(k));
-                  const valorFormatado = (isPhone && typeof valor === 'string') ? mascaraTelefone(valor) : (Array.isArray(valor) ? valor.join(', ') : String(valor));
+                  const isCPF = label.toLowerCase().includes('cpf');
+                  const valorFormatado = (isPhone && typeof valor === 'string') 
+                    ? mascaraTelefone(valor) 
+                    : (isCPF && typeof valor === 'string')
+                    ? mascaraCPF(valor)
+                    : (Array.isArray(valor) ? valor.join(', ') : String(valor));
                   return (
                     <div key={label} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                       <p className="text-[10px] font-black text-slate-400 uppercase mb-1">{label}</p>

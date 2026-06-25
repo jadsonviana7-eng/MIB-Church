@@ -5,9 +5,9 @@ import { baixarCartaoPNG, baixarCartaoPDF } from './cartaoDigital';
 import { supabase } from './supabaseClient';
 import { Card, PageHeader } from './ui';
 import './LeitorQRCode.css';
-import { 
-  Camera, QrCode, CheckCircle, AlertCircle, 
-  RefreshCw, Loader2, Download, Share2, 
+import {
+  Camera, QrCode, CheckCircle, AlertCircle,
+  RefreshCw, Loader2, Download, Share2,
   User, Calendar, DollarSign, Tag, Info, Clock
 } from 'lucide-react';
 
@@ -19,14 +19,27 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
 
   const html5QrCodeRef = useRef(null);
   const processandoRef = useRef(false);
+  const desmontadoRef = useRef(false);
 
   useEffect(() => {
-    html5QrCodeRef.current = new Html5Qrcode('reader-evento');
+    desmontadoRef.current = false;
+    const scanner = new Html5Qrcode('reader-evento');
+    html5QrCodeRef.current = scanner;
 
     return () => {
-      pararCamera();
+      desmontadoRef.current = true;
+      (async () => {
+        try {
+          const estado = scanner.getState ? scanner.getState() : null;
+          if (estado === 2) {
+            await scanner.stop();
+          }
+          await scanner.clear();
+        } catch (_) {
+          // Ignora erros de cleanup
+        }
+      })();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function pararCamera() {
@@ -34,7 +47,6 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
     if (instancia) {
       try {
         const estado = instancia.getState ? instancia.getState() : null;
-        // 2 = SCANNING (constante interna da lib)
         if (estado === 2) {
           await instancia.stop();
         }
@@ -42,29 +54,31 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
         // Câmera já parada
       }
     }
-    setCameraAtiva(false);
+    if (!desmontadoRef.current) setCameraAtiva(false);
   }
 
   async function iniciarCamera() {
+    if (desmontadoRef.current) return;
     setErroCamera('');
     const instancia = html5QrCodeRef.current;
     if (!instancia) return;
 
     try {
-      // Solicita explicitamente a permissão/câmera traseira do dispositivo
       await instancia.start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: { width: 250, height: 250 } },
         onScanSuccess,
         onScanError
       );
-      setCameraAtiva(true);
+      if (!desmontadoRef.current) setCameraAtiva(true);
     } catch (err) {
       console.error('Erro ao iniciar câmera:', err);
-      setErroCamera(
-        'Não foi possível acessar a câmera. Verifique se o site está rodando em HTTPS e se a permissão de câmera foi concedida no navegador.'
-      );
-      setCameraAtiva(false);
+      if (!desmontadoRef.current) {
+        setErroCamera(
+          'Não foi possível acessar a câmera. Verifique se o site está rodando em HTTPS e se a permissão de câmera foi concedida no navegador.'
+        );
+        setCameraAtiva(false);
+      }
     }
   }
 
@@ -442,35 +456,36 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
       <Card className="p-0 overflow-hidden shadow-xl border border-slate-100 rounded-[28px] bg-white">
         <div className="p-6 space-y-6">
           {/* Scanner Viewport Container */}
-          <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-inner">
-            <div 
-              id="reader-evento" 
-              className={`overflow-hidden rounded-2xl bg-slate-950 min-h-[300px] flex items-center justify-center transition-all ${
+          <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-inner min-h-[300px]">
+            {/* Container exclusivo da lib — React não deve renderizar filhos aqui */}
+            <div
+              id="reader-evento"
+              className={`overflow-hidden rounded-2xl bg-slate-950 min-h-[300px] transition-all ${
                 cameraAtiva ? 'scanner-viewport-active' : ''
               }`}
-            >
-              {!cameraAtiva && !status.msg && (
-                <div className="flex flex-col items-center text-center p-8 space-y-4">
-                  <div className="w-16 h-16 bg-slate-800/50 text-slate-400 rounded-2xl flex items-center justify-center border border-slate-700/50">
-                    <QrCode size={32} />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-sm text-slate-300 uppercase tracking-wider">Câmera Desativada</h3>
-                    <p className="text-xs text-slate-500 mt-1 max-w-[240px] leading-relaxed">
-                      Ative o leitor para escanear o QR Code de baixa impresso no cartão digital.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={iniciarCamera}
-                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-500/10 cursor-pointer flex items-center gap-2"
-                  >
-                    <Camera size={14} />
-                    Ativar Câmera
-                  </button>
+            />
+
+            {!cameraAtiva && !status.msg && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center p-8 space-y-4 bg-slate-950">
+                <div className="w-16 h-16 bg-slate-800/50 text-slate-400 rounded-2xl flex items-center justify-center border border-slate-700/50">
+                  <QrCode size={32} />
                 </div>
-              )}
-            </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-slate-300 uppercase tracking-wider">Câmera Desativada</h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-[240px] leading-relaxed">
+                    Ative o leitor para escanear o QR Code de baixa impresso no cartão digital.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={iniciarCamera}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-md shadow-blue-500/10 cursor-pointer flex items-center gap-2"
+                >
+                  <Camera size={14} />
+                  Ativar Câmera
+                </button>
+              </div>
+            )}
 
             {/* HUD / Scanning Overlay when camera active */}
             {cameraAtiva && (
@@ -480,7 +495,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
                 <div className="scanner-hud-corner scanner-hud-bl" />
                 <div className="scanner-hud-corner scanner-hud-br" />
                 <div className="scanner-laser" />
-                
+
                 {/* Status indicator floating */}
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-emerald-600/90 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-sm border border-emerald-400/20 z-10 animate-pulse">
                   <span className="w-1.5 h-1.5 rounded-full bg-white block" />
@@ -507,23 +522,21 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{status.msg}</p>
                 </div>
               ) : (
-                <div 
-                  className={`p-6 rounded-2xl border flex flex-col items-center text-center space-y-4 ${
-                    status.type === 'success'
+                <div
+                  className={`p-6 rounded-2xl border flex flex-col items-center text-center space-y-4 ${status.type === 'success'
                       ? 'bg-emerald-50/50 border-emerald-100 text-emerald-800'
                       : status.type === 'error'
-                      ? 'bg-rose-50/50 border-rose-100 text-rose-800'
-                      : 'bg-amber-50/50 border-amber-100 text-amber-800'
-                  }`}
+                        ? 'bg-rose-50/50 border-rose-100 text-rose-800'
+                        : 'bg-amber-50/50 border-amber-100 text-amber-800'
+                    }`}
                 >
-                  <div 
-                    className={`w-12 h-12 rounded-full flex items-center justify-center shadow-inner ${
-                      status.type === 'success'
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center shadow-inner ${status.type === 'success'
                         ? 'bg-emerald-100 text-emerald-600'
                         : status.type === 'error'
-                        ? 'bg-rose-100 text-rose-600'
-                        : 'bg-amber-100 text-amber-600'
-                    }`}
+                          ? 'bg-rose-100 text-rose-600'
+                          : 'bg-amber-100 text-amber-600'
+                      }`}
                   >
                     {status.type === 'success' ? (
                       <CheckCircle size={24} />
@@ -531,14 +544,14 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
                       <AlertCircle size={24} />
                     )}
                   </div>
-                  
+
                   <div>
                     <h4 className="font-extrabold text-sm uppercase tracking-wider">
-                      {status.type === 'success' 
-                        ? 'Baixa Processada' 
-                        : status.type === 'error' 
-                        ? 'Erro na Leitura' 
-                        : 'Aviso de Registro'}
+                      {status.type === 'success'
+                        ? 'Baixa Processada'
+                        : status.type === 'error'
+                          ? 'Erro na Leitura'
+                          : 'Aviso de Registro'}
                     </h4>
                     <p className="text-xs font-semibold mt-1.5 leading-relaxed max-w-[280px]">
                       {status.msg}
@@ -552,10 +565,10 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
           {/* Recibo Ticket Visually Structured */}
           {recibo && (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-300">
-              
+
               <div className="relative border border-slate-150 bg-slate-50/40 rounded-3xl p-5 space-y-4 overflow-hidden shadow-inner">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
-                
+
                 <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
                   <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg">
                     <CheckCircle size={16} />
@@ -591,11 +604,10 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
                   </div>
                   <div className="flex justify-between items-center py-1">
                     <span className="font-bold text-slate-400 flex items-center gap-1.5"><Info size={13} /> Situação</span>
-                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                      recibo.statusPagamento === 'pago' 
-                        ? 'bg-emerald-100 text-emerald-800' 
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${recibo.statusPagamento === 'pago'
+                        ? 'bg-emerald-100 text-emerald-800'
                         : 'bg-amber-100 text-amber-800'
-                    }`}>
+                      }`}>
                       {recibo.statusPagamento === 'pago' ? 'Quitado' : 'Pendente'}
                     </span>
                   </div>

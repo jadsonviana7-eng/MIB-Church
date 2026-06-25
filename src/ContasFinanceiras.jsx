@@ -67,8 +67,8 @@ export default function ContasFinanceiras({ usuarioLogado, membroLogado, hasAcce
       if (error) throw error;
       const nomeConta = contas.find(c => c.id === id)?.nome || id;
       await registrarLogFinanceiro(
-        usuarioLogado?.email, 
-        'Exclusão de Conta', 
+        usuarioLogado?.email,
+        'Exclusão de Conta',
         `Removeu a conta/caixa: ${nomeConta}`
       );
       await carregarContas();
@@ -89,7 +89,7 @@ export default function ContasFinanceiras({ usuarioLogado, membroLogado, hasAcce
   return (
     <div className="space-y-6 mx-2">
       <div className="hidden md:block">
-        <PageHeader titulo="Contas e Caixas" breadcrumb={['Resumo', 'Contas e Caixas']} subtitulo="Gerencie as contas bancárias e caixas físicos da igreja." onNavigate={onVoltar} />
+        <PageHeader titulo="Contas" breadcrumb={['Resumo', 'Contas']} onNavigate={onVoltar} />
       </div>
 
       <div className={podeEditar ? "grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start" : "grid grid-cols-1 gap-6 items-start"}>
@@ -97,25 +97,25 @@ export default function ContasFinanceiras({ usuarioLogado, membroLogado, hasAcce
         {podeEditar && (
           <div className="space-y-4">
             <Card className="p-0">
-              <CardHeader 
-                titulo={editandoId ? "Editar Conta" : "Nova Conta"} 
+              <CardHeader
+                titulo={editandoId ? "Editar Conta" : "Nova Conta"}
                 className="!bg-blue-50/50 !border-[#1e3a8a]"
               />
               <form onSubmit={handleSalvar} className="p-5 space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-500 mb-1">Nome da Conta</label>
-                  <input 
+                  <input
                     type="text" required placeholder="Ex: Caixa Geral, Bradesco..."
-                    value={nome} onChange={e => setNome(e.target.value)} 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#2563eb]/20 outline-none" 
+                    value={nome} onChange={e => setNome(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-500 mb-1">Descrição</label>
-                  <input 
+                  <input
                     type="text" placeholder="Finalidade ou detalhes da conta..."
-                    value={descricao} onChange={e => setDescricao(e.target.value)} 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#2563eb]/20 outline-none" 
+                    value={descricao} onChange={e => setDescricao(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
                   />
                 </div>
                 <div className="flex flex-col gap-2 pt-2">

@@ -8,6 +8,7 @@ import ModalEditarCelula from './ModalEditarCelula';
 import ModalExcluirCelula from './ModalExcluirCelula';
 import ModalLancarReuniao from './ModalLancarReuniao';
 import FormularioCelula from './FormularioCelula';
+import PainelCelulas from './PainelCelulas';
 import { 
   CalendarDays, 
   Users, 
@@ -110,6 +111,19 @@ export default function CelulasModulo({
           />
         )}
       </>
+    );
+  }
+
+  if (submenu === 'painel') {
+    return (
+      <PainelCelulas
+        celulas={celulas}
+        pessoas={pessoas}
+        zonas={zonas}
+        relatoriosCelula={relatoriosCelula}
+        setCelulaSelecionadaId={setCelulaSelecionadaId}
+        onNavigate={onNavigate}
+      />
     );
   }
 

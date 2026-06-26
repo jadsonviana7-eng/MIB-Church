@@ -93,7 +93,7 @@ export default function OverviewDashboard({
         const d = new Date(`${r.data_reuniao}T00:00:00`);
         return d.getMonth() === mesCorrente && d.getFullYear() === anoCorrente;
       })
-      .reduce((acc, r) => acc + Number(r.valor_oferta || 0), 0);
+      .reduce((acc, r) => acc + Number(r.oferta || r.valor_oferta || 0), 0);
   }, [relatoriosCelula]);
 
   // 6. Dados do Usuário Logado

@@ -148,8 +148,17 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
 
       // Tenta identificar o valor pago (parcela ou valor total/à vista)
       const valorEntry = Object.entries(dados).find(([k]) => k.toLowerCase().includes('valor'));
-      const valorPago = valorEntry ? Number(valorEntry[1]) || 0 : 0;
+      let valorPagoTotal = 0;
+      if (valorEntry) {
+        const valStr = String(valorEntry[1]);
+        const valorLimpo = valStr
+          .replace(/[^\d,.-]/g, '') // remove "R$" e caracteres não numéricos/separadores
+          .replace(/\./g, '')       // remove pontos de milhar
+          .replace(',', '.');       // substitui vírgula por ponto
+        valorPagoTotal = Number(valorLimpo) || 0;
+      }
       const ehParcela = totalParcelasConfiguradas > 1;
+      const valorPago = ehParcela ? (valorPagoTotal / totalParcelasConfiguradas) : valorPagoTotal;
 
       setStatus({
         loading: false,

@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-// Exemplo de import com recharts (Instale via: npm install recharts)
 import { supabase } from './supabaseClient';
 import { PageHeader, chartColors } from './ui'; 
 import TransacoesFinanceiras from './TransacoesFinanceiras';
@@ -7,9 +6,38 @@ import CategoriasFinanceiras from './CategoriasFinanceiras';
 import ContasFinanceiras from './ContasFinanceiras';
 import RelatoriosFinanceiros from './RelatoriosFinanceiros';
 import HistoricoFinanceiro from './HistoricoFinanceiro';
-import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { 
+  ComposedChart, 
+  BarChart,
+  Bar, 
+  Line, 
+  Area,
+  Cell,
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer 
+} from 'recharts';
+import { 
+  Wallet, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Landmark, 
+  History, 
+  Tag, 
+  Settings, 
+  Percent, 
+  BarChart3, 
+  UserSquare2, 
+  Building2,
+  TrendingUp,
+  TrendingDown,
+  DollarSign
+} from 'lucide-react';
 
-export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membroLogado, hasAccess, filtrosMobileAberto, setFiltrosMobileAberto }) {
+export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membroLogado, hasAccess, filtrosMobileAberto, setFiltrosMobileAberto, onNavigate }) {
   const [abaAtiva, setAbaAtiva] = useState(submenu || 'resumo');
   const [anoFiltro, setAnoFiltro] = useState(new Date().getFullYear().toString());
   const [mesFiltro, setMesFiltro] = useState(new Date().getMonth().toString());
@@ -17,6 +45,16 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
   const [contas, setContas] = useState([]);
   const [expandidoMobile, setExpandidoMobile] = useState(false);
   const [carregando, setCarregando] = useState(true);
+
+  const handleMudarAba = useCallback((novaAba) => {
+    setAbaAtiva(novaAba);
+    if (onNavigate) {
+      onNavigate(novaAba);
+    }
+  }, [onNavigate]);
+
+  // Paleta de cores vibrantes e contrastantes para as barras das categorias horizontais
+  const coresCategorias = ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316'];
 
   // Estados para os filtros de Transações
   const [dataInicioFiltro, setDataInicioFiltro] = useState(() => {
@@ -31,6 +69,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
   const [statusTransacaoFiltro, setStatusTransacaoFiltro] = useState('');
   const [contaFiltro, setContaFiltro] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState('');
+
   // Sincroniza a aba ativa quando o submenu mudar pelo menu principal
   useEffect(() => {
     if (submenu) setAbaAtiva(submenu);
@@ -40,7 +79,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
     setCarregando(true);
     
     const [resTransacoes, resContas] = await Promise.all([
-      supabase.from('transacoes_financeiras').select('*').eq('status', 'pago'),
+      supabase.from('transacoes_financeiras').select('*, categorias_financeiras(nome)').eq('status', 'pago'),
       supabase.from('contas_financeiras').select('id, nome').order('nome')
     ]);
     
@@ -132,7 +171,38 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
     return semanas.map(s => ({ ...s, saldo: s.receitas - s.despesas }));
   }, [transacoes, mesFiltro, anoFiltro]);
 
+  // Dados Agrupados por Categoria para os Gráficos Horizontais
+  const dadosCategorias = useMemo(() => {
+    const receitasMap = {};
+    const despesasMap = {};
+
+    transacoes.forEach(t => {
+      const valor = Number(t.valor) || 0;
+      const catNome = t.categorias_financeiras?.nome || 'Sem Categoria';
+      const tipo = t.tipo?.toLowerCase();
+
+      if (tipo === 'receita') {
+        receitasMap[catNome] = (receitasMap[catNome] || 0) + valor;
+      } else if (tipo === 'despesa') {
+        despesasMap[catNome] = (despesasMap[catNome] || 0) + valor;
+      }
+    });
+
+    const receitasOrdenadas = Object.entries(receitasMap)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5); // Top 5
+
+    const despesasOrdenadas = Object.entries(despesasMap)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5); // Top 5
+
+    return { receitas: receitasOrdenadas, despesas: despesasOrdenadas };
+  }, [transacoes]);
+
   const formatMoeda = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const formatMoedaValor = (val) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
       <div className="space-y-6">
@@ -143,62 +213,82 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
             </div>
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6">
             
-            {/* Bloco da Esquerda: Sumário e Gráficos (Ocupa 3 colunas no desktop) */}
+            {/* Bloco da Esquerda: Sumário e Gráficos */}
             <div className="space-y-6">
               
-              {/* Cards de Sumário Geral - Visível apenas em Desktop */}
-              <div className="hidden sm:grid grid-cols-4 gap-4">
-                <CardResumo title="Saldo Total" value={formatMoeda(stats.saldoTotal)} color="text-slate-800" bg="bg-white" />
-                <CardResumo title="Contas / Caixas" value={formatMoeda(stats.saldoTotal)} color="text-blue-600" bg="bg-white" />
-                <CardResumo title="Receitas (Mês)" value={formatMoeda(stats.receitasMes)} color="text-emerald-600" bg="bg-emerald-50/50" />
-                <CardResumo title="Despesas (Mês)" value={formatMoeda(stats.despesasMes)} color="text-rose-600" bg="bg-rose-50/50" />
+              {/* Cards de Sumário Geral com Nova Roupa Premium - Visível apenas em Desktop */}
+              <div className="hidden sm:grid grid-cols-1 md:grid-cols-4 gap-4">
+                <CardResumo 
+                  title="Saldo Total" 
+                  value={formatMoeda(stats.saldoTotal)} 
+                  gradient="bg-gradient-to-br from-[#0d1e52] to-[#2563eb]" 
+                  icon={Wallet} 
+                />
+                <CardResumo 
+                  title="Contas / Caixas" 
+                  value={`${contas.length} Contas`} 
+                  gradient="bg-gradient-to-br from-cyan-600 to-blue-500" 
+                  icon={Landmark} 
+                />
+                <CardResumo 
+                  title="Receitas (Mês)" 
+                  value={formatMoeda(stats.receitasMes)} 
+                  gradient="bg-gradient-to-br from-emerald-600 to-teal-500" 
+                  icon={ArrowUpRight} 
+                />
+                <CardResumo 
+                  title="Despesas (Mês)" 
+                  value={formatMoeda(stats.despesasMes)} 
+                  gradient="bg-gradient-to-br from-rose-600 to-red-500" 
+                  icon={ArrowDownRight} 
+                />
               </div>
 
-              {/* Sumário em Card Único - Visível apenas em Mobile */}
-              <div className="sm:hidden bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
+              {/* Sumário em Card Único com Design Atualizado - Visível apenas em Mobile */}
+              <div className="sm:hidden bg-[#0d1e52] p-2 rounded-3xl border border-blue-900/40 text-white shadow-xl">
                 <div className="p-4 flex justify-between items-center">
                   <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Saldo Total</p>
-                    <p className="text-2xl font-black text-slate-800">{formatMoeda(stats.saldoTotal)}</p>
+                    <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Saldo Total Geral</p>
+                    <p className="text-2xl font-black mt-0.5">{formatMoeda(stats.saldoTotal)}</p>
                   </div>
                   <button 
                     onClick={() => setExpandidoMobile(!expandidoMobile)}
-                    className={`w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 border border-slate-100 transition-transform duration-300 ${expandidoMobile ? 'rotate-180' : ''}`}
+                    className={`w-10 h-10 flex items-center justify-center rounded-full bg-white/10 border border-white/5 transition-transform duration-300 ${expandidoMobile ? 'rotate-180' : ''}`}
                   >
-                    <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                     </svg>
                   </button>
                 </div>
                 
                 {expandidoMobile && (
-                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300 border-t border-white/10 mt-2">
                     {/* Resumo do Mês */}
-                    <div className="grid grid-cols-2 divide-x divide-slate-50 border-t border-slate-50">
+                    <div className="grid grid-cols-2 divide-x divide-white/5 border-b border-white/5 py-2">
                       <div className="p-4">
                         <div className="flex items-center gap-2 mb-1">
-                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Receitas (Mês)</span>
+                          <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                          <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Receitas (Mês)</span>
                         </div>
-                        <p className="text-base font-black text-emerald-600 leading-none">{formatMoeda(stats.receitasMes)}</p>
+                        <p className="text-base font-black text-emerald-400 leading-none">{formatMoeda(stats.receitasMes)}</p>
                       </div>
                       
                       <div className="p-4 text-right">
                         <div className="flex items-center justify-end gap-2 mb-1">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Despesas (Mês)</span>
-                          <div className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Despesas (Mês)</span>
+                          <div className="w-2 h-2 rounded-full bg-rose-400" />
                         </div>
-                        <p className="text-base font-black text-rose-600 leading-none">{formatMoeda(stats.despesasMes)}</p>
+                        <p className="text-base font-black text-rose-400 leading-none">{formatMoeda(stats.despesasMes)}</p>
                       </div>
                     </div>
 
                     {/* Saldos por Conta */}
-                    <div className="p-4 border-t border-slate-50 space-y-3">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Saldos por Conta</p>
+                    <div className="p-4 space-y-3">
+                      <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1.5">Saldos por Conta</p>
                       {contas.map(conta => (
-                        <div key={conta.id} className="flex justify-between items-center py-1">
-                          <span className="text-xs font-bold text-slate-600">{conta.nome}</span>
-                          <span className={`text-xs font-black ${saldosPorConta[conta.id] >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                        <div key={conta.id} className="flex justify-between items-center py-1 border-b border-white/5 last:border-0">
+                          <span className="text-xs font-semibold text-blue-100">{conta.nome}</span>
+                          <span className={`text-xs font-black ${saldosPorConta[conta.id] >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                             {formatMoeda(saldosPorConta[conta.id] || 0)}
                           </span>
                         </div>
@@ -208,17 +298,17 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 )}
               </div>
 
-              {/* Seção de Gráficos */}
+              {/* Seção de Gráficos de Tendência com Gradientes e Área Translúcida */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* Gráfico Anual */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold text-slate-700">Resumo Anual</h3>
                     <select 
                       value={anoFiltro} 
                       onChange={(e) => setAnoFiltro(e.target.value)}
-                      className="text-xs border border-slate-200 rounded-lg p-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="text-xs border border-slate-200 rounded-lg p-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#055F6D]"
                     >
                       <option value="2026">2026</option>
                       <option value="2025">2025</option>
@@ -227,27 +317,41 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={dadosAnuaisReais}>
+                        <defs>
+                          <linearGradient id="colorReceitasAnual" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.85}/>
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.2}/>
+                          </linearGradient>
+                          <linearGradient id="colorDespesasAnual" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.85}/>
+                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.2}/>
+                          </linearGradient>
+                          <linearGradient id="colorSaldoAnual" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35}/>
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0}/>
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" tick={{fontSize: 11}} stroke="#94a3b8" />
                         <YAxis tick={{fontSize: 11}} stroke="#94a3b8" />
                         <Tooltip />
                         <Legend wrapperStyle={{fontSize: 11}} />
-                        <Bar dataKey="receitas" name="Receitas" fill={chartColors[1]} radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="despesas" name="Despesas" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-                        <Line type="monotone" dataKey="saldo" name="Saldo Líquido" stroke={chartColors[0]} strokeWidth={2} />
+                        <Bar dataKey="receitas" name="Receitas" fill="url(#colorReceitasAnual)" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="despesas" name="Despesas" fill="url(#colorDespesasAnual)" radius={[4, 4, 0, 0]} />
+                        <Area type="monotone" dataKey="saldo" name="Saldo Líquido" stroke="#2563eb" strokeWidth={2.5} fill="url(#colorSaldoAnual)" />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
                 {/* Gráfico Mensal */}
-                <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold text-slate-700">Resumo Mensal (Semanas)</h3>
                     <select 
                       value={mesFiltro} 
                       onChange={(e) => setMesFiltro(e.target.value)}
-                      className="text-xs border border-slate-200 rounded-lg p-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="text-xs border border-slate-200 rounded-lg p-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-[#055F6D]"
                     >
                       {meses.map((m, idx) => (
                         <option key={idx} value={idx}>{m}</option>
@@ -255,35 +359,105 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                     </select>
                   </div>
                   <div className="h-64">
-                    {/* Estrutura idêntica alterando os dados para semanas do mês selecionado */}
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={dadosMensaisReais}>
+                        <defs>
+                          <linearGradient id="colorReceitasMensal" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.85}/>
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.2}/>
+                          </linearGradient>
+                          <linearGradient id="colorDespesasMensal" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.85}/>
+                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.2}/>
+                          </linearGradient>
+                          <linearGradient id="colorSaldoMensal" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.35}/>
+                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.0}/>
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" tick={{fontSize: 11}} stroke="#94a3b8" />
                         <YAxis tick={{fontSize: 11}} stroke="#94a3b8" />
                         <Tooltip />
-                        <Bar dataKey="receitas" fill={chartColors[1]} name="Receitas" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="despesas" fill="#f43f5e" name="Despesas" radius={[4, 4, 0, 0]} />
-                        <Line type="monotone" dataKey="saldo" stroke={chartColors[0]} strokeWidth={2} name="Saldo Líquido" />
+                        <Bar dataKey="receitas" fill="url(#colorReceitasMensal)" name="Receitas" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="despesas" fill="url(#colorDespesasMensal)" name="Despesas" radius={[4, 4, 0, 0]} />
+                        <Area type="monotone" dataKey="saldo" stroke="#2563eb" strokeWidth={2.5} fill="url(#colorSaldoMensal)" name="Saldo Líquido" />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
-
               </div>
+
+              {/* Seção de Gráficos de Categorias Horizontais com Cores Individuais */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Categorias - Receitas */}
+                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-slate-700">Distribuição de Receitas por Categoria (Top 5)</h3>
+                    <TrendingUp className="w-4 h-4 text-emerald-500" />
+                  </div>
+                  <div className="h-64">
+                    {dadosCategorias.receitas.length === 0 ? (
+                      <div className="h-full flex items-center justify-center text-xs text-slate-400 italic">Nenhum lançamento encontrado.</div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={dadosCategorias.receitas} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 10 }}>
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                          <XAxis type="number" tick={{fontSize: 10}} stroke="#94a3b8" />
+                          <YAxis dataKey="name" type="category" tick={{fontSize: 10}} stroke="#94a3b8" width={110} />
+                          <Tooltip formatter={(value) => [`R$ ${formatMoedaValor(value)}`, 'Total']} />
+                          <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                            {dadosCategorias.receitas.map((entry, index) => (
+                              <Cell key={`cell-rec-${index}`} fill={coresCategorias[index % coresCategorias.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+
+                {/* Categorias - Despesas */}
+                <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-slate-700">Distribuição de Despesas por Categoria (Top 5)</h3>
+                    <TrendingDown className="w-4 h-4 text-rose-500" />
+                  </div>
+                  <div className="h-64">
+                    {dadosCategorias.despesas.length === 0 ? (
+                      <div className="h-full flex items-center justify-center text-xs text-slate-400 italic">Nenhum lançamento encontrado.</div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={dadosCategorias.despesas} layout="vertical" margin={{ left: 10, right: 30, top: 10, bottom: 10 }}>
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                          <XAxis type="number" tick={{fontSize: 10}} stroke="#94a3b8" />
+                          <YAxis dataKey="name" type="category" tick={{fontSize: 10}} stroke="#94a3b8" width={110} />
+                          <Tooltip formatter={(value) => [`R$ ${formatMoedaValor(value)}`, 'Total']} />
+                          <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                            {dadosCategorias.despesas.map((entry, index) => (
+                              <Cell key={`cell-des-${index}`} fill={coresCategorias[index % coresCategorias.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+              </div>
+
             </div>
 
-            {/* Coluna Lateral Direita: Atalhos Rápidos */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3 h-fit">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Atalhos Rápidos</h3>
-              <BotaoAtalho label="Transações" icon="💸" onClick={() => setAbaAtiva('transacoes')} />
-              <BotaoAtalho label="Histórico de Ações" icon="⏳" onClick={() => setAbaAtiva('historico')} />
-              <BotaoAtalho label="Orçamentos Anuais" icon="📊" onClick={() => {}} />
-              <BotaoAtalho label="Categorias" icon="🏷️" onClick={() => setAbaAtiva('categorias')} />
-              <BotaoAtalho label="Contas / Caixas" icon="🏦" onClick={() => setAbaAtiva('contas')} />
-              <BotaoAtalho label="Contatos / Favorecidos" icon="👤" onClick={() => {}} />
-              <BotaoAtalho label="Centros de Custos" icon="🏢" onClick={() => {}} />
-              <BotaoAtalho label="Relatórios" icon="📈" onClick={() => setAbaAtiva('relatorios')} />
+            {/* Coluna Lateral Direita: Atalhos Rápidos com Novo visual de Deck */}
+            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3 h-fit">
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">Atalhos Rápidos</h3>
+              <BotaoAtalho label="Transações" icon={DollarSign} onClick={() => handleMudarAba('transacoes')} />
+              <BotaoAtalho label="Histórico de Ações" icon={History} onClick={() => handleMudarAba('historico')} />
+              <BotaoAtalho label="Orçamentos Anuais" icon={BarChart3} onClick={() => {}} />
+              <BotaoAtalho label="Categorias" icon={Tag} onClick={() => handleMudarAba('categorias')} />
+              <BotaoAtalho label="Contas / Caixas" icon={Landmark} onClick={() => handleMudarAba('contas')} />
+              <BotaoAtalho label="Contatos / Favorecidos" icon={UserSquare2} onClick={() => {}} />
+              <BotaoAtalho label="Centros de Custos" icon={Building2} onClick={() => {}} />
+              <BotaoAtalho label="Relatórios" icon={BarChart3} onClick={() => handleMudarAba('relatorios')} />
             </div>
 
           </div>
@@ -309,21 +483,21 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
             hasAccess={hasAccess}
             filtrosMobileAberto={filtrosMobileAberto}
             setFiltrosMobileAberto={setFiltrosMobileAberto}
-            onVoltar={() => setAbaAtiva('resumo')}
+            onVoltar={() => handleMudarAba('resumo')}
           />
         )}
 
         {abaAtiva === 'categorias' && (
-          <CategoriasFinanceiras usuarioLogado={usuarioLogado} membroLogado={membroLogado} hasAccess={hasAccess} onVoltar={() => setAbaAtiva('resumo')} />
+          <CategoriasFinanceiras usuarioLogado={usuarioLogado} membroLogado={membroLogado} hasAccess={hasAccess} onVoltar={() => handleMudarAba('resumo')} />
         )}
 
         {abaAtiva === 'contas' && (
-          <ContasFinanceiras usuarioLogado={usuarioLogado} membroLogado={membroLogado} hasAccess={hasAccess} onVoltar={() => setAbaAtiva('resumo')} />
+          <ContasFinanceiras usuarioLogado={usuarioLogado} membroLogado={membroLogado} hasAccess={hasAccess} onVoltar={() => handleMudarAba('resumo')} />
         )}
 
-        {abaAtiva === 'relatorios' && <RelatoriosFinanceiros onVoltar={() => setAbaAtiva('resumo')} />}
+        {abaAtiva === 'relatorios' && <RelatoriosFinanceiros onVoltar={() => handleMudarAba('resumo')} />}
 
-        {abaAtiva === 'historico' && <HistoricoFinanceiro onVoltar={() => setAbaAtiva('resumo')} />}
+        {abaAtiva === 'historico' && <HistoricoFinanceiro onVoltar={() => handleMudarAba('resumo')} />}
 
         {/* Mapeamento das outras sub-abas aqui */}
         {abaAtiva !== 'resumo' && (
@@ -342,26 +516,33 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
   );
 }
 
-// Componentes Auxiliares Locais
-function CardResSummary({ title, value, color, bg }) {
+// Componentes Auxiliares Locais Premium
+function CardResumo({ title, value, gradient, icon: Icon }) {
   return (
-    <div className={`p-4 rounded-xl border border-slate-200 shadow-sm ${bg}`}>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{title}</p>
-      <p className={`text-base font-black mt-1 ${color}`}>{value}</p>
+    <div className={`p-5 rounded-3xl shadow-md ${gradient} text-white flex items-center justify-between transition hover:-translate-y-1 hover:shadow-lg duration-200`}>
+      <div>
+        <p className="text-[10px] font-extrabold uppercase tracking-wider opacity-80">{title}</p>
+        <p className="text-xl font-black mt-1.5 tracking-tight">{value}</p>
+      </div>
+      {Icon && (
+        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center backdrop-blur-md shrink-0">
+          <Icon className="w-5.5 h-5.5 text-white" />
+        </div>
+      )}
     </div>
   );
 }
-// Renomeado internamente para evitar colisões
-const CardResumo = CardResSummary;
 
-function BotaoAtalho({ label, icon, onClick }) {
+function BotaoAtalho({ label, icon: Icon, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/40 text-left text-xs font-semibold text-slate-700 transition group"
+      className="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl border border-slate-100 bg-slate-50/40 hover:border-emerald-300 hover:bg-emerald-50/20 text-left text-xs font-bold text-slate-700 transition group hover:shadow-sm"
     >
-      <span className="text-sm group-hover:scale-110 transition">{icon}</span>
-      <span className="flex-1">{label}</span>
+      <span className="p-2 rounded-xl bg-white border border-slate-100 text-[#055F6D] group-hover:scale-105 group-hover:bg-emerald-50/50 transition shrink-0">
+        <Icon className="w-4 h-4" strokeWidth={2.2} />
+      </span>
+      <span className="flex-1 tracking-tight">{label}</span>
     </button>
   );
 }

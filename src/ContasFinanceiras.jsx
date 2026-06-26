@@ -88,7 +88,7 @@ export default function ContasFinanceiras({ usuarioLogado, membroLogado, hasAcce
 
   return (
     <div className="space-y-6 mx-2">
-      <div className="hidden md:block">
+      <div className="print:hidden mx-[3px] sm:mx-0">
         <PageHeader titulo="Contas" breadcrumb={['Resumo', 'Contas']} onNavigate={onVoltar} />
       </div>
 

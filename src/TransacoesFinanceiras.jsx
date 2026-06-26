@@ -356,7 +356,7 @@ export default function TransacoesFinanceiras({
 
   return (
     <div className="space-y-6 mx-1">
-      <div className="hidden md:block">
+      <div className="print:hidden mx-[3px] sm:mx-0">
         <PageHeader titulo="Transações Financeiras" breadcrumb={['Resumo', 'Transações']} onNavigate={onVoltar} />
       </div>
 

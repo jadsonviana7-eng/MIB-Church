@@ -12,7 +12,8 @@ import {
   ArrowUpRight, 
   ArrowDownRight, 
   Sparkles,
-  DollarSign
+  DollarSign,
+  Search
 } from 'lucide-react';
 
 export default function RelatoriosFinanceiros({ onVoltar }) {
@@ -31,6 +32,7 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
   const [conta, setConta] = useState([]);
   const [catReceita, setCatReceita] = useState([]);
   const [catDespesa, setCatDespesa] = useState([]);
+  const [busca, setBusca] = useState(''); // Estado para busca rápida
 
   const [expansaoReceitas, setExpansaoReceitas] = useState(false);
   const [expansaoDespesas, setExpansaoDespesas] = useState(false);
@@ -76,6 +78,17 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
     'despesas-resumo-anual': 'Resumo Anual de Despesas por Categoria'
   };
 
+  // Função helper para mudar de relatório limpando filtros antigos incompatíveis
+  const handleSelecionarRelatorio = (nomeRelatorio) => {
+    setRelatorioAtivo(nomeRelatorio);
+    setTipo([]);
+    setStatus([]);
+    setConta([]);
+    setCatReceita([]);
+    setCatDespesa([]);
+    setBusca('');
+  };
+
   // Função para buscar dados automaticamente
   const carregarDadosRelatorio = useCallback(async () => {
     if (!relatorioAtivo) return;
@@ -115,12 +128,17 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
       const categoriasIds = [...catReceita, ...catDespesa];
       if (categoriasIds.length > 0) query = query.in('categoria_id', categoriasIds);
 
-      if (relatorioAtivo.includes('receitas')) query = query.eq('tipo', 'receita');
-      if (relatorioAtivo.includes('despesas')) query = query.eq('tipo', 'despesa');
-      if (relatorioAtivo === 'despesas-a-pagar') query = query.eq('status', 'pendente');
+      if (relatorioAtivo.startsWith('receitas') || relatorioAtivo.startsWith('cat-receita')) {
+        query = query.eq('tipo', 'receita');
+      } else if (relatorioAtivo.startsWith('despesas') || relatorioAtivo.startsWith('cat-despesa') || relatorioAtivo === 'despesas-a-pagar') {
+        query = query.eq('tipo', 'despesa');
+      }
+      if (relatorioAtivo === 'despesas-a-pagar') {
+        query = query.eq('status', 'pendente');
+      }
       
       if (relatorioAtivo.startsWith('cat-')) {
-        const catId = relatorioAtivo.split('-').pop();
+        const catId = relatorioAtivo.replace('cat-receita-', '').replace('cat-despesa-', '');
         query = query.eq('categoria_id', catId);
       }
 
@@ -138,8 +156,22 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
     carregarDadosRelatorio();
   }, [carregarDadosRelatorio]);
 
+  // 3. Filtragem cliente-side para busca rápida e confortável
+  const transacoesFiltradas = useMemo(() => {
+    if (!busca) return transacoes;
+    const b = busca.toLowerCase();
+    return transacoes.filter(t => 
+      t.descricao?.toLowerCase().includes(b) || 
+      t.pessoas?.nome?.toLowerCase().includes(b) ||
+      t.categorias_financeiras?.nome?.toLowerCase().includes(b) ||
+      t.contas_financeiras?.nome?.toLowerCase().includes(b) ||
+      String(t.valor).includes(b)
+    );
+  }, [transacoes, busca]);
+
+  // 4. Cálculos dos resumos baseados nos resultados filtrados
   const resumoCalculado = useMemo(() => {
-    return transacoes.reduce((acc, t) => {
+    return transacoesFiltradas.reduce((acc, t) => {
       const v = Number(t.valor) || 0;
       const tipo = t.tipo?.toLowerCase();
       const status = t.status?.toLowerCase();
@@ -151,11 +183,70 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
       acc.movimentacao = acc.receitas - acc.despesas;
       return acc;
     }, { receitas: 0, despesas: 0, aPagar: 0, movimentacao: 0 });
-  }, [transacoes]);
+  }, [transacoesFiltradas]);
+
+  // 5. Cálculos específicos para o DRE (Demonstrativo de Receitas e Despesas)
+  const dreDados = useMemo(() => {
+    const receitasMap = {};
+    const despesasMap = {};
+    let totalReceitas = 0;
+    let totalDespesas = 0;
+
+    transacoesFiltradas.forEach(t => {
+      const v = Number(t.valor) || 0;
+      const catNome = t.categorias_financeiras?.nome || 'Sem Categoria';
+      const tipo = t.tipo?.toLowerCase();
+      const status = t.status?.toLowerCase();
+
+      if (status === 'pago') {
+        if (tipo === 'receita') {
+          receitasMap[catNome] = (receitasMap[catNome] || 0) + v;
+          totalReceitas += v;
+        } else if (tipo === 'despesa') {
+          despesasMap[catNome] = (despesasMap[catNome] || 0) + v;
+          totalDespesas += v;
+        }
+      }
+    });
+
+    return {
+      receitas: Object.entries(receitasMap).map(([categoria, valor]) => ({ categoria, valor })),
+      despesas: Object.entries(despesasMap).map(([categoria, valor]) => ({ categoria, valor })),
+      totalReceitas,
+      totalDespesas,
+      resultadoLiquido: totalReceitas - totalDespesas
+    };
+  }, [transacoesFiltradas]);
+
+  // 6. Cálculos específicos para Resumo por Categoria
+  const resumoCategoriasDados = useMemo(() => {
+    const categoriasMap = {};
+    let totalGeral = 0;
+
+    transacoesFiltradas.forEach(t => {
+      const v = Number(t.valor) || 0;
+      const catNome = t.categorias_financeiras?.nome || 'Sem Categoria';
+      const tipo = t.tipo?.toLowerCase();
+      
+      if (!categoriasMap[catNome]) {
+        categoriasMap[catNome] = { nome: catNome, tipo: t.tipo, qtd: 0, total: 0 };
+      }
+      categoriasMap[catNome].qtd += 1;
+      categoriasMap[catNome].total += v;
+      
+      if (tipo === 'receita') totalGeral += v;
+      else if (tipo === 'despesa') totalGeral -= v;
+    });
+
+    return {
+      lista: Object.values(categoriasMap).sort((a, b) => b.total - a.total),
+      totalGeral
+    };
+  }, [transacoesFiltradas]);
 
   const getTituloRelatorio = () => {
     if (relatorioAtivo.startsWith('cat-')) {
-      const catId = relatorioAtivo.split('-').pop();
+      const catId = relatorioAtivo.replace('cat-receita-', '').replace('cat-despesa-', '');
       const nomeCat = categorias.find(c => c.id === catId)?.nome;
       const prefixo = relatorioAtivo.includes('receita') ? 'Extrato de Receitas:' : 'Extrato de Despesas:';
       return `${prefixo} ${nomeCat || 'Categoria'}`;
@@ -211,6 +302,63 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
     }
   };
 
+  // Exportação de dados formatados em planilha (CSV / Excel XLS)
+  const exportarPlanilha = (formato = 'csv') => {
+    let headers = [];
+    let linhas = [];
+    const divisor = formato === 'xls' ? '\t' : ',';
+    const extensao = formato === 'xls' ? 'xls' : 'csv';
+    const mimeType = formato === 'xls' ? 'application/vnd.ms-excel' : 'text/csv';
+
+    if (relatorioAtivo === 'fluxo-receitas-despesas') {
+      headers = ['Categoria', 'Tipo', 'Valor'];
+      dreDados.receitas.forEach(r => {
+        linhas.push([r.categoria, 'Receita', r.valor.toFixed(2)]);
+      });
+      linhas.push(['Subtotal Receitas', '', dreDados.totalReceitas.toFixed(2)]);
+      dreDados.despesas.forEach(d => {
+        linhas.push([d.categoria, 'Despesa', d.valor.toFixed(2)]);
+      });
+      linhas.push(['Subtotal Despesas', '', dreDados.totalDespesas.toFixed(2)]);
+      linhas.push(['Resultado Líquido do Período', '', dreDados.resultadoLiquido.toFixed(2)]);
+    } else if (relatorioAtivo === 'fluxo-resumo-categoria' || relatorioAtivo === 'receitas-resumo-anual' || relatorioAtivo === 'despesas-resumo-anual') {
+      headers = ['Categoria', 'Tipo', 'Lançamentos', 'Total Acumulado'];
+      resumoCategoriasDados.lista.forEach(c => {
+        linhas.push([c.nome, c.tipo, c.qtd, c.total.toFixed(2)]);
+      });
+      linhas.push(['Saldo Líquido Total', '', '', resumoCategoriasDados.totalGeral.toFixed(2)]);
+    } else {
+      headers = ['Data', 'Descrição', 'Pessoa', 'Categoria', 'Conta', 'Valor', 'Tipo', 'Status'];
+      transacoesFiltradas.forEach(t => {
+        linhas.push([
+          t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '',
+          t.descricao || '',
+          t.pessoas?.nome || 'Lançamento Avulso',
+          t.categorias_financeiras?.nome || 'Sem Categoria',
+          t.contas_financeiras?.nome || 'Sem Conta',
+          Number(t.valor).toFixed(2),
+          t.tipo || '',
+          t.status || ''
+        ]);
+      });
+      linhas.push(['Saldo Anterior', '', '', '', '', saldoAnterior.toFixed(2), '', '']);
+      linhas.push(['Total Receitas', '', '', '', '', resumoCalculado.receitas.toFixed(2), '', '']);
+      linhas.push(['Total Despesas', '', '', '', '', resumoCalculado.despesas.toFixed(2), '', '']);
+      linhas.push(['Saldo Final', '', '', '', '', (saldoAnterior + resumoCalculado.movimentacao).toFixed(2), '', '']);
+    }
+
+    const contentString = [headers.join(divisor), ...linhas.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(divisor))].join('\n');
+    const blob = new Blob(["\uFEFF" + contentString], { type: `${mimeType};charset=utf-8;` });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const nomeArquivo = `${getTituloRelatorio().toLowerCase().replace(/[^a-z0-9]/g, '-')}-${dataInicio}-a-${dataFim}.${extensao}`;
+    link.href = url;
+    link.setAttribute("download", nomeArquivo);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const CalendarPopup = () => (
     <div className="absolute top-full left-0 mt-2 z-[100] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 w-72 animate-in fade-in zoom-in duration-200">
       <div className="flex items-center justify-between mb-4">
@@ -244,47 +392,274 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
     </div>
   );
 
+  // Renderização das tabelas com o novo layout do resumo no final dos relatórios (balancete contábil)
+  const renderTabelaResultados = () => {
+    if (relatorioAtivo === 'fluxo-receitas-despesas') {
+      // Layout DRE
+      return (
+        <div className="printable-table-container overflow-x-auto">
+          <table className="table-mib printable-table">
+            <thead>
+              <tr>
+                <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-left bg-slate-100/80">Categoria</th>
+                <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center bg-slate-100/80 w-[20%]">Tipo</th>
+                <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right pr-6 bg-slate-100/80 w-[25%]">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Seção Receitas */}
+              <tr className="bg-emerald-50/50 font-bold border-t border-slate-200">
+                <td colSpan="3" className="py-2 px-4 text-emerald-800 uppercase tracking-wider text-[11px] font-black">1. Receitas</td>
+              </tr>
+              {dreDados.receitas.length === 0 ? (
+                <tr className="border-b border-slate-100">
+                  <td colSpan="3" className="py-2 px-6 text-slate-400 text-xs italic">Nenhuma receita registrada no período.</td>
+                </tr>
+              ) : (
+                dreDados.receitas.map(({ categoria, valor }) => (
+                  <tr key={categoria} className="border-b border-slate-100 hover:bg-slate-50/60 even:bg-slate-50/20 transition duration-150">
+                    <td className="py-2.5 px-6 text-slate-700 font-bold text-xs">{categoria}</td>
+                    <td className="py-2.5 px-4 text-center text-xs text-slate-500 font-medium">Receita</td>
+                    <td className="py-2.5 px-4 pr-6 text-right text-emerald-600 font-bold text-xs">+ R$ {formatarValor(valor)}</td>
+                  </tr>
+                ))
+              )}
+              <tr className="bg-white border-t border-slate-200 font-bold">
+                <td colSpan="2" className="py-2 px-6 text-right text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Subtotal Receitas (+):</td>
+                <td className="py-2 px-4 pr-6 text-right text-emerald-700 text-xs font-extrabold">R$ {formatarValor(dreDados.totalReceitas)}</td>
+              </tr>
+
+              {/* Seção Despesas */}
+              <tr className="bg-rose-50/50 font-bold border-t-2 border-slate-200">
+                <td colSpan="3" className="py-2 px-4 text-rose-800 uppercase tracking-wider text-[11px] font-black">2. Despesas</td>
+              </tr>
+              {dreDados.despesas.length === 0 ? (
+                <tr className="border-b border-slate-100">
+                  <td colSpan="3" className="py-2 px-6 text-slate-400 text-xs italic">Nenhuma despesa registrada no período.</td>
+                </tr>
+              ) : (
+                dreDados.despesas.map(({ categoria, valor }) => (
+                  <tr key={categoria} className="border-b border-slate-100 hover:bg-slate-50/60 even:bg-slate-50/20 transition duration-150">
+                    <td className="py-2.5 px-6 text-slate-700 font-bold text-xs">{categoria}</td>
+                    <td className="py-2.5 px-4 text-center text-xs text-slate-500 font-medium">Despesa</td>
+                    <td className="py-2.5 px-4 pr-6 text-right text-rose-600 font-bold text-xs">- R$ {formatarValor(valor)}</td>
+                  </tr>
+                ))
+              )}
+              <tr className="bg-white border-t border-slate-200 font-bold">
+                <td colSpan="2" className="py-2 px-6 text-right text-[10px] font-bold text-rose-700 uppercase tracking-widest">Subtotal Despesas (-):</td>
+                <td className="py-2 px-4 pr-6 text-right text-rose-700 text-xs font-extrabold">R$ {formatarValor(dreDados.totalDespesas)}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              {/* Novo rodapé de balanço contábil formal */}
+              <tr className="border-t-2 border-b-2 border-double border-slate-400 bg-slate-100/50 font-black">
+                <td colSpan="2" className="py-3 px-6 text-right text-xs font-black text-slate-800 uppercase tracking-widest">Resultado Líquido do Período:</td>
+                <td className={`py-3 px-4 pr-6 text-right text-sm font-black ${dreDados.resultadoLiquido >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                  R$ {formatarValor(dreDados.resultadoLiquido)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      );
+    }
+
+    if (relatorioAtivo === 'fluxo-resumo-categoria' || relatorioAtivo === 'receitas-resumo-anual' || relatorioAtivo === 'despesas-resumo-anual') {
+      // Resumo Geral por Categoria
+      return (
+        <div className="printable-table-container overflow-x-auto">
+          <table className="table-mib printable-table">
+            <thead>
+              <tr>
+                <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-left bg-slate-100/80">Categoria</th>
+                <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center bg-slate-100/80 w-[20%]">Tipo</th>
+                <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center bg-slate-100/80 w-[20%]">Lançamentos</th>
+                <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right pr-6 bg-slate-100/80 w-[25%]">Total Acumulado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {resumoCategoriasDados.lista.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="py-12 text-center text-slate-400 text-xs italic">Nenhum lançamento encontrado para os filtros selecionados.</td>
+                </tr>
+              ) : (
+                resumoCategoriasDados.lista.map(c => {
+                  const isReceita = c.tipo?.toLowerCase() === 'receita';
+                  return (
+                    <tr key={c.nome} className="border-b border-slate-100 hover:bg-slate-50/60 even:bg-slate-50/20 transition duration-150">
+                      <td className="py-2.5 px-4 text-slate-700 font-bold text-xs">{c.nome}</td>
+                      <td className="py-2.5 px-4 text-center text-xs">
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${isReceita ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                          {c.tipo}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-4 text-center text-xs text-slate-500 font-semibold">{c.qtd}</td>
+                      <td className={`py-2.5 px-4 pr-6 text-right font-bold text-xs ${isReceita ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {isReceita ? '+' : '-'} R$ {formatarValor(c.total)}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+            <tfoot>
+              {/* Novo rodapé de balanço contábil formal */}
+              <tr className="border-t-2 border-b-2 border-double border-slate-400 bg-slate-100/50 font-black">
+                <td colSpan="3" className="py-3 px-4 text-right text-xs font-black text-slate-800 uppercase tracking-widest">Saldo Líquido Geral:</td>
+                <td className={`py-3 px-4 pr-6 text-right text-sm font-black ${resumoCategoriasDados.totalGeral >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                  R$ {formatarValor(resumoCategoriasDados.totalGeral)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      );
+    }
+
+    // Extrato Detalhado Padrão
+    return (
+      <div className="printable-table-container overflow-x-auto">
+        <table className="table-mib printable-table">
+          <thead>
+            <tr>
+              <th className="w-[12%] py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-left bg-slate-100/80">Data</th>
+              <th className="py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-left bg-slate-100/80">Descrição / Pessoa</th>
+              <th className="w-[18%] py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-left bg-slate-100/80">Categoria</th>
+              <th className="w-[18%] py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-left bg-slate-100/80">Conta</th>
+              <th className="text-right pr-6 w-[20%] py-2.5 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider bg-slate-100/80">Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {transacoesFiltradas.map(t => {
+              const isReceita = t.tipo?.toLowerCase() === 'receita';
+              return (
+                <tr key={t.id} className="border-b border-slate-100 hover:bg-slate-50/60 even:bg-slate-50/20 transition duration-150">
+                  <td className="whitespace-nowrap py-3 px-4 text-slate-600 text-xs font-medium">
+                    {t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2 print:gap-0">
+                      {/* Oculta imagem de avatar no PDF */}
+                      <div className="print:hidden">
+                        <Avatar pessoa={t.pessoas} tamanho="w-7 h-7" />
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-bold text-slate-700 text-xs print:text-[11px] print:font-semibold truncate">{t.descricao}</span>
+                        <span className="text-[10px] text-slate-400 print:text-[9px] truncate">{t.pessoas?.nome || 'Lançamento Avulso'}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${isReceita ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                      {t.categorias_financeiras?.nome || 'Sem Categoria'}
+                    </span>
+                  </td>
+                  <td className="text-slate-500 py-3 px-4 text-xs font-medium">{t.contas_financeiras?.nome || 'Sem Conta'}</td>
+                  <td className={`text-right pr-6 font-bold text-xs whitespace-nowrap ${isReceita ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {isReceita ? '+' : '-'} R$ {formatarValor(t.valor)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            {/* Novo rodapé de balanço contábil formal (resumo mais profissional no final) */}
+            <tr className="border-t-2 border-slate-300">
+              <td colSpan="3" className="py-2.5 px-4 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest">Saldo anterior (acumulado):</td>
+              <td colSpan="2" className="py-2.5 px-4 pr-6 text-right text-xs font-bold text-slate-600">R$ {formatarValor(saldoAnterior)}</td>
+            </tr>
+            <tr className="border-t border-slate-100 bg-emerald-50/20">
+              <td colSpan="3" className="py-2.5 px-4 text-right text-[10px] font-bold text-emerald-600/80 uppercase tracking-widest">Total de receitas no período (+):</td>
+              <td colSpan="2" className="py-2.5 px-4 pr-6 text-right text-xs font-bold text-emerald-600">R$ {formatarValor(resumoCalculado.receitas)}</td>
+            </tr>
+            <tr className="border-t border-slate-100 bg-rose-50/20">
+              <td colSpan="3" className="py-2.5 px-4 text-right text-[10px] font-bold text-rose-600/80 uppercase tracking-widest">Total de despesas no período (-):</td>
+              <td colSpan="2" className="py-2.5 px-4 pr-6 text-right text-xs font-bold text-rose-600">R$ {formatarValor(resumoCalculado.despesas)}</td>
+            </tr>
+            <tr className="border-t border-slate-100">
+              <td colSpan="3" className="py-2.5 px-4 text-right text-[10px] font-bold text-slate-500 uppercase tracking-widest">Resultado Líquido do Período:</td>
+              <td colSpan="2" className={`py-2.5 px-4 pr-6 text-right text-xs font-bold ${resumoCalculado.movimentacao >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+                R$ {formatarValor(resumoCalculado.movimentacao)}
+              </td>
+            </tr>
+            {resumoCalculado.aPagar > 0 && (
+              <tr className="border-t border-slate-100 bg-amber-50/10">
+                <td colSpan="3" className="py-2.5 px-4 text-right text-[10px] font-bold text-amber-600/80 uppercase tracking-widest">Contas a pagar (pendentes):</td>
+                <td colSpan="2" className="py-2.5 px-4 pr-6 text-right text-xs font-bold text-amber-600">R$ {formatarValor(resumoCalculado.aPagar)}</td>
+              </tr>
+            )}
+            <tr className="border-t-2 border-b-2 border-double border-slate-400 bg-slate-100/50 font-black">
+              <td colSpan="3" className="py-3 px-4 text-right text-xs font-black text-slate-800 uppercase tracking-widest">Saldo Final Consolidado:</td>
+              <td colSpan="2" className="py-3 px-4 pr-6 text-right text-sm font-black text-slate-900">
+                R$ {formatarValor(saldoAnterior + resumoCalculado.movimentacao)}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-6xl pt-0 px-0 pb-12 sm:px-6 space-y-6 mx-[-3px] sm:mx-auto">
       <div className="print:hidden mx-[3px] sm:mx-0">
         <PageHeader titulo="Relatórios Financeiros" breadcrumb={['Resumo', 'Relatórios']} onNavigate={onVoltar} />
       </div>
       
-      {/* 1. Elementos de Filtros (Sem Card) */}
-      <div className="space-y-3 px-[3px] sm:px-0 print:hidden">
-        <div className="flex flex-col md:flex-row gap-3 items-end">
-          {/* Seletor de Período Estilizado */}
-          <div className="relative w-full md:w-auto md:min-w-[240px]">
-            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">Data do Relatório</label>
-            <div 
-              onClick={() => setCalendarioAberto(!calendarioAberto)}
-              className="flex items-center gap-3 px-4 py-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer transition-all shadow-sm group hover:border-slate-300"
-            >
-              <CalendarDays className="w-4 h-4 text-slate-400 shrink-0" strokeWidth={1.8} />
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                <span>{formatarExibicao(dataInicio)}</span>
-                <span className="text-slate-300">→</span>
-                <span>{formatarExibicao(dataFim)}</span>
+      {/* 1. Elementos de Filtros em Card Integrado (Oculto na Impressão) - !overflow-visible adicionado para evitar corte do calendário */}
+      <Card className="p-4 sm:p-5 rounded-3xl border border-slate-100 shadow-sm print:hidden space-y-4 !overflow-visible">
+        <div className="flex flex-col lg:flex-row gap-4 items-end justify-between">
+          <div className="flex flex-col sm:flex-row gap-4 items-end w-full lg:w-auto">
+            {/* Seletor de Período Estilizado */}
+            <div className="relative w-full sm:w-auto sm:min-w-[240px]">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#055F6D] mb-1.5 pl-1">Data do Relatório</label>
+              <div 
+                onClick={() => setCalendarioAberto(!calendarioAberto)}
+                className="flex items-center gap-3 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer transition-all hover:border-[#055F6D]/50 hover:bg-slate-50/80 group"
+              >
+                <CalendarDays className="w-4 h-4 text-slate-400 shrink-0" strokeWidth={1.8} />
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                  <span>{formatarExibicao(dataInicio)}</span>
+                  <span className="text-slate-300">→</span>
+                  <span>{formatarExibicao(dataFim)}</span>
+                </div>
+              </div>
+              {calendarioAberto && <CalendarPopup />}
+            </div>
+
+            {/* Campo de Busca Rápida */}
+            <div className="relative w-full sm:w-72">
+              <label className="block text-[10px] font-black uppercase tracking-widest text-[#055F6D] mb-1.5 pl-1">Buscar transação</label>
+              <div className="relative flex items-center">
+                <Search className="absolute left-3 w-4.5 h-4.5 text-slate-400 pointer-events-none" strokeWidth={1.8} />
+                <input
+                  type="text"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Buscar descrição, categoria..."
+                  className="w-full pl-9 pr-4 py-2.5 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#055F6D] focus:bg-white transition placeholder-slate-400"
+                />
               </div>
             </div>
-            {calendarioAberto && <CalendarPopup />}
           </div>
 
-          {/* Toggle de Filtros Avançados para Mobile */}
-          <div className="md:hidden flex gap-2 w-full">
+          {/* Toggles e Limpeza */}
+          <div className="flex gap-2 w-full lg:w-auto">
             <button
               type="button"
               onClick={() => setMostrarFiltrosAvancados(!mostrarFiltrosAvancados)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all shadow-sm ${mostrarFiltrosAvancados ? 'bg-[#055F6D] text-white border-[#055F6D]' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+              className={`flex-1 lg:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-black transition-all ${mostrarFiltrosAvancados ? 'bg-[#055F6D] text-white border-[#055F6D]' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'}`}
             >
               <SlidersHorizontal className="w-4 h-4" strokeWidth={2} />
               {mostrarFiltrosAvancados ? 'Ocultar Filtros' : 'Filtros Avançados'}
             </button>
-            {(tipo.length > 0 || status.length > 0 || conta.length > 0 || catReceita.length > 0 || catDespesa.length > 0) && (
+            
+            {(tipo.length > 0 || status.length > 0 || conta.length > 0 || catReceita.length > 0 || catDespesa.length > 0 || busca !== '') && (
               <button
                 type="button"
-                onClick={() => { setTipo([]); setStatus([]); setConta([]); setCatReceita([]); setCatDespesa([]); }}
-                className="px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 text-xs font-bold transition-all shadow-sm"
+                onClick={() => { setTipo([]); setStatus([]); setConta([]); setCatReceita([]); setCatDespesa([]); setBusca(''); }}
+                className="px-4 py-2.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 text-xs font-black hover:bg-rose-100 transition shadow-sm"
               >
                 Limpar
               </button>
@@ -292,63 +667,56 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
           </div>
         </div>
 
-        {/* Linha de Filtros Avançados */}
-        <div className={`${mostrarFiltrosAvancados ? 'grid' : 'hidden'} md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-8 gap-3 items-end`}>
-          <MultiSelectFiltro 
-            label="Tipo" 
-            valor={tipo} 
-            onChange={setTipo} 
-            opcoes={['Receita', 'Despesa', 'Transferência']} 
-          />
-          
-          <MultiSelectFiltro 
-            label="Status" 
-            valor={status} 
-            onChange={setStatus} 
-            opcoes={['Pago', 'Pendente', 'Cancelado']} 
-          />
+        {/* Filtros Avançados Expansíveis */}
+        {mostrarFiltrosAvancados && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-3 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
+            <MultiSelectFiltro 
+              label="Tipo" 
+              valor={tipo} 
+              onChange={setTipo} 
+              opcoes={['Receita', 'Despesa', 'Transferência']} 
+            />
+            
+            <MultiSelectFiltro 
+              label="Status" 
+              valor={status} 
+              onChange={setStatus} 
+              opcoes={['Pago', 'Pendente', 'Cancelado']} 
+            />
 
-          <MultiSelectFiltro 
-            label="Contas" 
-            valor={conta} 
-            onChange={setConta} 
-            opcoes={contas.map(c => ({ valor: c.id, label: c.nome }))} 
-          />
+            <MultiSelectFiltro 
+              label="Contas" 
+              valor={conta} 
+              onChange={setConta} 
+              opcoes={contas.map(c => ({ valor: c.id, label: c.nome }))} 
+            />
 
-          <MultiSelectFiltro 
-            label="Cat. Receitas" 
-            valor={catReceita} 
-            onChange={setCatReceita} 
-            opcoes={categorias.filter(c => c.tipo === 'receita').map(c => ({ valor: c.id, label: c.nome }))} 
-          />
+            <MultiSelectFiltro 
+              label="Cat. Receitas" 
+              valor={catReceita} 
+              onChange={setCatReceita} 
+              opcoes={categorias.filter(c => c.tipo === 'receita').map(c => ({ valor: c.id, label: c.nome }))} 
+            />
 
-          <MultiSelectFiltro 
-            label="Cat. Despesas" 
-            valor={catDespesa} 
-            onChange={setCatDespesa} 
-            opcoes={categorias.filter(c => c.tipo === 'despesa').map(c => ({ valor: c.id, label: c.nome }))} 
-          />
-
-          <button 
-            type="button" 
-            onClick={() => { setTipo([]); setStatus([]); setConta([]); setCatReceita([]); setCatDespesa([]); setRelatorioAtivo(''); setTransacoes([]); }}
-            className="hidden md:block text-[9px] font-black text-rose-500 hover:bg-rose-50 border border-rose-100 rounded-xl px-2 py-2.5 transition-colors uppercase tracking-widest h-fit mb-0.5"
-          >
-            Limpar Filtros
-          </button>
-        </div>
-      </div>
-
+            <MultiSelectFiltro 
+              label="Cat. Despesas" 
+              valor={catDespesa} 
+              onChange={setCatDespesa} 
+              opcoes={categorias.filter(c => c.tipo === 'despesa').map(c => ({ valor: c.id, label: c.nome }))} 
+            />
+          </div>
+        )}
+      </Card>
 
       {/* 2. Conteúdo Inferior - Relatório à esquerda e Painel à direita */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6 items-start px-[3px] sm:px-0">
-        <div className="space-y-4">
+        <div className="space-y-4 w-full">
           {/* Seletor Mobile de Relatórios no Topo */}
-          <div className="xl:hidden bg-white p-4 rounded-3xl border border-slate-100 shadow-sm space-y-2">
+          <div className="xl:hidden bg-white p-4 rounded-3xl border border-slate-100 shadow-sm space-y-2 print:hidden">
             <label className="block text-[10px] font-black uppercase tracking-widest text-[#055F6D]">Selecione o Relatório</label>
             <select
               value={relatorioAtivo}
-              onChange={(e) => setRelatorioAtivo(e.target.value)}
+              onChange={(e) => handleSelecionarRelatorio(e.target.value)}
               className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs bg-slate-50 outline-none font-bold text-slate-700"
             >
               <option value="">-- Escolha um Relatório --</option>
@@ -377,29 +745,69 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
 
           {/* Área de exibição do relatório selecionado */}
           {relatorioAtivo ? (
-            <Card className="p-4 sm:p-8 min-h-[600px] print:p-0 print:border-none print:shadow-none print:bg-white rounded-3xl border border-slate-100 shadow-sm">
-              {/* Ações de Exportação */}
-              {/* Estilos de impressão para margens A4 */}
+            <Card className="p-4 sm:p-8 min-h-[600px] print:p-0 print:border-none print:shadow-none print:bg-white rounded-3xl border border-slate-100 shadow-sm printable-report">
+              {/* Estilos de impressão para margens A4 e layout de tabela limpa */}
               <style>{`
                 @media print {
                   @page {
                     size: A4;
-                    margin: 1cm;
+                    margin: 1.2cm 1cm;
                   }
-                  thead tr {
+                  aside, header, nav, footer, .print-hidden, .print\:hidden, button, select, input, .lucide {
+                    display: none !important;
+                  }
+                  body, .max-w-6xl, .grid, .space-y-6, .space-y-4, .p-4, .p-8, .Card, .card, .bg-white {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                    background: white !important;
+                    color: black !important;
+                    display: block !important;
+                  }
+                  .printable-table-container {
+                    display: block !important;
+                    visibility: visible !important;
+                    width: 100% !important;
+                    overflow: visible !important;
+                  }
+                  .printable-table {
+                    display: table !important;
+                    width: 100% !important;
+                    border-collapse: collapse !important;
+                    margin-top: 15px !important;
+                  }
+                  .printable-table th, .printable-table td {
+                    border: 1px solid #cbd5e1 !important;
+                    padding: 6px 8px !important;
+                    font-size: 10px !important;
+                    color: #000 !important;
+                    background: transparent !important;
+                  }
+                  .printable-table th {
                     background-color: #f1f5f9 !important;
                     -webkit-print-color-adjust: exact;
                     print-color-adjust: exact;
+                    font-weight: bold !important;
+                  }
+                  .printable-table tr {
+                    page-break-inside: avoid !important;
+                  }
+                  .printable-cards-container {
+                    display: none !important;
                   }
                 }
               `}</style>
 
+              {/* Ações de Exportação */}
               <div className="flex justify-end gap-2 mb-6 print:hidden">
-                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-600 hover:bg-slate-50 transition uppercase tracking-wider">
+                <button onClick={() => exportarPlanilha('csv')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-600 hover:bg-slate-50 transition uppercase tracking-wider">
                   <svg className="w-3.5 h-3.5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                   CSV
                 </button>
-                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-600 hover:bg-slate-50 transition uppercase tracking-wider">
+                <button onClick={() => exportarPlanilha('xls')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-600 hover:bg-slate-50 transition uppercase tracking-wider">
                   <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                   Excel
                 </button>
@@ -411,8 +819,8 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
 
               {/* Cabeçalho de Renderização do Relatório */}
               <div className="flex flex-col items-center text-center space-y-2 mb-4 border-b border-slate-100 pb-4 print:pt-0" style={{ fontFamily: 'Roboto, sans-serif' }}>
-                <img src="/logo-mib-mundau.png" alt="Logo" className="h-16 w-auto object-contain bg-white rounded-lg p-1" />
-                <div>
+                <img src="/logo-mib-mundau.png" alt="Logo" className="h-16 w-auto object-contain bg-white rounded-lg p-1 print:hidden" />
+                <div className="print:hidden">
                   <h2 className="text-xl font-black text-slate-900/75 uppercase leading-none">{dadosIgreja?.nome_igreja || 'MIB CHURCH'}</h2>
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex flex-wrap justify-center gap-x-4 mt-2">
                     <span>CNPJ: {formatarCNPJ(dadosIgreja?.cnpj)}</span>
@@ -421,11 +829,11 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
                   <p className="text-[10px] text-slate-400 mt-1">{dadosIgreja?.endereco || '—'}</p>
                 </div>
                 
-                <div className="pt-1 w-full">
-                  <h3 className="text-lg font-normal text-[#055F6D] tracking-tight">
+                <div className="pt-1 w-full print:text-left print:border-b print:border-slate-300 print:pb-2">
+                  <h3 className="text-lg font-bold text-[#055F6D] print:text-slate-800 tracking-tight print:text-base">
                     {getTituloRelatorio()}
                   </h3>
-                  <p className="text-xs font-normal text-slate-500 mt-1">
+                  <p className="text-xs font-normal text-slate-500 print:text-slate-600 mt-1">
                     Período: {formatarExibicao(dataInicio)} até {formatarExibicao(dataFim)}
                   </p>
                 </div>
@@ -437,80 +845,16 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
                 <div className="py-20 text-center text-slate-300 italic text-sm">Nenhum lançamento encontrado para os filtros selecionados.</div>
               ) : (
                 <div className="w-full print:overflow-visible print:w-full" style={{ fontFamily: 'Roboto, sans-serif' }}>
-                  {/* TABELA - Visível apenas em telas maiores (Desktop) */}
-                  <div className="overflow-x-auto hidden md:block">
-                    <table className="table-mib">
-                      <thead>
-                        <tr>
-                          <th className="w-[10%]">Data</th>
-                          <th className="w-[42%] text-left">Descrição / Pessoa</th>
-                          <th className="w-[16%] whitespace-nowrap">Categoria</th>
-                          <th className="w-[16%] whitespace-nowrap">Conta</th>
-                          <th className="text-right pr-6 w-[16%] whitespace-nowrap">Valor</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {transacoes.map(t => (
-                          <tr key={t.id}>
-                            <td className="whitespace-nowrap">{t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
-                            <td>
-                              <div className="flex items-center gap-2">
-                                <Avatar pessoa={t.pessoas} tamanho="w-8 h-8" />
-                                <div className="flex flex-col">
-                                  <span className="font-bold text-slate-700">{t.descricao}</span>
-                                  <span className="text-[10px] text-slate-400">{t.pessoas?.nome || 'Lançamento Avulso'}</span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${t.tipo === 'receita' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-                                {t.categorias_financeiras?.nome}
-                              </span>
-                            </td>
-                            <td className="text-slate-500 whitespace-nowrap">{t.contas_financeiras?.nome}</td>
-                            <td className={`text-right pr-6 font-bold whitespace-nowrap ${t.tipo === 'receita' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                              {t.tipo === 'receita' ? '+' : '-'} R$ {Number(t.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr className="bg-slate-50/50 border-t-2 border-slate-200">
-                          <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-slate-500">Saldo anterior (até {dataInicio ? new Date(new Date(dataInicio + 'T00:00:00').getTime() - 86400000).toLocaleDateString('pt-BR') : '—'}):</td>
-                          <td className="text-right py-2 pr-6 font-normal text-slate-600 text-[14px]">R$ {formatarValor(saldoAnterior)}</td>
-                        </tr>
-                        <tr className="bg-white border-t border-slate-100">
-                          <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-emerald-600">Total de receitas no período (+):</td>
-                          <td className="text-right py-2 pr-6 font-normal text-emerald-600 text-[14px]">R$ {formatarValor(resumoCalculado.receitas)}</td>
-                        </tr>
-                        <tr className="bg-white border-t border-slate-100">
-                          <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-rose-600">Total de despesas no período (-):</td>
-                          <td className="text-right py-2 pr-6 font-normal text-rose-600 text-[14px]">R$ {formatarValor(resumoCalculado.despesas)}</td>
-                        </tr>
-                        <tr className="bg-slate-50/30 border-t border-slate-100">
-                          <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-slate-900">Soma de receitas e despesas (líquido):</td>
-                          <td className={`text-right py-2 pr-6 font-normal text-[14px] ${resumoCalculado.movimentacao >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                            R$ {formatarValor(resumoCalculado.movimentacao)}
-                          </td>
-                        </tr>
-                        <tr className="bg-white border-t border-slate-100">
-                          <td colSpan="4" className="text-right py-2 pr-4 text-[14px] font-normal text-amber-500">Contas a pagar (pendentes):</td>
-                          <td className="text-right py-2 pr-6 font-normal text-amber-500 text-[14px]">R$ {formatarValor(resumoCalculado.aPagar)}</td>
-                        </tr>
-                        <tr className="bg-[#055F6D]/5 border-t-2 border-[#055F6D]/20">
-                          <td colSpan="4" className="text-right py-3 pr-4 text-[14px] font-bold text-[#055F6D] tracking-tighter">Saldo final em {dataFim ? new Date(dataFim + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}:</td>
-                          <td className="text-right py-3 pr-6 font-bold text-[14px] text-[#055F6D]">
-                            R$ {formatarValor(saldoAnterior + resumoCalculado.movimentacao)}
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
+                  
+                  {/* TABELA - Visível em desktop e também na impressão (PDF) para qualquer dispositivo */}
+                  <div className="hidden md:block printable-table-container">
+                    {renderTabelaResultados()}
                   </div>
 
-                  {/* CARDS LIST - Visível em Mobile */}
-                  <div className="md:hidden space-y-4">
+                  {/* LISTA DE CARDS - Visível em Mobile apenas na tela */}
+                  <div className="md:hidden space-y-4 printable-cards-container print:hidden">
                     <div className="divide-y divide-slate-100 bg-slate-50/40 rounded-2xl border border-slate-100">
-                      {transacoes.map(t => {
+                      {transacoesFiltradas.map(t => {
                         const isReceita = t.tipo === 'receita';
                         return (
                           <div key={t.id} className="p-4 space-y-2.5">
@@ -549,43 +893,51 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
                       })}
                     </div>
 
-                    {/* Resumo/Totais para Mobile */}
-                    <div className="bg-white border border-slate-100 rounded-2xl p-4 space-y-3 text-xs shadow-sm">
-                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">Sumário do Relatório</h4>
+                    {/* Resumo/Totais para Mobile na tela (Novo Rodapé Contábil Simulado) */}
+                    <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-3 text-xs shadow-sm">
+                      <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider border-b border-slate-100 pb-2">Resumo Financeiro Consolidado</h4>
                       
                       <div className="flex justify-between items-center text-slate-500">
-                        <span className="font-medium">Saldo anterior:</span>
-                        <span className="font-bold">R$ {formatarValor(saldoAnterior)}</span>
+                        <span className="font-semibold">Saldo anterior (acumulado):</span>
+                        <span className="font-bold text-slate-700">R$ {formatarValor(saldoAnterior)}</span>
                       </div>
                       
-                      <div className="flex justify-between items-center text-emerald-600">
-                        <span className="font-medium">Total de receitas (+):</span>
+                      <div className="flex justify-between items-center text-emerald-600 bg-emerald-50/20 px-2 py-1 rounded-lg">
+                        <span className="font-semibold">Total de receitas no período (+):</span>
                         <span className="font-bold">R$ {formatarValor(resumoCalculado.receitas)}</span>
                       </div>
                       
-                      <div className="flex justify-between items-center text-rose-600">
-                        <span className="font-medium">Total de despesas (-):</span>
+                      <div className="flex justify-between items-center text-rose-600 bg-rose-50/20 px-2 py-1 rounded-lg">
+                        <span className="font-semibold">Total de despesas no período (-):</span>
                         <span className="font-bold">R$ {formatarValor(resumoCalculado.despesas)}</span>
                       </div>
                       
-                      <div className="flex justify-between items-center text-slate-700 border-t border-slate-100 pt-2 font-bold">
-                        <span>Líquido do período:</span>
-                        <span className={resumoCalculado.movimentacao >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                      <div className="flex justify-between items-center text-slate-700 border-t border-slate-100 pt-2">
+                        <span className="font-semibold">Resultado Líquido do Período:</span>
+                        <span className={`font-bold ${resumoCalculado.movimentacao >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
                           R$ {formatarValor(resumoCalculado.movimentacao)}
                         </span>
                       </div>
                       
-                      <div className="flex justify-between items-center text-amber-500">
-                        <span className="font-medium">Contas a pagar (pendentes):</span>
-                        <span className="font-bold">R$ {formatarValor(resumoCalculado.aPagar)}</span>
-                      </div>
+                      {resumoCalculado.aPagar > 0 && (
+                        <div className="flex justify-between items-center text-amber-600 bg-amber-50/10 px-2 py-1 rounded-lg">
+                          <span className="font-semibold">Contas a pagar (pendentes):</span>
+                          <span className="font-bold">R$ {formatarValor(resumoCalculado.aPagar)}</span>
+                        </div>
+                      )}
                       
-                      <div className="flex justify-between items-center text-[#055F6D] border-t-2 border-[#055F6D]/20 pt-2.5 text-sm font-black">
-                        <span>Saldo final:</span>
+                      <div className="flex justify-between items-center text-slate-900 border-t-2 border-b-2 border-double border-slate-400 bg-slate-50/60 p-2.5 text-sm font-black rounded-lg">
+                        <span>Saldo Final Consolidado:</span>
                         <span>R$ {formatarValor(saldoAnterior + resumoCalculado.movimentacao)}</span>
                       </div>
                     </div>
                   </div>
+
+                  {/* TABELA DE IMPRESSÃO (PDF) EM MOBILE - Oculta na tela e visível apenas em print */}
+                  <div className="md:hidden hidden print:block printable-table-container">
+                    {renderTabelaResultados()}
+                  </div>
+
                 </div>
               )}
             </Card>
@@ -607,21 +959,21 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
             <div className="p-4 space-y-4">
               {/* Fluxo de Caixa */}
               <div className="space-y-2">
-                <h4 className="text-[18px] font-black text-slate-500 uppercase border-l-2 border-[#055F6D] pl-2 mb-3">Fluxo de Caixa</h4>
+                <h4 className="text-[14px] font-black text-slate-400 uppercase border-l-2 border-[#055F6D] pl-2 mb-3 tracking-widest">Fluxo de Caixa</h4>
                 <button 
-                  onClick={() => setRelatorioAtivo('fluxo-extrato')} 
+                  onClick={() => handleSelecionarRelatorio('fluxo-extrato')} 
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${relatorioAtivo === 'fluxo-extrato' ? 'bg-[#055F6D] text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
                 >
                   Extrato
                 </button>
                 <button 
-                  onClick={() => setRelatorioAtivo('fluxo-receitas-despesas')} 
+                  onClick={() => handleSelecionarRelatorio('fluxo-receitas-despesas')} 
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${relatorioAtivo === 'fluxo-receitas-despesas' ? 'bg-[#055F6D] text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
                 >
                   Receitas / Despesas
                 </button>
                 <button 
-                  onClick={() => setRelatorioAtivo('fluxo-resumo-categoria')} 
+                  onClick={() => handleSelecionarRelatorio('fluxo-resumo-categoria')} 
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${relatorioAtivo === 'fluxo-resumo-categoria' ? 'bg-[#055F6D] text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
                 >
                   Resumo Geral por Categoria
@@ -630,9 +982,9 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
 
               {/* Receitas */}
               <div className="space-y-2 pt-4 border-t border-slate-100">
-                <h4 className="text-[18px] font-black text-slate-500 uppercase border-l-2 border-emerald-600 pl-2 mb-3">Receitas</h4>
+                <h4 className="text-[14px] font-black text-slate-400 uppercase border-l-2 border-emerald-600 pl-2 mb-3 tracking-widest">Receitas</h4>
                 <button 
-                  onClick={() => setRelatorioAtivo('receitas-extrato-diario')} 
+                  onClick={() => handleSelecionarRelatorio('receitas-extrato-diario')} 
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${relatorioAtivo === 'receitas-extrato-diario' ? 'bg-emerald-600 text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
                 >
                   Extrato Diário
@@ -652,7 +1004,7 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
                       {categorias.filter(c => c.tipo === 'receita').map(cat => (
                         <button 
                           key={cat.id}
-                          onClick={() => setRelatorioAtivo(`cat-receita-${cat.id}`)}
+                          onClick={() => handleSelecionarRelatorio(`cat-receita-${cat.id}`)}
                           className={`w-full text-left px-2 py-1.5 rounded-lg text-[11px] font-medium transition ${relatorioAtivo === `cat-receita-${cat.id}` ? 'text-emerald-700 bg-emerald-50 font-bold' : 'text-slate-500 hover:text-emerald-600 hover:bg-slate-50'}`}
                         >
                           • {cat.nome}
@@ -662,7 +1014,7 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
                   )}
                 </div>
                 <button 
-                  onClick={() => setRelatorioAtivo('receitas-resumo-anual')} 
+                  onClick={() => handleSelecionarRelatorio('receitas-resumo-anual')} 
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${relatorioAtivo === 'receitas-resumo-anual' ? 'bg-emerald-600 text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
                 >
                   Resumo Anual por Categoria
@@ -671,15 +1023,15 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
 
               {/* Despesas */}
               <div className="space-y-2 pt-4 border-t border-slate-100">
-                <h4 className="text-[18px] font-black text-slate-500 uppercase border-l-2 border-rose-600 pl-2 mb-3">Despesas</h4>
+                <h4 className="text-[14px] font-black text-slate-400 uppercase border-l-2 border-rose-600 pl-2 mb-3 tracking-widest">Despesas</h4>
                 <button 
-                  onClick={() => setRelatorioAtivo('despesas-extrato-diario')} 
+                  onClick={() => handleSelecionarRelatorio('despesas-extrato-diario')} 
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${relatorioAtivo === 'despesas-extrato-diario' ? 'bg-rose-600 text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
                 >
                   Extrato Diário
                 </button>
                 <button 
-                  onClick={() => setRelatorioAtivo('despesas-a-pagar')} 
+                  onClick={() => handleSelecionarRelatorio('despesas-a-pagar')} 
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${relatorioAtivo === 'despesas-a-pagar' ? 'bg-rose-600 text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
                 >
                   A Pagar
@@ -699,7 +1051,7 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
                       {categorias.filter(c => c.tipo === 'despesa').map(cat => (
                         <button 
                           key={cat.id}
-                          onClick={() => setRelatorioAtivo(`cat-despesa-${cat.id}`)}
+                          onClick={() => handleSelecionarRelatorio(`cat-despesa-${cat.id}`)}
                           className={`w-full text-left px-2 py-1.5 rounded-lg text-[11px] font-medium transition ${relatorioAtivo === `cat-despesa-${cat.id}` ? 'text-rose-700 bg-rose-50 font-bold' : 'text-slate-500 hover:text-rose-600 hover:bg-slate-50'}`}
                         >
                           • {cat.nome}
@@ -709,7 +1061,7 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
                   )}
                 </div>
                 <button 
-                  onClick={() => setRelatorioAtivo('despesas-resumo-anual')} 
+                  onClick={() => handleSelecionarRelatorio('despesas-resumo-anual')} 
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${relatorioAtivo === 'despesas-resumo-anual' ? 'bg-rose-600 text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
                 >
                   Resumo Anual por Categoria
@@ -736,10 +1088,10 @@ function MultiSelectFiltro({ label, valor, onChange, opcoes }) {
 
   return (
     <div className="relative">
-      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">{label}</label>
+      <label className="block text-[10px] font-bold uppercase tracking-wider text-[#055F6D] mb-1.5 pl-1">{label}</label>
       <div 
         onClick={() => setAberto(!aberto)}
-        className="flex items-center justify-between px-3 py-2.5 bg-white border border-slate-200 rounded-xl cursor-pointer transition-all shadow-sm hover:border-slate-300"
+        className="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer transition-all shadow-sm hover:border-[#055F6D]/50 hover:bg-white"
       >
         <span className="text-xs font-semibold text-slate-700 truncate">
           {valor.length === 0 ? 'Todos' : `${valor.length} selecionado(s)`}

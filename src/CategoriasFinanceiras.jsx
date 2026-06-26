@@ -510,8 +510,7 @@ export default function CategoriasFinanceiras({ usuarioLogado, membroLogado, has
 
   return (
     <div className="space-y-4">
-      {/* PageHeader — desktop only */}
-      <div className="hidden md:block">
+      <div className="print:hidden mx-[3px] sm:mx-0">
         <PageHeader
           titulo="Categorias Financeiras"
           breadcrumb={['Resumo', 'Categorias']}

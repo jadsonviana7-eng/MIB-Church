@@ -60,6 +60,7 @@ export const MenuIcons = {
   'p-relatorios': <BarChart3 className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
 
   // Submenus Células
+  'c-painel': <LayoutDashboard className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
   'c-lista': <ClipboardList className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
   'c-adicionar': <PlusCircle className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
   'c-reunioes': <CalendarDays className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
@@ -106,7 +107,7 @@ export const MenuIcons = {
 // Mapa de submenus → chave de ícone
 export const submenuIconKey = {
   pessoas: { todos: 'p-todos', adicionar: 'p-adicionar', link_publico: 'p-link_publico', inativos: 'p-inativos', aniversariantes: 'p-aniversariantes', cargo: 'p-cargo', zona: 'p-zona', atuacao: 'p-atuacao', relatorios: 'p-relatorios' },
-  celulas:  { lista: 'c-lista', adicionar: 'c-adicionar', reunioes: 'c-reunioes', relatorios: 'c-relatorios' },
+  celulas:  { painel: 'c-painel', lista: 'c-lista', adicionar: 'c-adicionar', reunioes: 'c-reunioes', relatorios: 'c-relatorios' },
   financeiro: { resumo: 'f-resumo', transacoes: 'f-transacoes', relatorios: 'f-relatorios', historico: 'f-historico', categorias: 'f-categorias', contas: 'f-contas', importar: 'f-importar' },
   escolas: { resumo: 'e-resumo', cursos: 'e-cursos', turmas: 'e-turmas', disciplinas: 'e-disciplinas', professores: 'e-professores', alunos: 'e-alunos', aulas: 'e-aulas', avaliacoes: 'e-avaliacoes', 'ficha-aluno': 'e-ficha-aluno', inscricoes: 'e-inscricoes' },
   gestao: { dashboard: 'e-resumo', equipes: 'p-todos', escalas: 'a-calendario', historico: 'f-historico', relatorios: 'e-avaliacoes', config: 'configuracoes' },

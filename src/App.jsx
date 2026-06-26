@@ -62,7 +62,7 @@ export default function App() {
   const [moduloAtual, setModuloAtual] = useState('dashboard');
   const [menuAberto, setMenuAberto] = useState(false);
   const [pessoasSubmenu, setPessoasSubmenu] = useState('todos');
-  const [celulasSubmenu, setCelulasSubmenu] = useState('lista');
+  const [celulasSubmenu, setCelulasSubmenu] = useState('painel');
   const [financeiroSubmenu, setFinanceiroSubmenu] = useState('resumo');
   const [escolasSubmenu, setEscolasSubmenu] = useState('resumo'); // Novo estado para o submenu de Escolas
   const [gestaoMinisterialSubmenu, setGestaoMinisterialSubmenu] = useState('escalas');
@@ -546,6 +546,7 @@ export default function App() {
   ].filter(([id, label]) => hasAccess('Pessoas', label)), [hasAccess]);
 
   const submenusCelulas = useMemo(() => [
+    ['painel', 'Painel Geral'],
     ['lista', 'Lista de células'],
     ['adicionar', 'Nova célula'],
     ['reunioes', 'Reuniões'],
@@ -889,7 +890,7 @@ export default function App() {
           {hasAccess('Células') && (
             <SideNavBtn
               ativo={moduloAtual === 'celulas'}
-              onClick={() => navegar('celulas', 'lista')}
+              onClick={() => navegar('celulas', hasAccess('Células', 'Painel Geral') ? 'painel' : 'lista')}
               icon={MenuIcons.celulas}
               label="Células"
               submenu={submenusCelulas}
@@ -1131,7 +1132,7 @@ export default function App() {
             <div>
               <MenuButton
                 ativo={moduloAtual === 'celulas'}
-                onClick={() => navegar('celulas', 'lista')}
+                onClick={() => navegar('celulas', hasAccess('Células', 'Painel Geral') ? 'painel' : 'lista')}
                 icon={MenuIcons.celulas}
                 hasSubmenu={submenusCelulas.length > 0}
                 expanded={mobileDropdownAberto === 'celulas'}
@@ -1447,6 +1448,7 @@ export default function App() {
             hasAccess={hasAccess}
             filtrosMobileAberto={filtrosFinanceiroAberto}
             setFiltrosMobileAberto={setFiltrosFinanceiroAberto}
+            onNavigate={(sub) => setFinanceiroSubmenu(sub)}
           />
         )}
 

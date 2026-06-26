@@ -32,7 +32,7 @@ export default function HistoricoFinanceiro({ onVoltar }) {
 
   return (
     <div className="space-y-6">
-      <div className="hidden md:block">
+      <div className="print:hidden mx-[3px] sm:mx-0">
         <PageHeader 
           titulo="Logs de Ações" 
           breadcrumb={['Resumo', 'Logs']}

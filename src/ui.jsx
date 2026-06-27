@@ -50,11 +50,12 @@ export async function uploadImagemCelula(arquivo, prefix = 'nova') {
   return data.publicUrl;
 }
 
-export function Card({ children, className = '', style = {} }) {
+export function Card({ children, className = '', style = {}, ...props }) {
   return (
     <section 
       className={`card border-b-2 border-[#60a5fa]/20 ${className}`.trim()} 
       style={{ fontFamily: "var(--font-body)", ...style }}
+      {...props}
     >
       {children}
     </section>

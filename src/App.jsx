@@ -595,6 +595,7 @@ export default function App() {
     ['resumo', 'Visão Geral'],
     ['escalas', 'Escalas Ministerial'],
     ['relatorio-semanal', 'Relatório Semanal'],
+    ['visitante-recepcao', 'Ficha de Visitante'],
     ['calculadora', 'Calculadora de Tributos'],
     ['quiz', 'Teste de Temperamento'],
     ['carne-generator', 'Gerador de Carnê'], // New item

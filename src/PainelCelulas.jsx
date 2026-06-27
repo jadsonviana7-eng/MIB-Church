@@ -1,18 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabaseClient';
 import { Card, PageHeader, Avatar } from './ui';
-import { 
-  Network, Users, AlertTriangle, TrendingUp, DollarSign, 
+import {
+  Network, Users, AlertTriangle, TrendingUp, DollarSign,
   MapPin, GitBranch, MessageCircle, ChevronRight, Trophy, Sparkles
 } from 'lucide-react';
 
-export default function PainelCelulas({ 
-  celulas, 
-  pessoas, 
-  zonas, 
-  relatoriosCelula, 
+export default function PainelCelulas({
+  celulas,
+  pessoas,
+  zonas,
+  relatoriosCelula,
   setCelulaSelecionadaId,
-  onNavigate 
+  onNavigate
 }) {
   const [presencas, setPresencas] = useState([]);
   const [carregandoPresencas, setCarregandoPresencas] = useState(true);
@@ -161,7 +161,7 @@ export default function PainelCelulas({
       .map(p => {
         // Encontra o último relatório da célula do membro que ele compareceu
         const presencasMembro = presencas.filter(pr => pr.pessoa_id === p.id);
-        const relsComparecidos = relatoriosCelula.filter(r => 
+        const relsComparecidos = relatoriosCelula.filter(r =>
           presencasMembro.some(pr => pr.relatorio_id === r.id)
         );
 
@@ -200,75 +200,77 @@ export default function PainelCelulas({
   return (
     <div className="space-y-6">
       {/* PageHeader Premium */}
-      <PageHeader 
-        titulo="Painel Células v2" 
-        subtitulo="Gestão, liderança, frequência e saúde pastoral das células em tempo real." 
+      <PageHeader
+        titulo="Painel Células v2"
       />
 
       {/* Grid de KPIs principais */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="relative overflow-hidden bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm hover:shadow-md transition duration-200">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <Card 
+          onClick={() => onNavigate('lista')}
+          className="relative overflow-hidden bg-gradient-to-br from-[#eff6ff] to-white border border-blue-100/80 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm hover:shadow-md hover:scale-[1.01] hover:border-blue-300 transition duration-200 cursor-pointer"
+        >
           <div className="flex justify-between items-start">
-            <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Células Ativas</span>
-              <h2 className="text-3xl font-black text-slate-800">{totalCelulasAtivas}</h2>
+            <div className="space-y-0.5 sm:space-y-1 min-w-0">
+              <span className="text-[9px] sm:text-[10px] font-black uppercase text-blue-600/80 tracking-wider block truncate">Células Ativas</span>
+              <h2 className="text-2xl sm:text-3xl font-black text-blue-950 mt-1">{totalCelulasAtivas}</h2>
             </div>
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
-              <Network size={20} />
+            <div className="p-2 sm:p-3 bg-blue-500 text-white rounded-xl sm:rounded-2xl shadow-md shadow-blue-100 shrink-0">
+              <Network size={16} className="sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-4 flex items-center text-[10px] font-bold text-slate-500 uppercase tracking-wide gap-1">
+          <div className="mt-3 sm:mt-4 flex items-center text-[8px] sm:text-[10px] font-bold text-blue-500 uppercase tracking-wide gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Operação Normal
           </div>
         </Card>
 
-        <Card className="relative overflow-hidden bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm hover:shadow-md transition duration-200">
+        <Card className="relative overflow-hidden bg-gradient-to-br from-[#ecfdf5] to-white border border-emerald-100/80 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm hover:shadow-md transition duration-200">
           <div className="flex justify-between items-start">
-            <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Pessoas em Células</span>
-              <h2 className="text-3xl font-black text-slate-800">{totalMembrosEmCelulas}</h2>
+            <div className="space-y-0.5 sm:space-y-1 min-w-0">
+              <span className="text-[9px] sm:text-[10px] font-black uppercase text-emerald-600/80 tracking-wider block truncate">Pessoas</span>
+              <h2 className="text-2xl sm:text-3xl font-black text-emerald-950 mt-1">{totalMembrosEmCelulas}</h2>
             </div>
-            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
-              <Users size={20} />
+            <div className="p-2 sm:p-3 bg-emerald-500 text-white rounded-xl sm:rounded-2xl shadow-md shadow-emerald-100 shrink-0">
+              <Users size={16} className="sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-            Integrados à comunidade
+          <div className="mt-3 sm:mt-4 text-[8px] sm:text-[10px] font-bold text-emerald-500 uppercase tracking-wide block truncate">
+            Membros ativos
           </div>
         </Card>
 
-        <Card className="relative overflow-hidden bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm hover:shadow-md transition duration-200">
+        <Card className="relative overflow-hidden bg-gradient-to-br from-[#fff5f5] to-white border border-rose-100/80 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm hover:shadow-md transition duration-200">
           <div className="flex justify-between items-start">
-            <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Ausências Críticas</span>
-              <h2 className="text-3xl font-black text-rose-600">
+            <div className="space-y-0.5 sm:space-y-1 min-w-0">
+              <span className="text-[9px] sm:text-[10px] font-black uppercase text-rose-500/80 tracking-wider block truncate">Ausentes</span>
+              <h2 className="text-2xl sm:text-3xl font-black text-rose-600 mt-1">
                 {carregandoPresencas ? '...' : membrosAusentes.length}
               </h2>
             </div>
-            <div className="p-3 bg-rose-50 text-rose-600 rounded-2xl">
-              <AlertTriangle size={20} />
+            <div className="p-2 sm:p-3 bg-rose-500 text-white rounded-xl sm:rounded-2xl shadow-md shadow-rose-100 shrink-0">
+              <AlertTriangle size={16} className="sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-4 text-[10px] font-bold text-rose-500 uppercase tracking-wide flex items-center gap-1">
-            ⚠️ Sem presença nos últimos 30d
+          <div className="mt-3 sm:mt-4 text-[8px] sm:text-[10px] font-bold text-rose-500 uppercase tracking-wide flex items-center gap-1 block truncate">
+            ⚠️ Sem presença 30d
           </div>
         </Card>
 
-        <Card className="relative overflow-hidden bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm hover:shadow-md transition duration-200">
+        <Card className="relative overflow-hidden bg-gradient-to-br from-[#fffbeb] to-white border border-amber-100/80 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm hover:shadow-md transition duration-200">
           <div className="flex justify-between items-start">
-            <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Ofertas de Célula</span>
-              <h2 className="text-3xl font-black text-slate-800">
+            <div className="space-y-0.5 sm:space-y-1 min-w-0">
+              <span className="text-[9px] sm:text-[10px] font-black uppercase text-amber-600/80 tracking-wider block truncate">Ofertas</span>
+              <h2 className="text-sm sm:text-2xl font-black text-amber-950 mt-1.5 truncate">
                 R$ {totalOfertasAcumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </h2>
             </div>
-            <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl">
-              <DollarSign size={20} />
+            <div className="p-2 sm:p-3 bg-amber-500 text-white rounded-xl sm:rounded-2xl shadow-md shadow-amber-100 shrink-0">
+              <DollarSign size={16} className="sm:w-5 sm:h-5" />
             </div>
           </div>
-          <div className="mt-4 text-[10px] font-bold text-slate-400 uppercase tracking-wide">
-            Recursos pastorais declarados
+          <div className="mt-3 sm:mt-4 text-[8px] sm:text-[10px] font-bold text-amber-500 uppercase tracking-wide block truncate">
+            Recursos declarados
           </div>
         </Card>
       </div>
@@ -298,15 +300,14 @@ export default function PainelCelulas({
                   <p className="text-xs text-slate-400 italic">Sem dados registrados.</p>
                 ) : (
                   rankingOfertas.map((c, i) => (
-                    <div 
-                      key={c.id} 
+                    <div
+                      key={c.id}
                       onClick={() => setCelulaSelecionadaId(c.id)}
                       className="flex items-center justify-between p-3 rounded-2xl border border-slate-50 hover:border-slate-100 bg-slate-50/30 hover:bg-slate-50 transition cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5">
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] ${
-                          i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
-                        }`}>
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] ${i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+                          }`}>
                           {i + 1}
                         </span>
                         <span className="font-bold text-slate-700 text-xs">{c.nome}</span>
@@ -330,15 +331,14 @@ export default function PainelCelulas({
                   <p className="text-xs text-slate-400 italic">Sem dados registrados.</p>
                 ) : (
                   rankingVisitantes.map((c, i) => (
-                    <div 
-                      key={c.id} 
+                    <div
+                      key={c.id}
                       onClick={() => setCelulaSelecionadaId(c.id)}
                       className="flex items-center justify-between p-3 rounded-2xl border border-slate-50 hover:border-slate-100 bg-slate-50/30 hover:bg-slate-50 transition cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5">
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] ${
-                          i === 0 ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
-                        }`}>
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] ${i === 0 ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
+                          }`}>
                           {i + 1}
                         </span>
                         <span className="font-bold text-slate-700 text-xs">{c.nome}</span>
@@ -377,9 +377,9 @@ export default function PainelCelulas({
                     <span className="text-slate-500">{z.qtd} ({z.pct.toFixed(0)}%)</span>
                   </div>
                   <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-blue-600 rounded-full transition-all duration-500" 
-                      style={{ width: `${z.pct}%` }} 
+                    <div
+                      className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                      style={{ width: `${z.pct}%` }}
                     />
                   </div>
                 </div>
@@ -411,15 +411,15 @@ export default function PainelCelulas({
                 <div key={g.geracao} className="space-y-2 border-l-2 border-slate-100 pl-4 relative">
                   {/* Ponto indicador de geração */}
                   <span className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-violet-500" />
-                  
+
                   <h4 className="text-[10px] font-black text-violet-700 uppercase tracking-wider">
                     {g.geracao}ª Geração {g.geracao === 1 ? '(Raiz / Matriz)' : `(Filhas)`}
                   </h4>
-                  
+
                   <div className="flex flex-wrap gap-2">
                     {g.celulas.map((c) => (
-                      <span 
-                        key={c.id} 
+                      <span
+                        key={c.id}
                         onClick={() => setCelulaSelecionadaId(c.id)}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-[11px] font-bold text-slate-700 cursor-pointer transition"
                       >
@@ -455,7 +455,7 @@ export default function PainelCelulas({
               </p>
             ) : (
               membrosAusentes.map((m) => (
-                <div 
+                <div
                   key={m.id}
                   className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-slate-50/20 hover:bg-slate-50/50 transition"
                 >

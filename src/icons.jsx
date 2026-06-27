@@ -12,6 +12,7 @@ import {
   PlusCircle,
   Link,
   UserMinus,
+  UserPlus,
   Gift,
   Award,
   MapPin,
@@ -97,6 +98,7 @@ export const MenuIcons = {
   'u-quiz': <Brain className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
   'u-pedido-oracao': <Heart className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
   'u-mural-oracao': <MessageSquare className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
+  'u-visitante-recepcao': <UserPlus className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
 
   // Submenus Agenda
   'a-calendario': <Calendar className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
@@ -115,6 +117,6 @@ export const submenuIconKey = {
   utilitarios: { 
     resumo: 'u-resumo', escalas: 'u-escalas', 'relatorio-semanal': 'u-relatorio-semanal', calculadora: 'u-calculadora',
     quiz: 'u-quiz', 'pedido-oracao': 'u-pedido-oracao', 'mural-oracao': 'u-mural-oracao'
-    , 'carne-generator': 'u-carne-generator', 'leitor-carne': 'u-leitor-carne'
+    , 'carne-generator': 'u-carne-generator', 'leitor-carne': 'u-leitor-carne', 'visitante-recepcao': 'u-visitante-recepcao'
   },
 };

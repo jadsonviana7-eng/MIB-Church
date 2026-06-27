@@ -613,38 +613,64 @@ export default function TransacoesFinanceiras({
         )}
 
             {/* Lista Compacta para Telas Pequenas */}
-            <div className="sm:hidden divide-y divide-slate-100">
+            <div className="sm:hidden divide-y divide-slate-100/50 border-y border-slate-100/50">
               {carregando ? (
                 <div className="p-10 text-center text-sm text-slate-400">Carregando transações...</div>
               ) : transacoes.length === 0 ? (
                 <div className="p-10 text-center text-sm text-slate-400">Nenhuma transação encontrada com os filtros.</div>
               ) : (
-                transacoes.map(t => {
+                transacoes.map((t, idx) => {
                   const tipoNormalizado = t.tipo?.toLowerCase();
                   const valorColor = tipoNormalizado === 'receita' ? 'text-emerald-600' : 'text-rose-600';
                   const statusColor = t.status === 'Pago' ? 'text-green-600' : t.status === 'Pendente' ? 'text-amber-600' : 'text-red-600';
                   const statusBg = t.status === 'Pago' ? 'bg-green-50' : t.status === 'Pendente' ? 'bg-amber-50' : 'bg-red-50';
+                  
+                  // Alternância de tom de fundo
+                  const bgRow = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40';
+                  
+                  // Borda lateral para representar Receita vs Despesa
+                  const borderType = 
+                    tipoNormalizado === 'receita' ? 'border-l-4 border-l-emerald-500' : 
+                    tipoNormalizado === 'despesa' ? 'border-l-4 border-l-rose-500' : 
+                    'border-l-4 border-l-blue-500';
 
                   return (
                     <div 
                       key={t.id} 
                       onClick={() => podeEditar && abrirModal(tipoNormalizado, t)} 
-                      className={`${podeEditar ? 'cursor-pointer hover:bg-slate-50' : ''} p-4 flex items-center justify-between transition active:scale-[0.98]`}
+                      className={`${podeEditar ? 'cursor-pointer hover:bg-slate-100/50' : ''} p-4 flex items-center justify-between transition active:scale-[0.98] ${bgRow} ${borderType}`}
                     >
                       <div className="flex flex-col flex-1 min-w-0 pr-2">
-                        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">{t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</p>
-                        <p className="text-sm font-black text-slate-800 leading-tight mt-1 truncate">{t.descricao}</p>
-                        {tipoNormalizado === 'receita' ? (
-                          <p className="text-[12px] text-slate-500 mt-1 truncate"> {t.contribuinte || '—'}</p>
-                        ) : (
-                          <p className="text-[12px] text-slate-500 mt-1 truncate"> {t.categoria || '—'}</p>
-                        )}
+                        {/* Metadados: Data e Conta */}
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
+                            {t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
+                          </span>
+                          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                          <span className="text-[9px] font-black bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                            {t.conta || 'Principal'}
+                          </span>
+                        </div>
+                        
+                        {/* Descrição principal */}
+                        <p className="text-sm font-extrabold text-slate-800 leading-tight mt-1 truncate">{t.descricao}</p>
+                        
+                        {/* Informação adicional (Doador/Categoria) */}
+                        <p className="text-[11px] text-slate-500 mt-1 truncate">
+                          {tipoNormalizado === 'receita' ? (
+                            `Contribuinte: ${t.contribuinte || '—'}`
+                          ) : (
+                            `Categoria: ${t.categoria || '—'}`
+                          )}
+                        </p>
                       </div>
-                      <div className="flex flex-col items-end shrink-0">
-                        <span className={`text-lg font-black ${valorColor}`}>
+                      
+                      {/* Lado Direito: Valor e Status */}
+                      <div className="flex flex-col items-end shrink-0 pl-1">
+                        <span className={`text-base font-black tracking-tight ${valorColor}`}>
                           {tipoNormalizado === 'receita' ? '+' : '-'} R$ {Number(t.valor).toFixed(2)}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mt-1 ${statusBg} ${statusColor}`}>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase mt-1.5 tracking-wider ${statusBg} ${statusColor}`}>
                           {t.status}
                         </span>
                       </div>
@@ -656,7 +682,7 @@ export default function TransacoesFinanceiras({
 
             {/* Botão flutuante para adicionar transação em mobile */}
             {podeEditar && (
-              <div className="fixed bottom-6 right-6 z-50 flex gap-3">
+              <div className="fixed bottom-20 right-6 z-50 flex gap-3">
                 <button type="button" onClick={() => abrirModal('receita')} className="w-14 h-14 rounded-full bg-emerald-600 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all" title="Nova Receita">+</button>
                 <button type="button" onClick={() => abrirModal('despesa')} className="w-14 h-14 rounded-full bg-rose-600 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all" title="Nova Despesa">—</button>
               </div>

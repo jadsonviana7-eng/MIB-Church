@@ -9,6 +9,7 @@ import CalculadoraTributos from './CalculadoraTributos';
 import QuizPersonalidade from './QuizPersonalidade';
 import PedidoOracao from './PedidoOracao';
 import MuralOracao from './MuralOracao';
+import FormularioVisitante from './FormularioVisitante';
 
 // Lista única de utilitários — usada tanto na grade da "Visão Geral"
 // quanto no painel lateral fixo (telas grandes).
@@ -21,6 +22,14 @@ function getUtilitarios({ membroLogado, temVinculoEscala }) {
       icon: MenuIcons['u-relatorio-semanal'],
       gradient: 'from-purple-500 to-fuchsia-500',
       show: ['admin', 'pastor', 'secretaria'].includes(membroLogado?.permissao),
+    },
+    {
+      id: 'visitante-recepcao',
+      label: 'Ficha de Visitante',
+      desc: 'Formulário para a recepção cadastrar novos visitantes dos cultos.',
+      icon: MenuIcons['u-visitante-recepcao'],
+      gradient: 'from-pink-500 to-rose-500',
+      show: true,
     },
     {
       id: 'calculadora',
@@ -197,6 +206,8 @@ export default function ModuloUtilitarios(props) {
     conteudo = <PedidoOracao usuarioLogado={usuarioLogado} />;
   } else if (submenu === 'mural-oracao') {
     conteudo = <MuralOracao />;
+  } else if (submenu === 'visitante-recepcao') {
+    conteudo = <FormularioVisitante onVoltar={() => onNavigate('resumo')} />;
   }
 
   if (!conteudo) return null;

@@ -682,7 +682,7 @@ export default function TransacoesFinanceiras({
 
             {/* Botão flutuante para adicionar transação em mobile */}
             {podeEditar && (
-              <div className="fixed bottom-20 right-6 z-50 flex gap-3">
+              <div className="fixed bottom-20 right-6 z-50 flex gap-3 md:hidden">
                 <button type="button" onClick={() => abrirModal('receita')} className="w-14 h-14 rounded-full bg-emerald-600 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all" title="Nova Receita">+</button>
                 <button type="button" onClick={() => abrirModal('despesa')} className="w-14 h-14 rounded-full bg-rose-600 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all" title="Nova Despesa">—</button>
               </div>

@@ -82,15 +82,88 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
     }
   }
 
+  function base64ToUuid(b64) {
+    if (!b64) return '';
+    try {
+      let str = b64.replace(/-/g, '+').replace(/_/g, '/');
+      while (str.length % 4) {
+        str += '=';
+      }
+      const binString = atob(str);
+      const hex = [];
+      for (let i = 0; i < binString.length; i++) {
+        const code = binString.charCodeAt(i);
+        hex.push(code.toString(16).padStart(2, '0'));
+      }
+      const h = hex.join('');
+      return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+    } catch (err) {
+      console.error('Erro ao decodificar UUID de base64:', err);
+      return b64;
+    }
+  }
+
+  function extrairCodigoInternoPix(payload) {
+    if (!payload || !payload.startsWith('000201')) return payload;
+    try {
+      let pos = 6; // Pula '000201'
+      while (pos < payload.length) {
+        const id = payload.substring(pos, pos + 2);
+        const len = parseInt(payload.substring(pos + 2, pos + 4), 10);
+        if (isNaN(len)) break;
+        const value = payload.substring(pos + 4, pos + 4 + len);
+        if (id === '26') {
+          // Parse subcampos de 26
+          let subPos = 0;
+          while (subPos < value.length) {
+            const subId = value.substring(subPos, subPos + 2);
+            const subLen = parseInt(value.substring(subPos + 2, subPos + 4), 10);
+            if (isNaN(subLen)) break;
+            const subValue = value.substring(subPos + 4, subPos + 4 + subLen);
+            if (subId === '02') {
+              if (subValue.startsWith('EVENTO|')) {
+                const partes = subValue.split('|');
+                if (partes.length === 3 && partes[1].length === 22) {
+                  const uuidOriginal = base64ToUuid(partes[1]);
+                  return `EVENTO|${uuidOriginal}|${partes[2]}`;
+                }
+                return subValue;
+              }
+              // Novo formato amigável: MIB - b64Uuid - Pparcela
+              if (subValue.startsWith('MIB - ')) {
+                const partes = subValue.split(' - ');
+                if (partes.length === 3 && partes[1].length === 22 && partes[2].startsWith('P')) {
+                  const b64Uuid = partes[1];
+                  const parcelaNum = partes[2].substring(1);
+                  const uuidOriginal = base64ToUuid(b64Uuid);
+                  return `EVENTO|${uuidOriginal}|${parcelaNum}`;
+                }
+                return subValue;
+              }
+            }
+            subPos += 4 + subLen;
+          }
+        }
+        pos += 4 + len;
+      }
+    } catch (e) {
+      console.error('Erro ao decodificar QR Code Pix:', e);
+    }
+    return payload;
+  }
+
   async function onScanSuccess(result) {
     if (processandoRef.current) return;
 
+    // Se for um Pix, tenta extrair o código interno de pagamento
+    const codigoLimpo = extrairCodigoInternoPix(result);
+
     // O formato esperado gerado pelo CarneGenerator é: EVENTO|inscricaoId|parcelaNum
-    if (result && result.startsWith('EVENTO|')) {
+    if (codigoLimpo && codigoLimpo.startsWith('EVENTO|')) {
       processandoRef.current = true;
       await pararCamera();
 
-      const [, inscricaoId, parcelaNum] = result.split('|');
+      const [, inscricaoId, parcelaNum] = codigoLimpo.split('|');
       await darBaixaEvento(inscricaoId, parcelaNum);
 
       processandoRef.current = false;

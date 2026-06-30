@@ -20,6 +20,7 @@ const CONFIG_ESCALAS_DEFAULT = {
     cor: { bg: "#4c1d95", accent: "#8b5cf6", light: "#f5f3ff", text: "#4c1d95", chipBg: "bg-violet-50", chipText: "text-violet-700", chipBorder: "border-violet-100" },
     iconUrl: null,
     iconSvg: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>`,
+    opcoesUniforme: ["Fardamento (1)", "Fardamento (2)", "Fardamento (3)", "Camisa Preta", "Camisa Branca"],
   },
   "Projeção": {
     cargos: ["Operador"],
@@ -61,37 +62,45 @@ const PALETAS_MINISTERIO = {
 const exportStyles = `
   @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  .export-page { width: 1080px; height: 1920px; padding: 48px; font-family: 'Montserrat', sans-serif; display: flex; flex-direction: column; gap: 18px; }
+  .export-page { width: 1080px; height: 1920px; padding: 48px; font-family: 'Montserrat', sans-serif; display: flex; flex-direction: column; gap: 24px; position: relative; overflow: hidden; }
   
-  .export-header { border-radius: 36px; padding: 42px 40px 36px; display: flex; flex-direction: column; align-items: flex-start; gap: 18px; overflow: hidden; position: relative; }
-  .export-header-badge { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.18em; padding: 6px 18px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; }
+  /* Glowing background blobs */
+  .export-glow-top { position: absolute; top: -150px; right: -150px; width: 600px; height: 600px; border-radius: 50%; filter: blur(160px); opacity: 0.25; pointer-events: none; z-index: 0; }
+  .export-glow-bottom { position: absolute; bottom: -150px; left: -150px; width: 650px; height: 650px; border-radius: 50%; filter: blur(180px); opacity: 0.25; pointer-events: none; z-index: 0; }
+  
+  .export-header { border-radius: 40px; padding: 48px 48px 42px; display: flex; flex-direction: column; align-items: flex-start; gap: 20px; overflow: hidden; position: relative; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15); z-index: 2; }
+  .export-header-badge { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2em; padding: 10px 24px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
   .export-header-icon { width: 28px; height: 28px; display: inline-block; vertical-align: middle; }
   .export-title-row { display: flex; flex-direction: column; gap: 4px; width: 100%; }
-  .export-kicker { font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.65; }
-  .export-title { font-size: 88px; font-weight: 900; line-height: 0.9; letter-spacing: -2px; }
+  .export-kicker { font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; opacity: 0.8; }
+  .export-title { font-size: 104px; font-weight: 900; line-height: 0.85; letter-spacing: -3px; text-transform: uppercase; margin-top: 6px; }
   .export-year { font-size: 28px; font-weight: 900; letter-spacing: 0.1em; }
 
-  .export-stats { display: flex; gap: 12px; width: 100%; margin-top: 4px; }
-  .export-stat-card { flex: 1; padding: 16px 20px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-  .export-stat-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; opacity: 0.55; }
-  .export-stat-value { font-size: 34px; font-weight: 900; line-height: 1; }
+  .export-stats { display: flex; gap: 16px; width: 100%; margin-top: 8px; }
+  .export-stat-card { flex: 1; padding: 20px 24px; border-radius: 24px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 6px; border: 1px solid rgba(255, 255, 255, 0.1); }
+  .export-stat-label { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.6; }
+  .export-stat-value { font-size: 46px; font-weight: 900; line-height: 1; }
 
-  .export-list { flex: 1; border-radius: 36px; padding: 22px 20px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; }
-  .export-list-title { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; opacity: 0.45; padding: 0 8px 6px; border-bottom: 1px solid rgba(0,0,0,0.08); margin-bottom: 4px; }
+  .export-list { flex: 1; border-radius: 40px; padding: 32px 20px; display: flex; flex-direction: column; gap: 16px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15); z-index: 2; }
+  .export-list-title { font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.25em; opacity: 0.55; padding: 0 12px 12px; border-bottom: 2px solid rgba(255, 255, 255, 0.1); margin-bottom: 8px; text-align: center; }
+  .export-list-grid { display: flex; flex-direction: column; gap: 20px; width: 100%; }
   
-  .export-item { border-radius: 22px; padding: 18px 22px; display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 0; min-height: 110px; }
-  .export-date { display: flex; flex-direction: column; align-items: center; justify-content: center; padding-right: 22px; border-right: 2px solid rgba(0,0,0,0.12); align-self: stretch; flex-shrink: 0; }
-  .export-date-day { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.5; margin-bottom: 2px; }
-  .export-date-num { font-size: 60px; font-weight: 900; line-height: 1; }
-  
-  .export-roles { display: flex; flex-wrap: wrap; gap: 0; padding-left: 22px; align-items: center; width: 100%; }
-  .export-role-box { display: flex; flex-direction: column; gap: 4px; padding: 10px 16px 10px 12px; border-left: 2.5px solid rgba(0,0,0,0.08); min-width: 200px; flex: 1; }
-  .export-role-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.4; }
-  .export-role-name { font-size: 22px; font-weight: 900; line-height: 1.1; color: #111; overflow-wrap: break-word; word-break: break-word; }
-  .export-role-empty { font-size: 20px; font-weight: 700; opacity: 0.2; }
+  .export-table { width: 100%; border-collapse: collapse; margin-top: 12px; z-index: 2; position: relative; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12); }
+  .export-th { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.9); padding: 22px 20px; background: rgba(15, 23, 42, 0.55); border-bottom: 2px solid rgba(255, 255, 255, 0.1); text-align: left; }
+  .export-tr { border-bottom: 1px solid rgba(0, 0, 0, 0.05); background: rgba(255, 255, 255, 0.96); }
+  .export-tr-alt { border-bottom: 1px solid rgba(0, 0, 0, 0.05); background: rgba(248, 250, 252, 0.96); }
+  .export-tr:last-child, .export-tr-alt:last-child { border-bottom: none; }
+  .export-td { padding: 22px 20px; font-size: 24px; font-weight: 800; color: #0f172a; vertical-align: middle; }
+  .export-td-date { width: 90px; text-align: center; }
+  .export-date-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; line-height: 1; }
+  .export-date-cell-day { font-size: 13px; font-weight: 900; opacity: 0.6; text-transform: uppercase; color: #475569; }
+  .export-date-cell-num { font-size: 38px; font-weight: 900; line-height: 1; }
+  .export-name-empty { opacity: 0.35; font-weight: 500; color: #94a3b8; letter-spacing: 1px; }
+  .export-td-uniform { font-style: italic; font-weight: 700; }
 
-  .export-footer { display: flex; align-items: center; justify-content: center; padding: 28px 0 8px; flex-shrink: 0; }
-  .export-footer-logo { height: 100px; object-fit: contain; }
+  .export-footer { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0 12px; flex-shrink: 0; gap: 10px; z-index: 2; }
+  .export-footer-logo { height: 90px; object-fit: contain; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15)); }
+  .export-footer-tagline { font-size: 16px; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; opacity: 0.6; color: #fff; margin-top: 4px; }
 `;
 
 // ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
@@ -111,6 +120,8 @@ export default function EscalasMinisterial() {
   const [membrosSistema, setMembrosSistema] = useState([]);
   const [equipe, setEquipe] = useState([]);
   const [dadosEscala, setDadosEscala] = useState({});
+  const [uniformes, setUniformes] = useState({});
+  const [opcoesUniformeInput, setOpcoesUniformeInput] = useState("");
   const [status, setStatus] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [mostrarPreview, setMostrarPreview] = useState(false);
@@ -120,6 +131,42 @@ export default function EscalasMinisterial() {
 
   // Edição inline de cores da escala atual
   const [editCores, setEditCores] = useState({ corBg: '', corAccent: '' });
+
+  const intercessaoKey = useMemo(() => {
+    return Object.keys(configEscalas).find(k => k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === 'intercessao') || 'Intercessão';
+  }, [configEscalas]);
+
+  const isIntercessao = useMemo(() => {
+    return tipo && tipo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === 'intercessao';
+  }, [tipo]);
+
+  // Sincroniza uniformes com localStorage
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem(`escalas_uniformes_${tipo}_${ano}_${mes}`);
+      setUniformes(salvo ? JSON.parse(salvo) : {});
+    } catch (_) {
+      setUniformes({});
+    }
+  }, [tipo, mes, ano]);
+
+  const handleSalvarUniforme = (cultoId, valor) => {
+    const novos = { ...uniformes, [cultoId]: valor };
+    setUniformes(novos);
+    try {
+      localStorage.setItem(`escalas_uniformes_${tipo}_${ano}_${mes}`, JSON.stringify(novos));
+    } catch (_) {}
+  };
+
+  // Sincroniza input de opções de uniforme
+  useEffect(() => {
+    if (isIntercessao) {
+      const opts = configEscalas[intercessaoKey]?.opcoesUniforme || [];
+      setOpcoesUniformeInput(Array.isArray(opts) ? opts.join(', ') : opts);
+    } else {
+      setOpcoesUniformeInput("");
+    }
+  }, [isIntercessao, configEscalas, intercessaoKey]);
 
   // Sincroniza editCores sempre que o tipo muda
   useEffect(() => {
@@ -147,6 +194,8 @@ export default function EscalasMinisterial() {
   // Paleta dinâmica baseada no ministério atual
   const corAtual = configEscalas[tipo]?.cor || CONFIG_ESCALAS_DEFAULT["Cultos"].cor;
   const paleta = PALETAS_MINISTERIO[tipo] || PALETAS_MINISTERIO["Cultos"];
+
+
 
   // ── Membros disponíveis para o modal ────────────────────────────────────
   const membrosDisponiveis = useMemo(() => {
@@ -278,30 +327,31 @@ export default function EscalasMinisterial() {
 
       // ── helpers de estilo inline ──────────────────────────────────────
       const S = {
-        page:      `box-sizing:border-box;width:1080px;height:1920px;padding:48px;font-family:'Montserrat',Arial,sans-serif;display:flex;flex-direction:column;gap:18px;background:linear-gradient(150deg,${p.bgA} 0%,${p.bgB} 55%,${p.bgC} 100%);`,
-        header:    `box-sizing:border-box;border-radius:36px;padding:42px 40px 36px;display:flex;flex-direction:column;align-items:flex-start;gap:18px;overflow:hidden;background:${p.panel}CC;`,
-        badge:     `box-sizing:border-box;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:0.18em;padding:6px 18px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;background:${p.bgA};color:${p.panel};`,
+        page:      `box-sizing:border-box;width:1080px;min-height:1920px;height:auto;padding:48px;font-family:'Montserrat',Arial,sans-serif;display:flex;flex-direction:column;gap:24px;background:linear-gradient(150deg,${p.bgA} 0%,${p.bgB} 55%,${p.bgC} 100%);position:relative;overflow:hidden;`,
+        header:    `box-sizing:border-box;border-radius:40px;padding:48px 48px 42px;display:flex;flex-direction:column;align-items:flex-start;gap:20px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.15);box-shadow:0 20px 50px rgba(0,0,0,0.15);z-index:2;`,
+        badge:     `box-sizing:border-box;font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:0.2em;padding:10px 24px;border-radius:999px;display:inline-flex;align-items:center;gap:8px;background:${p.accent};color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.1);`,
         titleRow:  `box-sizing:border-box;display:flex;flex-direction:column;gap:4px;width:100%;`,
-        kicker:    `box-sizing:border-box;font-size:22px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;opacity:0.65;color:${p.accent};`,
-        title:     `box-sizing:border-box;font-size:88px;font-weight:900;line-height:0.9;letter-spacing:-2px;color:${p.ink};`,
-        stats:     `box-sizing:border-box;display:flex;gap:12px;width:100%;margin-top:4px;`,
-        statCard:  `box-sizing:border-box;flex:1;padding:16px 20px;border-radius:20px;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(0,0,0,0.12);`,
-        statLabel: `box-sizing:border-box;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;opacity:0.55;color:${p.ink};`,
-        statValue: `box-sizing:border-box;font-size:34px;font-weight:900;line-height:1;color:${p.ink};`,
-        list:      `box-sizing:border-box;flex:1;border-radius:36px;padding:22px 20px;display:flex;flex-direction:column;gap:10px;overflow:hidden;background:${p.panel}CC;`,
-        listTitle: `box-sizing:border-box;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:0.15em;opacity:0.45;padding:0 8px 8px;border-bottom:1px solid rgba(0,0,0,0.08);margin-bottom:4px;color:${p.ink};`,
-        item:      `box-sizing:border-box;border-radius:22px;padding:0;display:flex;flex-direction:row;align-items:stretch;min-height:110px;background:rgba(255,255,255,0.90);overflow:hidden;`,
-        dateCol:   `box-sizing:border-box;width:120px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:18px 20px;border-right:2px solid rgba(0,0,0,0.10);`,
-        dateDay:   `box-sizing:border-box;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;opacity:0.45;margin-bottom:4px;color:${p.accent};`,
-        dateNum:   `box-sizing:border-box;font-size:62px;font-weight:900;line-height:1;color:${p.ink};`,
-        rolesRow:  `box-sizing:border-box;flex:1;display:flex;flex-direction:row;align-items:stretch;padding:0;`,
-        roleBox:   `box-sizing:border-box;flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:18px 20px;border-right:1px solid rgba(0,0,0,0.06);`,
-        roleBoxLast:`box-sizing:border-box;flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:18px 20px;`,
-        roleLabel: `box-sizing:border-box;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.10em;opacity:0.40;color:${p.accent};`,
-        roleName:  `box-sizing:border-box;font-size:22px;font-weight:900;line-height:1.1;color:#111;word-break:break-word;`,
-        roleEmpty: `box-sizing:border-box;font-size:20px;font-weight:700;opacity:0.20;color:#111;`,
-        footer:    `box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:20px 0 4px;flex-shrink:0;`,
-        footerImg: `height:100px;object-fit:contain;`,
+        kicker:    `box-sizing:border-box;font-size:22px;font-weight:900;text-transform:uppercase;letter-spacing:0.3em;opacity:0.8;color:rgba(255,255,255,0.6);`,
+        title:     `box-sizing:border-box;font-size:104px;font-weight:900;line-height:0.85;letter-spacing:-3px;text-transform:uppercase;margin-top:6px;color:#ffffff;text-shadow:0 4px 16px rgba(0,0,0,0.15);`,
+        stats:     `box-sizing:border-box;display:flex;gap:16px;width:100%;margin-top:8px;`,
+        statCard:  `box-sizing:border-box;flex:1;padding:20px 24px;border-radius:24px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;`,
+        statLabel: `box-sizing:border-box;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;opacity:0.6;color:rgba(255,255,255,0.6);`,
+        statValue: `box-sizing:border-box;font-size:46px;font-weight:900;line-height:1;color:#ffffff;`,
+        list:      `box-sizing:border-box;border-radius:40px;padding:32px 20px;display:flex;flex-direction:column;gap:16px;border:1px solid rgba(255,255,255,0.15);box-shadow:0 20px 50px rgba(0,0,0,0.15);z-index:2;background:linear-gradient(135deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0.03) 100%);`,
+        listTitle: `box-sizing:border-box;font-size:18px;font-weight:900;text-transform:uppercase;letter-spacing:0.25em;opacity:0.55;padding:0 12px 12px;border-bottom:2px solid rgba(255,255,255,0.1);margin-bottom:8px;text-align:center;color:rgba(255,255,255,0.7);`,
+        table:     `box-sizing:border-box;width:100%;border-collapse:collapse;margin-top:12px;border-radius:24px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.12);`,
+        th:        `box-sizing:border-box;font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.9);padding:22px 20px;background:rgba(15,23,42,0.55);border-bottom:2px solid rgba(255,255,255,0.1);text-align:left;`,
+        tr:        `box-sizing:border-box;border-bottom:1px solid rgba(0,0,0,0.05);background:rgba(255,255,255,0.96);`,
+        trAlt:     `box-sizing:border-box;border-bottom:1px solid rgba(0,0,0,0.05);background:rgba(248,250,252,0.96);`,
+        td:        `box-sizing:border-box;padding:22px 20px;font-size:24px;font-weight:800;color:#0f172a;vertical-align:middle;`,
+        tdDate:    `box-sizing:border-box;width:90px;text-align:center;`,
+        dateCell:  `box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1;`,
+        dateCellDay:`box-sizing:border-box;font-size:13px;font-weight:900;opacity:0.6;text-transform:uppercase;color:#475569;line-height:1;`,
+        dateCellNum:`box-sizing:border-box;font-size:38px;font-weight:900;color:${p.accent};line-height:1;`,
+        nameEmpty: `box-sizing:border-box;opacity:0.35;font-weight:500;color:#94a3b8;`,
+        tdUniform: `box-sizing:border-box;font-style:italic;font-weight:700;color:${p.accent};font-size:22px;`,
+        footer:    `box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 0 12px;flex-shrink:0;gap:10px;z-index:2;`,
+        footerImg: `height:90px;object-fit:contain;filter:drop-shadow(0 8px 16px rgba(0,0,0,0.15));`,
       };
 
       // ── stats HTML ────────────────────────────────────────────────────
@@ -321,36 +371,65 @@ export default function EscalasMinisterial() {
           ? `<span style="width:24px;height:24px;display:inline-block;">${configEscalas[tipo].iconSvg}</span>`
           : '';
 
-      // ── itens HTML — cada cargo ocupa 1 coluna flex de largura igual ──
-      const itensHTML = diasEscala.map(culto => {
+      // Otimização de fontes baseada no número de colunas da tabela
+      const numColunas = cargos.length + (isIntercessao ? 1 : 0);
+      const fontSizeNomes = numColunas >= 4 ? '18px' : numColunas === 3 ? '20px' : '22px';
+
+      // ── cabeçalho da tabela ───────────────────────────────────────────
+      const thsHTML = cargos.map(cargo => `<th style="${S.th}">${cargo}</th>`).join('');
+      const thUniformHTML = isIntercessao ? `<th style="${S.th}">Uniforme</th>` : '';
+      const headerRowHTML = `<tr>
+        <th style="${S.th};width:90px;text-align:center;">Data</th>
+        ${thsHTML}
+        ${thUniformHTML}
+      </tr>`;
+
+      // ── linhas da tabela ──────────────────────────────────────────────
+      const rowsHTML = diasEscala.map((culto, rowIndex) => {
         const atribuicoes = dadosEscala[culto.id] || {};
-        const rolesHTML = cargos.map((cargo, idx) => {
+        const isAlt = rowIndex % 2 === 1;
+        const rowStyle = isAlt ? S.trAlt : S.tr;
+
+        const tdsHTML = cargos.map((cargo, idx) => {
           const pId = atribuicoes[idx];
           const pessoa = equipe.find(pp => pp.id === pId);
           const partes = pessoa ? pessoa.nome.trim().split(' ') : [];
           const nomeCurto = partes.length > 1
             ? `${partes[0]} ${partes[partes.length - 1]}`
             : (partes[0] || '');
-          const boxStyle = idx < cargos.length - 1 ? S.roleBox : S.roleBoxLast;
-          return `<div style="${boxStyle}">
-            <div style="${S.roleLabel}">${cargo}</div>
+
+          return `<td style="${S.td};font-size:${fontSizeNomes};">
             ${nomeCurto
-              ? `<div style="${S.roleName}">${nomeCurto}</div>`
-              : `<div style="${S.roleEmpty}">— —</div>`}
-          </div>`;
+              ? `<span>${nomeCurto}</span>`
+              : `<span style="${S.nameEmpty}">— —</span>`}
+          </td>`;
         }).join('');
 
-        return `<div style="${S.item}">
-          <div style="${S.dateCol}">
-            <div style="${S.dateDay}">${culto.tipoDia.slice(0, 3).toUpperCase()}</div>
-            <div style="${S.dateNum}">${culto.dia}</div>
-          </div>
-          <div style="${S.rolesRow}">${rolesHTML}</div>
-        </div>`;
+        const tdUniformHTML = isIntercessao
+          ? `<td style="${S.td};${S.tdUniform};font-size:${fontSizeNomes};">
+              ${uniformes[culto.id]
+                ? `<span>${uniformes[culto.id]}</span>`
+                : `<span style="${S.nameEmpty}">— —</span>`}
+             </td>`
+          : '';
+
+        return `<tr style="${rowStyle}">
+          <td style="${S.td};${S.tdDate}">
+            <div style="${S.dateCell}">
+              <span style="${S.dateCellDay}">${culto.tipoDia.slice(0, 3).toUpperCase()}</span>
+              <span style="${S.dateCellNum}">${culto.dia}</span>
+            </div>
+          </td>
+          ${tdsHTML}
+          ${tdUniformHTML}
+        </tr>`;
       }).join('');
 
       // ── monta o HTML final ────────────────────────────────────────────
       container.innerHTML = `<div style="${S.page}">
+        <div style="position:absolute;top:-150px;right:-150px;width:600px;height:600px;border-radius:50%;filter:blur(160px);opacity:0.25;background:${p.accent};z-index:0;pointer-events:none;"></div>
+        <div style="position:absolute;bottom:-150px;left:-150px;width:650px;height:650px;border-radius:50%;filter:blur(180px);opacity:0.25;background:${p.accent};z-index:0;pointer-events:none;"></div>
+        
         <div style="${S.header}">
           <div style="${S.badge}">${iconHtml} Ministério de ${tipo}</div>
           <div style="${S.titleRow}">
@@ -361,18 +440,28 @@ export default function EscalasMinisterial() {
         </div>
         <div style="${S.list}">
           <div style="${S.listTitle}">Escala do mês — ${tipo}</div>
-          ${itensHTML}
+          <table style="${S.table}">
+            <thead>${headerRowHTML}</thead>
+            <tbody>${rowsHTML}</tbody>
+          </table>
         </div>
         <div style="${S.footer}">
           <img src="https://guznbiqposfhqalqjggw.supabase.co/storage/v1/object/public/fotos-membros/logo_betesda_branca.png" style="${S.footerImg}" crossorigin="anonymous" />
+          <div style="font-size:16px;font-weight:900;letter-spacing:0.25em;text-transform:uppercase;opacity:0.6;color:#fff;margin-top:4px;">MIB CHURCH · DEPARTAMENTO DE COMUNICAÇÃO</div>
         </div>
       </div>`;
 
       const content = container.firstElementChild;
+      
+      // Delay de 250ms para garantir que a renderização no DOM e o recuo do navegador estejam concluídos
+      await new Promise(resolve => setTimeout(resolve, 250));
+      
+      const computedHeight = content.scrollHeight;
       const canvas = await html2canvas(content, {
         scale: 2,
         width: 1080,
-        height: 1920,
+        height: computedHeight,
+        windowHeight: computedHeight,
         useCORS: true,
         logging: false,
       });
@@ -471,13 +560,16 @@ export default function EscalasMinisterial() {
           accent: editCores.corAccent,
           light: editCores.corBg + '15',
           text: editCores.corBg,
-        }
+        },
+        ...(isIntercessao ? {
+          opcoesUniforme: opcoesUniformeInput.split(',').map(s => s.trim()).filter(Boolean)
+        } : {})
       }
     };
     setConfigEscalas(novaConfig);
-    // Persiste se for escala customizada
+    // Persiste se for escala customizada ou se for a de Intercessão customizada
     const custom = Object.fromEntries(
-      Object.entries(novaConfig).filter(([k]) => !CONFIG_ESCALAS_DEFAULT[k])
+      Object.entries(novaConfig).filter(([k]) => !CONFIG_ESCALAS_DEFAULT[k] || k.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() === 'intercessao')
     );
     if (Object.keys(custom).length) {
       try { localStorage.setItem('configEscalasCustom', JSON.stringify(custom)); } catch {}
@@ -501,7 +593,7 @@ export default function EscalasMinisterial() {
   const cor = config?.cor || CONFIG_ESCALAS_DEFAULT["Cultos"].cor;
 
   return (
-    <div className="space-y-6 pb-24 lg:pb-6 w-full">
+    <div className="space-y-6 pb-36 lg:pb-6 w-full">
 
       {/* ── CABEÇALHO DINÂMICO ───────────────────────────────────────────── */}
       <div
@@ -560,7 +652,7 @@ export default function EscalasMinisterial() {
         </select>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 items-start w-full">
+      <div className="flex flex-col lg:flex-row gap-6 items-stretch lg:items-start w-full">
 
         {/* ── PAINEL ESQUERDO — oculto em mobile ───────────────────────── */}
         <aside className="hidden lg:flex w-full lg:w-[300px] shrink-0 flex-col gap-4 lg:sticky lg:top-24">
@@ -630,12 +722,26 @@ export default function EscalasMinisterial() {
             </div>
             {/* Preview da cor */}
             <div className="h-8 rounded-lg transition-all" style={{ background: `linear-gradient(135deg, ${editCores.corBg}, ${editCores.corAccent})` }} />
+            
+            {isIntercessao && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Opções de Uniforme (separadas por vírgula)</label>
+                <input
+                  type="text"
+                  value={opcoesUniformeInput}
+                  onChange={e => setOpcoesUniformeInput(e.target.value)}
+                  placeholder="Ex: Fardamento (1), Fardamento (2), Camisa Preta"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold bg-slate-50 text-slate-700 outline-none focus:bg-white transition-all"
+                />
+              </div>
+            )}
+
             <button
               type="button"
               onClick={handleSalvarCores}
               className="w-full py-2 rounded-xl text-white text-[10px] font-black uppercase tracking-wider transition active:scale-95"
               style={{ background: `linear-gradient(135deg, ${editCores.corBg}, ${editCores.corAccent})` }}
-            >Aplicar Cores</button>
+            >Salvar Configurações</button>
           </Card>
 
           {/* Indicadores compactos */}
@@ -740,6 +846,23 @@ export default function EscalasMinisterial() {
                     </select>
                   </div>
                 ))}
+
+                {/* Uniforme do dia (apenas na Intercessão) */}
+                {isIntercessao && (
+                  <div className="flex flex-col gap-0.5 pt-2 border-t border-slate-100/80">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Uniforme / Farda</label>
+                    <select
+                      value={uniformes[culto.id] || ""}
+                      onChange={(e) => handleSalvarUniforme(culto.id, e.target.value)}
+                      className="w-full rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold bg-slate-50 text-slate-700 outline-none focus:bg-white transition-all focus:border-slate-300 cursor-pointer"
+                    >
+                      <option value="">— Sem Uniforme —</option>
+                      {(config?.opcoesUniforme || ["Fardamento (1)", "Fardamento (2)", "Fardamento (3)", "Camisa Preta", "Camisa Branca"]).map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             </Card>
           ))}
@@ -747,7 +870,7 @@ export default function EscalasMinisterial() {
       </div>
 
       {/* ── BARRA DE AÇÕES FIXADA — apenas mobile ────────────────────────── */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-200 px-4 py-3 flex items-center gap-3 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
+      <div className="lg:hidden fixed bottom-16 left-0 right-0 z-40 bg-white border-t border-slate-200 px-4 py-3 flex items-center gap-3 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
         <button
           onClick={handleSalvarEscalaGeral}
           disabled={carregando}
@@ -770,76 +893,109 @@ export default function EscalasMinisterial() {
       {/* ── PREVIEW DO PNG — sempre no corpo da página, abaixo do grid ─── */}
       {mostrarPreview && (
         <div className="mt-4 p-6 md:p-10 bg-slate-900 rounded-[40px] border border-slate-800 flex flex-col items-center shadow-2xl">
-          <div className="mb-6 w-full max-w-xl flex items-center justify-between">
+          <div className="mb-6 w-full max-w-4xl flex items-center justify-between">
             <div>
               <h3 className="text-white font-black uppercase tracking-[0.2em] text-sm">Prévia do PNG</h3>
               <p className="text-slate-500 text-[10px] font-bold uppercase">Formato 1080×1920 · Escala reduzida</p>
             </div>
             <button
               type="button"
-              onClick={() => setMostrarPreview(false)}
+              onClick={() => {
+                setMostrarPreview(false);
+                setTimeout(() => setMostrarPreview(true), 100);
+              }}
               className="text-slate-500 hover:text-white transition font-bold text-lg px-3 py-1"
             >✕ Fechar</button>
           </div>
           <style>{exportStyles}</style>
-          <div className="relative shadow-[0_0_100px_rgba(0,0,0,0.5)] border-[12px] border-slate-800 rounded-[60px] overflow-hidden origin-top scale-[0.3] sm:scale-[0.4] md:scale-[0.5]" style={{ width: '1080px', height: '1920px' }}>
-            <div className="export-page" style={{ background: `linear-gradient(150deg, ${paleta.bgA} 0%, ${paleta.bgB} 55%, ${paleta.bgC} 100%)`, height: '100%', width: '100%' }}>
-              <div className="export-header" style={{ background: paleta.panel + 'CC' }}>
-                <div className="export-header-badge" style={{ background: paleta.bgA, color: paleta.panel }}>
-                  Ministério de {tipo}
-                </div>
-                <div className="export-title-row">
-                  <div className="export-kicker" style={{ color: paleta.accent }}>{ano}</div>
-                  <div className="export-title" style={{ color: paleta.ink }}>{MESES[mes].toUpperCase()}</div>
-                </div>
-                <div className="export-stats">
-                  {[
-                    { label: "Cultos", val: diasEscala.length },
-                    { label: "Domingos", val: diasEscala.filter(d => d.semana === 0).length },
-                    { label: "Quintas", val: diasEscala.filter(d => d.semana === 4).length },
-                  ].filter(s => s.val > 0).map(s => (
-                    <div key={s.label} className="export-stat-card" style={{ background: 'rgba(0,0,0,0.1)' }}>
-                      <div className="export-stat-label" style={{ color: paleta.ink }}>{s.label}</div>
-                      <div className="export-stat-value" style={{ color: paleta.ink }}>{s.val}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="export-list" style={{ background: paleta.panel + 'CC' }}>
-                <div className="export-list-title" style={{ color: paleta.ink }}>Escala do mês — {tipo}</div>
-                {diasEscala.map(culto => {
-                  const atribuicoes = dadosEscala[culto.id] || {};
-                  const cargos = config?.cargos || [];
-                  return (
-                    <div key={culto.id} className="export-item" style={{ background: 'rgba(255,255,255,0.88)' }}>
-                      <div className="export-date">
-                        <div className="export-date-day" style={{ color: paleta.accent }}>{culto.tipoDia.slice(0, 3).toUpperCase()}</div>
-                        <div className="export-date-num" style={{ color: paleta.ink }}>{culto.dia}</div>
+          
+          <div className="w-full max-w-4xl overflow-y-auto h-[750px] border border-slate-800 rounded-[36px] bg-slate-950/60 p-4 relative flex justify-center shadow-inner custom-scrollbar">
+            <div className="origin-top scale-[0.35] sm:scale-[0.55] md:scale-[0.7] lg:scale-[0.8]" style={{ width: '1080px', height: 'auto', minHeight: '1920px', transformOrigin: 'top center' }}>
+              <div className="export-page" style={{ background: `linear-gradient(150deg, ${paleta.bgA} 0%, ${paleta.bgB} 55%, ${paleta.bgC} 100%)`, height: 'auto', minHeight: '100%', width: '100%' }}>
+                <div className="export-glow-top" style={{ background: paleta.accent }} />
+                <div className="export-glow-bottom" style={{ background: paleta.accent }} />
+                
+                <div className="export-header" style={{ background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%)' }}>
+                  <div className="export-header-badge" style={{ background: paleta.accent, color: '#fff' }}>
+                    Ministério de {tipo}
+                  </div>
+                  <div className="export-title-row">
+                    <div className="export-kicker" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>{ano}</div>
+                    <div className="export-title" style={{ color: '#ffffff', textShadow: '0 4px 16px rgba(0, 0, 0, 0.15)' }}>{MESES[mes].toUpperCase()}</div>
+                  </div>
+                  <div className="export-stats">
+                    {[
+                      { label: "Cultos", val: diasEscala.length },
+                      { label: "Domingos", val: diasEscala.filter(d => d.semana === 0).length },
+                      { label: "Quintas", val: diasEscala.filter(d => d.semana === 4).length },
+                    ].filter(s => s.val > 0).map(s => (
+                      <div key={s.label} className="export-stat-card" style={{ background: 'rgba(255, 255, 255, 0.05)', color: '#fff' }}>
+                        <div className="export-stat-label" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>{s.label}</div>
+                        <div className="export-stat-value" style={{ color: '#ffffff' }}>{s.val}</div>
                       </div>
-                      <div className="export-roles">
-                        {cargos.map((cargo, idx) => {
-                          const pId = atribuicoes[idx];
-                          const pessoa = equipe.find(p => p.id === pId);
-                          const partes = pessoa ? pessoa.nome.trim().split(' ') : [];
-                          const nomeCurto = partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1]}` : (partes[0] || '');
-                          return (
-                            <div key={idx} className="export-role-box">
-                              <div className="export-role-label" style={{ color: paleta.accent }}>{cargo}</div>
-                              {nomeCurto ? <div className="export-role-name">{nomeCurto}</div> : <div className="export-role-empty">— —</div>}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="export-footer">
-                <img src="https://guznbiqposfhqalqjggw.supabase.co/storage/v1/object/public/fotos-membros/logo_betesda_branca.png" className="export-footer-logo" />
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="export-list" style={{ background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)' }}>
+                  <div className="export-list-title" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Escala do mês — {tipo}</div>
+                  <table className="export-table">
+                    <thead>
+                      <tr>
+                        <th className="export-th" style={{ width: '90px', textAlign: 'center' }}>Data</th>
+                        {(config?.cargos || []).map(cargo => (
+                          <th key={cargo} className="export-th">{cargo}</th>
+                        ))}
+                        {isIntercessao && <th className="export-th">Uniforme</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {diasEscala.map((culto, rowIndex) => {
+                        const atribuicoes = dadosEscala[culto.id] || {};
+                        const cargos = config?.cargos || [];
+                        const numColunas = cargos.length + (isIntercessao ? 1 : 0);
+                        const fontSizeNomes = numColunas >= 4 ? '18px' : numColunas === 3 ? '20px' : '22px';
+                        const isAlt = rowIndex % 2 === 1;
+                        const rowClass = isAlt ? "export-tr-alt" : "export-tr";
+
+                        return (
+                          <tr key={culto.id} className={rowClass}>
+                            <td className="export-td export-td-date">
+                              <div className="export-date-cell">
+                                <span className="export-date-cell-day">{culto.tipoDia.slice(0, 3).toUpperCase()}</span>
+                                <span className="export-date-cell-num" style={{ color: paleta.accent }}>{culto.dia}</span>
+                              </div>
+                            </td>
+                            {cargos.map((cargo, idx) => {
+                              const pId = atribuicoes[idx];
+                              const pessoa = equipe.find(p => p.id === pId);
+                              const partes = pessoa ? pessoa.nome.trim().split(' ') : [];
+                              const nomeCurto = partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1]}` : (partes[0] || '');
+                              return (
+                                <td key={idx} className="export-td" style={{ fontSize: fontSizeNomes }}>
+                                  {nomeCurto ? <span>{nomeCurto}</span> : <span className="export-name-empty">— —</span>}
+                                </td>
+                              );
+                            })}
+                            {isIntercessao && (
+                              <td className="export-td export-td-uniform" style={{ color: paleta.accent, fontSize: fontSizeNomes }}>
+                                {uniformes[culto.id] ? <span>{uniformes[culto.id]}</span> : <span className="export-name-empty">— —</span>}
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="export-footer">
+                  <img src="https://guznbiqposfhqalqjggw.supabase.co/storage/v1/object/public/fotos-membros/logo_betesda_branca.png" className="export-footer-logo" />
+                  <div className="export-footer-tagline">MIB CHURCH · DEPARTAMENTO DE COMUNICAÇÃO</div>
+                </div>
               </div>
             </div>
           </div>
-          <p className="text-slate-600 text-[10px] mt-[-400px] md:mt-[-450px] font-bold uppercase">↑ Fim da Prévia</p>
+          <p className="text-slate-500 text-[10px] mt-4 font-bold uppercase tracking-wider">↑ Role a prévia para visualizar a escala completa</p>
         </div>
       )}
 
@@ -915,12 +1071,26 @@ export default function EscalasMinisterial() {
                 </div>
                 {/* Preview barra de cor */}
                 <div className="h-8 rounded-xl transition-all" style={{ background: `linear-gradient(135deg, ${editCores.corBg}, ${editCores.corAccent})` }} />
+
+                {isIntercessao && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Opções de Uniforme (separadas por vírgula)</label>
+                    <input
+                      type="text"
+                      value={opcoesUniformeInput}
+                      onChange={e => setOpcoesUniformeInput(e.target.value)}
+                      placeholder="Ex: Fardamento (1), Fardamento (2), Camisa Preta"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-semibold bg-slate-50 text-slate-700 outline-none focus:bg-white transition-all"
+                    />
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={() => { handleSalvarCores(); setIsModalConfigAberto(false); }}
                   className="w-full py-2.5 rounded-xl text-white text-xs font-black uppercase tracking-wider transition active:scale-95 shadow-md"
                   style={{ background: `linear-gradient(135deg, ${editCores.corBg}, ${editCores.corAccent})` }}
-                >Aplicar Cores</button>
+                >Salvar Configurações</button>
               </div>
 
               {/* Equipe compacta */}

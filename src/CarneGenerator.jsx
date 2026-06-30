@@ -8,8 +8,116 @@ import { PageHeader } from './ui';
 import {
   User, Calendar, DollarSign, Building, Save, Printer,
   Trash2, ChevronDown, ChevronUp, Link, AlertCircle,
-  Plus, Share2, Download, QrCode, X, FileText
+  Plus, Share2, Download, QrCode, X, FileText, ArrowLeft
 } from 'lucide-react';
+
+// ============================================================
+// Pix BR Code Standard Generator
+// ============================================================
+function getCRC16(payload) {
+  payload += "6304";
+  let crc = 0xFFFF;
+  for (let i = 0; i < payload.length; i++) {
+    let charCode = payload.charCodeAt(i);
+    crc ^= (charCode << 8);
+    for (let j = 0; j < 8; j++) {
+      if ((crc & 0x8000) !== 0) {
+        crc = (crc << 1) ^ 0x1021;
+      } else {
+        crc <<= 1;
+      }
+    }
+  }
+  crc &= 0xFFFF;
+  let hex = crc.toString(16).toUpperCase();
+  return hex.padStart(4, '0');
+}
+
+function uuidToBase64(uuid) {
+  if (!uuid) return '';
+  const hex = uuid.replace(/-/g, '');
+  const bytes = [];
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes.push(parseInt(hex.slice(i, i + 2), 16));
+  }
+  const binString = String.fromCharCode(...bytes);
+  return btoa(binString)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function limparChavePix(chave) {
+  if (!chave) return '';
+  const limpa = chave.trim();
+  const apenasNumeros = limpa.replace(/\D/g, '');
+  
+  if (limpa.includes('@')) {
+    return limpa;
+  }
+  if (limpa.length === 36 && limpa.includes('-')) {
+    return limpa;
+  }
+  if (apenasNumeros.length === 11 || apenasNumeros.length === 14) {
+    return apenasNumeros;
+  }
+  if (apenasNumeros.length === 10 || apenasNumeros.length === 11) {
+    return `+55${apenasNumeros}`;
+  }
+  if (limpa.startsWith('+55') && (apenasNumeros.length === 12 || apenasNumeros.length === 13)) {
+    return `+${apenasNumeros}`;
+  }
+  return limpa;
+}
+
+function gerarPayloadPix({ chave, nome, cidade, valor, identificador, descricao }) {
+  const formatField = (id, value) => {
+    const valStr = String(value);
+    const len = valStr.length.toString().padStart(2, '0');
+    return `${id}${len}${valStr}`;
+  };
+
+  const cleanText = (txt) => {
+    if (!txt) return '';
+    return txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9\s]/g, '').slice(0, 25);
+  };
+
+  const cleanCity = (txt) => {
+    if (!txt) return 'SAO PAULO';
+    return txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9\s]/g, '').slice(0, 15);
+  };
+
+  // Se a descrição for do formato EVENTO|uuid|parcela, reduz o UUID para Base64 para não estourar o limite de 99 caracteres da tag 26
+  let descValor = descricao || '';
+  if (descValor.startsWith('EVENTO|')) {
+    const partes = descValor.split('|');
+    if (partes.length === 3 && partes[1].length === 36) {
+      const b64Uuid = uuidToBase64(partes[1]);
+      descValor = `MIB - ${b64Uuid} - P${partes[2]}`;
+    }
+  }
+
+  const gui = formatField('00', 'br.gov.bcb.pix');
+  const key = formatField('01', limparChavePix(chave));
+  const desc = descValor ? formatField('02', descValor.slice(0, 72)) : '';
+  const merchantAccountInfo = formatField('26', `${gui}${key}${desc}`);
+
+  const mcc = formatField('52', '0000');
+  const currency = formatField('53', '986');
+  const amount = valor ? formatField('54', Number(valor).toFixed(2)) : '';
+  const country = formatField('58', 'BR');
+  const merchantName = formatField('59', cleanText(nome || 'MIB CHURCH'));
+  const merchantCity = formatField('60', cleanCity(cidade || 'SAO PAULO'));
+  
+  // Garante que o txid nunca fique vazio ou sem asteriscos se for o padrão
+  const txidTexto = (identificador === '***' || !identificador) ? '***' : cleanText(identificador);
+  const txid = formatField('05', txidTexto || '***');
+  const additionalData = formatField('62', txid);
+
+  const payload = `000201${merchantAccountInfo}${mcc}${currency}${amount}${country}${merchantName}${merchantCity}${additionalData}`;
+  const crc = getCRC16(payload);
+  return `${payload}6304${crc}`;
+}
 
 // ============================================================
 // Util: formatação de data e moeda
@@ -222,7 +330,7 @@ function CupomCarne({ dadosCedente, dadosCliente, dadosVenda, parcela }) {
 // ============================================================
 // Componente principal
 // ============================================================
-export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInicial = null }) {
+export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInicial = null, onVoltar = null }) {
   const [dadosCliente, setDadosCliente] = useState({
     nome: '',
     cpfCnpj: '',
@@ -241,6 +349,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
     nome: '', endereco: '', bairro: '', cidade: '', estado: '',
     cep: '', numeroRua: '', complemento: '', telefoneFixo: '',
     telefoneCelular: '', email: '', localPagamento: '',
+    chavePix: '',
   };
 
   const [perfisCedente, setPerfisCedente] = useState(() => {
@@ -256,6 +365,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
   });
 
   const [dadosCedente, setDadosCedente] = useState(CEDENTE_VAZIO);
+  const [dadosIgrejaGlobal, setDadosIgrejaGlobal] = useState(null);
   const [showCedenteEditor, setShowCedenteEditor] = useState(false);
   const [nomeNovoPerfil, setNomeNovoPerfil] = useState('');
   const [modoNovoPerfil, setModoNovoPerfil] = useState(false); // true = criando novo
@@ -349,6 +459,26 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
   // No primeiro uso (sem perfis salvos), cria automaticamente um perfil inicial
   // com os dados da Igreja. NÃO altera dados_igreja nunca — só lê.
   useEffect(() => {
+    async function carregarIgrejaGlobal() {
+      try {
+        const { data } = await supabase.from('dados_igreja').select('*').eq('id', 1).single();
+        if (data) {
+          setDadosIgrejaGlobal({
+            nome_igreja: data.nome_igreja || 'Igreja',
+            endereco: data.endereco || '',
+            bairro: data.bairro || '',
+            cidade: data.cidade || '',
+            estado: data.estado || '',
+            telefone: data.telefone || '',
+            email_contato: data.email_contato || '',
+          });
+        }
+      } catch (e) {
+        console.error('Erro ao carregar dados globais da igreja:', e);
+      }
+    }
+    carregarIgrejaGlobal();
+
     async function inicializarPerfis() {
       const salvo = localStorage.getItem('carne_perfis_cedente');
       if (salvo) {
@@ -377,6 +507,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
           telefoneFixo: '',
           complemento: '',
           localPagamento: data.carne_local_pagamento || 'PAGÁVEL NA SECRETARIA DA IGREJA',
+          chavePix: '',
         };
         const id = `perfil_${Date.now()}`;
         const perfis = [{ id, label: 'Igreja (padrão)', dados: dadosIgreja }];
@@ -524,6 +655,84 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
     })();
   }, [inscricaoIdInicial]);
 
+  // Helper para achar valores no JSON da inscrição sem diferenciar maiúsculo/minúsculo
+  const findInJsonGlobal = (json, keyNames) => {
+    if (!json || typeof json !== 'object') return '';
+    for (const k of Object.keys(json)) {
+      if (keyNames.some(kn => k.toLowerCase() === kn.toLowerCase())) {
+        return json[k];
+      }
+    }
+    return '';
+  };
+
+  // Preenche dados do cliente e da venda a partir da inscrição selecionada
+  useEffect(() => {
+    if (!inscricaoSelecionada) return;
+    const di = inscricaoSelecionada.dados_inscricao || {};
+
+    const nome = findInJsonGlobal(di, ['nome', 'nome completo', 'completo', 'nome_completo']);
+    const cpf = findInJsonGlobal(di, ['cpf', 'cnpj', 'cpf/cnpj', 'cpf_cnpj']);
+    const telefone = findInJsonGlobal(di, ['telefone', 'celular', 'whatsapp', 'fone', 'contato']);
+    const endereco = findInJsonGlobal(di, ['endereco', 'endereço', 'rua', 'logradouro']);
+    const bairro = findInJsonGlobal(di, ['bairro']);
+    const cidade = findInJsonGlobal(di, ['cidade']);
+    const estado = findInJsonGlobal(di, ['estado', 'uf']);
+    const cep = findInJsonGlobal(di, ['cep']);
+
+    setDadosCliente(prev => ({
+      nome: (nome || prev.nome || '').toUpperCase(),
+      cpfCnpj: mascaraCPF(cpf || '') || cpf || prev.cpfCnpj || '',
+      telefone: mascaraTelefone(telefone || '') || prev.telefone || '',
+      endereco: (endereco || prev.endereco || '').toUpperCase(),
+      bairro: (bairro || prev.bairro || '').toUpperCase(),
+      cidade: (cidade || prev.cidade || '').toUpperCase(),
+      estado: (estado || prev.estado || '').toUpperCase(),
+      cep: cep || prev.cep || '',
+      numeroRua: findInJsonGlobal(di, ['numero', 'número', 'num']) || prev.numeroRua || '',
+      complemento: findInJsonGlobal(di, ['complemento']) || prev.complemento || '',
+    }));
+
+    // Função auxiliar para converter string de moeda ("R$ 150,00") em float
+    const parseCurrency = (val) => {
+      if (!val) return 0;
+      if (typeof val === 'number') return val;
+      const clean = val.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.');
+      return parseFloat(clean) || 0;
+    };
+
+    // Se o evento associado tiver informações de valor e parcelas, preenche dadosVenda
+    const ev = inscricaoSelecionada.agenda_eventos || {};
+    
+    // Obtém o valor total exato salvo na inscrição (ex: "Valor Total": "R$ 140,00"),
+    // senão recalcula usando ev.valor e ev.valor_transporte como fallback.
+    const valorTotalStr = findInJsonGlobal(di, ['valor total', 'valor_total', 'valorTotal']);
+    let valorTotal = 0;
+    if (valorTotalStr) {
+      valorTotal = parseCurrency(valorTotalStr);
+    } else {
+      const valorInscricao = Number(ev.valor) || 0;
+      const incluiTransporte = findInJsonGlobal(di, ['transporte'])?.toString().toLowerCase().startsWith('sim');
+      const valorTransporte = incluiTransporte ? (Number(ev.valor_transporte) || 0) : 0;
+      valorTotal = valorInscricao + valorTransporte;
+    }
+
+    const qtdParcelas = Number(findInJsonGlobal(di, ['parcelas', 'qtd_parcelas', 'quantidade_parcelas'])) || 1;
+    const valorParcela = qtdParcelas > 0 ? (valorTotal / qtdParcelas) : valorTotal;
+
+    // Define o título padrão do carnê como o título do evento
+    const tituloCarnes = ev.titulo || 'Inscrição de Evento';
+
+    setDadosVenda(prev => ({
+      ...prev,
+      titulo: tituloCarnes || prev.titulo,
+      valorParcela: valorParcela || prev.valorParcela,
+      quantidadeParcelas: qtdParcelas || prev.quantidadeParcelas,
+      // Se não houver data de vencimento da primeira parcela preenchida, preenche com hoje
+      vencimentoPrimeiraParcela: prev.vencimentoPrimeiraParcela || new Date().toISOString().slice(0, 10),
+    }));
+  }, [inscricaoSelecionada]);
+
   function selecionarInscricao(insc) {
     setInscricaoId(insc.id);
     setInscricaoSelecionada(insc);
@@ -569,7 +778,17 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
       const comQr = await Promise.all(
         parcelasBase.map(async (p) => {
           try {
-            const qrCodeDataUrl = await QRCode.toDataURL(p.codigo, { width: 120, margin: 1 });
+            const textoQr = (dadosCedente.chavePix)
+              ? gerarPayloadPix({
+                  chave: dadosCedente.chavePix,
+                  nome: dadosIgrejaGlobal?.nome_igreja || dadosCedente.nome,
+                  cidade: dadosIgrejaGlobal?.cidade || dadosCedente.cidade,
+                  valor: p.valorPago,
+                  identificador: '***',
+                  descricao: p.codigo
+                })
+              : p.codigo;
+            const qrCodeDataUrl = await QRCode.toDataURL(textoQr, { width: 120, margin: 1 });
             return { ...p, qrCodeDataUrl };
           } catch (err) {
             console.error('Erro ao gerar QR Code:', err);
@@ -582,7 +801,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
     return () => {
       cancelado = true;
     };
-  }, [parcelasBase, inscricaoId]);
+  }, [parcelasBase, inscricaoId, dadosCedente.chavePix, dadosIgrejaGlobal]);
 
   const valorTotal = useMemo(
     () => parcelas.reduce((acc, p) => acc + p.valorPago, 0),
@@ -622,8 +841,19 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
   }
 
   function montarDadosCartaoParcela(parcela) {
+    const textoQr = (dadosCedente.chavePix)
+      ? gerarPayloadPix({
+          chave: dadosCedente.chavePix,
+          nome: dadosIgrejaGlobal?.nome_igreja || dadosCedente.nome,
+          cidade: dadosIgrejaGlobal?.cidade || dadosCedente.cidade,
+          valor: parcela.valorPago,
+          identificador: '***',
+          descricao: parcela.codigo
+        })
+      : parcela.codigo;
+
     return {
-      igreja: montarIgrejaParaCartao(),
+      igreja: dadosIgrejaGlobal || montarIgrejaParaCartao(),
       evento: inscricaoSelecionada?.agenda_eventos?.titulo || 'Pagamento',
       nome: dadosCliente.nome,
       cpf: dadosCliente.cpfCnpj,
@@ -632,7 +862,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
       totalParcelas: parcela.total,
       vencimento: parcela.vencimento,
       pago: false,
-      codigoQr: parcela.codigo,
+      codigoQr: textoQr,
     };
   }
 
@@ -659,7 +889,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
     const dataVenc = formatDate(parcela.vencimento);
     const valor = formatCurrency(parcela.valorPago);
     const nomeCliente = dadosCliente.nome;
-    const igreja = dadosCedente.nome;
+    const igreja = dadosIgrejaGlobal?.nome_igreja || dadosCedente.nome || 'Igreja';
 
     // Tenta encontrar um link de pagamento configurado na inscrição
     const linkPagamento = (inscricaoSelecionada?.agenda_eventos?.formas_pagamento || [])
@@ -777,7 +1007,19 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
         <div className="print:hidden mx-[3px] sm:mx-0">
           <PageHeader
             titulo="Gerador de Carnê"
-          />
+            onNavigate={onVoltar}
+          >
+            {onVoltar && (
+              <button
+                type="button"
+                onClick={onVoltar}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 hover:border-slate-300 rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+              >
+                <ArrowLeft size={14} />
+                Voltar à Gestão do Evento
+              </button>
+            )}
+          </PageHeader>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start print:block">
@@ -1314,6 +1556,17 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                         className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
                         value={dadosCedente.localPagamento}
                         onChange={(e) => setDadosCedente((d) => ({ ...d, localPagamento: e.target.value }))}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Chave Pix (Opcional - Ativa o QR Code Pix)</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: CPF, CNPJ, Celular, E-mail ou Chave Aleatória"
+                        className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                        value={dadosCedente.chavePix || ''}
+                        onChange={(e) => setDadosCedente((d) => ({ ...d, chavePix: e.target.value }))}
                       />
                     </div>
 

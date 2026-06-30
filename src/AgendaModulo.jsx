@@ -330,6 +330,14 @@ const Icon = {
   Printer: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 0-2-2v-5a2 2 0 0 0 2-2h16a2 2 0 0 0 2 2v5a2 2 0 0 0-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>,
   Edit: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
   Mural: () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" /></svg>,
+  Carne: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+      <path d="M8 14h.01M12 14h.01M16 14h.01" />
+      <path d="M8 18h.01M12 18h.01M16 18h.01" />
+    </svg>
+  ),
 };
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
@@ -584,6 +592,8 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
 
   useEffect(() => {
     setView('lista');
+    setSubView(null);
+    setInscritoParaCarne(null);
     window.scrollTo(0, 0);
   }, [submenu]);
 
@@ -1570,13 +1580,24 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                           )}
                         </td>
                         <td style={{ textAlign: 'right', paddingRight: '24px' }} className="print:hidden">
-                          <button
-                            onClick={(e) => handleExcluirInscricao(e, i.id)}
-                            className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer"
-                            title="Excluir Inscrição"
-                          >
-                            <Icon.Trash />
-                          </button>
+                          <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => onGerarCarne({ inscricaoId: i.id, pessoaId: membroFound?.id || null })}
+                              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition p-1.5 rounded-lg cursor-pointer"
+                              title="Gerar Carnê"
+                            >
+                              <Icon.Carne />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleExcluirInscricao(e, i.id)}
+                              className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition p-1.5 rounded-lg cursor-pointer"
+                              title="Excluir Inscrição"
+                            >
+                              <Icon.Trash />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -1611,12 +1632,23 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                           ) : (
                             <span className="badge bg-amber-50 text-amber-700">pendente</span>
                           )}
-                          <button
-                            onClick={(e) => handleExcluirInscricao(e, i.id)}
-                            className="p-1.5 text-rose-500 active:scale-95 cursor-pointer print:hidden"
-                          >
-                            <Icon.Trash />
-                          </button>
+                          <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => onGerarCarne({ inscricaoId: i.id, pessoaId: membroFound?.id || null })}
+                              className="p-1.5 text-blue-600 active:scale-95 cursor-pointer print:hidden"
+                              title="Gerar Carnê"
+                            >
+                              <Icon.Carne />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleExcluirInscricao(e, i.id)}
+                              className="p-1.5 text-rose-500 active:scale-95 cursor-pointer print:hidden"
+                            >
+                              <Icon.Trash />
+                            </button>
+                          </div>
                         </div>
                       </div>
                       <p className="font-bold text-slate-800 leading-tight">{nome} {membroFound && <span className="ml-1 text-[8px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 font-black">MEMBRO</span>}</p>
@@ -1724,6 +1756,28 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                   <button onClick={() => handleUpdateStatus(modalInscrito.dados.id, 'pago')} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-100">Confirmar Pagamento</button>
                   <button onClick={() => handleUpdateStatus(modalInscrito.dados.id, 'pendente')} className="flex-1 py-3 bg-amber-500 text-white rounded-xl text-xs font-black uppercase tracking-wider">Deixar Pendente</button>
                   <button onClick={() => handleUpdateStatus(modalInscrito.dados.id, 'cancelado')} className="flex-1 py-3 bg-rose-600 text-white rounded-xl text-xs font-black uppercase tracking-wider">Cancelar</button>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t space-y-3">
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Geração de Documentos</p>
+                <div className="flex gap-2">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      const email = findInJsonGlobal(modalInscrito.dados.dados_inscricao, 'email');
+                      const nome = findInJsonGlobal(modalInscrito.dados.dados_inscricao, 'nome') || findInJsonGlobal(modalInscrito.dados.dados_inscricao, 'completo') || 'Participante';
+                      const membro = pessoas.find(p => (email && p.email?.toLowerCase() === email.toLowerCase()) || (nome && p.nome?.toLowerCase() === nome.toLowerCase()));
+                      onGerarCarne({
+                        inscricaoId: modalInscrito.dados.id,
+                        pessoaId: membro?.id || null
+                      });
+                      setModalInscrito({ aberto: false, dados: null });
+                    }} 
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-blue-100 cursor-pointer"
+                  >
+                    <Icon.Carne /> Gerar Carnê do Inscrito
+                  </button>
                 </div>
               </div>
             </div>

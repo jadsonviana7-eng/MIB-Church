@@ -28,6 +28,15 @@ export default function RelatoriosMinisterial() {
   // State da Central de Respostas Estratégicas
   const [activeQuestao, setActiveQuestao] = useState('crescimento'); // 'crescimento' | 'sem_escalar' | 'sobrecarga' | 'lider_equipe'
 
+  // Período de Escala Mensal
+  const [mesSelecionado, setMesSelecionado] = useState(new Date().getMonth());
+  const [anoSelecionado, setAnoSelecionado] = useState(new Date().getFullYear());
+
+  const anosDisponiveis = useMemo(() => {
+    const anoAtual = new Date().getFullYear();
+    return [anoAtual - 1, anoAtual, anoAtual, anoAtual + 1, anoAtual + 2];
+  }, []);
+
   function showToast(msg) {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 4000);
@@ -724,6 +733,236 @@ export default function RelatoriosMinisterial() {
     }
   }
 
+  async function exportarProgramacaoMensalPDF(mes, ano) {
+    setLoading(true);
+    try {
+      const { data: escalas, error } = await supabase
+        .from('escalas')
+        .select(`
+          status,
+          created_at,
+          eventos_ministeriais (
+            id,
+            titulo,
+            data_evento,
+            local,
+            fardamentos
+          ),
+          pessoas (
+            nome
+          ),
+          ministerios (
+            id,
+            nome
+          ),
+          ministerio_funcoes (
+            nome
+          )
+        `);
+
+      if (error) throw error;
+
+      const parseDatabaseDate = (str) => {
+        if (!str) return null;
+        if (!str.includes('Z') && !str.match(/[+-]\d{2}(:?\d{2})?$/)) {
+          const clean = str.trim().replace(' ', 'T');
+          return new Date(clean + 'Z');
+        }
+        return new Date(str);
+      };
+
+      const escalasFiltradas = (escalas || []).filter(e => {
+        if (!e.eventos_ministeriais?.data_evento) return false;
+        const date = parseDatabaseDate(e.eventos_ministeriais.data_evento);
+        const bDate = new Date(date.getTime() - 3 * 3600 * 1000);
+        return bDate.getUTCFullYear() === ano && bDate.getUTCMonth() === mes;
+      });
+
+      if (escalasFiltradas.length === 0) {
+        alert('Nenhuma escala encontrada para o período selecionado.');
+        setLoading(false);
+        return;
+      }
+
+      const escalasPorEvento = {};
+      escalasFiltradas.forEach(e => {
+        const evId = e.eventos_ministeriais.id;
+        if (!escalasPorEvento[evId]) {
+          escalasPorEvento[evId] = {
+            evento: e.eventos_ministeriais,
+            itens: []
+          };
+        }
+        escalasPorEvento[evId].itens.push(e);
+      });
+
+      const eventosOrdenados = Object.values(escalasPorEvento).sort((a, b) => {
+        return new Date(a.evento.data_evento) - new Date(b.evento.data_evento);
+      });
+
+      const doc = new jsPDF();
+      let y = 20;
+      const margin = 15;
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const contentWidth = pageWidth - 2 * margin;
+
+      const formatarDataFuso = (isoString) => {
+        if (!isoString) return '';
+        const diasSemana = ['DOMINGO', 'SEGUNDA-FEIRA', 'TERÇA-FEIRA', 'QUARTA-FEIRA', 'QUINTA-FEIRA', 'SEXTA-FEIRA', 'SÁBADO'];
+        try {
+          const date = parseDatabaseDate(isoString);
+          const bDate = new Date(date.getTime() - 3 * 3600 * 1000);
+          const YYYY = bDate.getUTCFullYear();
+          const MM = String(bDate.getUTCMonth() + 1).padStart(2, '0');
+          const DD = String(bDate.getUTCDate()).padStart(2, '0');
+          const hh = String(bDate.getUTCHours()).padStart(2, '0');
+          const mm = String(bDate.getUTCMinutes()).padStart(2, '0');
+          const diaSemana = diasSemana[bDate.getUTCDay()];
+          return `${diaSemana}, ${DD}/${MM}/${YYYY} às ${hh}:${mm}h`;
+        } catch (e) {
+          return new Date(isoString).toLocaleString('pt-BR');
+        }
+      };
+
+      const nomesMeses = [
+        'JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO',
+        'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'
+      ];
+
+      const drawHeader = () => {
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(30, 58, 138);
+        doc.text(`PROGRAMAÇÃO MENSAL DE ESCALAS - ${nomesMeses[mes]} / ${ano}`, margin, y);
+        y += 6;
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`MIB CHURCH · QUADRO DE PROGRAMAÇÃO OFICIAL`, margin, y);
+        doc.setDrawColor(226, 232, 240);
+        doc.line(margin, y + 4, pageWidth - margin, y + 4);
+        y += 12;
+      };
+
+      drawHeader();
+
+      eventosOrdenados.forEach(({ evento, itens }) => {
+        if (y > pageHeight - 45) {
+          doc.addPage();
+          y = 20;
+          drawHeader();
+        }
+
+        doc.setFillColor(241, 245, 249);
+        doc.rect(margin, y, contentWidth, 8, 'F');
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(30, 41, 59);
+        const dataFormatada = formatarDataFuso(evento.data_evento);
+        doc.text(`${dataFormatada} · ${evento.titulo.toUpperCase()}`, margin + 3, y + 5.5);
+        y += 8;
+
+        doc.setFillColor(30, 58, 138);
+        doc.rect(margin, y, contentWidth, 7, 'F');
+        doc.setFont('Helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(255, 255, 255);
+        doc.text('MINISTÉRIO', margin + 3, y + 4.8);
+        doc.text('FUNÇÃO', margin + 50, y + 4.8);
+        doc.text('VOLUNTÁRIO ESCALADO', margin + 95, y + 4.8);
+        doc.text('FARDA / DETALHE', margin + 145, y + 4.8);
+        y += 7;
+
+        const itensAgrupados = {};
+        itens.forEach(item => {
+          const minId = item.ministerios.id;
+          const minNome = item.ministerios.nome;
+          if (!itensAgrupados[minId]) {
+            itensAgrupados[minId] = {
+              nome: minNome,
+              fardamento: evento.fardamentos?.[minId] || 'Nenhuma',
+              escalados: []
+            };
+          }
+          itensAgrupados[minId].escalados.push(item);
+        });
+
+        Object.values(itensAgrupados).forEach(({ nome, fardamento, escalados }) => {
+          escalados.forEach((item, index) => {
+            if (y > pageHeight - 15) {
+              doc.addPage();
+              y = 20;
+              drawHeader();
+              
+              doc.setFillColor(241, 245, 249);
+              doc.rect(margin, y, contentWidth, 8, 'F');
+              doc.setFont('Helvetica', 'bold');
+              doc.setFontSize(9);
+              doc.setTextColor(30, 41, 59);
+              doc.text(`${dataFormatada} · ${evento.titulo.toUpperCase()} (continuação)`, margin + 3, y + 5.5);
+              y += 8;
+
+              doc.setFillColor(30, 58, 138);
+              doc.rect(margin, y, contentWidth, 7, 'F');
+              doc.setFont('Helvetica', 'bold');
+              doc.setFontSize(8);
+              doc.setTextColor(255, 255, 255);
+              doc.text('MINISTÉRIO', margin + 3, y + 4.8);
+              doc.text('FUNÇÃO', margin + 50, y + 4.8);
+              doc.text('VOLUNTÁRIO ESCALADO', margin + 95, y + 4.8);
+              doc.text('FARDA / DETALHE', margin + 145, y + 4.8);
+              y += 7;
+            }
+
+            doc.setFont('Helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(71, 85, 105);
+
+            const trunc = (str, len) => (str && str.length > len) ? str.substring(0, len) + '...' : (str || '');
+
+            const ministerioStr = index === 0 ? trunc(nome, 22) : '';
+            const funcaoStr = trunc(item.ministerio_funcoes?.nome || 'Geral', 22);
+            const voluntarioStr = trunc(item.pessoas?.nome || '', 26);
+            const fardaStr = index === 0 ? trunc(fardamento, 36) : '';
+
+            if (index === 0 && escalados.length > 1) {
+              doc.setDrawColor(241, 245, 249);
+              doc.line(margin, y, pageWidth - margin, y);
+            }
+
+            doc.text(ministerioStr, margin + 3, y + 5);
+            doc.text(funcaoStr, margin + 50, y + 5);
+            
+            if (item.status === 'confirmado') {
+              doc.setFont('Helvetica', 'bold');
+              doc.setTextColor(15, 23, 42);
+            }
+            doc.text(voluntarioStr, margin + 95, y + 5);
+            doc.setFont('Helvetica', 'normal');
+            doc.setTextColor(71, 85, 105);
+
+            doc.text(fardaStr, margin + 145, y + 5);
+
+            doc.setDrawColor(248, 250, 252);
+            doc.line(margin, y + 7, pageWidth - margin, y + 7);
+            y += 7;
+          });
+        });
+
+        y += 8;
+      });
+
+      doc.save(`Programacao_Escalas_Mensal_${nomesMeses[mes]}_${ano}.pdf`);
+      showToast('✓ Programação mensal PDF baixada!');
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao gerar relatório: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   // Processamento e Consolidação dos Indicadores (Dashboard V3)
   const stats = useMemo(() => {
     if (!rawDados) return null;
@@ -1354,7 +1593,7 @@ export default function RelatoriosMinisterial() {
       )}
 
       {activeTab === 'exportar' && (
-        <div className="grid md:grid-cols-2 gap-6 animate-in fade-in duration-200">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-200">
           {/* Card Exportar Voluntários */}
           <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between group hover:border-slate-200 transition">
             <div>
@@ -1435,6 +1674,67 @@ export default function RelatoriosMinisterial() {
               >
                 <Download size={12} />
                 CSV
+              </button>
+            </div>
+          </div>
+
+          {/* Card Programação Mensal para Quadro de Avisos */}
+          <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm flex flex-col justify-between group hover:border-slate-200 transition">
+            <div>
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 border border-amber-100">
+                <Calendar size={20} />
+              </div>
+              <h3 className="font-bold text-slate-800 text-sm">Programação Mensal (Quadro Mural)</h3>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                Gera um PDF diagramado e otimizado para impressão física e fixação no quadro de avisos ou mural de programação da igreja.
+              </p>
+
+              {/* Seletores de Período */}
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Mês</label>
+                  <select
+                    value={mesSelecionado}
+                    onChange={(e) => setMesSelecionado(parseInt(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold text-slate-700 mt-1 cursor-pointer focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  >
+                    <option value={0}>Janeiro</option>
+                    <option value={1}>Fevereiro</option>
+                    <option value={2}>Março</option>
+                    <option value={3}>Abril</option>
+                    <option value={4}>Maio</option>
+                    <option value={5}>Junho</option>
+                    <option value={6}>Julho</option>
+                    <option value={7}>Agosto</option>
+                    <option value={8}>Setembro</option>
+                    <option value={9}>Outubro</option>
+                    <option value={10}>Novembro</option>
+                    <option value={11}>Dezembro</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Ano</label>
+                  <select
+                    value={anoSelecionado}
+                    onChange={(e) => setAnoSelecionado(parseInt(e.target.value))}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-bold text-slate-700 mt-1 cursor-pointer focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  >
+                    {anosDisponiveis.map(ano => (
+                      <option key={ano} value={ano}>{ano}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => exportarProgramacaoMensalPDF(mesSelecionado, anoSelecionado)}
+                disabled={loading}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition active:scale-98 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer shadow-md shadow-blue-200"
+              >
+                <Download size={12} strokeWidth={3} />
+                Gerar PDF de Programação
               </button>
             </div>
           </div>

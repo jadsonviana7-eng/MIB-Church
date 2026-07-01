@@ -6,7 +6,8 @@ import {
   Plus,
   Trash2,
   X,
-  Pencil
+  Pencil,
+  ChevronLeft
 } from 'lucide-react';
 
 import { supabase } from '../supabaseClient';
@@ -15,7 +16,7 @@ import { MinistryIcon } from '../ui';
 import MembroHistoricoModal from './components/MembroHistoricoModal';
 import { escalasService } from './services/escalasService';
 
-export default function MinistryDetails({ ministerioId }) {
+export default function MinistryDetails({ ministerioId, onVoltar }) {
   const [aba, setAba] = useState('equipe');
   const [ministerio, setMinisterio] = useState(null);
   const [membros, setMembros] = useState([]);
@@ -33,6 +34,7 @@ export default function MinistryDetails({ ministerioId }) {
   const [editingMembro, setEditingMembro] = useState(null);
   const [modalHistoricoAberto, setModalHistoricoAberto] = useState(false);
   const [membroSelecionadoHistorico, setMembroSelecionadoHistorico] = useState(null);
+  const [novoFardamento, setNovoFardamento] = useState('');
 
   // States para Disponibilidade e Bloqueios
   const [dispDomingo, setDispDomingo] = useState(true);
@@ -137,6 +139,59 @@ export default function MinistryDetails({ ministerioId }) {
 
   const handleRemoverBloqueioLocal = (id) => {
     setBloqueiosMembro(prev => prev.filter(b => b.id !== id));
+  };
+
+  const handleAdicionarFardamento = async (e) => {
+    e.preventDefault();
+    if (!novoFardamento.trim()) return;
+
+    try {
+      const fardamentosAtuais = ministerio?.fardamentos || [];
+      if (fardamentosAtuais.includes(novoFardamento.trim())) {
+        alert('Este fardamento já está cadastrado.');
+        return;
+      }
+
+      const novosFardamentos = [...fardamentosAtuais, novoFardamento.trim()];
+
+      const { data, error } = await supabase
+        .from('ministerios')
+        .update({ fardamentos: novosFardamentos })
+        .eq('id', ministerioId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setMinisterio(data);
+      setNovoFardamento('');
+    } catch (err) {
+      console.error('Erro ao adicionar fardamento:', err);
+      alert('Erro ao adicionar fardamento: ' + err.message);
+    }
+  };
+
+  const handleExcluirFardamento = async (fardamentoNome) => {
+    if (!window.confirm(`Deseja excluir o fardamento "${fardamentoNome}"?`)) return;
+
+    try {
+      const fardamentosAtuais = ministerio?.fardamentos || [];
+      const novosFardamentos = fardamentosAtuais.filter(f => f !== fardamentoNome);
+
+      const { data, error } = await supabase
+        .from('ministerios')
+        .update({ fardamentos: novosFardamentos })
+        .eq('id', ministerioId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setMinisterio(data);
+    } catch (err) {
+      console.error('Erro ao excluir fardamento:', err);
+      alert('Erro ao excluir fardamento: ' + err.message);
+    }
   };
 
   useEffect(() => {
@@ -373,8 +428,18 @@ export default function MinistryDetails({ ministerioId }) {
       {/* HEADER */}
       <div className="bg-white rounded-xl shadow p-6">
         <div className="flex items-center gap-4">
+          {onVoltar && (
+            <button
+              onClick={onVoltar}
+              className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer shrink-0"
+              title="Voltar para Ministérios"
+            >
+              <ChevronLeft size={20} strokeWidth={3} />
+            </button>
+          )}
+
           <div
-            className="w-16 h-16 rounded-xl flex items-center justify-center text-white shadow-md shadow-slate-200"
+            className="w-16 h-16 rounded-xl flex items-center justify-center text-white shadow-md shadow-slate-200 shrink-0"
             style={{
               backgroundColor: ministerio.cor_principal || '#2563eb'
             }}
@@ -394,33 +459,33 @@ export default function MinistryDetails({ ministerioId }) {
       </div>
 
       {/* ESTATÍSTICAS */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl shadow p-4 flex flex-col justify-center">
-          <div className="flex items-center gap-2 text-slate-400">
-            <Users size={16} />
-            <span className="text-xs font-black uppercase tracking-wider">Membros</span>
+      <div className="grid grid-cols-3 gap-2 md:gap-4">
+        <div className="bg-white rounded-xl shadow p-3 md:p-4 flex flex-col justify-center">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1 sm:gap-2 text-slate-400 text-center sm:text-left">
+            <Users size={16} className="shrink-0" />
+            <span className="text-[9px] sm:text-xs font-black uppercase tracking-wider">Membros</span>
           </div>
-          <p className="text-2xl font-black text-slate-800 mt-1">
+          <p className="text-lg sm:text-2xl font-black text-slate-800 mt-1 text-center sm:text-left">
             {membros.length}
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow p-4 flex flex-col justify-center">
-          <div className="flex items-center gap-2 text-slate-400">
-            <Shield size={16} />
-            <span className="text-xs font-black uppercase tracking-wider">Líderes</span>
+        <div className="bg-white rounded-xl shadow p-3 md:p-4 flex flex-col justify-center">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1 sm:gap-2 text-slate-400 text-center sm:text-left">
+            <Shield size={16} className="shrink-0" />
+            <span className="text-[9px] sm:text-xs font-black uppercase tracking-wider">Líderes</span>
           </div>
-          <p className="text-2xl font-black text-slate-800 mt-1">
+          <p className="text-lg sm:text-2xl font-black text-slate-800 mt-1 text-center sm:text-left">
             {membros.filter((m) => m.lider).length}
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow p-4 flex flex-col justify-center">
-          <div className="flex items-center gap-2 text-slate-400">
-            <Settings size={16} />
-            <span className="text-xs font-black uppercase tracking-wider">Funções</span>
+        <div className="bg-white rounded-xl shadow p-3 md:p-4 flex flex-col justify-center">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-1 sm:gap-2 text-slate-400 text-center sm:text-left">
+            <Settings size={16} className="shrink-0" />
+            <span className="text-[9px] sm:text-xs font-black uppercase tracking-wider">Funções</span>
           </div>
-          <p className="text-2xl font-black text-slate-800 mt-1">
+          <p className="text-lg sm:text-2xl font-black text-slate-800 mt-1 text-center sm:text-left">
             {funcoes.length}
           </p>
         </div>
@@ -448,6 +513,17 @@ export default function MinistryDetails({ ministerioId }) {
           }`}
         >
           Funções
+        </button>
+
+        <button
+          onClick={() => setAba('fardamentos')}
+          className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+            aba === 'fardamentos'
+              ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-100'
+              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+          }`}
+        >
+          Fardamentos
         </button>
       </div>
 
@@ -543,6 +619,58 @@ export default function MinistryDetails({ ministerioId }) {
       {/* FUNÇÕES */}
       {aba === 'funcoes' && (
         <FuncoesMinisteriais ministerioId={ministerioId} />
+      )}
+
+      {/* FARDAMENTO */}
+      {aba === 'fardamentos' && (
+        <div className="bg-white rounded-xl shadow p-6 space-y-6">
+          <div className="pb-2 border-b border-slate-50">
+            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Configuração de Fardamentos</h3>
+            <p className="text-xs text-slate-400 mt-1">Configure os tipos de fardamento que este ministério utiliza.</p>
+          </div>
+
+          <form onSubmit={handleAdicionarFardamento} className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Digite o nome do fardamento (Ex: Camisa Preta, Farda Oficial)..."
+              value={novoFardamento}
+              onChange={e => setNovoFardamento(e.target.value)}
+              className="flex-1 px-4 py-2 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-xs font-medium"
+            />
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+            >
+              <Plus size={14} strokeWidth={3} />
+              Adicionar
+            </button>
+          </form>
+
+          <div className="space-y-2">
+            {(!ministerio?.fardamentos || ministerio.fardamentos.length === 0) ? (
+              <p className="text-xs text-slate-400 italic text-center py-8 border border-dashed border-slate-200 rounded-xl">
+                Nenhum fardamento cadastrado. Adicione o primeiro no campo acima!
+              </p>
+            ) : (
+              (ministerio.fardamentos || []).map((fardamento, idx) => (
+                <div
+                  key={idx}
+                  className="flex justify-between items-center border border-slate-100 rounded-xl p-3 bg-slate-50/20"
+                >
+                  <span className="text-xs font-bold text-slate-700">{fardamento}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleExcluirFardamento(fardamento)}
+                    className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 transition cursor-pointer"
+                    title="Excluir Fardamento"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       )}
 
       {/* MODAL ADICIONAR MEMBRO */}

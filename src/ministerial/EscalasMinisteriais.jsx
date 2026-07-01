@@ -709,6 +709,31 @@ export default function EscalasMinisteriais({ membroLogado }) {
     }
   }
 
+  async function handleMudarFardamentoDia(ministerioId, fardamentoNome) {
+    if (!eventoSelecionado) return;
+
+    try {
+      const fardamentosAtuais = eventoSelecionado.fardamentos || {};
+      const novosFardamentos = { ...fardamentosAtuais, [ministerioId]: fardamentoNome };
+
+      const { data, error } = await supabase
+        .from('eventos_ministeriais')
+        .update({ fardamentos: novosFardamentos })
+        .eq('id', eventoSelecionado.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setEventoSelecionado(data);
+      setEventos(prev => prev.map(e => e.id === data.id ? data : e));
+      mostrarToast('✓ Fardamento do dia atualizado!');
+    } catch (error) {
+      console.error('Erro ao atualizar fardamento do dia:', error);
+      alert('Erro ao salvar fardamento: ' + error.message);
+    }
+  }
+
   async function rodarAutoEscala(ministerioId) {
     if (!eventoSelecionado || !ministerioId) return;
     mostrarToast('⚡ Rodando AutoEscala inteligente...');
@@ -764,6 +789,7 @@ export default function EscalasMinisteriais({ membroLogado }) {
         acc[minNome] = {
           id: item.ministerio_id,
           nome: minNome,
+          fardamentos: item.ministerios?.fardamentos || [],
           itens: []
         };
       }
@@ -807,7 +833,8 @@ export default function EscalasMinisteriais({ membroLogado }) {
     texto += `*LOCAL:* ${eventoSelecionado.local || 'Templo Sede'}\n\n`;
 
     Object.entries(escalasAgrupadas).forEach(([minNome, grupo]) => {
-      texto += `*${minNome.toUpperCase()}*\n`;
+      const fardaSel = eventoSelecionado?.fardamentos?.[grupo.id];
+      texto += `*${minNome.toUpperCase()}*${fardaSel ? ` _(Farda: ${fardaSel})_` : ''}\n`;
       grupo.itens.forEach(item => {
         const statusIcon = item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡';
         texto += ` • _${item.ministerio_funcoes?.nome || 'Função'}:_ *${item.pessoas?.nome}* ${statusIcon}\n`;
@@ -1057,11 +1084,31 @@ export default function EscalasMinisteriais({ membroLogado }) {
               <div className="space-y-6">
                 {Object.values(escalasAgrupadas).map((grupo) => (
                   <div key={grupo.nome} className="border border-slate-100 rounded-2xl p-4 bg-slate-50/30">
-                    <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
-                      <h4 className="font-black text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                        <span>🎵</span>
-                        {grupo.nome}
-                      </h4>
+                    <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100 flex-wrap gap-2">
+                      <div className="flex items-center gap-3">
+                        <h4 className="font-black text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                          <span>🎵</span>
+                          {grupo.nome}
+                        </h4>
+                        
+                        {/* Seletor de Fardamento */}
+                        {grupo.fardamentos && grupo.fardamentos.length > 0 && (
+                          <div className="flex items-center gap-1.5 ml-2 bg-slate-100 py-0.5 px-2 rounded-lg border border-slate-200">
+                            <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">👕 Farda:</span>
+                            <select
+                              value={eventoSelecionado?.fardamentos?.[grupo.id] || ''}
+                              onChange={e => handleMudarFardamentoDia(grupo.id, e.target.value)}
+                              className="bg-transparent text-[10px] font-bold text-slate-700 outline-none cursor-pointer border-none p-0 focus:ring-0"
+                            >
+                              <option value="">Nenhuma</option>
+                              {grupo.fardamentos.map(f => (
+                                <option key={f} value={f}>{f}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </div>
+                      
                       <button
                         type="button"
                         onClick={() => rodarAutoEscala(grupo.id)}

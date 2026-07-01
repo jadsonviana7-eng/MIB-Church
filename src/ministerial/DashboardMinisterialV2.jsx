@@ -4,18 +4,18 @@ import { ministeriosService } from './services/ministeriosService';
 
 function Card({ titulo, valor, Icon, corSub, desc }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition duration-300 flex justify-between items-center relative overflow-hidden group">
+    <div className="bg-white rounded-2xl border border-slate-100 p-4 sm:p-5 shadow-sm hover:shadow-md transition duration-300 flex justify-between items-center relative overflow-hidden group">
       <div className="absolute top-0 left-0 w-1.5 h-full" style={{ backgroundColor: corSub }} />
-      <div>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{titulo}</p>
-        <h2 className="text-3xl font-black mt-1.5 text-slate-800 tracking-tight">{valor}</h2>
-        {desc && <p className="text-[10px] text-slate-400 mt-1">{desc}</p>}
+      <div className="min-w-0 pr-2">
+        <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">{titulo}</p>
+        <h2 className="text-2xl sm:text-3xl font-black mt-1 text-slate-800 tracking-tight">{valor}</h2>
+        {desc && <p className="text-[9px] sm:text-[10px] text-slate-400 mt-1 truncate">{desc}</p>}
       </div>
       <div 
-        className="w-10 h-10 rounded-xl flex items-center justify-center transition duration-300 group-hover:scale-110"
+        className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition duration-300 group-hover:scale-110 shrink-0"
         style={{ backgroundColor: corSub + '15', color: corSub }}
       >
-        <Icon size={20} />
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
     </div>
   );
@@ -74,7 +74,7 @@ export default function DashboardMinisterialV2() {
       </div>
 
       {/* Cards de Métricas Principais */}
-      <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
         <Card
           titulo="Voluntários Ativos"
           valor={dados.totalMembros}

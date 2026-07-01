@@ -1230,6 +1230,10 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
     let cancelados = 0;
     let totalArrecadado = 0;
 
+    let transporteSim = 0;
+    let transporteNao = 0;
+    const formasPagamento = {};
+
     inscritos.forEach(i => {
       const dados = i.dados_inscricao || {};
       const incluiTransporte = findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
@@ -1242,13 +1246,31 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
       if (i.status_pagamento === 'pago') { confirmados++; totalArrecadado += valorInscricaoReal; }
       else if (i.status_pagamento === 'cancelado') { cancelados++; }
       else { pendentes++; if (pagas.length > 0) totalArrecadado += (valorInscricaoReal / totalParcelas) * pagas.length; }
+
+      // Estatísticas apenas de inscritos ativos (não cancelados)
+      if (i.status_pagamento !== 'cancelado') {
+        if (incluiTransporte) transporteSim++;
+        else transporteNao++;
+
+        const forma = findInJsonGlobal(dados, 'pagamento')?.toString() || 'Não especificada';
+        formasPagamento[forma] = (formasPagamento[forma] || 0) + 1;
+      }
     });
 
     // Vagas ocupadas (considerando pagos e pendentes como reserva de vaga)
     const ocupadas = confirmados + pendentes;
     const disponiveis = evento.vagas ? Math.max(0, evento.vagas - ocupadas) : '∞';
 
-    return { confirmados, pendentes, cancelados, disponiveis, totalRecebido: totalArrecadado };
+    return {
+      confirmados,
+      pendentes,
+      cancelados,
+      disponiveis,
+      totalRecebido: totalArrecadado,
+      transporteSim,
+      transporteNao,
+      formasPagamento
+    };
   }, [inscritos, evento]);
 
   // Processamento de dados para o gráfico de linha (Inscrições por dia)
@@ -1498,6 +1520,79 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
           </div>
         </Card>
       </div>
+
+      {/* SEÇÃO DE ESTATÍSTICAS DE PAGAMENTO E TRANSPORTE */}
+      {evento.valor_tipo === 'pago' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:hidden">
+          {/* Card Formas de Pagamento */}
+          <Card className="p-0 overflow-hidden">
+            <CardHeader titulo="Formas de Pagamento" subtitulo="Distribuição dos métodos escolhidos pelos inscritos ativos." />
+            <div className="p-6 space-y-4">
+              {Object.keys(stats.formasPagamento).length === 0 ? (
+                <p className="text-sm text-slate-400 italic text-center py-4">Nenhuma forma de pagamento registrada ainda.</p>
+              ) : (
+                <div className="space-y-4">
+                  {Object.entries(stats.formasPagamento).map(([metodo, qtd]) => {
+                    const ativosCount = inscritos.length - stats.cancelados;
+                    const porcentagem = ativosCount > 0 ? Math.round((qtd / ativosCount) * 100) : 0;
+                    return (
+                      <div key={metodo} className="space-y-1.5">
+                        <div className="flex justify-between items-center text-xs font-bold">
+                          <span className="text-slate-600 uppercase tracking-wider">{metodo}</span>
+                          <span className="text-slate-800">{qtd} {qtd === 1 ? 'optante' : 'optantes'} ({porcentagem}%)</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2">
+                          <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${porcentagem}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Card Opção de Transporte */}
+          {Number(evento.valor_transporte) > 0 && (
+            <Card className="p-0 overflow-hidden">
+              <CardHeader titulo="Opção de Transporte" subtitulo="Adesão ao transporte opcional oferecido pelo evento." />
+              <div className="p-6 space-y-4">
+                <div className="space-y-4">
+                  {/* Com Transporte */}
+                  {(() => {
+                    const ativosCount = inscritos.length - stats.cancelados;
+                    const porcentagemSim = ativosCount > 0 ? Math.round((stats.transporteSim / ativosCount) * 100) : 0;
+                    const porcentagemNao = ativosCount > 0 ? Math.round((stats.transporteNao / ativosCount) * 100) : 0;
+                    return (
+                      <>
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center text-xs font-bold">
+                            <span className="text-slate-600 uppercase tracking-wider">🚌 Com Transporte</span>
+                            <span className="text-slate-800">{stats.transporteSim} {stats.transporteSim === 1 ? 'pessoa' : 'pessoas'} ({porcentagemSim}%)</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-2">
+                            <div className="bg-emerald-600 h-2 rounded-full transition-all duration-500" style={{ width: `${porcentagemSim}%` }} />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center text-xs font-bold">
+                            <span className="text-slate-600 uppercase tracking-wider">🚶 Sem Transporte</span>
+                            <span className="text-slate-800">{stats.transporteNao} {stats.transporteNao === 1 ? 'pessoa' : 'pessoas'} ({porcentagemNao}%)</span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-2">
+                            <div className="bg-slate-400 h-2 rounded-full transition-all duration-500" style={{ width: `${porcentagemNao}%` }} />
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* CABEÇALHO DE IMPRESSÃO - Visível apenas no papel */}
       <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-6">
@@ -2139,7 +2234,7 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                       <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                         <input type="checkbox" checked={formasPagamento.some(i => i.tipo === nomeForma)}
                           onChange={e => e.target.checked
-                            ? setFormasPagamento([...formasPagamento, { tipo: nomeForma, instrucao: '', permite_parcelas: f.permite_parcelamento, max_parcelas: f.max_parcelas }])
+                            ? setFormasPagamento([...formasPagamento, { tipo: nomeForma, instrucao: '', permite_parcelas: f.permite_parcelamento, max_parcelas: f.max_parcelas || 1 }])
                             : setFormasPagamento(formasPagamento.filter(x => x.tipo !== nomeForma))}
                           style={{ accentColor: '#1e3a8a', width: 14, height: 14 }} />
                         <span style={{ fontSize: 13, fontWeight: 500, color: '#1e40af' }}>
@@ -2148,7 +2243,28 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                         </span>
                       </label>
                       {formasPagamento.some(i => i.tipo === nomeForma) && (
-                        <div style={{ marginTop: 8 }}>
+                        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {typeof f === 'object' && f.permite_parcelamento && (
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 uppercase">Número Máximo de Parcelas para este Evento</label>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="100"
+                                  value={formasPagamento.find(x => x.tipo === nomeForma)?.max_parcelas || (typeof f === 'object' ? (f.max_parcelas || 1) : 1)}
+                                  onChange={e => {
+                                    const val = Math.max(1, parseInt(e.target.value) || 1);
+                                    setFormasPagamento(formasPagamento.map(x => x.tipo === nomeForma ? { ...x, max_parcelas: val } : x));
+                                  }}
+                                  className="campo-input"
+                                  style={{ width: '80px', padding: '6px 10px', fontSize: '13px' }}
+                                />
+                                <span className="text-xs text-slate-500 font-medium">parcelas</span>
+                              </div>
+                            </div>
+                          )}
+
                           {nomeForma.toLowerCase().includes('cartão') ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                               <div>
@@ -2174,14 +2290,17 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                               </div>
                             </div>
                           ) : (
-                            <textarea
-                              placeholder={`Instruções para ${nomeForma} (Ex: Chave Pix ou dados bancários)...`}
-                              value={formasPagamento.find(x => x.tipo === nomeForma)?.instrucao || ''}
-                              onChange={e => setFormasPagamento(formasPagamento.map(x => x.tipo === nomeForma ? { ...x, instrucao: e.target.value } : x))}
-                              className="campo-input"
-                              style={{ resize: 'none' }}
-                              rows="2"
-                            />
+                            <div>
+                              <label className="text-[10px] font-bold text-slate-400 uppercase">Instruções Adicionais</label>
+                              <textarea
+                                placeholder={`Instruções para ${nomeForma} (Ex: Chave Pix ou dados bancários)...`}
+                                value={formasPagamento.find(x => x.tipo === nomeForma)?.instrucao || ''}
+                                onChange={e => setFormasPagamento(formasPagamento.map(x => x.tipo === nomeForma ? { ...x, instrucao: e.target.value } : x))}
+                                className="campo-input"
+                                style={{ resize: 'none' }}
+                                rows="2"
+                              />
+                            </div>
                           )}
                         </div>
                       )}

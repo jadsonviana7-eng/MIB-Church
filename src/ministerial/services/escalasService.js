@@ -63,7 +63,8 @@ export const escalasService = {
           nome
         ),
         ministerios (
-          nome
+          nome,
+          fardamentos
         ),
         ministerio_funcoes (
           nome

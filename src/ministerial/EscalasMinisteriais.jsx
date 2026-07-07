@@ -3,7 +3,7 @@ import { Calendar, Plus, X, Search, Check, AlertCircle, Share2, Printer, CheckCi
 import { escalasService } from './services/escalasService';
 import { autoEscalaService } from './services/autoEscalaService';
 
-export default function EscalasMinisteriais({ membroLogado }) {
+export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio }) {
   const [eventos, setEventos] = useState([]);
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [escalas, setEscalas] = useState([]);
@@ -85,6 +85,8 @@ export default function EscalasMinisteriais({ membroLogado }) {
     descricao: ''
   });
   const [previaEventos, setPreviaEventos] = useState([]);
+
+  const isMembroNormal = membroLogado?.permissao === 'membro' && !isLiderMinisterio;
 
   useEffect(() => {
     carregarEventos();
@@ -909,23 +911,27 @@ export default function EscalasMinisteriais({ membroLogado }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              setAbaGerador('config');
-              setModalGerador(true);
-            }}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-wider transition active:scale-95 cursor-pointer"
-          >
-            <Calendar size={14} strokeWidth={3} />
-            Gerador Mensal
-          </button>
-          <button
-            onClick={() => setModalEvento(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer"
-          >
-            <Plus size={14} strokeWidth={3} />
-            Novo Evento
-          </button>
+          {!isMembroNormal && (
+            <>
+              <button
+                onClick={() => {
+                  setAbaGerador('config');
+                  setModalGerador(true);
+                }}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-wider transition active:scale-95 cursor-pointer"
+              >
+                <Calendar size={14} strokeWidth={3} />
+                Gerador Mensal
+              </button>
+              <button
+                onClick={() => setModalEvento(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer"
+              >
+                <Plus size={14} strokeWidth={3} />
+                Novo Evento
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -1042,24 +1048,28 @@ export default function EscalasMinisteriais({ membroLogado }) {
                 </div>
 
                 <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => abrirModalEditar(eventoSelecionado)}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
-                    title="Editar este Evento"
-                  >
-                    <Pencil size={13} />
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={excluirEventoAtual}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
-                    title="Excluir este Evento"
-                  >
-                    <Trash2 size={13} />
-                    Excluir
-                  </button>
+                  {!isMembroNormal && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => abrirModalEditar(eventoSelecionado)}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                        title="Editar este Evento"
+                      >
+                        <Pencil size={13} />
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={excluirEventoAtual}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                        title="Excluir este Evento"
+                      >
+                        <Trash2 size={13} />
+                        Excluir
+                      </button>
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={copiarWhatsApp}
@@ -1069,14 +1079,16 @@ export default function EscalasMinisteriais({ membroLogado }) {
                     <Share2 size={13} />
                     WhatsApp
                   </button>
-                  <button
-                    type="button"
-                    onClick={abrirModalEscala}
-                    className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer"
-                  >
-                    <Plus size={13} strokeWidth={3} />
-                    Escalar
-                  </button>
+                  {!isMembroNormal && (
+                    <button
+                      type="button"
+                      onClick={abrirModalEscala}
+                      className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer"
+                    >
+                      <Plus size={13} strokeWidth={3} />
+                      Escalar
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -1148,14 +1160,16 @@ export default function EscalasMinisteriais({ membroLogado }) {
                             }`}>
                               {item.status}
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => excluirEscala(item.id)}
-                              className="p-1 text-slate-300 hover:text-red-600 transition cursor-pointer"
-                              title="Remover da escala"
-                            >
-                              <X size={14} />
-                            </button>
+                            {!isMembroNormal && (
+                              <button
+                                type="button"
+                                onClick={() => excluirEscala(item.id)}
+                                className="p-1 text-slate-300 hover:text-red-600 transition cursor-pointer"
+                                title="Remover da escala"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}

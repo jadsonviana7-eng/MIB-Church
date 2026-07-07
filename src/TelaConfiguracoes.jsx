@@ -8,7 +8,7 @@ import {
   desmascararCNPJ
 } from './mascaras';
 import {
-  Building2, MapPin, Briefcase, CreditCard, Search, X, Check, Trash2, Edit2, Palette, Sun, Moon, Globe
+  Building2, MapPin, Briefcase, CreditCard, Search, X, Check, Trash2, Edit2, Palette, Sun, Moon, Globe, Activity
 } from 'lucide-react';
 import { aplicarTema } from './themeUtils';
 
@@ -142,7 +142,7 @@ const t = {
   }
 };
 
-export default function TelaConfiguracoes({ onFechar }) {
+export default function TelaConfiguracoes({ membroLogado, onFechar }) {
   const [zonas, setZonas] = useState([]);
   const [atuacoes, setAtuacoes] = useState([]);
   const [novaZona, setNovaZona] = useState('');
@@ -180,6 +180,18 @@ export default function TelaConfiguracoes({ onFechar }) {
   const [temaModo, setTemaModo] = useState('claro');
   const [temaAcento, setTemaAcento] = useState('azul');
   const [idioma, setIdioma] = useState('pt');
+
+  // Estados do Sistema de Logs
+  const [logsAuditoria, setLogsAuditoria] = useState([]);
+  const [logsSessoes, setLogsSessoes] = useState([]);
+  const [carregandoLogs, setCarregandoLogs] = useState(false);
+  const [subAbaLogs, setSubAbaLogs] = useState('auditoria');
+  const [filtroAcaoAudit, setFiltroAcaoAudit] = useState('');
+  const [filtroUsuarioAudit, setFiltroUsuarioAudit] = useState('');
+  const [filtroTabelaAudit, setFiltroTabelaAudit] = useState('');
+  const [logDetalhesExpandidoId, setLogDetalhesExpandidoId] = useState(null);
+
+  const eAdminOuPastor = membroLogado?.permissao?.toLowerCase() === 'admin' || membroLogado?.permissao?.toLowerCase() === 'pastor';
 
   async function carregarDadosConfiguracao() {
     setCarregando(true);
@@ -231,6 +243,61 @@ export default function TelaConfiguracoes({ onFechar }) {
     setTemaAcento(acento);
     setIdioma(lang);
   }, []);
+
+  const carregarLogsSistema = async () => {
+    if (!eAdminOuPastor) return;
+    setCarregandoLogs(true);
+    try {
+      // 1. Carrega logs de auditoria
+      const { data: audit, error: errAudit } = await supabase
+        .from('logs_sistema')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(250);
+      if (!errAudit && audit) setLogsAuditoria(audit);
+
+      // 2. Carrega logs de sessões
+      const { data: sessoes, error: errSess } = await supabase
+        .from('sessoes_sistema')
+        .select('*')
+        .order('ultimo_heartbeat', { ascending: false })
+        .limit(250);
+      if (!errSess && sessoes) setLogsSessoes(sessoes);
+    } catch (err) {
+      console.error('Erro ao carregar logs:', err);
+    } finally {
+      setCarregandoLogs(false);
+    }
+  };
+
+  useEffect(() => {
+    if (abaAtiva === 'logs') {
+      carregarLogsSistema();
+    }
+  }, [abaAtiva]);
+
+  const formatarTempoPermanencia = (segundos) => {
+    if (segundos === null || segundos === undefined || segundos < 0) return '---';
+    if (segundos < 60) return `${segundos}s`;
+    const hrs = Math.floor(segundos / 3600);
+    const mins = Math.floor((segundos % 3600) / 60);
+    const parts = [];
+    if (hrs > 0) parts.push(`${hrs}h`);
+    if (mins > 0) parts.push(`${mins}m`);
+    return parts.join(' ');
+  };
+
+  const formatarDataHora = (dataStr) => {
+    if (!dataStr) return '---';
+    return new Date(dataStr).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
 
   async function handleSalvarDadosIgreja(e) {
     e.preventDefault();
@@ -399,13 +466,19 @@ export default function TelaConfiguracoes({ onFechar }) {
             {t[idioma].categorias}
           </p>
           <div className="flex md:flex-col overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 gap-1.5 scrollbar-hide">
-            {[
-              { id: 'institucional', label: t[idioma].institucional, icon: <Building2 size={16} /> },
-              { id: 'localizacao', label: t[idioma].localizacao, icon: <MapPin size={16} /> },
-              { id: 'atuacoes', label: t[idioma].atuacoes, icon: <Briefcase size={16} /> },
-              { id: 'financeiro', label: t[idioma].financeiro, icon: <CreditCard size={16} /> },
-              { id: 'aparencia', label: t[idioma].aparencia, icon: <Palette size={16} /> }
-            ].map((tab) => (
+            {(() => {
+              const abas = [
+                { id: 'institucional', label: t[idioma].institucional, icon: <Building2 size={16} /> },
+                { id: 'localizacao', label: t[idioma].localizacao, icon: <MapPin size={16} /> },
+                { id: 'atuacoes', label: t[idioma].atuacoes, icon: <Briefcase size={16} /> },
+                { id: 'financeiro', label: t[idioma].financeiro, icon: <CreditCard size={16} /> },
+                { id: 'aparencia', label: t[idioma].aparencia, icon: <Palette size={16} /> }
+              ];
+              if (eAdminOuPastor) {
+                abas.push({ id: 'logs', label: "Logs do Sistema", icon: <Activity size={16} /> });
+              }
+              return abas;
+            })().map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => {
@@ -1093,6 +1166,263 @@ export default function TelaConfiguracoes({ onFechar }) {
                 </div>
 
               </div>
+            </Card>
+          )}
+
+          {/* ── ABA 6: LOGS DO SISTEMA ── */}
+          {abaAtiva === 'logs' && eAdminOuPastor && (
+            <Card className="p-0 border border-slate-100 rounded-2xl shadow-3xs overflow-hidden bg-white">
+              <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-sm">Logs e Auditoria do Sistema</h3>
+                  <p className="text-xs text-slate-400">Monitore as ações executadas e as sessões de usuários.</p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setSubAbaLogs('auditoria')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      subAbaLogs === 'auditoria'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-650 hover:bg-slate-200'
+                    }`}
+                  >
+                    Ações de Auditoria
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSubAbaLogs('sessoes')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      subAbaLogs === 'sessoes'
+                        ? 'bg-slate-900 text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-650 hover:bg-slate-200'
+                    }`}
+                  >
+                    Tempo de Uso & Sessões
+                  </button>
+                </div>
+              </div>
+
+              {/* CONTEÚDO SUB-ABA: AUDITORIA */}
+              {subAbaLogs === 'auditoria' && (
+                <div className="p-5 space-y-4">
+                  {/* Filtros */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-450 uppercase">Usuário</label>
+                      <input
+                        type="text"
+                        placeholder="Nome ou e-mail..."
+                        value={filtroUsuarioAudit}
+                        onChange={e => setFiltroUsuarioAudit(e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-450 uppercase">Ação</label>
+                      <select
+                        value={filtroAcaoAudit}
+                        onChange={e => setFiltroAcaoAudit(e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+                      >
+                        <option value="">Todas as Ações</option>
+                        <option value="INSERT">Inclusão (INSERT)</option>
+                        <option value="UPDATE">Alteração (UPDATE)</option>
+                        <option value="DELETE">Exclusão (DELETE)</option>
+                        <option value="LOGIN">Acesso (LOGIN)</option>
+                        <option value="LOGOUT">Saída (LOGOUT)</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-450 uppercase">Tabela</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: pessoas, celulas..."
+                        value={filtroTabelaAudit}
+                        onChange={e => setFiltroTabelaAudit(e.target.value)}
+                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Listagem/Tabela */}
+                  {carregandoLogs ? (
+                    <div className="py-12 flex justify-center items-center text-xs text-slate-400 italic">
+                      Carregando logs de auditoria...
+                    </div>
+                  ) : (
+                    <div className="border border-slate-100 rounded-2xl overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+                              <th className="p-3">Data/Hora</th>
+                              <th className="p-3">Usuário</th>
+                              <th className="p-3">Ação</th>
+                              <th className="p-3">Tabela</th>
+                              <th className="p-3">Detalhes</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 bg-white">
+                            {(() => {
+                              const filtrados = logsAuditoria.filter(log => {
+                                const matchUser = !filtroUsuarioAudit || 
+                                  log.usuario_nome?.toLowerCase().includes(filtroUsuarioAudit.toLowerCase()) ||
+                                  log.usuario_email?.toLowerCase().includes(filtroUsuarioAudit.toLowerCase());
+                                const matchAcao = !filtroAcaoAudit || log.acao === filtroAcaoAudit;
+                                const matchTab = !filtroTabelaAudit || log.tabela?.toLowerCase().includes(filtroTabelaAudit.toLowerCase());
+                                return matchUser && matchAcao && matchTab;
+                              });
+
+                              if (filtrados.length === 0) {
+                                return (
+                                  <tr>
+                                    <td colSpan="5" className="p-6 text-center text-slate-400 italic">
+                                      Nenhum registro de auditoria encontrado.
+                                    </td>
+                                  </tr>
+                                );
+                              }
+
+                              return filtrados.map(log => {
+                                const isExpandido = logDetalhesExpandidoId === log.id;
+                                let badgeColor = 'bg-slate-100 text-slate-650';
+                                if (log.acao === 'INSERT') badgeColor = 'bg-emerald-50 text-emerald-700 border border-emerald-100';
+                                if (log.acao === 'UPDATE') badgeColor = 'bg-blue-50 text-blue-700 border border-blue-100';
+                                if (log.acao === 'DELETE') badgeColor = 'bg-rose-50 text-rose-700 border border-rose-100';
+                                if (log.acao === 'LOGIN') badgeColor = 'bg-purple-50 text-purple-700 border border-purple-100';
+                                if (log.acao === 'LOGOUT') badgeColor = 'bg-amber-50 text-amber-700 border border-amber-100';
+
+                                return (
+                                  <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <td className="p-3 text-slate-500 whitespace-nowrap">{formatarDataHora(log.created_at)}</td>
+                                    <td className="p-3">
+                                      <div className="font-bold text-slate-800">{log.usuario_nome}</div>
+                                      <div className="text-[10px] text-slate-400">{log.usuario_email}</div>
+                                    </td>
+                                    <td className="p-3">
+                                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${badgeColor}`}>
+                                        {log.acao}
+                                      </span>
+                                    </td>
+                                    <td className="p-3 font-semibold text-slate-600 whitespace-nowrap">{log.tabela || '---'}</td>
+                                    <td className="p-3">
+                                      <div className="space-y-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => setLogDetalhesExpandidoId(isExpandido ? null : log.id)}
+                                          className="text-blue-600 hover:text-blue-800 font-bold hover:underline"
+                                        >
+                                          {isExpandido ? 'Ocultar' : 'Ver Detalhes'}
+                                        </button>
+                                        {isExpandido && log.detalhes && (
+                                          <pre className="mt-2 p-3 bg-slate-900 text-slate-200 text-[10px] rounded-xl overflow-x-auto font-mono max-w-lg leading-relaxed shadow-inner">
+                                            {JSON.stringify(log.detalhes, null, 2)}
+                                          </pre>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              });
+                            })()}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* CONTEÚDO SUB-ABA: SESSÕES */}
+              {subAbaLogs === 'sessoes' && (
+                <div className="p-5 space-y-4">
+                  {/* Filtro */}
+                  <div className="max-w-xs space-y-1 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                    <label className="text-[10px] font-bold text-slate-450 uppercase">Pesquisar Usuário</label>
+                    <input
+                      type="text"
+                      placeholder="Nome ou e-mail..."
+                      value={filtroUsuarioAudit}
+                      onChange={e => setFiltroUsuarioAudit(e.target.value)}
+                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+                    />
+                  </div>
+
+                  {/* Listagem */}
+                  {carregandoLogs ? (
+                    <div className="py-12 flex justify-center items-center text-xs text-slate-400 italic">
+                      Carregando sessões...
+                    </div>
+                  ) : (
+                    <div className="border border-slate-100 rounded-2xl overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+                              <th className="p-3">Usuário</th>
+                              <th className="p-3">Login em</th>
+                              <th className="p-3">Última Atividade</th>
+                              <th className="p-3">Tempo de Permanência</th>
+                              <th className="p-3">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 bg-white">
+                            {(() => {
+                              const filtradas = logsSessoes.filter(sess => {
+                                return !filtroUsuarioAudit ||
+                                  sess.usuario_nome?.toLowerCase().includes(filtroUsuarioAudit.toLowerCase()) ||
+                                  sess.usuario_email?.toLowerCase().includes(filtroUsuarioAudit.toLowerCase());
+                              });
+
+                              if (filtradas.length === 0) {
+                                return (
+                                  <tr>
+                                    <td colSpan="5" className="p-6 text-center text-slate-400 italic">
+                                      Nenhuma sessão registrada encontrada.
+                                    </td>
+                                  </tr>
+                                );
+                              }
+
+                              return filtradas.map(sess => {
+                                // Determina se a sessão está ativa (heartbeat feito nos últimos 90 segundos)
+                                const heartbeatTime = new Date(sess.ultimo_heartbeat).getTime();
+                                const agora = new Date().getTime();
+                                const isAtiva = (agora - heartbeatTime) < 90000;
+
+                                return (
+                                  <tr key={sess.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <td className="p-3">
+                                      <div className="font-bold text-slate-800">{sess.usuario_nome}</div>
+                                      <div className="text-[10px] text-slate-400">{sess.usuario_email}</div>
+                                    </td>
+                                    <td className="p-3 text-slate-500">{formatarDataHora(sess.login_at)}</td>
+                                    <td className="p-3 text-slate-500">{formatarDataHora(sess.ultimo_heartbeat)}</td>
+                                    <td className="p-3 font-semibold text-slate-700">{formatarTempoPermanencia(sess.duracao_segundos)}</td>
+                                    <td className="p-3">
+                                      {isAtiva ? (
+                                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-100">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                                          Ativa
+                                        </span>
+                                      ) : (
+                                        <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-550 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200">
+                                          Finalizada
+                                        </span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              });
+                            })()}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </Card>
           )}
 

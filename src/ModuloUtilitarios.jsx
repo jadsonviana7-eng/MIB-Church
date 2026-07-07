@@ -77,7 +77,7 @@ function getUtilitarios({ membroLogado, temVinculoEscala }) {
       desc: 'Visualize e interceda pelos pedidos de oração da sua célula ou igreja.',
       icon: MenuIcons['u-mural-oracao'],
       gradient: 'from-rose-500 to-pink-500',
-      show: ['admin', 'pastor', 'lider-celula'].includes(membroLogado?.permissao),
+      show: ['admin', 'pastor', 'lider-celula', 'lider', 'supervisor'].includes(membroLogado?.permissao),
     },
   ].filter((u) => u.show);
 }

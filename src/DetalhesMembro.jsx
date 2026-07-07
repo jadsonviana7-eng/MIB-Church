@@ -1185,7 +1185,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
         <div className="flex flex-wrap gap-2 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
           {!modoEdicao ? (
             <>
-              {hasAccess && hasAccess('Pessoas', 'Ficha do membro', 'editar') && (
+              {hasAccess && (hasAccess('Pessoas', 'Ficha do membro', 'editar') || String(membroLogado?.id) === String(pessoaId)) && (
                 <button
                   type="button"
                   onClick={() => setModoEdicao(true)}

@@ -83,7 +83,7 @@ export default function TransacoesFinanceiras({
     const mes = viewDate.getMonth();
     const primeiroDiaMes = new Date(ano, mes, 1).getDay();
     const ultimoDiaMes = new Date(ano, mes + 1, 0).getDate();
-    
+
     const dias = [];
     // Dias vazios para alinhar o início da semana (ajustado para começar na segunda ou domingo conforme preferência)
     for (let i = 0; i < (primeiroDiaMes === 0 ? 6 : primeiroDiaMes - 1); i++) {
@@ -97,7 +97,7 @@ export default function TransacoesFinanceiras({
 
   const handleSelecionarDia = (data) => {
     const dataStr = formatarParaISO(data);
-    
+
     if (!dataInicioFiltro || (dataInicioFiltro && dataFimFiltro)) {
       setDataInicioFiltro(dataStr);
       setDataFimFiltro('');
@@ -123,23 +123,23 @@ export default function TransacoesFinanceiras({
   const CalendarPopup = () => (
     <div className="absolute top-full right-0 mt-2 z-[100] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 w-72 animate-in fade-in zoom-in duration-200">
       <div className="flex items-center justify-between mb-4">
-        <button 
+        <button
           type="button" // Adicionado type="button" para evitar submit de formulário
-          onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))} 
+          onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
           className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </button>
         <span className="text-sm font-normal text-slate-700">{mesNome}</span>
-        <button 
+        <button
           type="button" // Adicionado type="button"
-          onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))} 
+          onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}
           className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
         </button>
       </div>
-      
+
       <div className="grid grid-cols-7 gap-1 mb-2">
         {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((d, i) => (
           <div key={i} className="text-sm font-normal text-slate-300 text-center">{d}</div>
@@ -161,9 +161,9 @@ export default function TransacoesFinanceiras({
               onClick={() => handleSelecionarDia(dia)}
               className={`
                 h-9 w-9 text-sm font-normal rounded-lg transition-all border border-transparent
-                ${isInicio || isFim ? 'bg-[#1e3a8a] text-white shadow-md !font-bold' : 
-                  isRange ? 'bg-blue-50 text-[#2563eb]' : 
-                  isHoje ? 'text-[#2563eb] border border-blue-200' : 'text-slate-600 hover:bg-slate-50'}
+                ${isInicio || isFim ? 'bg-[#1e3a8a] text-white shadow-md !font-bold' :
+                  isRange ? 'bg-blue-50 text-[#2563eb]' :
+                    isHoje ? 'text-[#2563eb] border border-blue-200' : 'text-slate-600 hover:bg-slate-50'}
               `}
             >
               {dia.getDate()}
@@ -171,18 +171,18 @@ export default function TransacoesFinanceiras({
           );
         })}
       </div>
-      
+
       <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between gap-2">
-        <button 
+        <button
           type="button" // Adicionado type="button"
-          onClick={() => { setDataInicioFiltro(''); setDataFimFiltro(''); setCalendarioAberto(false); }} 
+          onClick={() => { setDataInicioFiltro(''); setDataFimFiltro(''); setCalendarioAberto(false); }}
           className="text-sm font-normal text-rose-500 hover:underline"
         >
           Limpar
         </button>
-        <button 
+        <button
           type="button" // Adicionado type="button"
-          onClick={() => setCalendarioAberto(false)} 
+          onClick={() => setCalendarioAberto(false)}
           className="text-sm font-normal text-slate-400 hover:text-slate-600"
         >
           Fechar
@@ -212,6 +212,7 @@ export default function TransacoesFinanceiras({
       if (statusTransacaoFiltro) query = query.eq('status', statusTransacaoFiltro.toLowerCase());
       if (contaFiltro) query = query.eq('conta_id', contaFiltro);
       if (categoriaFiltro) query = query.eq('categoria_id', categoriaFiltro);
+      if (!hasAccess('Financeiro') && membroLogado?.id) query = query.eq('pessoa_id', membroLogado.id);
 
       const { data, error } = await query;
       if (error) throw error;
@@ -227,7 +228,7 @@ export default function TransacoesFinanceiras({
     } finally {
       setCarregando(false);
     }
-  }, [dataInicioFiltro, dataFimFiltro, tipoTransacaoFiltro, statusTransacaoFiltro, contaFiltro, categoriaFiltro]);
+  }, [dataInicioFiltro, dataFimFiltro, tipoTransacaoFiltro, statusTransacaoFiltro, contaFiltro, categoriaFiltro, hasAccess, membroLogado?.id]);
 
   useEffect(() => {
     // Carrega dados auxiliares apenas uma vez ao montar o componente
@@ -272,8 +273,8 @@ export default function TransacoesFinanceiras({
         .eq('id', t.id);
       if (error) throw error;
       await registrarLogFinanceiro(
-        usuarioLogado?.email, 
-        'Exclusão de Transação', 
+        usuarioLogado?.email,
+        'Exclusão de Transação',
         `Removeu ${t.tipo}: ${t.descricao} (R$ ${t.valor})`
       );
       carregarTransacoes();
@@ -365,7 +366,7 @@ export default function TransacoesFinanceiras({
         <div className="hidden md:flex flex-wrap items-end gap-3">
           <div className="min-w-[240px] relative datepicker-container">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Data da Movimentação</label>
-            <div 
+            <div
               onClick={() => setCalendarioAberto(!calendarioAberto)}
               className={`flex items-center gap-3 px-3 py-2.5 bg-white border rounded-xl cursor-pointer transition-all shadow-sm group ${calendarioAberto ? 'border-[#1e3a8a] ring-2 ring-[#1e3a8a]/10' : 'border-slate-200 hover:border-slate-300'}`}
             >
@@ -399,22 +400,22 @@ export default function TransacoesFinanceiras({
           </div>
 
           {podeEditar && (
-          <div className="hidden md:flex items-center gap-2 w-full md:w-auto">
-            <button 
-              type="button" 
-              onClick={() => abrirModal('receita')}
-              className="flex-1 md:min-w-[140px] justify-center px-8 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition shadow-sm flex items-center gap-2"
-            >
-              <span className="text-base font-bold">+</span> Receita
-            </button>
-            <button 
-              type="button" 
-              onClick={() => abrirModal('despesa')}
-              className="flex-1 md:min-w-[140px] justify-center px-8 py-2 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition shadow-sm flex items-center gap-2"
-            >
-              <span className="text-base font-bold">+</span> Despesa
-            </button>
-          </div>
+            <div className="hidden md:flex items-center gap-2 w-full md:w-auto">
+              <button
+                type="button"
+                onClick={() => abrirModal('receita')}
+                className="flex-1 md:min-w-[140px] justify-center px-8 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition shadow-sm flex items-center gap-2"
+              >
+                <span className="text-base font-bold">+</span> Receita
+              </button>
+              <button
+                type="button"
+                onClick={() => abrirModal('despesa')}
+                className="flex-1 md:min-w-[140px] justify-center px-8 py-2 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition shadow-sm flex items-center gap-2"
+              >
+                <span className="text-base font-bold">+</span> Despesa
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -431,7 +432,7 @@ export default function TransacoesFinanceiras({
           <div className="p-6 space-y-5 overflow-y-auto max-h-[70vh]">
             <div className="relative datepicker-container">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">Período</label>
-              <div 
+              <div
                 onClick={() => setCalendarioAberto(!calendarioAberto)}
                 className={`flex items-center gap-3 px-3 py-2.5 bg-white border rounded-xl cursor-pointer transition-all shadow-sm group ${calendarioAberto ? 'border-[#1e3a8a] ring-2 ring-[#1e3a8a]/10' : 'border-slate-200 hover:border-slate-300'}`}
               >
@@ -459,7 +460,7 @@ export default function TransacoesFinanceiras({
               <BtnAtalho label="Limpar" onClick={() => setPeriodoRapido('limpar')} destaque />
             </div>
 
-            <button 
+            <button
               onClick={() => setFiltrosMobileAberto(false)}
               className="w-full py-4 bg-[#1e3a8a] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl mt-4 active:scale-[0.98] transition-all"
             >
@@ -560,51 +561,49 @@ export default function TransacoesFinanceiras({
                   const tipoNormalizado = t.tipo?.toLowerCase();
                   return (
                     <tr key={t.id} onClick={() => podeEditar && abrirModal(tipoNormalizado, t)} className={`${podeEditar ? 'cursor-pointer hover:bg-slate-50' : ''} transition`}>
-                    <td>{t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
-                    <td className="text-slate-600 font-normal">{t.descricao}</td>
-                    <td className="font-medium text-slate-900">{t.contribuinte || '—'}</td>
-                    <td>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        t.tipo === 'Receita' ? 'bg-emerald-100 text-emerald-800' :
-                        t.tipo === 'Despesa' ? 'bg-rose-100 text-rose-800' :
-                        'bg-blue-100 text-blue-800'
-                      }`}>
-                        {t.tipo}
-                      </span>
-                    </td>
-                    <td>{t.categoria}</td>
-                    <td>{t.conta}</td>
-                    <td>
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        t.status === 'Pago' ? 'bg-green-100 text-green-800' :
-                        t.status === 'Pendente' ? 'bg-amber-100 text-amber-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {t.status}
-                      </span>
-                    </td>
-                    <td className="text-right pr-6">
-                      <div className="flex items-center justify-end gap-2">
-                        {podeEditar ? (
-                          <> {/* Botões de editar e excluir ficam no modal, mas o ícone de editar na tabela ainda é útil */}
-                        <span className="font-bold mr-2">{`R$ ${t.valor.toFixed(2)}`}</span>
-                        <button onClick={(e) => { e.stopPropagation(); abrirModal(tipoNormalizado, t); }} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Lançamento">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button onClick={(e) => handleQuickDelete(e, t)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Excluir Lançamento">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                          </>
-                        ) : (
-                          <span className="font-bold">{`R$ ${t.valor.toFixed(2)}`}</span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                      <td>{t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
+                      <td className="text-slate-600 font-normal">{t.descricao}</td>
+                      <td className="font-medium text-slate-900">{t.contribuinte || '—'}</td>
+                      <td>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.tipo === 'Receita' ? 'bg-emerald-100 text-emerald-800' :
+                            t.tipo === 'Despesa' ? 'bg-rose-100 text-rose-800' :
+                              'bg-blue-100 text-blue-800'
+                          }`}>
+                          {t.tipo}
+                        </span>
+                      </td>
+                      <td>{t.categoria}</td>
+                      <td>{t.conta}</td>
+                      <td>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.status === 'Pago' ? 'bg-green-100 text-green-800' :
+                            t.status === 'Pendente' ? 'bg-amber-100 text-amber-800' :
+                              'bg-red-100 text-red-800'
+                          }`}>
+                          {t.status}
+                        </span>
+                      </td>
+                      <td className="text-right pr-6">
+                        <div className="flex items-center justify-end gap-2">
+                          {podeEditar ? (
+                            <> {/* Botões de editar e excluir ficam no modal, mas o ícone de editar na tabela ainda é útil */}
+                              <span className="font-bold mr-2">{`R$ ${t.valor.toFixed(2)}`}</span>
+                              <button onClick={(e) => { e.stopPropagation(); abrirModal(tipoNormalizado, t); }} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Lançamento">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button onClick={(e) => handleQuickDelete(e, t)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Excluir Lançamento">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </>
+                          ) : (
+                            <span className="font-bold">{`R$ ${t.valor.toFixed(2)}`}</span>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
@@ -612,86 +611,86 @@ export default function TransacoesFinanceiras({
           </div>
         )}
 
-            {/* Lista Compacta para Telas Pequenas */}
-            <div className="sm:hidden divide-y divide-slate-100/50 border-y border-slate-100/50">
-              {carregando ? (
-                <div className="p-10 text-center text-sm text-slate-400">Carregando transações...</div>
-              ) : transacoes.length === 0 ? (
-                <div className="p-10 text-center text-sm text-slate-400">Nenhuma transação encontrada com os filtros.</div>
-              ) : (
-                transacoes.map((t, idx) => {
-                  const tipoNormalizado = t.tipo?.toLowerCase();
-                  const valorColor = tipoNormalizado === 'receita' ? 'text-emerald-600' : 'text-rose-600';
-                  const statusColor = t.status === 'Pago' ? 'text-green-600' : t.status === 'Pendente' ? 'text-amber-600' : 'text-red-600';
-                  const statusBg = t.status === 'Pago' ? 'bg-green-50' : t.status === 'Pendente' ? 'bg-amber-50' : 'bg-red-50';
-                  
-                  // Alternância de tom de fundo
-                  const bgRow = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40';
-                  
-                  // Borda lateral para representar Receita vs Despesa
-                  const borderType = 
-                    tipoNormalizado === 'receita' ? 'border-l-4 border-l-emerald-500' : 
-                    tipoNormalizado === 'despesa' ? 'border-l-4 border-l-rose-500' : 
+        {/* Lista Compacta para Telas Pequenas */}
+        <div className="sm:hidden divide-y divide-slate-100/50 border-y border-slate-100/50">
+          {carregando ? (
+            <div className="p-10 text-center text-sm text-slate-400">Carregando transações...</div>
+          ) : transacoes.length === 0 ? (
+            <div className="p-10 text-center text-sm text-slate-400">Nenhuma transação encontrada com os filtros.</div>
+          ) : (
+            transacoes.map((t, idx) => {
+              const tipoNormalizado = t.tipo?.toLowerCase();
+              const valorColor = tipoNormalizado === 'receita' ? 'text-emerald-600' : 'text-rose-600';
+              const statusColor = t.status === 'Pago' ? 'text-green-600' : t.status === 'Pendente' ? 'text-amber-600' : 'text-red-600';
+              const statusBg = t.status === 'Pago' ? 'bg-green-50' : t.status === 'Pendente' ? 'bg-amber-50' : 'bg-red-50';
+
+              // Alternância de tom de fundo
+              const bgRow = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40';
+
+              // Borda lateral para representar Receita vs Despesa
+              const borderType =
+                tipoNormalizado === 'receita' ? 'border-l-4 border-l-emerald-500' :
+                  tipoNormalizado === 'despesa' ? 'border-l-4 border-l-rose-500' :
                     'border-l-4 border-l-blue-500';
 
-                  return (
-                    <div 
-                      key={t.id} 
-                      onClick={() => podeEditar && abrirModal(tipoNormalizado, t)} 
-                      className={`${podeEditar ? 'cursor-pointer hover:bg-slate-100/50' : ''} p-4 flex items-center justify-between transition active:scale-[0.98] ${bgRow} ${borderType}`}
-                    >
-                      <div className="flex flex-col flex-1 min-w-0 pr-2">
-                        {/* Metadados: Data e Conta */}
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
-                            {t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
-                          </span>
-                          <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                          <span className="text-[9px] font-black bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                            {t.conta || 'Principal'}
-                          </span>
-                        </div>
-                        
-                        {/* Descrição principal */}
-                        <p className="text-sm font-extrabold text-slate-800 leading-tight mt-1 truncate">{t.descricao}</p>
-                        
-                        {/* Informação adicional (Doador/Categoria) */}
-                        <p className="text-[11px] text-slate-500 mt-1 truncate">
-                          {tipoNormalizado === 'receita' ? (
-                            `Contribuinte: ${t.contribuinte || '—'}`
-                          ) : (
-                            `Categoria: ${t.categoria || '—'}`
-                          )}
-                        </p>
-                      </div>
-                      
-                      {/* Lado Direito: Valor e Status */}
-                      <div className="flex flex-col items-end shrink-0 pl-1">
-                        <span className={`text-base font-black tracking-tight ${valorColor}`}>
-                          {tipoNormalizado === 'receita' ? '+' : '-'} R$ {Number(t.valor).toFixed(2)}
-                        </span>
-                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase mt-1.5 tracking-wider ${statusBg} ${statusColor}`}>
-                          {t.status}
-                        </span>
-                      </div>
+              return (
+                <div
+                  key={t.id}
+                  onClick={() => podeEditar && abrirModal(tipoNormalizado, t)}
+                  className={`${podeEditar ? 'cursor-pointer hover:bg-slate-100/50' : ''} p-4 flex items-center justify-between transition active:scale-[0.98] ${bgRow} ${borderType}`}
+                >
+                  <div className="flex flex-col flex-1 min-w-0 pr-2">
+                    {/* Metadados: Data e Conta */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
+                        {t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
+                      </span>
+                      <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                      <span className="text-[9px] font-black bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                        {t.conta || 'Principal'}
+                      </span>
                     </div>
-                  );
-                })
-              )}
-            </div>
 
-            {/* Botão flutuante para adicionar transação em mobile */}
-            {podeEditar && (
-              <div className="fixed bottom-20 right-6 z-50 flex gap-3 md:hidden">
-                <button type="button" onClick={() => abrirModal('receita')} className="w-14 h-14 rounded-full bg-emerald-600 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all" title="Nova Receita">+</button>
-                <button type="button" onClick={() => abrirModal('despesa')} className="w-14 h-14 rounded-full bg-rose-600 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all" title="Nova Despesa">—</button>
-              </div>
-            )}
+                    {/* Descrição principal */}
+                    <p className="text-sm font-extrabold text-slate-800 leading-tight mt-1 truncate">{t.descricao}</p>
+
+                    {/* Informação adicional (Doador/Categoria) */}
+                    <p className="text-[11px] text-slate-500 mt-1 truncate">
+                      {tipoNormalizado === 'receita' ? (
+                        `Contribuinte: ${t.contribuinte || '—'}`
+                      ) : (
+                        `Categoria: ${t.categoria || '—'}`
+                      )}
+                    </p>
+                  </div>
+
+                  {/* Lado Direito: Valor e Status */}
+                  <div className="flex flex-col items-end shrink-0 pl-1">
+                    <span className={`text-base font-black tracking-tight ${valorColor}`}>
+                      {tipoNormalizado === 'receita' ? '+' : '-'} R$ {Number(t.valor).toFixed(2)}
+                    </span>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase mt-1.5 tracking-wider ${statusBg} ${statusColor}`}>
+                      {t.status}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Botão flutuante para adicionar transação em mobile */}
+        {podeEditar && (
+          <div className="fixed bottom-20 right-6 z-50 flex gap-3 md:hidden">
+            <button type="button" onClick={() => abrirModal('receita')} className="w-14 h-14 rounded-full bg-emerald-600 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all" title="Nova Receita">+</button>
+            <button type="button" onClick={() => abrirModal('despesa')} className="w-14 h-14 rounded-full bg-rose-600 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all" title="Nova Despesa">—</button>
+          </div>
+        )}
       </Card>
 
       {modalTransacao.aberto && (
-        <ModalLancarTransacao 
-          tipo={modalTransacao.tipo} 
+        <ModalLancarTransacao
+          tipo={modalTransacao.tipo}
           transacaoParaEditar={modalTransacao.dados}
           onFechar={() => setModalTransacao({ aberto: false, tipo: 'receita', dados: null })}
           contas={contasDisponiveis}
@@ -743,8 +742,8 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
         .eq('id', transacaoParaEditar.id);
       if (error) throw error;
       await registrarLogFinanceiro(
-        usuarioLogado?.email, 
-        'Exclusão de Transação', 
+        usuarioLogado?.email,
+        'Exclusão de Transação',
         `Removeu ${tipo}: ${transacaoParaEditar.descricao} (R$ ${transacaoParaEditar.valor})`
       );
       onSucesso();
@@ -839,7 +838,7 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
         <div className={`p-3 sm:p-4 border-b border-slate-100 flex items-center justify-between ${corHeader}`}>
           <div>
             <h3 className="font-bold text-slate-900 text-sm sm:text-base uppercase tracking-tight">{transacaoParaEditar ? 'Editar' : 'Nova'} {tipo}</h3>
-            
+
           </div>
           <button type="button" onClick={onFechar} className="text-slate-400 hover:text-slate-600 font-bold p-2 text-xl">✕</button>
         </div>
@@ -864,43 +863,43 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                <label className="block text-sm font-bold text-slate-500 mb-1">Tipo de Lançamento</label>
-                <select value={tipoLancamento} onChange={e => setTipoLancamento(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none">
-                  <option value="unico">Lançamento Único</option>
-                  <option value="repetido">Repetido / Fixo</option>
-                </select>
-              </div>
-
-              {tipoLancamento === 'repetido' && (
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-500 mb-1">Dia Venc.</label>
-                    <select 
-                      value={diaVencimento} 
-                      onChange={e => setDiaVencimento(parseInt(e.target.value))}
-                      className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
-                    >
-                      {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
-                        <option key={d} value={d}>{d}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-500 mb-1">Frequência</label>
-                    <select value={frequencia} onChange={e => setFrequencia(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none">
-                      <option value="semanal">Semanal</option>
-                      <option value="mensal">Mensal</option>
-                      <option value="anual">Anual</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-slate-500 mb-1">Repetições</label>
-                    <select value={repeticoes} onChange={e => setRepeticoes(parseInt(e.target.value))} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none">
-                      {Array.from({ length: 35 }, (_, i) => i + 2).map(n => <option key={n} value={n}>{n}x</option>)}
-                    </select>
-                  </div>
+                  <label className="block text-sm font-bold text-slate-500 mb-1">Tipo de Lançamento</label>
+                  <select value={tipoLancamento} onChange={e => setTipoLancamento(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none">
+                    <option value="unico">Lançamento Único</option>
+                    <option value="repetido">Repetido / Fixo</option>
+                  </select>
                 </div>
-              )}
+
+                {tipoLancamento === 'repetido' && (
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-500 mb-1">Dia Venc.</label>
+                      <select
+                        value={diaVencimento}
+                        onChange={e => setDiaVencimento(parseInt(e.target.value))}
+                        className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                      >
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-500 mb-1">Frequência</label>
+                      <select value={frequencia} onChange={e => setFrequencia(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none">
+                        <option value="semanal">Semanal</option>
+                        <option value="mensal">Mensal</option>
+                        <option value="anual">Anual</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-500 mb-1">Repetições</label>
+                      <select value={repeticoes} onChange={e => setRepeticoes(parseInt(e.target.value))} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none">
+                        {Array.from({ length: 35 }, (_, i) => i + 2).map(n => <option key={n} value={n}>{n}x</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -929,14 +928,13 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
             </div>
             <div className="sm:col-span-2">
               <label className="block text-sm font-bold text-slate-500 mb-1">Status</label>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setStatus(status === 'pago' ? 'pendente' : 'pago')}
-                className={`w-full py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition flex items-center justify-center gap-2 shadow-xs ${
-                  status === 'pago' 
+                className={`w-full py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition flex items-center justify-center gap-2 shadow-xs ${status === 'pago'
                     ? `bg-emerald-600 border-emerald-600 text-white shadow-emerald-200` // Verde para Pago
                     : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600' // Discreto para Pendente
-                }`}
+                  }`}
               >
                 {status === 'pago' ? '✓' : '○'} {labelStatus}
               </button>
@@ -945,11 +943,11 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
 
           <div>
             <label className="block text-sm font-bold text-slate-500 mb-1">Anotações Internas</label>
-            <textarea 
-              rows="1" 
-              value={anotacoes} 
-              onChange={e => setAnotacoes(e.target.value)} 
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#2563eb]/20 outline-none resize-none" 
+            <textarea
+              rows="1"
+              value={anotacoes}
+              onChange={e => setAnotacoes(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#2563eb]/20 outline-none resize-none"
               placeholder="Detalhes adicionais sobre este lançamento..."
             />
           </div>
@@ -975,8 +973,8 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
             )}
 
             <button type="button" onClick={onFechar} className="w-full sm:w-auto px-5 py-2 text-sm font-bold text-slate-400 hover:text-slate-600 transition order-2 sm:order-1">Cancelar</button>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={enviando}
               className={`fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-[120] 
                 sm:static sm:w-auto sm:h-auto sm:px-10 sm:py-2.5 sm:rounded-2xl sm:shadow-lg
@@ -1004,11 +1002,10 @@ function BtnAtalho({ label, onClick, destaque }) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-5 py-1.5 rounded-lg text-sm font-normal transition ${
-        destaque 
-          ? 'bg-[#1e3a8a] text-white hover:bg-[#1e40af]' 
+      className={`px-5 py-1.5 rounded-lg text-sm font-normal transition ${destaque
+          ? 'bg-[#1e3a8a] text-white hover:bg-[#1e40af]'
           : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600 border border-slate-200'
-      }`}
+        }`}
     >
       {label}
     </button>

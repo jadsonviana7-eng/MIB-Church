@@ -37,6 +37,7 @@ export default function OverviewDashboard({
   membroLogado = null,
   usuarioLogado = null,
   onNavigate = () => {},
+  hasAccess = () => false,
   reunioesVistas = [],
   abaDashboard,
   setAbaDashboard
@@ -49,6 +50,7 @@ export default function OverviewDashboard({
   const [financeLoading, setFinanceLoading] = useState(false);
   const [financeData, setFinanceData] = useState(null);
   const [hasFinanceAccess, setHasFinanceAccess] = useState(true);
+  const podeVerFinanceiro = hasAccess('Financeiro');
 
   // 1. Processamento Geral de Pessoas Ativas
   const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo'), [pessoas]);
@@ -233,10 +235,16 @@ export default function OverviewDashboard({
   }, [meses]);
 
   useEffect(() => {
-    if (abaAtiva === 'financas') {
+    if (abaAtiva === 'financas' && podeVerFinanceiro) {
       fetchFinanceData();
     }
-  }, [abaAtiva, fetchFinanceData]);
+  }, [abaAtiva, fetchFinanceData, podeVerFinanceiro]);
+
+  useEffect(() => {
+    if (abaAtiva === 'financas' && !podeVerFinanceiro) {
+      setAbaAtiva('visao_geral');
+    }
+  }, [abaAtiva, podeVerFinanceiro, setAbaAtiva]);
 
   // Formatador de Moeda BRL
   const formatarBRL = (valor) => {
@@ -289,7 +297,7 @@ export default function OverviewDashboard({
           { id: 'celulas', label: 'Células & Engajamento', icon: <Home size={16} /> },
           { id: 'demografia', label: 'Crescimento & Demografia', icon: <Activity size={16} /> },
           { id: 'financas', label: 'Painel Financeiro', icon: <Coins size={16} /> }
-        ].map((tab) => (
+        ].filter(tab => tab.id !== 'financas' || podeVerFinanceiro).map((tab) => (
           <button
             key={tab.id}
             onClick={() => setAbaAtiva(tab.id)}
@@ -317,7 +325,7 @@ export default function OverviewDashboard({
             { label: 'Lançar Reunião', action: () => onNavigate('celulas', 'reunioes'), color: 'hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700', icon: <Plus size={16} className="text-emerald-500" /> },
             { label: 'Nova Transação', action: () => onNavigate('financeiro', 'transacoes'), color: 'hover:bg-purple-50 hover:border-purple-200 hover:text-purple-700', icon: <Plus size={16} className="text-purple-500" /> },
             { label: 'Escalas de Culto', action: () => onNavigate('gestao', 'escalas'), color: 'hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700', icon: <Calendar size={16} className="text-amber-500" /> }
-          ].map((item, idx) => (
+          ].filter(item => item.label !== 'Nova Transação' || podeVerFinanceiro).map((item, idx) => (
             <button
               key={idx}
               onClick={item.action}

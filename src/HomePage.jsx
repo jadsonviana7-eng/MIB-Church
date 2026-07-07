@@ -51,6 +51,7 @@ export default function HomePage({
   const [financeLoading, setFinanceLoading] = useState(false);
   const [financeData, setFinanceData] = useState(null);
   const [hasFinanceAccess, setHasFinanceAccess] = useState(true);
+  const podeVerFinanceiro = hasAccess('Financeiro');
 
   // Handlers para navegação do mural de avisos
   const avisoAnterior = useCallback((e) => {
@@ -267,10 +268,16 @@ export default function HomePage({
   }, [meses]);
 
   useEffect(() => {
-    if (abaAtiva === 'financas') {
+    if (abaAtiva === 'financas' && podeVerFinanceiro) {
       fetchFinanceData();
     }
-  }, [abaAtiva, fetchFinanceData]);
+  }, [abaAtiva, fetchFinanceData, podeVerFinanceiro]);
+
+  useEffect(() => {
+    if (abaAtiva === 'financas' && !podeVerFinanceiro) {
+      setAbaAtiva('visao_geral');
+    }
+  }, [abaAtiva, podeVerFinanceiro, setAbaAtiva]);
 
   // Formatador de Moeda BRL
   const formatarBRL = (valor) => {
@@ -342,13 +349,13 @@ export default function HomePage({
       </div>
 
       {/* 2. MENU DE ABAS MOBILE (TABS NAVIGATION - GRID SEGMENTADO FIXO) */}
-      <div className="grid grid-cols-4 bg-white/80 backdrop-blur-md p-1 rounded-xl shadow-xs border border-slate-200/80 gap-1 w-full">
+      <div className={`grid ${podeVerFinanceiro ? 'grid-cols-4' : 'grid-cols-3'} bg-white/80 backdrop-blur-md p-1 rounded-xl shadow-xs border border-slate-200/80 gap-1 w-full`}>
         {[
           { id: 'visao_geral', label: 'Geral', icon: <Users size={14} /> },
           { id: 'celulas', label: 'Células', icon: <Home size={14} /> },
           { id: 'demografia', label: 'Crescimento', icon: <Activity size={14} /> },
           { id: 'financas', label: 'Finanças', icon: <Coins size={14} /> }
-        ].map((tab) => (
+        ].filter(tab => tab.id !== 'financas' || podeVerFinanceiro).map((tab) => (
           <button
             key={tab.id}
             onClick={() => setAbaAtiva(tab.id)}

@@ -86,15 +86,15 @@ const exportStyles = `
   .export-list-grid { display: flex; flex-direction: column; gap: 20px; width: 100%; }
   
   .export-table { width: 100%; border-collapse: collapse; margin-top: 12px; z-index: 2; position: relative; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12); }
-  .export-th { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.9); padding: 22px 20px; background: rgba(15, 23, 42, 0.55); border-bottom: 2px solid rgba(255, 255, 255, 0.1); text-align: left; }
+  .export-th { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.9); padding: 22px 20px; background: rgba(15, 23, 42, 0.55); border-bottom: 2px solid rgba(255, 255, 255, 0.1); text-align: center; }
   .export-tr { border-bottom: 1px solid rgba(0, 0, 0, 0.05); background: rgba(255, 255, 255, 0.96); }
   .export-tr-alt { border-bottom: 1px solid rgba(0, 0, 0, 0.05); background: rgba(248, 250, 252, 0.96); }
   .export-tr:last-child, .export-tr-alt:last-child { border-bottom: none; }
-  .export-td { padding: 22px 20px; font-size: 24px; font-weight: 800; color: #0f172a; vertical-align: middle; }
+  .export-td { padding: 22px 20px; font-size: 24px; font-weight: 800; color: #0f172a; vertical-align: middle; text-align: center; }
   .export-td-date { width: 90px; text-align: center; }
-  .export-date-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; line-height: 1; }
-  .export-date-cell-day { font-size: 13px; font-weight: 900; opacity: 0.6; text-transform: uppercase; color: #475569; }
-  .export-date-cell-num { font-size: 38px; font-weight: 900; line-height: 1; }
+  .export-date-cell { display: block; text-align: center; line-height: 1; }
+  .export-date-cell-day { font-size: 13px; font-weight: 900; opacity: 0.6; text-transform: uppercase; color: #475569; display: block; text-align: center; margin-bottom: 2px; }
+  .export-date-cell-num { font-size: 38px; font-weight: 900; line-height: 1; display: block; text-align: center; }
   .export-name-empty { opacity: 0.35; font-weight: 500; color: #94a3b8; letter-spacing: 1px; }
   .export-td-uniform { font-style: italic; font-weight: 700; }
 
@@ -340,14 +340,14 @@ export default function EscalasMinisterial() {
         list:      `box-sizing:border-box;border-radius:40px;padding:32px 20px;display:flex;flex-direction:column;gap:16px;border:1px solid rgba(255,255,255,0.15);box-shadow:0 20px 50px rgba(0,0,0,0.15);z-index:2;background:linear-gradient(135deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0.03) 100%);`,
         listTitle: `box-sizing:border-box;font-size:18px;font-weight:900;text-transform:uppercase;letter-spacing:0.25em;opacity:0.55;padding:0 12px 12px;border-bottom:2px solid rgba(255,255,255,0.1);margin-bottom:8px;text-align:center;color:rgba(255,255,255,0.7);`,
         table:     `box-sizing:border-box;width:100%;border-collapse:collapse;margin-top:12px;border-radius:24px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.12);`,
-        th:        `box-sizing:border-box;font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.9);padding:22px 20px;background:rgba(15,23,42,0.55);border-bottom:2px solid rgba(255,255,255,0.1);text-align:left;`,
+        th:        `box-sizing:border-box;font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.9);padding:22px 20px;background:rgba(15,23,42,0.55);border-bottom:2px solid rgba(255,255,255,0.1);text-align:center;`,
         tr:        `box-sizing:border-box;border-bottom:1px solid rgba(0,0,0,0.05);background:rgba(255,255,255,0.96);`,
         trAlt:     `box-sizing:border-box;border-bottom:1px solid rgba(0,0,0,0.05);background:rgba(248,250,252,0.96);`,
-        td:        `box-sizing:border-box;padding:22px 20px;font-size:24px;font-weight:800;color:#0f172a;vertical-align:middle;`,
+        td:        `box-sizing:border-box;padding:22px 20px;font-size:24px;font-weight:800;color:#0f172a;vertical-align:middle;text-align:center;`,
         tdDate:    `box-sizing:border-box;width:90px;text-align:center;`,
-        dateCell:  `box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1;`,
-        dateCellDay:`box-sizing:border-box;font-size:13px;font-weight:900;opacity:0.6;text-transform:uppercase;color:#475569;line-height:1;`,
-        dateCellNum:`box-sizing:border-box;font-size:38px;font-weight:900;color:${p.accent};line-height:1;`,
+        dateCell:  `box-sizing:border-box;display:block;text-align:center;line-height:1;`,
+        dateCellDay:`box-sizing:border-box;font-size:13px;font-weight:900;opacity:0.6;text-transform:uppercase;color:#475569;line-height:1;display:block;text-align:center;margin-bottom:2px;`,
+        dateCellNum:`box-sizing:border-box;font-size:38px;font-weight:900;color:${p.accent};line-height:1;display:block;text-align:center;`,
         nameEmpty: `box-sizing:border-box;opacity:0.35;font-weight:500;color:#94a3b8;`,
         tdUniform: `box-sizing:border-box;font-style:italic;font-weight:700;color:${p.accent};font-size:22px;`,
         footer:    `box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 0 12px;flex-shrink:0;gap:10px;z-index:2;`,
@@ -376,10 +376,10 @@ export default function EscalasMinisterial() {
       const fontSizeNomes = numColunas >= 4 ? '18px' : numColunas === 3 ? '20px' : '22px';
 
       // ── cabeçalho da tabela ───────────────────────────────────────────
-      const thsHTML = cargos.map(cargo => `<th style="${S.th}">${cargo}</th>`).join('');
-      const thUniformHTML = isIntercessao ? `<th style="${S.th}">Uniforme</th>` : '';
+      const thsHTML = cargos.map(cargo => `<th style="${S.th}" align="center">${cargo}</th>`).join('');
+      const thUniformHTML = isIntercessao ? `<th style="${S.th}" align="center">Uniforme</th>` : '';
       const headerRowHTML = `<tr>
-        <th style="${S.th};width:90px;text-align:center;">Data</th>
+        <th style="${S.th};width:90px;text-align:center;" align="center">Data</th>
         ${thsHTML}
         ${thUniformHTML}
       </tr>`;
@@ -398,7 +398,7 @@ export default function EscalasMinisterial() {
             ? `${partes[0]} ${partes[partes.length - 1]}`
             : (partes[0] || '');
 
-          return `<td style="${S.td};font-size:${fontSizeNomes};">
+          return `<td style="${S.td};font-size:${fontSizeNomes};" align="center">
             ${nomeCurto
               ? `<span>${nomeCurto}</span>`
               : `<span style="${S.nameEmpty}">— —</span>`}
@@ -406,17 +406,24 @@ export default function EscalasMinisterial() {
         }).join('');
 
         const tdUniformHTML = isIntercessao
-          ? `<td style="${S.td};${S.tdUniform};font-size:${fontSizeNomes};">
+          ? `<td style="${S.td};${S.tdUniform};font-size:${fontSizeNomes};" align="center">
               ${uniformes[culto.id]
                 ? `<span>${uniformes[culto.id]}</span>`
                 : `<span style="${S.nameEmpty}">— —</span>`}
              </td>`
           : '';
 
+        const diaSemanaStr = culto.tipoDia.slice(0, 3).toUpperCase();
+        const badgeBg = diaSemanaStr === 'DOM' ? '#ef4444' : diaSemanaStr === 'QUI' ? '#facc15' : 'transparent';
+        const badgeColor = diaSemanaStr === 'DOM' ? '#ffffff' : diaSemanaStr === 'QUI' ? '#0f172a' : '#475569';
+        const extraSpanStyle = diaSemanaStr === 'DOM' || diaSemanaStr === 'QUI'
+          ? `background-color:${badgeBg};color:${badgeColor};padding:2px 8px;border-radius:6px;font-size:11px;font-weight:900;display:inline-block;margin-bottom:2px;opacity:1;`
+          : '';
+
         return `<tr style="${rowStyle}">
-          <td style="${S.td};${S.tdDate}">
+          <td style="${S.td};${S.tdDate}" align="center">
             <div style="${S.dateCell}">
-              <span style="${S.dateCellDay}">${culto.tipoDia.slice(0, 3).toUpperCase()}</span>
+              <span style="${S.dateCellDay};${extraSpanStyle}">${diaSemanaStr}</span>
               <span style="${S.dateCellNum}">${culto.dia}</span>
             </div>
           </td>
@@ -942,11 +949,11 @@ export default function EscalasMinisterial() {
                   <table className="export-table">
                     <thead>
                       <tr>
-                        <th className="export-th" style={{ width: '90px', textAlign: 'center' }}>Data</th>
+                        <th className="export-th" style={{ width: '90px', textAlign: 'center' }} align="center">Data</th>
                         {(config?.cargos || []).map(cargo => (
-                          <th key={cargo} className="export-th">{cargo}</th>
+                          <th key={cargo} className="export-th" style={{ textAlign: 'center' }} align="center">{cargo}</th>
                         ))}
-                        {isIntercessao && <th className="export-th">Uniforme</th>}
+                        {isIntercessao && <th className="export-th" style={{ textAlign: 'center' }} align="center">Uniforme</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -960,9 +967,32 @@ export default function EscalasMinisterial() {
 
                         return (
                           <tr key={culto.id} className={rowClass}>
-                            <td className="export-td export-td-date">
+                            <td className="export-td export-td-date" align="center">
                               <div className="export-date-cell">
-                                <span className="export-date-cell-day">{culto.tipoDia.slice(0, 3).toUpperCase()}</span>
+                                {(() => {
+                                  const diaSemanaStr = culto.tipoDia.slice(0, 3).toUpperCase();
+                                  const isDomOrQui = diaSemanaStr === 'DOM' || diaSemanaStr === 'QUI';
+                                  const badgeBg = diaSemanaStr === 'DOM' ? '#ef4444' : diaSemanaStr === 'QUI' ? '#facc15' : 'transparent';
+                                  const badgeColor = diaSemanaStr === 'DOM' ? '#ffffff' : diaSemanaStr === 'QUI' ? '#0f172a' : '#475569';
+                                  return (
+                                    <span
+                                      className="export-date-cell-day"
+                                      style={isDomOrQui ? {
+                                        backgroundColor: badgeBg,
+                                        color: badgeColor,
+                                        padding: '2px 8px',
+                                        borderRadius: '6px',
+                                        fontSize: '11px',
+                                        fontWeight: '900',
+                                        display: 'inline-block',
+                                        marginBottom: '2px',
+                                        opacity: 1
+                                      } : {}}
+                                    >
+                                      {diaSemanaStr}
+                                    </span>
+                                  );
+                                })()}
                                 <span className="export-date-cell-num" style={{ color: paleta.accent }}>{culto.dia}</span>
                               </div>
                             </td>
@@ -972,13 +1002,13 @@ export default function EscalasMinisterial() {
                               const partes = pessoa ? pessoa.nome.trim().split(' ') : [];
                               const nomeCurto = partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1]}` : (partes[0] || '');
                               return (
-                                <td key={idx} className="export-td" style={{ fontSize: fontSizeNomes }}>
+                                <td key={idx} className="export-td" style={{ fontSize: fontSizeNomes, textAlign: 'center' }} align="center">
                                   {nomeCurto ? <span>{nomeCurto}</span> : <span className="export-name-empty">— —</span>}
                                 </td>
                               );
                             })}
                             {isIntercessao && (
-                              <td className="export-td export-td-uniform" style={{ color: paleta.accent, fontSize: fontSizeNomes }}>
+                              <td className="export-td export-td-uniform" style={{ color: paleta.accent, fontSize: fontSizeNomes, textAlign: 'center' }} align="center">
                                 {uniformes[culto.id] ? <span>{uniformes[culto.id]}</span> : <span className="export-name-empty">— —</span>}
                               </td>
                             )}

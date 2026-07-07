@@ -76,6 +76,13 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
   }, [submenu]);
 
   const carregarDadosIniciais = useCallback(async () => {
+    if (!hasAccess('Financeiro')) {
+      setTransacoes([]);
+      setContas([]);
+      setCarregando(false);
+      return;
+    }
+
     setCarregando(true);
     
     const [resTransacoes, resContas] = await Promise.all([
@@ -87,7 +94,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
     if (!resContas.error) setContas(resContas.data || []);
     
     setCarregando(false);
-  }, []);
+  }, [hasAccess]);
 
   useEffect(() => {
     carregarDadosIniciais();
@@ -203,6 +210,14 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
 
   const formatMoeda = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const formatMoedaValor = (val) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  if (!hasAccess('Financeiro')) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center text-sm font-semibold text-slate-500">
+        Você não possui acesso ao módulo financeiro.
+      </div>
+    );
+  }
 
   return (
       <div className="space-y-6">

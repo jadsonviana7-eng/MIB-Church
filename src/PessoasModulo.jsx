@@ -224,10 +224,17 @@ export default function PessoasModulo(props) {
             )}
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5">
-            <Card className="p-0">
-              <TabelaPessoas pessoas={pessoasFiltradasMembros} onSelecionar={setMembroSelecionadoId} />
-            </Card>
+          {!hasAccess('Pessoas', 'Ver todos') ? (
+            <div className="p-8 mt-5 text-center bg-white rounded-3xl border border-slate-200 shadow-sm">
+              <span className="text-3xl block mb-3">🔒</span>
+              <h3 className="text-slate-700 font-bold">Acesso Restrito</h3>
+              <p className="text-sm text-slate-500 mt-1">Sua conta não possui permissão para visualizar o diretório completo de membros.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5 mt-5">
+              <Card className="p-0">
+                <TabelaPessoas pessoas={pessoasFiltradasMembros} onSelecionar={setMembroSelecionadoId} />
+              </Card>
 
         {/* Drawer de Filtros para Mobile / Sidebar para Desktop */}
         <div className={`${filtrosMobileAberto ? 'fixed inset-0 z-[60] flex items-end justify-center sm:items-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm' : 'hidden xl:block'} transition-all`}>
@@ -246,10 +253,12 @@ export default function PessoasModulo(props) {
               cargosDisponiveis={cargosDisponiveis} 
               atuacoesDisponiveis={atuacoesDisponiveis} 
               escolaridadesDisponiveis={escolaridadesDisponiveis} 
+              escolaridadesDisponiveis={escolaridadesDisponiveis} 
             />
           </div>
         </div>
-      </div>
+          </div>
+        )}
       </>
       )}
     </>

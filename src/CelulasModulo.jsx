@@ -258,7 +258,11 @@ export default function CelulasModulo({
             </div>
           )}
         </Card>
-        <Card className="p-5 space-y-4 h-fit">
+        <Card className={`p-5 space-y-4 h-fit ${
+          ['lider-celula', 'lider', 'supervisor'].includes(membroLogado?.permissao)
+            ? 'hidden xl:block'
+            : ''
+        }`}>
           <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
             <h3 className="font-semibold text-sm text-[var(--text-heading)] uppercase tracking-wider">Filtros</h3>
             <button type="button" onClick={limparFiltros} className="text-xs font-medium text-[#2563eb]">Limpar</button>
@@ -1236,6 +1240,40 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
   const [arquivoImagem, setArquivoImagem] = useState(null);
   const [salvandoImagem, setSalvandoImagem] = useState(false);
 
+  // Estados de busca por pessoas para vinculação
+  const [buscaTermo, setBuscaTermo] = useState('');
+  const [buscaResultados, setBuscaResultados] = useState([]);
+  const [buscando, setBuscando] = useState(false);
+
+  useEffect(() => {
+    if (!isModalAberto) {
+      setBuscaTermo('');
+      setBuscaResultados([]);
+      return;
+    }
+    if (buscaTermo.trim().length < 3) {
+      setBuscaResultados([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setBuscando(true);
+      try {
+        const { data, error } = await supabase.rpc('buscar_pessoas_para_celula', {
+          termo_busca: buscaTermo.trim()
+        });
+        if (error) throw error;
+        setBuscaResultados(data || []);
+      } catch (err) {
+        console.error("Erro ao buscar pessoas para a celula:", err);
+      } finally {
+        setBuscando(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [buscaTermo, isModalAberto]);
+
   const isMembro = membroLogado?.permissao === 'membro';
 
   // Define a aba inicial como 'membros' se for desktop
@@ -1302,11 +1340,13 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
 
     setSalvandoModal(true);
     try {
-      const { error } = await supabase.from('pessoas').update({ celula_id: celula.id }).in('id', pessoasSelecionadas);
+      const ids = pessoasSelecionadas.map(p => p.id);
+      const { error } = await supabase.from('pessoas').update({ celula_id: celula.id }).in('id', ids);
       if (error) throw error;
       if (obterDados) await obterDados();
       setIsModalAberto(false);
       setPessoasSelecionadas([]);
+      setBuscaTermo('');
     } catch (error) {
       console.error(error);
       window.alert(`Erro ao vincular membros: ${error.message}`);
@@ -1315,8 +1355,19 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
     }
   }
 
-  const handleCheckboxChange = (pessoaId) => {
-    setPessoasSelecionadas((prev) => prev.includes(pessoaId) ? prev.filter((id) => id !== pessoaId) : [...prev, pessoaId]);
+  const handleCheckboxChange = (p) => {
+    setPessoasSelecionadas((prev) => {
+      const existe = prev.some(item => item.id === p.id);
+      if (existe) {
+        return prev.filter(item => item.id !== p.id);
+      } else {
+        return [...prev, { id: p.id, nome: p.nome }];
+      }
+    });
+  };
+
+  const estaPessoaMarcada = (id) => {
+    return pessoasSelecionadas.some(item => item.id === id);
   };
 
   async function handleRemoverPessoa(pessoaId, nomePessoa) {
@@ -1943,26 +1994,91 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                 <h4 className="font-semibold text-slate-950 text-base">Vincular Pessoas</h4>
                 <p className="text-xs text-slate-400">Selecione os membros que deseja trazer para a célula <strong>{celula.nome}</strong>.</p>
               </div>
-              <button type="button" onClick={() => { setIsModalAberto(false); setPessoasSelecionadas([]); }} className="text-slate-400 hover:text-slate-600 font-bold p-1 text-sm">✕</button>
+              <button type="button" onClick={() => { setIsModalAberto(false); setPessoasSelecionadas([]); setBuscaTermo(''); }} className="text-slate-400 hover:text-slate-600 font-bold p-1 text-sm">✕</button>
             </div>
+
+            {/* Input de Busca */}
+            <div className="px-5 pt-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={buscaTermo}
+                  onChange={e => setBuscaTermo(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none text-xs"
+                  placeholder="Buscar membros por nome, telefone ou e-mail..."
+                  autoComplete="off"
+                />
+                {buscando && (
+                  <div className="absolute right-3 top-2.5 text-[9px] text-slate-400 font-bold uppercase tracking-wider">Buscando...</div>
+                )}
+              </div>
+            </div>
+
+            {/* Banner de Selecionados */}
+            {pessoasSelecionadas.length > 0 && (
+              <div className="mx-5 mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex flex-wrap items-center gap-1.5 max-h-24 overflow-y-auto">
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider mr-1">Selecionados:</span>
+                {pessoasSelecionadas.map(p => (
+                  <span key={p.id} className="inline-flex items-center gap-1 bg-white border border-emerald-200 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {p.nome}
+                    <button type="button" onClick={() => handleCheckboxChange(p)} className="text-rose-500 hover:text-rose-700 font-black">×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+
             <form onSubmit={handleSalvarMembrosModal} className="flex flex-col flex-1 overflow-hidden">
-              <div className="p-5 overflow-y-auto space-y-2 flex-1 max-h-64">
-                {pessoasDisponiveis.map((p) => {
-                  const estaMarcado = pessoasSelecionadas.includes(p.id);
-                  return (
-                    <label key={p.id} className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold cursor-pointer select-none transition ${estaMarcado ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950' : 'bg-white border-slate-100 hover:bg-slate-50 text-slate-700'}`}>
-                      <div className="flex items-center gap-3">
-                        <input type="checkbox" checked={estaMarcado} onChange={() => handleCheckboxChange(p.id)} className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                        <span>{p.nome}</span>
-                      </div>
-                      {p.celulas?.nome && <span className="text-[10px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-md font-normal">vindo de: {p.celulas.nome}</span>}
-                    </label>
-                  );
-                })}
+              <div className="p-5 overflow-y-auto space-y-2 flex-1 max-h-64 custom-scrollbar">
+                {buscaTermo.trim().length >= 3 ? (
+                  /* Mostra Resultados da Busca */
+                  buscaResultados.length > 0 ? (
+                    buscaResultados.map((p) => {
+                      const estaMarcado = estaPessoaMarcada(p.id);
+                      return (
+                        <label key={p.id} className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold cursor-pointer select-none transition ${estaMarcado ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950' : 'bg-white border-slate-100 hover:bg-slate-50 text-slate-700'}`}>
+                          <div className="flex items-center gap-3">
+                            <input type="checkbox" checked={estaMarcado} onChange={() => handleCheckboxChange(p)} className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                            <div>
+                              <span className="block font-bold">{p.nome}</span>
+                              <span className="block text-[10px] text-slate-400 font-normal">{p.telefone || p.email || 'Sem contato'}</span>
+                            </div>
+                          </div>
+                          {p.celula_nome ? (
+                            <span className="text-[10px] bg-amber-50 border border-amber-100 text-amber-600 px-2 py-0.5 rounded-md font-bold">Célula: {p.celula_nome}</span>
+                          ) : (
+                            <span className="text-[10px] bg-emerald-50 border border-emerald-100 text-emerald-600 px-2 py-0.5 rounded-md font-bold">Sem célula</span>
+                          )}
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-6 text-xs text-slate-400 italic">Nenhum membro encontrado para "{buscaTermo}".</div>
+                  )
+                ) : (
+                  /* Lista Padrão de Pessoas Disponíveis (se houver) */
+                  pessoasDisponiveis.length > 0 ? (
+                    pessoasDisponiveis.map((p) => {
+                      const estaMarcado = estaPessoaMarcada(p.id);
+                      return (
+                        <label key={p.id} className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold cursor-pointer select-none transition ${estaMarcado ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950' : 'bg-white border-slate-100 hover:bg-slate-50 text-slate-700'}`}>
+                          <div className="flex items-center gap-3">
+                            <input type="checkbox" checked={estaMarcado} onChange={() => handleCheckboxChange(p)} className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                            <span>{p.nome}</span>
+                          </div>
+                          {p.celulas?.nome && <span className="text-[10px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-md font-normal">vindo de: {p.celulas.nome}</span>}
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-6 text-xs text-slate-400 italic">
+                      Use a barra de busca acima para encontrar e selecionar membros cadastrados da igreja.
+                    </div>
+                  )
+                )}
               </div>
               <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button type="button" onClick={() => { setIsModalAberto(false); setPessoasSelecionadas([]); }} className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700">Cancelar</button>
-                <button type="submit" disabled={salvandoModal || pessoasSelecionadas.length === 0} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition disabled:bg-slate-200 disabled:text-slate-400 shadow-sm">
+                <button type="button" onClick={() => { setIsModalAberto(false); setPessoasSelecionadas([]); setBuscaTermo(''); }} className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700">Cancelar</button>
+                <button type="submit" disabled={salvandoModal || pessoasSelecionadas.length === 0} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition disabled:bg-slate-200 disabled:text-slate-400 shadow-sm cursor-pointer">
                   Salvar e Vincular
                 </button>
               </div>
@@ -2112,7 +2228,7 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
   const podeEditar = useMemo(() => {
     if (!membroLogado) return false;
     if (['admin', 'pastor'].includes(membroLogado.permissao)) return true;
-    if (membroLogado.permissao === 'lider-celula' && celula && String(celula.lider_id) === String(membroLogado.id)) return true;
+    if (['lider-celula', 'lider', 'supervisor'].includes(membroLogado.permissao) && celula && String(celula.lider_id) === String(membroLogado.id)) return true;
     return false;
   }, [membroLogado, celula]);
 

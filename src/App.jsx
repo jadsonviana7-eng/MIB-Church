@@ -3,6 +3,8 @@ import { supabase } from './supabaseClient';
 import TelaConfiguracoes from './TelaConfiguracoes';
 import TelaLogin from './TelaLogin';
 import OverviewDashboard from './OverviewDashboard'; // Renomeado de Dashboard
+import DashboardMembro from './DashboardMembro';
+import DashboardLider from './DashboardLider';
 import CelulasModulo from './CelulasModulo';
 import PessoasModulo from './PessoasModulo';
 import ModuloFinanceiro from './ModuloFinanceiro';
@@ -118,6 +120,35 @@ export default function App() {
   }, [usuarioLogado, pessoas]);
 
   const [reunioesVistas, setReunioesVistas] = useState([]);
+  const [isLiderMinisterio, setIsLiderMinisterio] = useState(false);
+
+  useEffect(() => {
+    async function verificarLiderMinisterio() {
+      if (!membroLogado?.id) {
+        setIsLiderMinisterio(false);
+        return;
+      }
+      try {
+        const { data, error } = await supabase
+          .from('ministerio_membros')
+          .select('id')
+          .eq('pessoa_id', membroLogado.id)
+          .eq('lider', true)
+          .limit(1);
+        
+        if (error) {
+          console.warn('Erro ao verificar liderança ministerial:', error);
+          setIsLiderMinisterio(false);
+        } else {
+          setIsLiderMinisterio(data && data.length > 0);
+        }
+      } catch (err) {
+        console.error('Erro ao consultar liderança ministerial:', err);
+        setIsLiderMinisterio(false);
+      }
+    }
+    verificarLiderMinisterio();
+  }, [membroLogado]);
 
   useEffect(() => {
     if (membroLogado) {
@@ -389,6 +420,40 @@ export default function App() {
     return Array.isArray(atuacoes) ? atuacoes.length > 0 : Boolean(atuacoes);
   }, [membroLogado]);
 
+  const perfilAtual = membroLogado?.permissao?.toLowerCase() || '';
+  const isPerfilLiderCelula = ['lider-celula', 'lider', 'supervisor'].includes(perfilAtual);
+
+  const celulasDoLider = useMemo(() => {
+    if (!isPerfilLiderCelula || !membroLogado?.id) return [];
+    return celulas.filter(c =>
+      String(c.lider_id || '') === String(membroLogado.id) ||
+      String(c.co_lider_id || '') === String(membroLogado.id)
+    );
+  }, [celulas, isPerfilLiderCelula, membroLogado?.id]);
+
+  const idsCelulasDoLider = useMemo(
+    () => new Set(celulasDoLider.map(c => String(c.id))),
+    [celulasDoLider]
+  );
+
+  const pessoasVisiveis = useMemo(() => {
+    if (!isPerfilLiderCelula) return pessoas;
+    return pessoas.filter(p =>
+      String(p.id) === String(membroLogado?.id) ||
+      (p.celula_id && idsCelulasDoLider.has(String(p.celula_id)))
+    );
+  }, [pessoas, isPerfilLiderCelula, membroLogado?.id, idsCelulasDoLider]);
+
+  const celulasVisiveis = useMemo(
+    () => (isPerfilLiderCelula ? celulasDoLider : celulas),
+    [isPerfilLiderCelula, celulasDoLider, celulas]
+  );
+
+  const relatoriosCelulaVisiveis = useMemo(() => {
+    if (!isPerfilLiderCelula) return relatoriosCelula;
+    return relatoriosCelula.filter(r => idsCelulasDoLider.has(String(r.celula_id)));
+  }, [relatoriosCelula, isPerfilLiderCelula, idsCelulasDoLider]);
+
   /**
    * Verifica se o membro logado tem acesso a um módulo ou bloco específico.
    */
@@ -399,9 +464,8 @@ export default function App() {
     const json = membroLogado.permissoes_json || {};
     const temManual = Object.keys(json).length > 0;
 
-    // Se possui permissão manual configurada para o membro, ela é EXCLUSIVA (ignora regras de cargo padrão)
+    // Se possui permissão manual configurada, ela é ADITIVA (se conceder acesso retorna true, caso contrário segue o fallback)
     if (temManual) {
-      // Gestor financeiro tem acesso total ao Financeiro
       if (modulo === 'Financeiro' && (json['Financeiro|Gestor financeiro'] === true || json['Financeiro|Gestor financeiro|ver'] === true)) {
         return true;
       }
@@ -409,41 +473,39 @@ export default function App() {
       if (bloco) {
         if (acao) {
           const key = `${modulo}|${bloco}|${acao}`;
-          return json[key] === true;
+          if (json[key] === true) return true;
         } else {
           const key = `${modulo}|${bloco}`;
-          return json[key] === true || json[`${key}|ver`] === true;
+          if (json[key] === true || json[`${key}|ver`] === true) return true;
         }
       } else {
-        return Object.keys(json).some(k => k.startsWith(`${modulo}|`) && json[k] === true);
+        if (Object.keys(json).some(k => k.startsWith(`${modulo}|`) && json[k] === true)) return true;
       }
     }
 
-    // Se NÃO possui permissão manual, segue as regras padrões de cargo/perfil (Aditivo/Fallback)
+    // Segue as regras padrões de cargo/perfil (Aditivo/Fallback)
     const p = membroLogado.permissao?.toLowerCase() || '';
 
     if (p === 'membro') {
-      if (modulo === 'Agenda') return true;
-      if (modulo === 'Gestão Ministerial') return true;
+      if (modulo === 'Gestão Ministerial') {
+        if (isLiderMinisterio) {
+          return !bloco || ['Escalas', 'Dashboard'].includes(bloco);
+        }
+        if (!bloco) return true;
+        return ['Escalas'].includes(bloco);
+      }
+      // Membros comuns nunca podem editar, excluir ou adicionar em outros módulos
+      if (acao && (acao === 'editar' || acao === 'excluir' || acao === 'adicionar')) return false;
+
       if (modulo === 'Utilitários') {
         if (!bloco) return true;
-        // Membros não acessam o Gerador de Carnê, Relatório Semanal nem Mural de Orações
-        return !['Relatório Semanal', 'Mural de Orações', 'Gerador de Carnê'].includes(bloco);
+        return ['Calculadora de Tributos', 'Teste de Temperamento', 'Pedido de Oração'].includes(bloco);
       }
       if (modulo === 'Pessoas') {
         if (!bloco) return true;
-        // Membros podem ver a listagem e aniversariantes (o RLS do banco filtrará os dados)
-        return ['Ver todos', 'Aniversariantes'].includes(bloco);
-      }
-      if (modulo === 'Células') {
-        if (!bloco) return true;
-        return ['Lista de células'].includes(bloco);
+        return ['Aniversariantes'].includes(bloco);
       }
       return false;
-    }
-
-    if (p === 'pastor') {
-      return true; // Pastor visualiza todos os módulos e submenus, incluindo Gerador de Carnê
     }
 
     if (p === 'pastor') {
@@ -462,26 +524,41 @@ export default function App() {
       }
       return true;
     }
-    if (p === 'lider-celula' || p === 'supervisor') {
-      if (modulo === 'Agenda') return true;
+    if (p === 'lider-celula' || p === 'lider' || p === 'supervisor') {
+      if (modulo === 'Agenda') {
+        if (!bloco) return true;
+        return bloco === 'Mural de Avisos';
+      }
       if (modulo === 'Pessoas') {
-        return !bloco || ['Ver todos', 'Aniversariantes'].includes(bloco);
+        if (acao === 'excluir') return false; // NUNCA excluir
+        if (acao === 'editar' || acao === 'adicionar') return true; // VER E ATUALIZAR (INCLUIR PARTICIPANTE)
+        return !bloco || ['Ver todos', 'Aniversariantes', 'Ficha do membro', 'Adicionar pessoa'].includes(bloco);
       }
       if (modulo === 'Células') {
-        return !bloco || ['Lista de células', 'Reuniões'].includes(bloco);
+        if (acao === 'excluir') return false; // NUNCA excluir célula
+        if (acao === 'editar' || acao === 'adicionar') return true; // ATUALIZAR DADOS DA CÉLULA / SALVAR REUNIÃO
+        return !bloco || ['Lista de células', 'Reuniões', 'Relatórios', 'Painel Geral'].includes(bloco);
       }
+      if (modulo === 'Financeiro') return false; // RESTRIÇÃO TOTAL
       if (modulo === 'Utilitários') {
         if (!bloco) return true;
-        return !['Relatório Semanal', 'Gerador de Carnê', 'Leitor de Carnê'].includes(bloco);
+        return !['Relatório Semanal', 'Gerador de Carnê', 'Leitor de Carnê'].includes(bloco); // RESTRIÇÃO UTILITÁRIOS
+      }
+      if (modulo === 'Gestão Ministerial') {
+        if (isLiderMinisterio) {
+          return !bloco || ['Escalas', 'Dashboard'].includes(bloco); // PERMITIR VISUALIZAR/ATUALIZAR ESCALAS
+        }
+        if (!bloco) return true;
+        return ['Escalas'].includes(bloco); // PERMITIR VER E CONFIRMAR PRÓPRIAS ESCALAS
       }
       return false;
     }
 
     return false;
-  }, [membroLogado]);
+  }, [membroLogado, isLiderMinisterio]);
 
   const indicadores = useMemo(() => {
-    const ativas = pessoas.filter(p => normalizarTexto(p.status) !== 'inativo');
+    const ativas = pessoasVisiveis.filter(p => normalizarTexto(p.status) !== 'inativo');
     const total = ativas.length || 1;
     const homens = ativas.filter((p) => normalizarTexto(p.genero) === 'masculino').length;
     const mulheres = ativas.filter((p) => normalizarTexto(p.genero) === 'feminino').length;
@@ -490,12 +567,12 @@ export default function App() {
       homens, mulheres,
       percentualHomens: Math.round((homens / total) * 100),
       percentualMulheres: Math.round((mulheres / total) * 100),
-      totalCelulas: celulas.length,
+      totalCelulas: celulasVisiveis.length,
     };
-  }, [pessoas, celulas]);
+  }, [pessoasVisiveis, celulasVisiveis]);
 
   const pessoasFiltradas = useMemo(() => {
-    return pessoas.filter((p) => {
+    return pessoasVisiveis.filter((p) => {
       if (normalizarTexto(p.status) === 'inativo') return false;
 
       // Aplica o filtro específico vindo dos relatórios (botão Ver Lista)
@@ -515,10 +592,10 @@ export default function App() {
       }
       return true;
     });
-  }, [pessoas, filtros]);
+  }, [pessoasVisiveis, filtros]);
 
   const celulasFiltradas = useMemo(() => {
-    return celulas.filter((c) => {
+    return celulasVisiveis.filter((c) => {
       const busca = normalizarTexto(filtrosCelula.busca);
       if (busca && !normalizarTexto(c.nome).includes(busca)) return false;
       if (filtrosCelula.faixaEtaria && c.faixa_etaria !== filtrosCelula.faixaEtaria) return false;
@@ -527,7 +604,7 @@ export default function App() {
       if (filtrosCelula.horario && c.horario !== filtrosCelula.horario) return false;
       return true;
     });
-  }, [celulas, filtrosCelula]);
+  }, [celulasVisiveis, filtrosCelula]);
 
   const alterarFiltroCelula = (campo, valor) => setFiltrosCelula(prev => ({ ...prev, [campo]: valor }));
 
@@ -667,7 +744,90 @@ export default function App() {
     alunoSelecionadoParaCadernetaId
   ]);
 
+  // Sistema de Sessões e Heartbeats (Logs de tempo de permanência)
+  useEffect(() => {
+    if (!usuarioLogado || !membroLogado?.id) return;
+
+    let activeSessaoId = sessionStorage.getItem('mibHeartbeatSessaoId');
+    let intervalId = null;
+
+    const iniciarSessao = async () => {
+      try {
+        if (activeSessaoId) return;
+
+        // 1. Criar entrada na tabela sessoes_sistema
+        const { data, error } = await supabase
+          .from('sessoes_sistema')
+          .insert([{
+            usuario_id: membroLogado.id,
+            usuario_email: membroLogado.email || usuarioLogado.email,
+            usuario_nome: membroLogado.nome
+          }])
+          .select('id')
+          .single();
+
+        if (!error && data?.id) {
+          activeSessaoId = data.id;
+          sessionStorage.setItem('mibHeartbeatSessaoId', data.id);
+
+          // 2. Registrar evento de LOGIN em logs_sistema
+          await supabase.from('logs_sistema').insert([{
+            usuario_id: membroLogado.id,
+            usuario_email: membroLogado.email || usuarioLogado.email,
+            usuario_nome: membroLogado.nome,
+            acao: 'LOGIN',
+            detalhes: { agent: navigator.userAgent, sessao_id: data.id }
+          }]);
+        }
+      } catch (err) {
+        console.warn('Erro ao inicializar sessão para log:', err);
+      }
+    };
+
+    const runHeartbeat = async () => {
+      if (!activeSessaoId) return;
+      try {
+        await supabase.rpc('incrementar_duracao_sessao', {
+          sessao_uuid: activeSessaoId,
+          incrementosegundos: 30
+        });
+      } catch (err) {
+        // Fallback simples se RPC não estiver disponível (só atualiza timestamp)
+        try {
+          await supabase.from('sessoes_sistema').update({
+            ultimo_heartbeat: new Date().toISOString()
+          }).eq('id', activeSessaoId);
+        } catch { /* ignora falha silenciosamente */ }
+      }
+    };
+
+    iniciarSessao().then(() => {
+      intervalId = setInterval(runHeartbeat, 30000);
+    });
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [usuarioLogado, membroLogado]);
+
   async function handleSair() {
+    try {
+      const activeSessaoId = sessionStorage.getItem('mibHeartbeatSessaoId');
+      if (membroLogado && activeSessaoId) {
+        // Registrar LOGOUT em logs_sistema
+        await supabase.from('logs_sistema').insert([{
+          usuario_id: membroLogado.id,
+          usuario_email: membroLogado.email || usuarioLogado.email,
+          usuario_nome: membroLogado.nome,
+          acao: 'LOGOUT',
+          detalhes: { sessao_id: activeSessaoId }
+        }]);
+        sessionStorage.removeItem('mibHeartbeatSessaoId');
+      }
+    } catch (e) {
+      console.warn('Erro ao registrar log de logout:', e);
+    }
+
     try { await supabase.auth.signOut(); } catch { /* ignora erro de rede */ }
     localStorage.removeItem('mibChurchSessao');
     setUsuarioLogado(null);
@@ -710,6 +870,33 @@ export default function App() {
     localStorage.setItem('mibChurchSessao', JSON.stringify(usuario));
     setUsuarioLogado(usuario);
   }
+
+  useEffect(() => {
+    const moduloParaPermissao = {
+      pessoas: 'Pessoas',
+      celulas: 'Células',
+      financeiro: 'Financeiro',
+      escolas: 'Escolas',
+      gestao: 'Gestão Ministerial',
+      agenda: 'Agenda',
+      utilitarios: 'Utilitários',
+      configuracoes: 'Configurações',
+    };
+
+    const moduloPermissao = moduloParaPermissao[moduloAtual];
+    if (moduloPermissao && !hasAccess(moduloPermissao)) {
+      navegar('dashboard');
+      return;
+    }
+
+    if (moduloAtual === 'agenda' && agendaSubmenu === 'eventos' && !hasAccess('Agenda', 'Eventos')) {
+      navegar('agenda', 'calendario');
+    }
+
+    if (moduloAtual === 'utilitarios' && utilitariosSubmenu === 'relatorio-semanal' && !hasAccess('Utilitários', 'Relatório Semanal')) {
+      navegar('utilitarios', 'resumo');
+    }
+  }, [moduloAtual, agendaSubmenu, utilitariosSubmenu, hasAccess]);
 
   // Verifica se a URL é para o formulário público e renderiza sem autenticação
   if (window.location.pathname === '/cadastro-publico') {
@@ -804,8 +991,8 @@ export default function App() {
 
         {/* ── BUSCA GLOBAL ──────────────────────────────────────────────────── */}
         <BuscaGlobal
-          pessoas={pessoas}
-          celulas={celulas}
+          pessoas={pessoasVisiveis}
+          celulas={celulasVisiveis}
           buscaGlobal={buscaGlobal}
           setBuscaGlobal={setBuscaGlobal}
           buscaAberta={buscaAberta}
@@ -862,7 +1049,16 @@ export default function App() {
               usuarioLogado={usuarioLogado}
               membroLogado={membroLogado}
               onSair={handleSair}
-              onVerPerfil={() => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(membroLogado?.id); }}
+              onVerPerfil={() => { 
+                if (membroLogado?.permissao === 'membro') {
+                  setModuloAtual('dashboard');
+                  setMembroSelecionadoId(membroLogado?.id);
+                } else {
+                  setModuloAtual('pessoas'); 
+                  setPessoasSubmenu('todos'); 
+                  setMembroSelecionadoId(membroLogado?.id); 
+                }
+              }}
             />
           </div>
         </div>
@@ -878,7 +1074,7 @@ export default function App() {
           {hasAccess('Pessoas') && (
             <SideNavBtn
               ativo={moduloAtual === 'pessoas'}
-              onClick={() => { setFiltros(filtrosIniciais); navegar('pessoas', 'todos'); }}
+              onClick={() => { setFiltros(filtrosIniciais); navegar('pessoas', hasAccess('Pessoas', 'Ver todos') ? 'todos' : 'aniversariantes'); }}
               icon={MenuIcons.pessoas}
               label="Pessoas"
               submenu={submenusPessoas}
@@ -1046,8 +1242,8 @@ export default function App() {
       {/* 🔍 Overlay de Busca Mobile */}
       {buscaMobileAberta && (
         <BuscaMobileOverlay
-          pessoas={pessoas}
-          celulas={celulas}
+          pessoas={pessoasVisiveis}
+          celulas={celulasVisiveis}
           busca={buscaMobile}
           setBusca={setBuscaMobile}
           onFechar={() => setBuscaMobileAberta(false)}
@@ -1108,7 +1304,7 @@ export default function App() {
             <div>
               <MenuButton
                 ativo={moduloAtual === 'pessoas'}
-                onClick={() => { setFiltros(filtrosIniciais); navegar('pessoas', 'todos'); }}
+                onClick={() => { setFiltros(filtrosIniciais); navegar('pessoas', hasAccess('Pessoas', 'Ver todos') ? 'todos' : 'aniversariantes'); }}
                 icon={MenuIcons.pessoas}
                 hasSubmenu={submenusPessoas.length > 0}
                 expanded={mobileDropdownAberto === 'pessoas'}
@@ -1313,6 +1509,7 @@ export default function App() {
         </button>
 
         {/* Botão Busca */}
+        {membroLogado?.permissao !== 'membro' && (
         <button
           onClick={() => { setBuscaMobile(''); setBuscaMobileAberta(true); }}
           className="flex flex-col items-center gap-1 text-slate-400 relative active:scale-95 transition-transform cursor-pointer"
@@ -1322,14 +1519,17 @@ export default function App() {
           </svg>
           <span className="text-[10px] font-bold uppercase tracking-tight">Busca</span>
         </button>
+        )}
 
         {/* Botão Configurações */}
+        {hasAccess('Configurações') && (
         <button onClick={() => navegar('configuracoes')} className={`flex flex-col items-center gap-1 transition-colors ${moduloAtual === 'configuracoes' ? 'text-[#1e3a8a]' : 'text-slate-400'}`}>
           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
             <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.11-.414.03L6.463 5.01a1.875 1.875 0 0 0-2.652 0l-.825.825a1.875 1.875 0 0 0 0 2.652l.828.828c.08.08.084.248-.03.414a7.446 7.446 0 0 0-.57.986c-.088.182-.228.277-.348.297L1.817 11.078a1.875 1.875 0 0 0-1.567 1.85v1.144c0 .917.663 1.699 1.567 1.85l1.051.176c.12.02.26.115.348.297.252.522.583 1.008.986 1.45a.447.447 0 0 1 .03.415l-.828.828a1.875 1.875 0 0 0 0 2.652l.825.825a1.875 1.875 0 0 0 2.652 0l.828-.828c.08-.08.248-.084.415-.03.442.403.928.734 1.45.986.182.088.277.228.297.348l.176 1.051a1.875 1.875 0 0 0 1.85 1.567h1.144a1.875 1.875 0 0 0 1.85-1.567l.176-1.051c.02-.12.115-.26.297-.348a7.493 7.493 0 0 0 .986-.57c.166-.115.334-.11.414-.03l.828.828a1.875 1.875 0 0 0 2.652 0l.825-.825a1.875 1.875 0 0 0 0-2.652l-.828-.828c-.08-.08-.084-.248.03-.414a7.446 7.446 0 0 0 .57-.986c.088-.182.228-.277.348-.297l1.051-.176a1.875 1.875 0 0 0 1.567-1.85v-1.144a1.875 1.875 0 0 0-1.567-1.85l-1.051-.176c-.12-.02-.26-.115-.348-.297a7.446 7.446 0 0 0-.57-.986.447.447 0 0 1-.03-.414l.828-.828a1.875 1.875 0 0 0 0-2.652l-.825-.825a1.875 1.875 0 0 0-2.652 0l-.828.828c-.08.08-.248.084-.414.03a7.493 7.493 0 0 0-1.45-.986c-.182-.088-.277-.228-.297-.348l-.176-1.051a1.875 1.875 0 0 0-1.85-1.567h-1.144ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
           </svg>
           <span className="text-[10px] font-bold uppercase tracking-tight">Ajustes</span>
         </button>
+        )}
       </nav>
 
       {/* ── CONTEÚDO PRINCIPAL — offset do header + sidebar ── */}
@@ -1337,16 +1537,63 @@ export default function App() {
         {/* Nova HomePage como a tela principal do dashboard */}
         {moduloAtual === 'dashboard' && (
           <>
-            {/* Mobile: Exibe os cartões de navegação rápida */}
-            <div className="md:hidden">
-              <HomePage
+            {['lider', 'lider-celula', 'supervisor'].includes(membroLogado?.permissao?.toLowerCase()) ? (
+              membroSelecionadoId ? (
+                <DetalhesMembro
+                  pessoaId={membroSelecionadoId}
+                  onFechar={() => setMembroSelecionadoId(null)}
+                  listaPessoas={pessoasVisiveis}
+                  onDadosAtualizados={obterDados}
+                  cargosLista={cargosDisponiveis}
+                  atuacoesLista={atuacoesDisponiveis}
+                  membroLogado={membroLogado}
+                  hasAccess={hasAccess}
+                />
+              ) : (
+                <DashboardLider
+                  membroLogado={membroLogado}
+                  pessoas={pessoasVisiveis}
+                  celulas={celulasVisiveis}
+                  relatoriosCelula={relatoriosCelulaVisiveis}
+                  reunioesVistas={reunioesVistas}
+                  onNavigate={navegar}
+                  isLiderMinisterio={isLiderMinisterio}
+                  obterDados={obterDados}
+                  onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
+                  onVerPerfil={() => setMembroSelecionadoId(membroLogado.id)}
+                />
+              )
+            ) : membroLogado?.permissao === 'membro' ? (
+              membroSelecionadoId ? (
+                <DetalhesMembro
+                  pessoaId={membroSelecionadoId}
+                  onFechar={() => setMembroSelecionadoId(null)}
+                  listaPessoas={pessoasVisiveis}
+                  onDadosAtualizados={obterDados}
+                  cargosLista={cargosDisponiveis}
+                  atuacoesLista={atuacoesDisponiveis}
+                  membroLogado={membroLogado}
+                  hasAccess={hasAccess}
+                />
+              ) : (
+                <DashboardMembro 
+                  membroLogado={membroLogado} 
+                  onNavigate={navegar} 
+                  onVerPerfil={() => setMembroSelecionadoId(membroLogado.id)} 
+                />
+              )
+            ) : (
+              <>
+                {/* Mobile: Exibe os cartões de navegação rápida */}
+                <div className="md:hidden">
+                  <HomePage
                 onNavigate={navegar}
                 hasAccess={hasAccess}
                 membroLogado={membroLogado}
-                pessoas={pessoas}
-                celulas={celulas}
+                pessoas={pessoasVisiveis}
+                celulas={celulasVisiveis}
                 zonas={zonas}
-                relatoriosCelula={relatoriosCelula}
+                relatoriosCelula={relatoriosCelulaVisiveis}
                 reunioesVistas={reunioesVistas}
                 onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
                 onVerReuniao={(id) => {
@@ -1364,10 +1611,10 @@ export default function App() {
             {/* Desktop: Exibe os indicadores estatísticos (Dashboard de outrora) */}
             <div className="hidden md:block">
               <OverviewDashboard
-                pessoas={pessoas}
-                celulas={celulas}
+                pessoas={pessoasVisiveis}
+                celulas={celulasVisiveis}
                 zonas={zonas}
-                relatoriosCelula={relatoriosCelula}
+                relatoriosCelula={relatoriosCelulaVisiveis}
                 indicadores={indicadores}
                 carregando={carregando}
                 periodoConvertidos={periodoConvertidos}
@@ -1383,18 +1630,19 @@ export default function App() {
                 }}
                 membroLogado={membroLogado}
                 usuarioLogado={usuarioLogado}
+                hasAccess={hasAccess}
                 onNavigate={navegar}
-                abaDashboard={abaDashboard}
-                setAbaDashboard={setAbaDashboard}
-              />
-            </div>
+                />
+              </div>
+            </>
+            )}
           </>
         )}
 
         {moduloAtual === 'pessoas' && (
           <PessoasModulo
             submenu={pessoasSubmenu}
-            pessoas={pessoas}
+            pessoas={pessoasVisiveis}
             pessoasFiltradas={pessoasFiltradas}
             filtros={filtros}
             alterarFiltro={alterarFiltro}
@@ -1420,14 +1668,14 @@ export default function App() {
         {moduloAtual === 'celulas' && (
           <CelulasModulo
             submenu={celulasSubmenu}
-            celulas={celulas}
+            celulas={celulasVisiveis}
             celulasFiltradas={celulasFiltradas}
             filtrosCelula={filtrosCelula} // Passa o estado de filtros
             alterarFiltroCelula={alterarFiltroCelula} // Passa a função para alterar filtros
             limparFiltros={() => setFiltrosCelula(filtrosCelulaIniciais)} // Passa a função para limpar filtros
-            pessoas={pessoas}
+            pessoas={pessoasVisiveis}
             zonas={zonas}
-            relatoriosCelula={relatoriosCelula}
+            relatoriosCelula={relatoriosCelulaVisiveis}
             celulaSelecionadaId={celulaSelecionadaId} // Passa o ID da célula selecionada
             setCelulaSelecionadaId={setCelulaSelecionadaId} // Passa a função para definir a célula selecionada
             reuniaoSelecionadaId={reuniaoSelecionadaId}
@@ -1460,7 +1708,8 @@ export default function App() {
             membroLogado={membroLogado}
             usuarioLogado={usuarioLogado}
             hasAccess={hasAccess}
-            pessoas={pessoas}
+            pessoas={pessoasVisiveis}
+            isLiderMinisterio={isLiderMinisterio}
           />
         )}
 
@@ -1468,7 +1717,7 @@ export default function App() {
           <EscolasModulo
             submenu={escolasSubmenu}
             onNavigate={(sub) => navegar('escolas', sub)}
-            pessoas={pessoas}
+            pessoas={pessoasVisiveis}
             alunoSelecionadoParaCadernetaId={alunoSelecionadoParaCadernetaId} // Passa o ID do aluno
             setAlunoSelecionadoParaCadernetaId={setAlunoSelecionadoParaCadernetaId} // Passa o setter
             membroLogado={membroLogado}
@@ -1493,7 +1742,7 @@ export default function App() {
             <DetalhesMembro
               pessoaId={alunoSelecionadoParaCadernetaId}
               onFechar={() => navegar('escolas', 'turmas')} // Volta para a lista de turmas ou alunos
-              listaPessoas={pessoas}
+              listaPessoas={pessoasVisiveis}
               onDadosAtualizados={obterDados}
               isStudentCadernetaView={true} // Indica que é a visão de caderneta do aluno
               membroLogado={membroLogado}
@@ -1508,7 +1757,7 @@ export default function App() {
             onNavigate={(sub) => navegar('agenda', sub)}
             membroLogado={membroLogado}
             hasAccess={hasAccess}
-            pessoas={pessoas}
+            pessoas={pessoasVisiveis}
           />
         )}
 
@@ -1523,7 +1772,7 @@ export default function App() {
           />
         )}
 
-        {moduloAtual === 'configuracoes' && <TelaConfiguracoes onFechar={() => navegar('dashboard')} />}
+        {moduloAtual === 'configuracoes' && <TelaConfiguracoes membroLogado={membroLogado} onFechar={() => navegar('dashboard')} />}
         {confirmDialog && (
           <ConfirmModal
             titulo={confirmDialog.titulo}

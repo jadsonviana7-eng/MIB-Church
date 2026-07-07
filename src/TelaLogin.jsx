@@ -12,7 +12,7 @@ const perfisAcesso = [
 ];
 
 /* ── modos da tela ── */
-const MODO = { LOGIN: 'login', ESQUECEU: 'esqueceu', NOVA_SENHA: 'nova_senha' };
+const MODO = { LOGIN: 'login', ESQUECEU: 'esqueceu', NOVA_SENHA: 'nova_senha', ALTERAR_SENHA_PADRAO: 'alterar_senha_padrao' };
 
 /* ──────────────────────────────────────────────── */
 
@@ -23,6 +23,7 @@ export default function TelaLogin({ onEntrar }) {
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [lembrar, setLembrar] = useState(true);
+  const [dadosUsuarioTemp, setDadosUsuarioTemp] = useState(null);
   const [erro, setErro] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,6 +36,12 @@ export default function TelaLogin({ onEntrar }) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
+          const sessaoSalva = localStorage.getItem('mibChurchSessao');
+          if (!sessaoSalva) {
+            // Sessão incompleta (ex: fechou navegador antes de atualizar a senha padrão)
+            await supabase.auth.signOut();
+            return;
+          }
           // Busca o perfil real no banco para a sessão ativa
           const { data: pData } = await supabase.from('pessoas')
             .select('permissao')
@@ -148,10 +155,41 @@ export default function TelaLogin({ onEntrar }) {
         const pId = pData?.permissao?.toLowerCase() || 'membro';
         const perfil = perfisAcesso.find(p => p.id === pId) || perfisAcesso.find(p => p.id === 'membro');
 
-        onEntrar({ id: data.user.id, email: data.user.email, perfil, lembrarAcesso: lembrar });
+        // Se o usuário logou usando uma senha padrão, redireciona para cadastrar definitiva
+        const senhasPadrao = ['mib123', 'mib@123', 'mudar123', 'senha123', '123456', '12345678', 'mib2026', 'igreja123', 'mib2026@', 'mibchurch'];
+        if (senhasPadrao.includes(senha.trim().toLowerCase())) {
+          setDadosUsuarioTemp({ id: data.user.id, email: data.user.email, perfil, lembrarAcesso: lembrar });
+          setNovaSenha('');
+          setConfirmarSenha('');
+          setModo(MODO.ALTERAR_SENHA_PADRAO);
+        } else {
+          onEntrar({ id: data.user.id, email: data.user.email, perfil, lembrarAcesso: lembrar });
+        }
       }
     } catch { setErro('Erro ao conectar. Tente novamente.'); }
     finally { setLoading(false); }
+  }
+
+  async function handleAlterarSenhaPadraoSubmit(e) {
+    e.preventDefault();
+    if (novaSenha.length < 6) { setErro('A senha deve ter ao menos 6 caracteres.'); return; }
+    if (novaSenha !== confirmarSenha) { setErro('As senhas não coincidem.'); return; }
+    setLoading(true); setErro(''); setInfo('');
+    try {
+      const { error } = await supabase.auth.updateUser({ password: novaSenha });
+      if (error) { setErro(error.message); return; }
+
+      setInfo('Senha definitiva cadastrada com sucesso! Redirecionando...');
+      setTimeout(() => {
+        if (dadosUsuarioTemp) {
+          onEntrar(dadosUsuarioTemp);
+        }
+      }, 1000);
+    } catch {
+      setErro('Erro ao atualizar senha. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleEsqueceu(e) {
@@ -565,7 +603,7 @@ export default function TelaLogin({ onEntrar }) {
             margin-top: 0.75rem;
           }
           .tl-headline h1 { 
-            font-size: 1.1rem; 
+            font-size: 1.45rem; 
             text-align: center; 
             line-height: 1.35; 
             font-family: 'Cinzel', serif; 
@@ -821,6 +859,47 @@ export default function TelaLogin({ onEntrar }) {
 
                 <button type="submit" className="tl-btn tl-btn-primary" disabled={loading}>
                   {loading ? 'Salvando…' : 'Salvar nova senha →'}
+                </button>
+              </form>
+            )}
+
+            {/* ──── MODO: ALTERAR SENHA PADRÃO ──── */}
+            {modo === MODO.ALTERAR_SENHA_PADRAO && (
+              <form onSubmit={handleAlterarSenhaPadraoSubmit} noValidate>
+                <p className="tl-right-title">Definir senha definitiva</p>
+                <p className="tl-right-sub">Este é o seu primeiro acesso com uma senha temporária. Por segurança, cadastre uma nova senha definitiva.</p>
+
+                <div className="tl-field">
+                  <label className="tl-label" htmlFor="nova_definitiva">Nova senha definitiva</label>
+                  <input
+                    id="nova_definitiva"
+                    type="password"
+                    className="tl-input"
+                    placeholder="Mínimo 6 caracteres"
+                    value={novaSenha}
+                    onChange={e => setNovaSenha(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <div className="tl-field">
+                  <label className="tl-label" htmlFor="confirmar_definitiva">Confirmar nova senha</label>
+                  <input
+                    id="confirmar_definitiva"
+                    type="password"
+                    className="tl-input"
+                    placeholder="Repita a senha"
+                    value={confirmarSenha}
+                    onChange={e => setConfirmarSenha(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                {erro && <div className="tl-alert tl-alert-err">{erro}</div>}
+                {info && <div className="tl-alert tl-alert-info">{info}</div>}
+
+                <button type="submit" className="tl-btn tl-btn-primary" disabled={loading}>
+                  {loading ? 'Salvando e acessando…' : 'Salvar e Acessar o Sistema →'}
                 </button>
               </form>
             )}

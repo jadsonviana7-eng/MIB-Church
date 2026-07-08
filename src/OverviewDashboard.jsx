@@ -352,8 +352,8 @@ export default function OverviewDashboard({
           {/* ── ABA 1: VISÃO GERAL ── */}
           {abaAtiva === 'visao_geral' && (
             <div className="space-y-6">
-              {/* StatCards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* StatCards para Desktop */}
+              <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard 
                   label="Total de Pessoas" 
                   valor={totalPessoasAtivas} 
@@ -377,6 +377,42 @@ export default function OverviewDashboard({
                   valor={`${taxaBatismo}%`} 
                   detalhe={`${totalBatizados} batizados`} 
                   icone={<div className="p-2 rounded-xl bg-amber-50 border border-amber-100"><Award className="w-6 h-6 text-amber-600" /></div>}
+                />
+              </div>
+
+              {/* StatCards para Mobile com Cores Diferenciadas, Contraste e Ícones Maiores */}
+              <div className="sm:hidden grid grid-cols-1 gap-4">
+                <CardMobileIndicador
+                  label="Total de Pessoas"
+                  valor={totalPessoasAtivas}
+                  detalhe="Membros Ativos"
+                  icon={Users}
+                  gradient="from-blue-600 via-blue-700 to-indigo-800"
+                  shadowColor="shadow-blue-500/10"
+                />
+                <CardMobileIndicador
+                  label="Células"
+                  valor={totalCelulas}
+                  detalhe="Ativas"
+                  icon={Home}
+                  gradient="from-emerald-600 via-emerald-700 to-teal-800"
+                  shadowColor="shadow-emerald-500/10"
+                />
+                <CardMobileIndicador
+                  label="Novos Convertidos"
+                  valor={novosConvertidosMes}
+                  detalhe="Este Mês"
+                  icon={Sparkles}
+                  gradient="from-purple-600 via-purple-700 to-fuchsia-800"
+                  shadowColor="shadow-purple-500/10"
+                />
+                <CardMobileIndicador
+                  label="Taxa de Batismo"
+                  valor={`${taxaBatismo}%`}
+                  detalhe={`${totalBatizados} batizados`}
+                  icon={Award}
+                  gradient="from-amber-500 via-amber-600 to-orange-700"
+                  shadowColor="shadow-amber-500/10"
                 />
               </div>
 
@@ -753,7 +789,7 @@ export default function OverviewDashboard({
                                 </span>
                               </div>
                               <div className="text-right shrink-0">
-                                <span className={`block font-extrabold text-xs ${t.tipo === 'receita' ? 'text-blue-600' : 'text-rose-600'}`}>
+                                <span className={`block font-extrabold text-xs ${t.tipo === 'receita' ? 'text-blue-600' : 'text-red-600'}`}>
                                   {t.tipo === 'receita' ? '+' : '-'} {formatarBRL(t.valor)}
                                 </span>
                               </div>
@@ -773,6 +809,31 @@ export default function OverviewDashboard({
 
         </div>
       )}
+    </div>
+  );
+}
+
+function CardMobileIndicador({ label, valor, detalhe, icon: Icon, gradient, shadowColor }) {
+  return (
+    <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-xs flex items-center gap-5 text-slate-850 animate-in fade-in slide-in-from-top-1 duration-300">
+      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 text-white shadow-sm`}>
+        <Icon className="w-8 h-8 text-white" strokeWidth={1.8} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none">
+          {label}
+        </p>
+        <div className="flex items-baseline gap-2 mt-2 leading-none">
+          <span className="text-3xl font-black text-slate-800 tracking-tight">
+            {valor}
+          </span>
+          {detalhe && (
+            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+              • {detalhe}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

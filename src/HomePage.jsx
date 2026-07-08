@@ -377,23 +377,40 @@ export default function HomePage({
         {/* ── ABA 1: VISÃO GERAL (INCLUI AVISOS E ATALHOS) ── */}
         {abaAtiva === 'visao_geral' && (
           <div className="space-y-5">
-            {/* 3. Mini stats cards com ícones */}
-            <div className="grid grid-cols-3 gap-2.5">
-              <div className="bg-white rounded-xl border border-slate-100 p-2.5 text-center shadow-xs flex flex-col items-center justify-center">
-                <Users size={14} className="text-blue-500 mb-1" />
-                <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-widest">Membros</span>
-                <span className="block text-sm font-black text-slate-850 mt-0.5">{totalPessoasAtivas}</span>
-              </div>
-              <div className="bg-white rounded-xl border border-slate-100 p-2.5 text-center shadow-xs flex flex-col items-center justify-center">
-                <Home size={14} className="text-emerald-500 mb-1" />
-                <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-widest">Células</span>
-                <span className="block text-sm font-black text-slate-850 mt-0.5">{totalCelulasAtivas}</span>
-              </div>
-              <div className="bg-white rounded-xl border border-slate-100 p-2.5 text-center shadow-xs flex flex-col items-center justify-center">
-                <Award size={14} className="text-amber-500 mb-1" />
-                <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-widest">Batismo</span>
-                <span className="block text-sm font-black text-amber-600 mt-0.5">{taxaBatismo}%</span>
-              </div>
+            {/* Cards de Indicadores Premium Mobile com Cores, Contraste e Ícones Maiores */}
+            <div className="grid grid-cols-2 gap-3">
+              <CardMobileIndicador
+                label="Membros"
+                valor={totalPessoasAtivas}
+                detalhe="Ativos"
+                icon={Users}
+                gradient="from-blue-600 to-indigo-750"
+                shadowColor="shadow-blue-500/10"
+              />
+              <CardMobileIndicador
+                label="Células"
+                valor={totalCelulasAtivas}
+                detalhe="Ativas"
+                icon={Home}
+                gradient="from-emerald-600 to-teal-750"
+                shadowColor="shadow-emerald-500/10"
+              />
+              <CardMobileIndicador
+                label="Convertidos"
+                valor={novosConvertidosMes}
+                detalhe="Este Mês"
+                icon={Sparkles}
+                gradient="from-purple-600 to-fuchsia-750"
+                shadowColor="shadow-purple-500/10"
+              />
+              <CardMobileIndicador
+                label="Batismo"
+                valor={`${taxaBatismo}%`}
+                detalhe={`${totalBatizados} bat.`}
+                icon={Award}
+                gradient="from-amber-500 to-orange-655"
+                shadowColor="shadow-amber-500/10"
+              />
             </div>
 
             {/* MURAL DE AVISOS (Single active card with overlay arrows) */}
@@ -805,7 +822,7 @@ export default function HomePage({
                               {new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </span>
                           </div>
-                          <span className={`font-black text-xs shrink-0 ${t.tipo === 'receita' ? 'text-blue-600' : 'text-rose-600'}`}>
+                          <span className={`font-black text-xs shrink-0 ${t.tipo === 'receita' ? 'text-blue-600' : 'text-red-600'}`}>
                             {t.tipo === 'receita' ? '+' : '-'} {formatarBRL(t.valor)}
                           </span>
                         </div>
@@ -851,6 +868,31 @@ export default function HomePage({
           </div>
         </ModalWrapper>
       )}
+    </div>
+  );
+}
+
+function CardMobileIndicador({ label, valor, detalhe, icon: Icon, gradient, shadowColor }) {
+  return (
+    <div className="p-4 rounded-2xl bg-white border border-slate-100 shadow-3xs flex items-center gap-4 text-slate-800 animate-in fade-in slide-in-from-top-1 duration-300">
+      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 text-white shadow-xs`}>
+        <Icon className="w-6.5 h-6.5 text-white" strokeWidth={1.8} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 leading-none">
+          {label}
+        </p>
+        <div className="flex items-baseline gap-2 mt-1.5 leading-none">
+          <span className="text-2xl font-black text-slate-800 tracking-tight">
+            {valor}
+          </span>
+          {detalhe && (
+            <span className="text-[9px] text-slate-450 font-bold uppercase tracking-wider">
+              • {detalhe}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

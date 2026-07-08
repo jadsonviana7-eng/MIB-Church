@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { Card, PageHeader } from './ui';
 import { registrarLogFinanceiro } from './financeiroUtils';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 const exportStylesRelatorio = `
   @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
@@ -182,22 +182,19 @@ export default function RelatorioSemanal({ usuarioLogado }) {
       container.appendChild(content);
       document.body.appendChild(container);
 
-      const canvas = await html2canvas(content, {
-        scale: 2,
+      const imgData = await toPng(content, {
         width: 1080,
         height: 1920,
-        windowWidth: 1080,
-        windowHeight: 1920,
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+          width: '1080px',
+          height: '1920px'
+        },
         useCORS: true,
+        cacheBust: true,
         backgroundColor: '#2d1457',
-        scrollX: 0,
-        scrollY: 0,
-        x: 0,
-        y: 0,
-        logging: false
       });
-
-      const imgData = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       const fileName = `Relatorio_Semanal_${dataStr.replace(/\//g, '-')}.png`;
       link.download = fileName;

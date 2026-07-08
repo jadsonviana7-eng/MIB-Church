@@ -565,8 +565,8 @@ export default function TransacoesFinanceiras({
                       <td className="text-slate-600 font-normal">{t.descricao}</td>
                       <td className="font-medium text-slate-900">{t.contribuinte || '—'}</td>
                       <td>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.tipo === 'Receita' ? 'bg-emerald-100 text-emerald-800' :
-                            t.tipo === 'Despesa' ? 'bg-rose-100 text-rose-800' :
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tipoNormalizado === 'receita' ? 'bg-emerald-100 text-emerald-800' :
+                            tipoNormalizado === 'despesa' ? 'bg-red-100 text-red-800' :
                               'bg-blue-100 text-blue-800'
                           }`}>
                           {t.tipo}
@@ -586,7 +586,9 @@ export default function TransacoesFinanceiras({
                         <div className="flex items-center justify-end gap-2">
                           {podeEditar ? (
                             <> {/* Botões de editar e excluir ficam no modal, mas o ícone de editar na tabela ainda é útil */}
-                              <span className="font-bold mr-2">{`R$ ${t.valor.toFixed(2)}`}</span>
+                              <span className={`font-bold mr-2 ${tipoNormalizado === 'receita' ? 'text-emerald-600' : tipoNormalizado === 'despesa' ? 'text-red-600' : 'text-slate-900'}`}>
+                                {t.valor.toFixed(2)}
+                              </span>
                               <button onClick={(e) => { e.stopPropagation(); abrirModal(tipoNormalizado, t); }} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Lançamento">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -599,7 +601,9 @@ export default function TransacoesFinanceiras({
                               </button>
                             </>
                           ) : (
-                            <span className="font-bold">{`R$ ${t.valor.toFixed(2)}`}</span>
+                            <span className={`font-bold ${tipoNormalizado === 'receita' ? 'text-emerald-600' : tipoNormalizado === 'despesa' ? 'text-red-600' : 'text-slate-900'}`}>
+                              {t.valor.toFixed(2)}
+                            </span>
                           )}
                         </div>
                       </td>
@@ -620,7 +624,7 @@ export default function TransacoesFinanceiras({
           ) : (
             transacoes.map((t, idx) => {
               const tipoNormalizado = t.tipo?.toLowerCase();
-              const valorColor = tipoNormalizado === 'receita' ? 'text-emerald-600' : 'text-rose-600';
+              const valorColor = tipoNormalizado === 'receita' ? 'text-emerald-600' : 'text-red-600';
               const statusColor = t.status === 'Pago' ? 'text-green-600' : t.status === 'Pendente' ? 'text-amber-600' : 'text-red-600';
               const statusBg = t.status === 'Pago' ? 'bg-green-50' : t.status === 'Pendente' ? 'bg-amber-50' : 'bg-red-50';
 
@@ -630,7 +634,7 @@ export default function TransacoesFinanceiras({
               // Borda lateral para representar Receita vs Despesa
               const borderType =
                 tipoNormalizado === 'receita' ? 'border-l-4 border-l-emerald-500' :
-                  tipoNormalizado === 'despesa' ? 'border-l-4 border-l-rose-500' :
+                  tipoNormalizado === 'despesa' ? 'border-l-4 border-l-red-500' :
                     'border-l-4 border-l-blue-500';
 
               return (
@@ -644,6 +648,14 @@ export default function TransacoesFinanceiras({
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
                         {t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
+                      </span>
+                      <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${
+                        tipoNormalizado === 'receita' ? 'bg-emerald-100 text-emerald-800' :
+                        tipoNormalizado === 'despesa' ? 'bg-red-100 text-red-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {t.tipo}
                       </span>
                       <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                       <span className="text-[9px] font-black bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-wider">
@@ -667,7 +679,7 @@ export default function TransacoesFinanceiras({
                   {/* Lado Direito: Valor e Status */}
                   <div className="flex flex-col items-end shrink-0 pl-1">
                     <span className={`text-base font-black tracking-tight ${valorColor}`}>
-                      {tipoNormalizado === 'receita' ? '+' : '-'} R$ {Number(t.valor).toFixed(2)}
+                      {Number(t.valor).toFixed(2)}
                     </span>
                     <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase mt-1.5 tracking-wider ${statusBg} ${statusColor}`}>
                       {t.status}

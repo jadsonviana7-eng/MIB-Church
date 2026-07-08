@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { Card, CardHeader, PageHeader } from './ui';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 // ─── CONFIGURAÇÃO DE MINISTÉRIOS ────────────────────────────────────────────
 // Cada ministério tem: cargos, diasSemana, cores e ícone SVG.
@@ -464,16 +464,18 @@ export default function EscalasMinisterial() {
       await new Promise(resolve => setTimeout(resolve, 250));
       
       const computedHeight = content.scrollHeight;
-      const canvas = await html2canvas(content, {
-        scale: 2,
+      const imgData = await toPng(content, {
         width: 1080,
         height: computedHeight,
-        windowHeight: computedHeight,
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+          width: '1080px',
+          height: `${computedHeight}px`
+        },
         useCORS: true,
-        logging: false,
+        cacheBust: true,
       });
-
-      const imgData = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.download = `Escala_${tipo}_${MESES[mes]}_${ano}.png`;
       link.href = imgData;

@@ -670,15 +670,15 @@ export default function App() {
 
   const submenusUtilitarios = useMemo(() => [
     ['resumo', 'Visão Geral'],
-    ['escalas', 'Escalas Ministerial'],
+    ['calculadora', 'Calculadora de Tributos'],
     ['relatorio-semanal', 'Relatório Semanal'],
     ['visitante-recepcao', 'Ficha de Visitante'],
-    ['calculadora', 'Calculadora de Tributos'],
-    ['quiz', 'Teste de Temperamento'],
-    ['carne-generator', 'Gerador de Carnê'], // New item
-    ['leitor-carne', 'Leitor de Carnê'],
     ['pedido-oracao', 'Pedido de Oração'],
-    ['mural-oracao', 'Mural de Orações']
+    ['mural-oracao', 'Mural de Orações'],
+    ['quiz', 'Teste de Temperamento'],
+    ['carne-generator', 'Gerador de Carnê'],
+    ['leitor-carne', 'Leitor de Carnê'],
+    ['escalas', 'Escalas Ministerial']
   ].filter(([id, label]) => hasAccess('Utilitários', label)), [hasAccess]);
 
   const obterDados = useCallback(async () => {

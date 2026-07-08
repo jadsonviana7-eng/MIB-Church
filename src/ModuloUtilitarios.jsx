@@ -16,6 +16,14 @@ import FormularioVisitante from './FormularioVisitante';
 function getUtilitarios({ membroLogado, temVinculoEscala }) {
   return [
     {
+      id: 'calculadora',
+      label: 'Calculadora de Tributos',
+      desc: 'Calcule dízimos, ofertas e primícias com base em versículos bíblicos.',
+      icon: MenuIcons['u-calculadora'],
+      gradient: 'from-indigo-500 to-blue-500',
+      show: true,
+    },
+    {
       id: 'relatorio-semanal',
       label: 'Relatório Semanal',
       desc: 'Gere o gráfico de ofertas semanais para compartilhamento.',
@@ -32,12 +40,20 @@ function getUtilitarios({ membroLogado, temVinculoEscala }) {
       show: true,
     },
     {
-      id: 'calculadora',
-      label: 'Calculadora de Tributos',
-      desc: 'Calcule dízimos, ofertas e primícias com base em versículos bíblicos.',
-      icon: MenuIcons['u-calculadora'],
-      gradient: 'from-indigo-500 to-blue-500',
+      id: 'pedido-oracao',
+      label: 'Pedido de Oração',
+      desc: 'Abra seu coração. Seus pedidos serão enviados diretamente aos pastores.',
+      icon: MenuIcons['u-pedido-oracao'],
+      gradient: 'from-violet-500 to-purple-500',
       show: true,
+    },
+    {
+      id: 'mural-oracao',
+      label: 'Mural de Orações',
+      desc: 'Visualize e interceda pelos pedidos de oração da sua célula ou igreja.',
+      icon: MenuIcons['u-mural-oracao'],
+      gradient: 'from-rose-500 to-pink-500',
+      show: ['admin', 'pastor', 'lider-celula', 'lider', 'supervisor'].includes(membroLogado?.permissao),
     },
     {
       id: 'quiz',
@@ -62,22 +78,6 @@ function getUtilitarios({ membroLogado, temVinculoEscala }) {
       icon: MenuIcons['u-leitor-carne'],
       gradient: 'from-sky-500 to-cyan-500',
       show: ['admin', 'pastor', 'tesouraria', 'financeiro'].includes(membroLogado?.permissao),
-    },
-    {
-      id: 'pedido-oracao',
-      label: 'Pedido de Oração',
-      desc: 'Abra seu coração. Seus pedidos serão enviados diretamente aos pastores.',
-      icon: MenuIcons['u-pedido-oracao'],
-      gradient: 'from-violet-500 to-purple-500',
-      show: true,
-    },
-    {
-      id: 'mural-oracao',
-      label: 'Mural de Orações',
-      desc: 'Visualize e interceda pelos pedidos de oração da sua célula ou igreja.',
-      icon: MenuIcons['u-mural-oracao'],
-      gradient: 'from-rose-500 to-pink-500',
-      show: ['admin', 'pastor', 'lider-celula', 'lider', 'supervisor'].includes(membroLogado?.permissao),
     },
   ].filter((u) => u.show);
 }

@@ -18,7 +18,7 @@ export default function PainelAprovacoes({ onVerDetalhes, onAprovado }) {
         .from('pessoas')
         .select('*')
         .eq('status', 'pendente')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false, nullsFirst: false });
 
       if (error) {
         console.error('Erro ao buscar pendentes:', error);
@@ -33,7 +33,7 @@ export default function PainelAprovacoes({ onVerDetalhes, onAprovado }) {
           .from('pessoas')
           .select('id, nome, foto_url, cargo, created_at')
           .eq('status', 'ativo')
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false, nullsFirst: false })
           .limit(8);
         if (!recentError) setRecentes(recentData || []);
       } else {

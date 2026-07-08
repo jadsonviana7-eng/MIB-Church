@@ -34,7 +34,8 @@ import {
   Building2,
   TrendingUp,
   TrendingDown,
-  DollarSign
+  DollarSign,
+  Upload
 } from 'lucide-react';
 
 export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membroLogado, hasAccess, filtrosMobileAberto, setFiltrosMobileAberto, onNavigate }) {
@@ -226,10 +227,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
             <div className="hidden md:block">
               <PageHeader titulo="Módulo Financeiro"/>
             </div>
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6">
-            
-            {/* Bloco da Esquerda: Sumário e Gráficos */}
-            <div className="space-y-6">
+          <div className="space-y-6">
               
               {/* Cards de Sumário Geral com Nova Roupa Premium - Visível apenas em Desktop */}
               <div className="hidden sm:grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -310,6 +308,58 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                       ))}
                     </div>
                   </div>
+                )}
+              </div>
+
+              {/* Cards de Atalhos Rápidos com Cores Diferenciadas, em ordem dos submenus */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                {hasAccess('Financeiro', 'Transações') && (
+                  <CardAtalhoFinanceiro 
+                    label="Transações" 
+                    icon={DollarSign} 
+                    gradient="from-blue-500 to-indigo-600" 
+                    onClick={() => handleMudarAba('transacoes')} 
+                  />
+                )}
+                {hasAccess('Financeiro', 'Relatórios financeiros') && (
+                  <CardAtalhoFinanceiro 
+                    label="Relatórios" 
+                    icon={BarChart3} 
+                    gradient="from-emerald-500 to-teal-600" 
+                    onClick={() => handleMudarAba('relatorios')} 
+                  />
+                )}
+                {hasAccess('Financeiro', 'Categorias') && (
+                  <CardAtalhoFinanceiro 
+                    label="Categorias" 
+                    icon={Tag} 
+                    gradient="from-amber-500 to-orange-600" 
+                    onClick={() => handleMudarAba('categorias')} 
+                  />
+                )}
+                {hasAccess('Financeiro', 'Contas') && (
+                  <CardAtalhoFinanceiro 
+                    label="Contas / Caixas" 
+                    icon={Landmark} 
+                    gradient="from-cyan-500 to-sky-600" 
+                    onClick={() => handleMudarAba('contas')} 
+                  />
+                )}
+                {hasAccess('Financeiro', 'Importar') && (
+                  <CardAtalhoFinanceiro 
+                    label="Importar" 
+                    icon={Upload} 
+                    gradient="from-purple-500 to-fuchsia-600" 
+                    onClick={() => handleMudarAba('importar')} 
+                  />
+                )}
+                {hasAccess('Financeiro', 'Logs') && (
+                  <CardAtalhoFinanceiro 
+                    label="Histórico / Logs" 
+                    icon={History} 
+                    gradient="from-violet-500 to-purple-600" 
+                    onClick={() => handleMudarAba('historico')} 
+                  />
                 )}
               </div>
 
@@ -460,21 +510,6 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 </div>
               </div>
 
-            </div>
-
-            {/* Coluna Lateral Direita: Atalhos Rápidos com Novo visual de Deck */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3 h-fit">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 pl-1">Atalhos Rápidos</h3>
-              <BotaoAtalho label="Transações" icon={DollarSign} onClick={() => handleMudarAba('transacoes')} />
-              <BotaoAtalho label="Histórico de Ações" icon={History} onClick={() => handleMudarAba('historico')} />
-              <BotaoAtalho label="Orçamentos Anuais" icon={BarChart3} onClick={() => {}} />
-              <BotaoAtalho label="Categorias" icon={Tag} onClick={() => handleMudarAba('categorias')} />
-              <BotaoAtalho label="Contas / Caixas" icon={Landmark} onClick={() => handleMudarAba('contas')} />
-              <BotaoAtalho label="Contatos / Favorecidos" icon={UserSquare2} onClick={() => {}} />
-              <BotaoAtalho label="Centros de Custos" icon={Building2} onClick={() => {}} />
-              <BotaoAtalho label="Relatórios" icon={BarChart3} onClick={() => handleMudarAba('relatorios')} />
-            </div>
-
           </div>
           </>
         )}
@@ -548,16 +583,17 @@ function CardResumo({ title, value, gradient, icon: Icon }) {
   );
 }
 
-function BotaoAtalho({ label, icon: Icon, onClick }) {
+function CardAtalhoFinanceiro({ label, icon: Icon, gradient, onClick }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl border border-slate-100 bg-slate-50/40 hover:border-emerald-300 hover:bg-emerald-50/20 text-left text-xs font-bold text-slate-700 transition group hover:shadow-sm"
+      className="w-full flex items-center gap-3 px-3.5 py-3.5 rounded-2xl border border-slate-100 bg-white hover:border-slate-200 hover:shadow-md text-left text-xs font-bold text-slate-700 transition group cursor-pointer hover:-translate-y-0.5 duration-300 overflow-hidden"
     >
-      <span className="p-2 rounded-xl bg-white border border-slate-100 text-[#055F6D] group-hover:scale-105 group-hover:bg-emerald-50/50 transition shrink-0">
+      <span className={`p-2 rounded-xl bg-gradient-to-br ${gradient} text-white group-hover:scale-105 transition shrink-0`}>
         <Icon className="w-4 h-4" strokeWidth={2.2} />
       </span>
-      <span className="flex-1 tracking-tight">{label}</span>
+      <span className="flex-1 tracking-tight truncate">{label}</span>
     </button>
   );
 }

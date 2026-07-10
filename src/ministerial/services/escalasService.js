@@ -210,5 +210,27 @@ export const escalasService = {
       
       if (insError) throw insError;
     }
+  },
+
+  async listarEscalasMes(eventoIds, ministerioId) {
+    const { data, error } = await supabase
+      .from('escalas')
+      .select(`
+        *,
+        pessoas (
+          nome
+        ),
+        ministerios (
+          nome
+        ),
+        ministerio_funcoes (
+          nome
+        )
+      `)
+      .in('evento_id', eventoIds)
+      .eq('ministerio_id', ministerioId);
+
+    if (error) throw error;
+    return data;
   }
 }

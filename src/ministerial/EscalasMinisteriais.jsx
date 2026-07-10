@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { Calendar, Plus, X, Search, Check, AlertCircle, Share2, Printer, CheckCircle, XCircle, Trash2, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { escalasService } from './services/escalasService';
 import { autoEscalaService } from './services/autoEscalaService';
+import { supabase } from '../supabaseClient';
+import { toPng } from 'html-to-image';
 
 export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio }) {
   const [eventos, setEventos] = useState([]);
@@ -86,7 +88,15 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
   });
   const [previaEventos, setPreviaEventos] = useState([]);
 
+  const [modalExportarMensal, setModalExportarMensal] = useState(false);
+  const [minExportarId, setMinExportarId] = useState('');
+  const [dadosMensaisExportar, setDadosMensaisExportar] = useState([]);
+  const [funcoesExportar, setFuncoesExportar] = useState([]);
+  const [carregandoExportar, setCarregandoExportar] = useState(false);
+
   const isMembroNormal = membroLogado?.permissao === 'membro' && !isLiderMinisterio;
+
+  const [modalGradeMobile, setModalGradeMobile] = useState(false);
 
   useEffect(() => {
     carregarEventos();
@@ -135,6 +145,8 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
       if (dados && dados.length > 0 && !eventoSelecionado) {
         selecionarEvento(dados[0]);
       }
+      const mins = await escalasService.listarMinisterios();
+      setListaMinisterios(mins || []);
     } catch (error) {
       console.error('Erro ao carregar eventos:', error);
     }
@@ -151,11 +163,14 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
     }
   }
 
-  async function selecionarEvento(evento) {
+  async function selecionarEvento(evento, fromUserClick = false) {
     setEventoSelecionado(evento);
     try {
       const lista = await escalasService.listarEscalas(evento.id);
       setEscalas(lista || []);
+      if (fromUserClick && window.innerWidth < 1024) {
+        setModalGradeMobile(true);
+      }
     } catch (error) {
       console.error('Erro ao carregar escalas:', error);
     }
@@ -849,6 +864,181 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
     });
   }
 
+  // Copiar escala de um ministério específico para WhatsApp
+  function copiarWhatsAppMinisterio(grupo) {
+    if (!eventoSelecionado || !grupo || grupo.itens.length === 0) return;
+    
+    const dataInfo = obterInfoDataBrasilia(eventoSelecionado.data_evento);
+    const nomesDiasLongos = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+    const nomesMeses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    
+    const diaSemanaLong = nomesDiasLongos[dataInfo.diaSemanaIndex];
+    const mesNome = nomesMeses[dataInfo.mesIndex];
+    
+    const dataFormatada = `${diaSemanaLong}, ${Number(dataInfo.diaNum)} de ${mesNome}`;
+    const horaFormatada = obterHoraExibicao(eventoSelecionado);
+
+    let texto = `*MIB CHURCH — ESCALA DE VOLUNTÁRIOS*\n`;
+    texto += `*EVENTO:* ${eventoSelecionado.titulo.toUpperCase()}\n`;
+    texto += `*DATA:* ${dataFormatada} às ${horaFormatada}\n`;
+    texto += `*LOCAL:* ${eventoSelecionado.local || 'Templo Sede'}\n\n`;
+
+    const fardaSel = eventoSelecionado?.fardamentos?.[grupo.id];
+    texto += `*${grupo.nome.toUpperCase()}*${fardaSel ? ` _(Farda: ${fardaSel})_` : ''}\n`;
+    grupo.itens.forEach(item => {
+      const statusIcon = item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡';
+      texto += ` • _${item.ministerio_funcoes?.nome || 'Função'}:_ *${item.pessoas?.nome}* ${statusIcon}\n`;
+    });
+
+    navigator.clipboard.writeText(texto).then(() => {
+      mostrarToast(`✓ Escala do ${grupo.nome} copiada!`);
+    });
+  }
+
+  // Sincroniza dados para a exportação da escala mensal
+  useEffect(() => {
+    if (!modalExportarMensal || !minExportarId) {
+      setDadosMensaisExportar([]);
+      setFuncoesExportar([]);
+      return;
+    }
+    
+    async function buscarDadosMensais() {
+      setCarregandoExportar(true);
+      try {
+        const eventIds = eventosFiltrados.map(e => e.id);
+        if (eventIds.length === 0) {
+          setDadosMensaisExportar([]);
+          setFuncoesExportar([]);
+          return;
+        }
+        const dados = await escalasService.listarEscalasMes(eventIds, minExportarId);
+        setDadosMensaisExportar(dados || []);
+        
+        // Fetch and sort functions of the ministry to ensure fixed order/position
+        const funcs = await escalasService.listarFuncoes(minExportarId);
+        const funcsOrdenadas = (funcs || []).sort((a, b) => a.nome.localeCompare(b.nome));
+        setFuncoesExportar(funcsOrdenadas);
+      } catch (error) {
+        console.error('Erro ao carregar dados da escala mensal para exportação:', error);
+      } finally {
+        setCarregandoExportar(false);
+      }
+    }
+    
+    buscarDadosMensais();
+  }, [modalExportarMensal, minExportarId, filtroMes, filtroAno, eventosFiltrados]);
+
+  // Exportar PNG da escala mensal
+  async function handleExportarMensalPNG(isDownloadOnly = false) {
+    if (!minExportarId) return;
+    const ministerio = listaMinisterios.find(m => m.id === minExportarId);
+    if (!ministerio) return;
+    
+    setCarregandoExportar(true);
+    const container = document.createElement('div');
+    try {
+      container.style.cssText = 'position:fixed;left:-9999px;top:0;width:1080px;';
+      document.body.appendChild(container);
+      
+      const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+      const nomesDias = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
+      
+      const cardsHTML = eventosFiltrados.map((ev) => {
+        const dataInfo = obterInfoDataBrasilia(ev.data_evento);
+        const diaSemanaStr = nomesDias[dataInfo.diaSemanaIndex];
+        
+        // Find volunteers for this event and this ministry
+        const atribuicoes = dadosMensaisExportar.filter(item => item.evento_id === ev.id);
+        const hasVolunteers = atribuicoes.length > 0;
+        
+        const assignmentsHTML = hasVolunteers ? funcoesExportar.map((func) => {
+          const item = atribuicoes.find(att => att.funcao_id === func.id);
+          const statusIcon = item ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') : '';
+          const nomePessoa = item?.pessoas?.nome || '— —';
+          return `
+            <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
+              <div style="font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#2563eb; opacity:0.85;">
+                ${func.nome}
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:24px; font-weight:800; color:${item ? '#0f172a' : '#94a3b8'}; font-style:${item ? 'normal' : 'italic'};">${nomePessoa}</span>
+                ${item ? `<span style="font-size:12px;">${statusIcon}</span>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('') : '<div style="font-size:20px; color:#94a3b8; font-style:italic; grid-column:span 2;">Sem voluntários escalados</div>';
+        
+        const fardaSel = ev.fardamentos?.[minExportarId];
+        const uniformHTML = fardaSel
+          ? `<div style="display:flex; align-items:center; gap:6px; margin-top:4px; padding-top:8px; border-top:1px dashed rgba(15, 23, 42, 0.1); font-size:14px; font-weight:800; color:#475569; grid-column: span 2;">
+              👕 Farda: ${fardaSel}
+             </div>`
+          : '';
+          
+        return `
+          <div style="display:flex; align-items:center; gap:28px; background:rgba(255,255,255,0.96); border-radius:32px; padding:24px 32px; box-shadow:0 12px 35px rgba(0,0,0,0.15); border:1px solid rgba(255,255,255,0.6); width:100%; text-align:left; box-sizing:border-box;">
+            <div style="width:110px; height:110px; border-radius:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.18); flex-shrink:0; background:linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);">
+              <span style="font-size:14px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; opacity:0.8; margin-bottom:2px;">${diaSemanaStr}</span>
+              <span style="font-size:50px; font-weight:900; line-height:1;">${dataInfo.diaNum}</span>
+            </div>
+            <div style="flex-grow:1; display:flex; flex-direction:column; gap:12px; text-align:left;">
+              <div style="font-size:20px; font-weight:900; text-transform:uppercase; tracking-wide:1px; color:#0f172a; border-bottom:1px solid rgba(15,23,42,0.08); padding-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                <span>${ev.titulo}</span>
+                <span style="font-size:11px; opacity:0.6; font-weight:700;">⏰ ${obterHoraExibicao(ev)}</span>
+              </div>
+              <div style="display:grid; gap:14px; grid-template-columns: repeat(2, 1fr); text-align:left;">
+                ${assignmentsHTML || '<div style="font-size:20px; color:#94a3b8; font-style:italic; grid-column:span 2;">Sem voluntários escalados</div>'}
+                ${uniformHTML}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      container.innerHTML = `
+        <div style="box-sizing:border-box; width:1080px; min-height:1920px; height:auto; padding:56px 48px; font-family:'Montserrat',Arial,sans-serif; display:flex; flex-direction:column; gap:32px; position:relative; overflow:hidden; background:linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#311042 100%);">
+          <div style="border-radius:40px; padding:48px; display:flex; flex-direction:column; align-items:flex-start; gap:24px; border:1px solid rgba(255,255,255,0.12); box-shadow:0 20px 50px rgba(0,0,0,0.25); background:linear-gradient(135deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0.03) 100%); z-index:2; width:100%; box-sizing:border-box;">
+            <div style="font-size:16px; font-weight:900; text-transform:uppercase; letter-spacing:0.2em; padding:10px 24px; border-radius:999px; display:inline-flex; align-items:center; gap:8px; background:#3b82f6; color:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.15);">${ministerio.nome}</div>
+            <div style="font-size:96px; font-weight:900; line-height:0.85; letter-spacing:-2px; text-transform:uppercase; margin-top:6px; color:#ffffff; text-shadow:0 4px 16px rgba(0,0,0,0.2);">${MESES[filtroMes].toUpperCase()} ${filtroAno}</div>
+          </div>
+          <div style="flex:1; border-radius:40px; padding:36px 24px; display:flex; flex-direction:column; gap:24px; border:1px solid rgba(255, 255, 255, 0.12); box-shadow:0 20px 50px rgba(0, 0, 0, 0.2); z-index:2; background:linear-gradient(135deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0.02) 100%); width:100%; box-sizing:border-box;">
+            <div style="font-size:18px; font-weight:900; text-transform:uppercase; letter-spacing:0.25em; opacity:0.55; padding:0 12px 12px; border-bottom:2px solid rgba(255, 255, 255, 0.1); margin-bottom:12px; text-align:center; color:rgba(255, 255, 255, 0.7);">Escala Mensal de Voluntários</div>
+            ${cardsHTML}
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 0 12px; flex-shrink:0; gap:10px; z-index:2; width:100%; box-sizing:border-box;">
+            <img src="https://guznbiqposfhqalqjggw.supabase.co/storage/v1/object/public/fotos-membros/logo_betesda_branca.png" style="height:90px; object-fit:contain; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.15));" crossorigin="anonymous" />
+            <div style="font-size:16px; font-weight:900; letter-spacing:0.25em; text-transform:uppercase; opacity:0.6; color:#fff; margin-top:4px;">MIB CHURCH · DEPARTAMENTO DE COMUNICAÇÃO</div>
+          </div>
+        </div>
+      `;
+      
+      // Delay to ensure rendering is complete
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const computedHeight = container.firstElementChild.scrollHeight;
+      const imgData = await toPng(container.firstElementChild, { width: 1080, height: computedHeight });
+      
+      const link = document.createElement('a');
+      link.download = `Escala_Mensal_${ministerio.nome}_${MESES[filtroMes]}_${filtroAno}.png`;
+      link.href = imgData;
+      
+      if (navigator.share && !isDownloadOnly) {
+        const blob = await (await fetch(imgData)).blob();
+        const file = new File([blob], link.download, { type: 'image/png' });
+        await navigator.share({ files: [file], title: `Escala Mensal - ${ministerio.nome}` }).catch(() => link.click());
+      } else {
+        link.click();
+      }
+    } catch (e) {
+      console.error('Erro ao gerar PNG da escala mensal:', e);
+      alert('Erro ao gerar imagem: ' + e.message);
+    } finally {
+      document.body.removeChild(container);
+      setCarregandoExportar(false);
+    }
+  }
+
   return (
     <div className="space-y-6 relative">
       {/* Notificação flutuante */}
@@ -914,6 +1104,13 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
           {!isMembroNormal && (
             <>
               <button
+                onClick={() => setModalExportarMensal(true)}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-wider transition active:scale-95 cursor-pointer"
+              >
+                <Share2 size={14} strokeWidth={3} />
+                Exportar Mensal
+              </button>
+              <button
                 onClick={() => {
                   setAbaGerador('config');
                   setModalGerador(true);
@@ -975,7 +1172,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
               return (
                 <button
                   key={ev.id}
-                  onClick={() => selecionarEvento(ev)}
+                  onClick={() => selecionarEvento(ev, true)}
                   className={`w-full text-left p-2.5 rounded-xl border transition-all duration-200 flex items-center justify-between cursor-pointer group ${
                     eventoSelecionado?.id === ev.id
                       ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100'
@@ -1031,9 +1228,15 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
         </div>
 
         {/* Painel Direito - Grade da Escala */}
-        <div className="col-span-12 lg:col-span-8 bg-white rounded-2xl border border-slate-100/80 p-6 shadow-sm">
-          {eventoSelecionado ? (
-            <>
+        <div className={`col-span-12 lg:col-span-8 ${modalGradeMobile ? 'fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 lg:static lg:bg-transparent lg:p-0 lg:flex-none lg:block' : 'hidden lg:block'}`}>
+          <div className={`bg-white rounded-2xl border border-slate-100/80 p-6 shadow-sm w-full ${modalGradeMobile ? 'max-h-[90vh] overflow-y-auto relative' : 'h-full'}`}>
+            {modalGradeMobile && (
+              <button type="button" onClick={() => setModalGradeMobile(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 lg:hidden cursor-pointer bg-slate-100 rounded-full p-1 z-10">
+                <X size={20} />
+              </button>
+            )}
+            {eventoSelecionado ? (
+              <>
               {/* Header do Evento */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-5 border-b border-slate-100">
                 <div>
@@ -1121,14 +1324,25 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
                         )}
                       </div>
                       
-                      <button
-                        type="button"
-                        onClick={() => rodarAutoEscala(grupo.id)}
-                        className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg hover:bg-blue-100 transition cursor-pointer"
-                        title="Montar escala automaticamente com base no histórico e disponibilidade."
-                      >
-                        ⚡ AutoEscala
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => copiarWhatsAppMinisterio(grupo)}
+                          className="text-[10px] font-black uppercase tracking-wider text-emerald-600 hover:text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg hover:bg-emerald-100 transition cursor-pointer flex items-center gap-1"
+                          title="Copiar escala deste ministério para WhatsApp"
+                        >
+                          <Share2 size={11} />
+                          WhatsApp
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => rodarAutoEscala(grupo.id)}
+                          className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg hover:bg-blue-100 transition cursor-pointer"
+                          title="Montar escala automaticamente com base no histórico e disponibilidade."
+                        >
+                          ⚡ AutoEscala
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-3">
@@ -1189,6 +1403,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
               Selecione um evento na barra lateral para carregar sua escala de voluntários.
             </div>
           )}
+          </div>
         </div>
       </div>
 
@@ -1890,6 +2105,191 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
               <button type="button" onClick={salvarEdicaoEvento} disabled={salvando} className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer">
                 {salvando ? 'Salvando...' : 'Salvar Alterações'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal - Exportar Escala Mensal */}
+      {modalExportarMensal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[85vh] overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col text-slate-800">
+            {/* Cabeçalho */}
+            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50">
+              <div>
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                  📲 Exportar Escala Mensal (PNG)
+                </h3>
+                <p className="text-[10px] text-slate-400 mt-0.5 font-bold uppercase">
+                  Período: {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes]} de {filtroAno}
+                </p>
+              </div>
+              <button type="button" onClick={() => setModalExportarMensal(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Corpo */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* Seleção do Ministério */}
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-1.5">Ministério</label>
+                <select
+                  value={minExportarId}
+                  onChange={(e) => setMinExportarId(e.target.value)}
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-slate-50 outline-none focus:border-blue-500 transition cursor-pointer text-slate-700 font-bold"
+                >
+                  <option value="">— Selecione o Ministério para Exportação —</option>
+                  {listaMinisterios.map(m => (
+                    <option key={m.id} value={m.id}>{m.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Prévia */}
+              <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/30 flex flex-col items-center">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Prévia do Layout Mobile</p>
+                
+                {carregandoExportar ? (
+                  <div className="py-20 text-center text-slate-500 font-bold text-sm animate-pulse">Carregando dados da escala...</div>
+                ) : !minExportarId ? (
+                  <div className="py-20 text-center text-slate-400 italic text-xs">Selecione um ministério acima para ver a prévia.</div>
+                ) : eventosFiltrados.length === 0 ? (
+                  <div className="py-20 text-center text-slate-400 italic text-xs">Nenhum evento cadastrado neste mês.</div>
+                ) : (
+                  <div className="w-full max-w-2xl overflow-y-auto h-[450px] border border-slate-200 rounded-[28px] bg-slate-950 p-4 relative flex justify-center shadow-inner custom-scrollbar">
+                    <div className="origin-top scale-[0.4] sm:scale-[0.55] md:scale-[0.65]" style={{ width: '1080px', height: 'auto', transformOrigin: 'top center' }}>
+                      <style>{`
+                        .mensal-export-page { width: 1080px; height: auto; min-height: 1920px; padding: 56px 48px; font-family: 'Montserrat', sans-serif; display: flex; flex-direction: column; gap: 32px; position: relative; overflow: hidden; background: linear-gradient(150deg, #0f172a 0%, #1e1b4b 55%, #311042 100%); }
+                        .mensal-export-header { border-radius: 40px; padding: 48px; display: flex; flex-direction: column; align-items: flex-start; gap: 24px; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25); background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%); z-index: 2; width: 100%; }
+                        .mensal-export-header-badge { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.2em; padding: 10px 24px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; background: #3b82f6; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+                        .mensal-export-title { font-size: 96px; font-weight: 900; line-height: 0.85; letter-spacing: -2px; text-transform: uppercase; margin-top: 6px; color: #ffffff; text-shadow: 0 4px 16px rgba(0, 0, 0, 0.2); }
+                        .mensal-export-list { flex: 1; border-radius: 40px; padding: 36px 24px; display: flex; flex-direction: column; gap: 24px; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2); z-index: 2; background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%); width: 100%; }
+                        .mensal-export-list-title { font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.25em; opacity: 0.55; padding: 0 12px 12px; border-bottom: 2px solid rgba(255, 255, 255, 0.1); margin-bottom: 12px; text-align: center; color: rgba(255, 255, 255, 0.7); }
+                        .mensal-export-card { display: flex; align-items: center; gap: 28px; background: rgba(255, 255, 255, 0.96); border-radius: 32px; padding: 24px 32px; box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15); border: 1px solid rgba(255, 255, 255, 0.6); width: 100%; text-align: left; }
+                        .mensal-export-date-badge { width: 110px; height: 110px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; box-shadow: 0 8px 20px rgba(0,0,0,0.18); flex-shrink: 0; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); }
+                        .mensal-export-date-badge-day { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.8; margin-bottom: 2px; }
+                        .mensal-export-date-badge-num { font-size: 50px; font-weight: 900; line-height: 1; }
+                        .mensal-export-content { flex-grow: 1; display: flex; flex-direction: column; gap: 12px; text-align: left; }
+                        .mensal-export-event-title { font-size: 20px; font-weight: 900; text-transform: uppercase; tracking-wide: 1px; color: #0f172a; border-bottom: 1px solid rgba(15, 23, 42, 0.08); padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+                        .mensal-export-assignments-grid { display: grid; gap: 14px; grid-template-columns: repeat(2, 1fr); text-align: left; }
+                        .mensal-export-assignment-cell { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+                        .mensal-export-assignment-role { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #2563eb; opacity: 0.85; }
+                        .mensal-export-assignment-name-row { display: flex; align-items: center; gap: 8px; }
+                        .mensal-export-assignment-name { font-size: 24px; font-weight: 800; color: #0f172a; }
+                        .mensal-export-assignment-name-empty { font-size: 24px; font-weight: 500; color: #94a3b8; font-style: italic; }
+                        .mensal-export-uniform-badge { display: flex; align-items: center; gap: 6px; margin-top: 4px; padding-top: 8px; border-top: 1px dashed rgba(15, 23, 42, 0.1); font-size: 14px; font-weight: 800; color: #475569; grid-column: span 2; }
+                        .mensal-export-footer { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0 12px; flex-shrink: 0; gap: 10px; z-index: 2; width: 100%; }
+                        .mensal-export-footer-logo { height: 90px; object-fit: contain; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15)); }
+                        .mensal-export-footer-tagline { font-size: 16px; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; opacity: 0.6; color: #fff; margin-top: 4px; }
+                      `}</style>
+                      
+                      <div className="mensal-export-page">
+                        <div className="mensal-export-header">
+                          <div className="mensal-export-header-badge">
+                            {listaMinisterios.find(m => m.id === minExportarId)?.nome || ''}
+                          </div>
+                          <div className="mensal-export-title">
+                            {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes].toUpperCase()} {filtroAno}
+                          </div>
+                        </div>
+                        
+                        <div className="mensal-export-list">
+                          <div className="mensal-export-list-title">Escala Mensal de Voluntários</div>
+                          
+                          {eventosFiltrados.map((ev) => {
+                            const dataInfo = obterInfoDataBrasilia(ev.data_evento);
+                            const diaSemanaStr = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'][dataInfo.diaSemanaIndex];
+                            
+                            const atribuicoes = dadosMensaisExportar.filter(item => item.evento_id === ev.id);
+                            const fardaSel = ev.fardamentos?.[minExportarId];
+                            const hasVolunteers = atribuicoes.length > 0;
+                            
+                            return (
+                              <div key={ev.id} className="mensal-export-card">
+                                <div className="mensal-export-date-badge">
+                                  <span className="mensal-export-date-badge-day">{diaSemanaStr}</span>
+                                  <span className="mensal-export-date-badge-num">{dataInfo.diaNum}</span>
+                                </div>
+                                <div className="mensal-export-content">
+                                  <div className="mensal-export-event-title">
+                                    <span>{ev.titulo}</span>
+                                    <span style={{ fontSize: '11px', opacity: 0.6 }}>⏰ {obterHoraExibicao(ev)}</span>
+                                  </div>
+                                  <div className="mensal-export-assignments-grid">
+                                    {hasVolunteers ? funcoesExportar.map((func) => {
+                                      const item = atribuicoes.find(att => att.funcao_id === func.id);
+                                      const statusIcon = item ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') : '';
+                                      const nomePessoa = item?.pessoas?.nome || '— —';
+                                      
+                                      return (
+                                        <div key={func.id} className="mensal-export-assignment-cell">
+                                          <div className="mensal-export-assignment-role" style={{ color: '#2563eb' }}>{func.nome}</div>
+                                          <div className="mensal-export-assignment-name-row">
+                                            <span className={item ? "mensal-export-assignment-name" : "mensal-export-assignment-name-empty"}>
+                                              {nomePessoa}
+                                            </span>
+                                            {item && <span style={{ fontSize: '12px' }}>{statusIcon}</span>}
+                                          </div>
+                                        </div>
+                                      );
+                                    }) : (
+                                      <div className="mensal-export-assignment-name-empty" style={{ gridColumn: 'span 2' }}>
+                                        Sem voluntários escalados
+                                      </div>
+                                    )}
+                                    {fardaSel && (
+                                      <div className="mensal-export-uniform-badge">
+                                        👕 Farda: {fardaSel}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        
+                        <div className="mensal-export-footer">
+                          <img src="https://guznbiqposfhqalqjggw.supabase.co/storage/v1/object/public/fotos-membros/logo_betesda_branca.png" className="mensal-export-footer-logo" />
+                          <div className="mensal-export-footer-tagline">MIB CHURCH · DEPARTAMENTO DE COMUNICAÇÃO</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Rodapé */}
+            <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-between items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setModalExportarMensal(false)}
+                className="px-5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-white transition cursor-pointer"
+              >
+                Fechar
+              </button>
+              
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleExportarMensalPNG(false)}
+                  disabled={carregandoExportar || !minExportarId || eventosFiltrados.length === 0}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition active:scale-95 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Share2 size={13} />
+                  Compartilhar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExportarMensalPNG(true)}
+                  disabled={carregandoExportar || !minExportarId || eventosFiltrados.length === 0}
+                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  Baixar PNG
+                </button>
+              </div>
             </div>
           </div>
         </div>

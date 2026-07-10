@@ -81,22 +81,20 @@ const exportStyles = `
   .export-stat-label { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.6; }
   .export-stat-value { font-size: 46px; font-weight: 900; line-height: 1; }
 
-  .export-list { flex: 1; border-radius: 40px; padding: 32px 20px; display: flex; flex-direction: column; gap: 16px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15); z-index: 2; }
-  .export-list-title { font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.25em; opacity: 0.55; padding: 0 12px 12px; border-bottom: 2px solid rgba(255, 255, 255, 0.1); margin-bottom: 8px; text-align: center; }
+  .export-list { flex: 1; border-radius: 40px; padding: 32px 24px; display: flex; flex-direction: column; gap: 20px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15); z-index: 2; }
+  .export-list-title { font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.25em; opacity: 0.55; padding: 0 12px 12px; border-bottom: 2px solid rgba(255, 255, 255, 0.1); margin-bottom: 12px; text-align: center; }
   .export-list-grid { display: flex; flex-direction: column; gap: 20px; width: 100%; }
   
-  .export-table { width: 100%; border-collapse: collapse; margin-top: 12px; z-index: 2; position: relative; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12); }
-  .export-th { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255, 255, 255, 0.9); padding: 22px 20px; background: rgba(15, 23, 42, 0.55); border-bottom: 2px solid rgba(255, 255, 255, 0.1); text-align: center; }
-  .export-tr { border-bottom: 1px solid rgba(0, 0, 0, 0.05); background: rgba(255, 255, 255, 0.96); }
-  .export-tr-alt { border-bottom: 1px solid rgba(0, 0, 0, 0.05); background: rgba(248, 250, 252, 0.96); }
-  .export-tr:last-child, .export-tr-alt:last-child { border-bottom: none; }
-  .export-td { padding: 22px 20px; font-size: 24px; font-weight: 800; color: #0f172a; vertical-align: middle; text-align: center; }
-  .export-td-date { width: 90px; text-align: center; }
-  .export-date-cell { display: block; text-align: center; line-height: 1; }
-  .export-date-cell-day { font-size: 13px; font-weight: 900; opacity: 0.6; text-transform: uppercase; color: #475569; display: block; text-align: center; margin-bottom: 2px; }
-  .export-date-cell-num { font-size: 38px; font-weight: 900; line-height: 1; display: block; text-align: center; }
-  .export-name-empty { opacity: 0.35; font-weight: 500; color: #94a3b8; letter-spacing: 1px; }
-  .export-td-uniform { font-style: italic; font-weight: 700; }
+  .export-card { display: flex; align-items: center; gap: 24px; background: rgba(255, 255, 255, 0.95); border-radius: 28px; padding: 20px 24px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); border: 1px solid rgba(255, 255, 255, 0.5); width: 100%; text-align: left; }
+  .export-date-badge { width: 110px; height: 110px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,0.12); flex-shrink: 0; }
+  .export-date-badge-day { font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.8; margin-bottom: 2px; }
+  .export-date-badge-num { font-size: 50px; font-weight: 900; line-height: 1; }
+  .export-assignments-grid { flex-grow: 1; display: grid; gap: 16px; text-align: left; }
+  .export-assignment-cell { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+  .export-assignment-role { font-size: 13px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.85; }
+  .export-assignment-name { font-size: 28px; font-weight: 800; color: #0f172a; }
+  .export-assignment-name-empty { font-size: 28px; font-weight: 500; color: #94a3b8; font-style: italic; }
+  .export-uniform-badge { display: flex; align-items: center; gap: 6px; margin-top: 4px; padding-top: 8px; border-top: 1px dashed rgba(15, 23, 42, 0.1); font-size: 14px; font-weight: 800; color: #0f172a; }
 
   .export-footer { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0 12px; flex-shrink: 0; gap: 10px; z-index: 2; }
   .export-footer-logo { height: 90px; object-fit: contain; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15)); }
@@ -337,15 +335,6 @@ export default function EscalasMinisterial() {
         statCard:  `box-sizing:border-box;flex:1;padding:20px 24px;border-radius:24px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;`,
         statLabel: `box-sizing:border-box;font-size:15px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;opacity:0.6;color:rgba(255,255,255,0.6);`,
         statValue: `box-sizing:border-box;font-size:46px;font-weight:900;line-height:1;color:#ffffff;`,
-        list:      `box-sizing:border-box;border-radius:40px;padding:32px 20px;display:flex;flex-direction:column;gap:16px;border:1px solid rgba(255,255,255,0.15);box-shadow:0 20px 50px rgba(0,0,0,0.15);z-index:2;background:linear-gradient(135deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0.03) 100%);`,
-        listTitle: `box-sizing:border-box;font-size:18px;font-weight:900;text-transform:uppercase;letter-spacing:0.25em;opacity:0.55;padding:0 12px 12px;border-bottom:2px solid rgba(255,255,255,0.1);margin-bottom:8px;text-align:center;color:rgba(255,255,255,0.7);`,
-        table:     `box-sizing:border-box;width:100%;border-collapse:collapse;margin-top:12px;border-radius:24px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.12);`,
-        th:        `box-sizing:border-box;font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.9);padding:22px 20px;background:rgba(15,23,42,0.55);border-bottom:2px solid rgba(255,255,255,0.1);text-align:center;`,
-        tr:        `box-sizing:border-box;border-bottom:1px solid rgba(0,0,0,0.05);background:rgba(255,255,255,0.96);`,
-        trAlt:     `box-sizing:border-box;border-bottom:1px solid rgba(0,0,0,0.05);background:rgba(248,250,252,0.96);`,
-        td:        `box-sizing:border-box;padding:22px 20px;font-size:24px;font-weight:800;color:#0f172a;vertical-align:middle;text-align:center;`,
-        tdDate:    `box-sizing:border-box;width:90px;text-align:center;`,
-        dateCell:  `box-sizing:border-box;display:block;text-align:center;line-height:1;`,
         dateCellDay:`box-sizing:border-box;font-size:13px;font-weight:900;opacity:0.6;text-transform:uppercase;color:#475569;line-height:1;display:block;text-align:center;margin-bottom:2px;`,
         dateCellNum:`box-sizing:border-box;font-size:38px;font-weight:900;color:${p.accent};line-height:1;display:block;text-align:center;`,
         nameEmpty: `box-sizing:border-box;opacity:0.35;font-weight:500;color:#94a3b8;`,
@@ -371,65 +360,41 @@ export default function EscalasMinisterial() {
           ? `<span style="width:24px;height:24px;display:inline-block;">${configEscalas[tipo].iconSvg}</span>`
           : '';
 
-      // Otimização de fontes baseada no número de colunas da tabela
-      const numColunas = cargos.length + (isIntercessao ? 1 : 0);
-      const fontSizeNomes = numColunas >= 4 ? '18px' : numColunas === 3 ? '20px' : '22px';
-
-      // ── cabeçalho da tabela ───────────────────────────────────────────
-      const thsHTML = cargos.map(cargo => `<th style="${S.th}" align="center">${cargo}</th>`).join('');
-      const thUniformHTML = isIntercessao ? `<th style="${S.th}" align="center">Uniforme</th>` : '';
-      const headerRowHTML = `<tr>
-        <th style="${S.th};width:90px;text-align:center;" align="center">Data</th>
-        ${thsHTML}
-        ${thUniformHTML}
-      </tr>`;
-
-      // ── linhas da tabela ──────────────────────────────────────────────
-      const rowsHTML = diasEscala.map((culto, rowIndex) => {
+      const cardsHTML = diasEscala.map((culto) => {
         const atribuicoes = dadosEscala[culto.id] || {};
-        const isAlt = rowIndex % 2 === 1;
-        const rowStyle = isAlt ? S.trAlt : S.tr;
-
-        const tdsHTML = cargos.map((cargo, idx) => {
+        const diaSemanaStr = culto.tipoDia.slice(0, 3).toUpperCase();
+        
+        const assignmentsHTML = cargos.map((cargo, idx) => {
           const pId = atribuicoes[idx];
           const pessoa = equipe.find(pp => pp.id === pId);
-          const partes = pessoa ? pessoa.nome.trim().split(' ') : [];
-          const nomeCurto = partes.length > 1
-            ? `${partes[0]} ${partes[partes.length - 1]}`
-            : (partes[0] || '');
-
-          return `<td style="${S.td};font-size:${fontSizeNomes};" align="center">
-            ${nomeCurto
-              ? `<span>${nomeCurto}</span>`
-              : `<span style="${S.nameEmpty}">— —</span>`}
-          </td>`;
+          const nomeCompleto = pessoa ? pessoa.nome.trim() : '';
+          const partes = nomeCompleto.split(' ');
+          const nomeExibir = partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1]}` : (partes[0] || '— —');
+          
+          return `
+            <div style="${S.assignmentCell}">
+              <div style="${S.assignmentRole}">${cargo}</div>
+              <div style="${nomeCompleto ? S.assignmentName : S.assignmentNameEmpty}">${nomeExibir}</div>
+            </div>
+          `;
         }).join('');
 
-        const tdUniformHTML = isIntercessao
-          ? `<td style="${S.td};${S.tdUniform};font-size:${fontSizeNomes};" align="center">
-              ${uniformes[culto.id]
-                ? `<span>${uniformes[culto.id]}</span>`
-                : `<span style="${S.nameEmpty}">— —</span>`}
-             </td>`
+        const uniformHTML = (isIntercessao && uniformes[culto.id])
+          ? `<div style="${S.uniformBadge}">👕 Farda: ${uniformes[culto.id]}</div>`
           : '';
 
-        const diaSemanaStr = culto.tipoDia.slice(0, 3).toUpperCase();
-        const badgeBg = diaSemanaStr === 'DOM' ? '#ef4444' : diaSemanaStr === 'QUI' ? '#facc15' : 'transparent';
-        const badgeColor = diaSemanaStr === 'DOM' ? '#ffffff' : diaSemanaStr === 'QUI' ? '#0f172a' : '#475569';
-        const extraSpanStyle = diaSemanaStr === 'DOM' || diaSemanaStr === 'QUI'
-          ? `background-color:${badgeBg};color:${badgeColor};padding:2px 8px;border-radius:6px;font-size:11px;font-weight:900;display:inline-block;margin-bottom:2px;opacity:1;`
-          : '';
-
-        return `<tr style="${rowStyle}">
-          <td style="${S.td};${S.tdDate}" align="center">
-            <div style="${S.dateCell}">
-              <span style="${S.dateCellDay};${extraSpanStyle}">${diaSemanaStr}</span>
-              <span style="${S.dateCellNum}">${culto.dia}</span>
+        return `
+          <div style="${S.card}">
+            <div style="${S.dateBadge}">
+              <span style="${S.dateBadgeDay}">${diaSemanaStr}</span>
+              <span style="${S.dateBadgeNum}">${culto.dia}</span>
             </div>
-          </td>
-          ${tdsHTML}
-          ${tdUniformHTML}
-        </tr>`;
+            <div style="${S.assignmentsGrid}">
+              ${assignmentsHTML}
+              ${uniformHTML}
+            </div>
+          </div>
+        `;
       }).join('');
 
       // ── monta o HTML final ────────────────────────────────────────────
@@ -447,10 +412,7 @@ export default function EscalasMinisterial() {
         </div>
         <div style="${S.list}">
           <div style="${S.listTitle}">Escala do mês — ${tipo}</div>
-          <table style="${S.table}">
-            <thead>${headerRowHTML}</thead>
-            <tbody>${rowsHTML}</tbody>
-          </table>
+          ${cardsHTML}
         </div>
         <div style="${S.footer}">
           <img src="https://guznbiqposfhqalqjggw.supabase.co/storage/v1/object/public/fotos-membros/logo_betesda_branca.png" style="${S.footerImg}" crossorigin="anonymous" />
@@ -948,77 +910,47 @@ export default function EscalasMinisterial() {
                 
                 <div className="export-list" style={{ background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)' }}>
                   <div className="export-list-title" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>Escala do mês — {tipo}</div>
-                  <table className="export-table">
-                    <thead>
-                      <tr>
-                        <th className="export-th" style={{ width: '90px', textAlign: 'center' }} align="center">Data</th>
-                        {(config?.cargos || []).map(cargo => (
-                          <th key={cargo} className="export-th" style={{ textAlign: 'center' }} align="center">{cargo}</th>
-                        ))}
-                        {isIntercessao && <th className="export-th" style={{ textAlign: 'center' }} align="center">Uniforme</th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {diasEscala.map((culto, rowIndex) => {
-                        const atribuicoes = dadosEscala[culto.id] || {};
-                        const cargos = config?.cargos || [];
-                        const numColunas = cargos.length + (isIntercessao ? 1 : 0);
-                        const fontSizeNomes = numColunas >= 4 ? '18px' : numColunas === 3 ? '20px' : '22px';
-                        const isAlt = rowIndex % 2 === 1;
-                        const rowClass = isAlt ? "export-tr-alt" : "export-tr";
-
-                        return (
-                          <tr key={culto.id} className={rowClass}>
-                            <td className="export-td export-td-date" align="center">
-                              <div className="export-date-cell">
-                                {(() => {
-                                  const diaSemanaStr = culto.tipoDia.slice(0, 3).toUpperCase();
-                                  const isDomOrQui = diaSemanaStr === 'DOM' || diaSemanaStr === 'QUI';
-                                  const badgeBg = diaSemanaStr === 'DOM' ? '#ef4444' : diaSemanaStr === 'QUI' ? '#facc15' : 'transparent';
-                                  const badgeColor = diaSemanaStr === 'DOM' ? '#ffffff' : diaSemanaStr === 'QUI' ? '#0f172a' : '#475569';
-                                  return (
-                                    <span
-                                      className="export-date-cell-day"
-                                      style={isDomOrQui ? {
-                                        backgroundColor: badgeBg,
-                                        color: badgeColor,
-                                        padding: '2px 8px',
-                                        borderRadius: '6px',
-                                        fontSize: '11px',
-                                        fontWeight: '900',
-                                        display: 'inline-block',
-                                        marginBottom: '2px',
-                                        opacity: 1
-                                      } : {}}
-                                    >
-                                      {diaSemanaStr}
-                                    </span>
-                                  );
-                                })()}
-                                <span className="export-date-cell-num" style={{ color: paleta.accent }}>{culto.dia}</span>
-                              </div>
-                            </td>
+                  <div className="export-list-grid" style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
+                    {diasEscala.map((culto) => {
+                      const atribuicoes = dadosEscala[culto.id] || {};
+                      const diaSemanaStr = culto.tipoDia.slice(0, 3).toUpperCase();
+                      const cargos = config?.cargos || [];
+                      const numColunas = cargos.length;
+                      const gridTemplateColumns = numColunas === 1 ? '1fr' : 'repeat(2, 1fr)';
+                      
+                      return (
+                        <div key={culto.id} className="export-card">
+                          <div className="export-date-badge" style={{ background: `linear-gradient(135deg, ${paleta.bgA} 0%, ${paleta.bgB} 100%)` }}>
+                            <span className="export-date-badge-day">{diaSemanaStr}</span>
+                            <span className="export-date-badge-num">{culto.dia}</span>
+                          </div>
+                          <div className="export-assignments-grid" style={{ gridTemplateColumns }}>
                             {cargos.map((cargo, idx) => {
                               const pId = atribuicoes[idx];
-                              const pessoa = equipe.find(p => p.id === pId);
-                              const partes = pessoa ? pessoa.nome.trim().split(' ') : [];
-                              const nomeCurto = partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1]}` : (partes[0] || '');
+                              const pessoa = equipe.find(pp => pp.id === pId);
+                              const nomeCompleto = pessoa ? pessoa.nome.trim() : '';
+                              const partes = nomeCompleto.split(' ');
+                              const nomeExibir = partes.length > 1 ? `${partes[0]} ${partes[partes.length - 1]}` : (partes[0] || '— —');
+                              
                               return (
-                                <td key={idx} className="export-td" style={{ fontSize: fontSizeNomes, textAlign: 'center' }} align="center">
-                                  {nomeCurto ? <span>{nomeCurto}</span> : <span className="export-name-empty">— —</span>}
-                                </td>
+                                <div key={idx} className="export-assignment-cell">
+                                  <div className="export-assignment-role" style={{ color: paleta.accent }}>{cargo}</div>
+                                  <div className={nomeCompleto ? "export-assignment-name" : "export-assignment-name-empty"}>
+                                    {nomeExibir}
+                                  </div>
+                                </div>
                               );
                             })}
-                            {isIntercessao && (
-                              <td className="export-td export-td-uniform" style={{ color: paleta.accent, fontSize: fontSizeNomes, textAlign: 'center' }} align="center">
-                                {uniformes[culto.id] ? <span>{uniformes[culto.id]}</span> : <span className="export-name-empty">— —</span>}
-                              </td>
+                            {isIntercessao && uniformes[culto.id] && (
+                              <div className="export-uniform-badge" style={{ gridColumn: numColunas === 1 ? 'auto' : 'span 2' }}>
+                                👕 Farda: {uniformes[culto.id]}
+                              </div>
                             )}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
                 <div className="export-footer">
                   <img src="https://guznbiqposfhqalqjggw.supabase.co/storage/v1/object/public/fotos-membros/logo_betesda_branca.png" className="export-footer-logo" />

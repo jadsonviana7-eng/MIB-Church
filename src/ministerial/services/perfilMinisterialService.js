@@ -40,9 +40,15 @@ export const perfilMinisterialService = {
   },
 
   async salvarDisponibilidade(payload) {
+    const { error: delError } = await supabase
+      .from('disponibilidade_ministerial')
+      .delete()
+      .eq('pessoa_id', payload.pessoa_id);
+    if (delError) throw delError;
+
     const { data, error } = await supabase
       .from('disponibilidade_ministerial')
-      .upsert(payload, { onConflict: 'pessoa_id' })
+      .insert(payload)
       .select()
       .single();
     if (error) throw error;

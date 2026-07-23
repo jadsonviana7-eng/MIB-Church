@@ -160,8 +160,14 @@ function calcularPermissoesPorCargo(membro) {
   }
 
   if (chave.includes('secretaria')) {
+    push('Visão Geral', ['Dashboard', 'Indicadores e gráficos']);
     push('Pessoas', ['Ver todos', 'Adicionar pessoa', 'Aniversariantes', 'Relatórios', 'Ficha do membro']);
-    push('Células', ['Lista de células', 'Nova célula']);
+    push('Células', ['Lista de células', 'Nova célula', 'Reuniões', 'Detalhes da célula', 'Membros da célula']);
+    push('Financeiro', ['Minhas Contribuições']);
+    push('Escolas', ['Visão Geral', 'Cursos', 'Turmas', 'Disciplinas', 'Professores', 'Alunos', 'Aulas', 'Avaliações', 'Inscrições Públicas']);
+    push('Agenda', ['Eventos', 'Calendário', 'Mural de Avisos', 'Inscrições']);
+    push('Utilitários', ['Escalas Ministerial', 'Relatório Semanal', 'Calculadora de Tributos', 'Teste de Temperamento', 'Pedido de Oração', 'Mural de Orações', 'Gerador de Carnê', 'Leitor de Carnê']);
+    push('Gestão Ministerial', ['Dashboard', 'Equipes', 'Escalas', 'Histórico', 'Relatórios']);
     return itens;
   }
 

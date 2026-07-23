@@ -22,6 +22,7 @@ const t = {
     institucional: "Institucional",
     localizacao: "Localização & Zonas",
     atuacoes: "Campos de Atuação",
+    cargos: "Cargos",
     financeiro: "Financeiro & Carnê",
     aparencia: "Aparência",
     salvar: "Salvar",
@@ -64,6 +65,7 @@ const t = {
     institucional: "Institutional",
     localizacao: "Location & Zones",
     atuacoes: "Fields of Action",
+    cargos: "Roles / Positions",
     financeiro: "Financial & Slip",
     aparencia: "Appearance",
     salvar: "Save",
@@ -106,6 +108,7 @@ const t = {
     institucional: "Institucional",
     localizacao: "Ubicación y Zonas",
     atuacoes: "Campos de Actuación",
+    cargos: "Cargos",
     financeiro: "Financiero y Carnet",
     aparencia: "Apariencia",
     salvar: "Guardar",
@@ -145,8 +148,10 @@ const t = {
 export default function TelaConfiguracoes({ membroLogado, onFechar }) {
   const [zonas, setZonas] = useState([]);
   const [atuacoes, setAtuacoes] = useState([]);
+  const [cargos, setCargos] = useState([]);
   const [novaZona, setNovaZona] = useState('');
   const [novaAtuacao, setNovaAtuacao] = useState('');
+  const [novoCargo, setNovoCargo] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [formasPagamentoDisponiveis, setFormasPagamentoDisponiveis] = useState([]);
   const [novaFormaPagamento, setNovaFormaPagamento] = useState('');
@@ -171,6 +176,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
   const [abaAtiva, setAbaAtiva] = useState('institucional');
   const [filtroZonas, setFiltroZonas] = useState('');
   const [filtroAtuacoes, setFiltroAtuacoes] = useState('');
+  const [filtroCargos, setFiltroCargos] = useState('');
   const [filtroFormas, setFiltroFormas] = useState('');
 
   const [editandoId, setEditandoId] = useState(null);
@@ -203,6 +209,10 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
       const { data: listAtuacoes, error: erroAtuacoes } = await supabase.from('atuacoes').select('*').order('nome');
       if (erroAtuacoes) console.warn('Tabela "atuacoes" não encontrada. Veja DATABASE_SCHEMA.md');
       if (listAtuacoes) setAtuacoes(listAtuacoes);
+
+      const { data: listCargos, error: erroCargos } = await supabase.from('cargos').select('*').order('nome');
+      if (erroCargos) console.warn('Tabela "cargos" não encontrada.');
+      if (listCargos) setCargos(listCargos);
 
       const { data: igr, error: erroIgreja } = await supabase.from('dados_igreja').select('*').eq('id', 1).single();
       if (erroIgreja) console.warn('Tabela "dados_igreja" não encontrada. Veja DATABASE_SCHEMA.md');
@@ -368,6 +378,42 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
     await carregarDadosConfiguracao();
   }
 
+  async function handleAdicionarCargo(e) {
+    e.preventDefault();
+    if (!novoCargo.trim()) return;
+    setCarregando(true);
+    const { error } = await supabase.from('cargos').insert([{ nome: novoCargo.trim() }]);
+    if (!error) {
+      setNovoCargo('');
+      await carregarDadosConfiguracao();
+    } else {
+      window.alert('Erro: ' + error.message);
+    }
+    setCarregando(false);
+  }
+
+  async function handleExcluirCargo(id) {
+    if (!(await window.confirmModal('Excluir Cargo', 'Excluir este cargo? Membros vinculados a ele não serão afetados.'))) return;
+    await supabase.from('cargos').delete().eq('id', id);
+    await carregarDadosConfiguracao();
+  }
+
+  async function handleSalvarEdicaoCargo(id) {
+    if (!editandoTexto.trim()) return;
+    setCarregando(true);
+    try {
+      const { error } = await supabase.from('cargos').update({ nome: editandoTexto.trim() }).eq('id', id);
+      if (error) throw error;
+      setEditandoId(null);
+      setEditandoTexto('');
+      await carregarDadosConfiguracao();
+    } catch (err) {
+      window.alert('Erro ao atualizar cargo: ' + err.message);
+    } finally {
+      setCarregando(false);
+    }
+  }
+
   async function handleAdicionarFormaPagamento(e) {
     e.preventDefault();
     if (!novaFormaPagamento.trim()) return;
@@ -471,6 +517,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                 { id: 'institucional', label: t[idioma].institucional, icon: <Building2 size={16} /> },
                 { id: 'localizacao', label: t[idioma].localizacao, icon: <MapPin size={16} /> },
                 { id: 'atuacoes', label: t[idioma].atuacoes, icon: <Briefcase size={16} /> },
+                { id: 'cargos', label: t[idioma].cargos, icon: <Briefcase size={16} /> },
                 { id: 'financeiro', label: t[idioma].financeiro, icon: <CreditCard size={16} /> },
                 { id: 'aparencia', label: t[idioma].aparencia, icon: <Palette size={16} /> }
               ];
@@ -906,6 +953,119 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                             <button
                               type="button"
                               onClick={() => handleExcluirAtuacao(a.id)}
+                              className="px-2.5 py-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                            >
+                              <Trash2 size={12} /> {t[idioma].excluir}
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ));
+                })()}
+              </div>
+            </Card>
+          )}
+
+          {/* ── ABA CARGOS ── */}
+          {abaAtiva === 'cargos' && (
+            <Card className="p-0 border border-slate-100 rounded-2xl shadow-3xs overflow-hidden">
+              <CardHeader
+                titulo={`${t[idioma].cargos} (${cargos.length})`}
+                subtitulo="Gerencie os cargos eclesiásticos e funções disponíveis para os membros."
+              />
+
+              {/* Form Adicionar Cargo */}
+              <form onSubmit={handleAdicionarCargo} className="p-4 border-t border-slate-50 bg-slate-50/20 flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Ex: Diácono, Presbítero, Missionário..."
+                  value={novoCargo}
+                  onChange={(e) => setNovoCargo(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none bg-white"
+                  disabled={carregando}
+                />
+                <button
+                  type="submit"
+                  disabled={carregando || !novoCargo.trim()}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-bold shadow-sm disabled:bg-slate-300 transition-all shrink-0 cursor-pointer select-none active:scale-95"
+                >
+                  + {t[idioma].adicionar}
+                </button>
+              </form>
+
+              {/* Filtro interno */}
+              {cargos.length > 0 && (
+                <div className="px-4 py-2 bg-white border-b border-slate-100 flex items-center gap-2">
+                  <Search size={14} className="text-slate-400 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Pesquisar cargo..."
+                    value={filtroCargos}
+                    onChange={(e) => setFiltroCargos(e.target.value)}
+                    className="w-full text-xs text-slate-700 bg-transparent border-none focus:outline-none focus:ring-0 py-1"
+                  />
+                  {filtroCargos && (
+                    <button
+                      type="button"
+                      onClick={() => setFiltroCargos('')}
+                      className="text-[10px] text-slate-450 hover:text-slate-750 font-bold uppercase shrink-0"
+                    >
+                      {t[idioma].limpar}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Lista de cargos */}
+              <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto bg-white">
+                {(() => {
+                  const filtrados = cargos.filter(c => c.nome.toLowerCase().includes((filtroCargos || '').toLowerCase()));
+                  if (filtrados.length === 0) {
+                    return <p className="p-4 text-xs text-slate-450 italic text-center">Nenhum cargo encontrado.</p>;
+                  }
+                  return filtrados.map((c) => (
+                    <div key={c.id} className="px-4 py-3 flex justify-between items-center text-xs group hover:bg-slate-50/50 transition-colors">
+                      {editandoId === c.id ? (
+                        <div className="flex items-center gap-2 flex-1 mr-3">
+                          <input
+                            type="text"
+                            value={editandoTexto}
+                            onChange={(e) => setEditandoTexto(e.target.value)}
+                            className="flex-1 px-2.5 py-1 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-slate-900 bg-white"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSalvarEdicaoCargo(c.id)}
+                            className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
+                            title={t[idioma].salvar}
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setEditandoId(null); setEditandoTexto(''); }}
+                            className="p-1 text-slate-500 hover:bg-slate-100 rounded-md transition-colors"
+                            title="Cancelar"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="font-medium text-slate-700">{c.nome}</span>
+                          <div className="flex items-center gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => { setEditandoId(c.id); setEditandoTexto(c.nome); }}
+                              className="px-2.5 py-1 text-slate-555 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                            >
+                              <Edit2 size={12} /> {t[idioma].editar}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleExcluirCargo(c.id)}
                               className="px-2.5 py-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
                             >
                               <Trash2 size={12} /> {t[idioma].excluir}

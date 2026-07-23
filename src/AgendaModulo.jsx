@@ -523,19 +523,19 @@ function QuillEditorDetalhes({ value, onChange }) {
     }
   }, [value, editor]);
 
-  // Upload de imagem para Supabase Storage
+  // Upload de imagem para Supabase Storage (mesmo bucket das capas e fotos de membros)
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !editor) return;
     try {
-      const ext = file.name.split('.').pop();
-      const path = `editor/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('agenda').upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data: { publicUrl } } = supabase.storage.from('agenda').getPublicUrl(path);
-      editor.chain().focus().setImage({ src: publicUrl }).run();
+      const publicUrl = await uploadImagemCelula(file, 'agenda-editor');
+      if (publicUrl) {
+        editor.chain().focus().setImage({ src: publicUrl }).run();
+      }
     } catch (err) {
       alert('Erro ao fazer upload da imagem: ' + err.message);
+    } finally {
+      e.target.value = '';
     }
   };
 

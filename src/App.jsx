@@ -512,9 +512,11 @@ export default function App() {
       return true;
     }
 
-    if (p === 'secretaria' && ['Pessoas', 'Células', 'Utilitários', 'Agenda'].includes(modulo)) {
-      if (modulo === 'Utilitários' && bloco) {
-        return !['Gerador de Carnê', 'Leitor de Carnê'].includes(bloco);
+    if (p === 'secretaria') {
+      if (modulo === 'Configurações') return false;
+      if (modulo === 'Financeiro') {
+        if (bloco === 'Minhas Contribuições' || bloco === 'Minhas Transações' || bloco === 'Contribuições') return true;
+        return false;
       }
       return true;
     }

@@ -12,13 +12,29 @@ const perfisAcesso = [
 ];
 
 /* ── modos da tela ── */
-const MODO = { LOGIN: 'login', ESQUECEU: 'esqueceu', NOVA_SENHA: 'nova_senha', ALTERAR_SENHA_PADRAO: 'alterar_senha_padrao' };
+const MODO = {
+  LOGIN: 'login',
+  ESQUECEU: 'esqueceu',
+  VERIFICAR_CODIGO: 'verificar_codigo',
+  NOVA_SENHA: 'nova_senha',
+  ALTERAR_SENHA_PADRAO: 'alterar_senha_padrao'
+};
+
+function traduzirErroAuth(msg) {
+  if (!msg) return 'Ocorreu um erro. Tente novamente.';
+  if (msg.includes('For security purposes')) return 'Por segurança, aguarde 60 segundos antes de solicitar um novo código.';
+  if (msg.includes('rate limit')) return 'Limite de envio de e-mails excedido. Aguarde alguns minutos e tente novamente.';
+  if (msg.includes('User not found') || msg.includes('email not found')) return 'Nenhum usuário encontrado com este e-mail.';
+  if (msg.includes('Invalid token') || msg.includes('Token has expired') || msg.includes('otp_expired')) return 'Código ou link expirado/inválido. Solicite um novo código.';
+  return msg;
+}
 
 /* ──────────────────────────────────────────────── */
 
 export default function TelaLogin({ onEntrar }) {
   const [modo, setModo] = useState(MODO.LOGIN);
   const [email, setEmail] = useState('');
+  const [codigo, setCodigo] = useState('');
   const [senha, setSenha] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
@@ -30,15 +46,29 @@ export default function TelaLogin({ onEntrar }) {
   const [perfilIdentificado, setPerfilIdentificado] = useState(null);
   const canvasRef = useRef(null);
 
-  /* verificar sessão existente */
+  /* verificar sessão existente e escutar eventos de recuperação */
   useEffect(() => {
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    const isRecoveryUrl = hash.includes('type=recovery') || hash.includes('access_token') || search.includes('reset=1') || search.includes('code=');
+
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
           const sessaoSalva = localStorage.getItem('mibChurchSessao');
+          
+          if (isRecoveryUrl || modo === MODO.VERIFICAR_CODIGO || modo === MODO.NOVA_SENHA) {
+            setModo(MODO.NOVA_SENHA);
+            setInfo('Sessão de redefinição validada. Digite sua nova senha abaixo.');
+            if (window.history && window.history.replaceState) {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            return;
+          }
+
           if (!sessaoSalva) {
-            // Sessão incompleta (ex: fechou navegador antes de atualizar a senha padrão)
+            // Sessão incompleta sem ser recuperação (ex: fechou navegador antes de atualizar a senha padrão)
             await supabase.auth.signOut();
             return;
           }
@@ -55,6 +85,20 @@ export default function TelaLogin({ onEntrar }) {
         // Mantem a tela de login disponível quando a sessão não puder ser verificada.
       }
     })();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        setModo(MODO.NOVA_SENHA);
+        setInfo('Link/Código verificado com sucesso! Digite sua nova senha abaixo.');
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, [onEntrar]);
 
   /* canvas partículas */
@@ -197,12 +241,44 @@ export default function TelaLogin({ onEntrar }) {
     if (!email.trim()) { setErro('Informe seu e-mail.'); return; }
     setLoading(true); setErro(''); setInfo('');
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      const eClean = email.trim().toLowerCase();
+      // Verifica se o e-mail está cadastrado na tabela de pessoas
+      const { data: pessoa } = await supabase
+        .from('pessoas')
+        .select('id, email')
+        .eq('email', eClean)
+        .maybeSingle();
+
+      if (!pessoa) {
+        setErro('E-mail não encontrado no sistema da igreja. Verifique o endereço digitado.');
+        return;
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(eClean, {
         redirectTo: window.location.origin + '/?reset=1',
       });
-      if (error) { setErro(error.message); return; }
-      setInfo('Enviamos um link de redefinição para o seu e-mail. Verifique também a caixa de spam.');
-    } catch { setErro('Erro ao enviar. Tente novamente.'); }
+      if (error) { setErro(traduzirErroAuth(error.message)); return; }
+      
+      setModo(MODO.VERIFICAR_CODIGO);
+      setInfo('Código e link de redefinição enviados com sucesso! Verifique sua caixa de entrada e a pasta de SPAM.');
+    } catch { setErro('Erro ao enviar e-mail de redefinição. Tente novamente.'); }
+    finally { setLoading(false); }
+  }
+
+  async function handleVerificarCodigo(e) {
+    e.preventDefault();
+    if (!codigo.trim()) { setErro('Informe o código de 6 dígitos enviado por e-mail.'); return; }
+    setLoading(true); setErro(''); setInfo('');
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token: codigo.trim(),
+        type: 'recovery',
+      });
+      if (error) { setErro(traduzirErroAuth(error.message)); return; }
+      setModo(MODO.NOVA_SENHA);
+      setInfo('Código validado com sucesso! Digite sua nova senha.');
+    } catch { setErro('Erro ao verificar código. Tente novamente.'); }
     finally { setLoading(false); }
   }
 
@@ -213,14 +289,20 @@ export default function TelaLogin({ onEntrar }) {
     setLoading(true); setErro(''); setInfo('');
     try {
       const { error } = await supabase.auth.updateUser({ password: novaSenha });
-      if (error) { setErro(error.message); return; }
-      setInfo('Senha atualizada com sucesso! Faça login.');
+      if (error) { setErro(traduzirErroAuth(error.message)); return; }
+      
+      await supabase.auth.signOut();
+      setInfo('Senha redefinida com sucesso! Faça login com sua nova senha.');
+      setSenha('');
+      setNovaSenha('');
+      setConfirmarSenha('');
+      setCodigo('');
       setModo(MODO.LOGIN);
-    } catch { setErro('Erro ao atualizar. Tente novamente.'); }
+    } catch { setErro('Erro ao atualizar senha. Tente novamente.'); }
     finally { setLoading(false); }
   }
 
-  const mudarModo = (m) => { setModo(m); setErro(''); setInfo(''); };
+  const mudarModo = (m) => { setModo(m); setErro(''); setInfo(''); setCodigo(''); };
 
   /* ── render ── */
   return (
@@ -793,7 +875,7 @@ export default function TelaLogin({ onEntrar }) {
 
                 <p className="tl-right-title">Redefinir senha</p>
                 <p className="tl-right-sub">
-                  Informe o e-mail cadastrado e enviaremos um link para criar uma nova senha.
+                  Informe o e-mail cadastrado para enviarmos o código e o link de redefinição.
                 </p>
 
                 <div className="tl-field">
@@ -813,8 +895,56 @@ export default function TelaLogin({ onEntrar }) {
                 {info && <div className="tl-alert tl-alert-info">{info}</div>}
 
                 <button type="submit" className="tl-btn tl-btn-primary" disabled={loading}>
-                  {loading ? 'Enviando…' : 'Enviar link de redefinição →'}
+                  {loading ? 'Enviando código…' : 'Enviar código de redefinição →'}
                 </button>
+
+                <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                  <button type="button" className="tl-link" onClick={() => mudarModo(MODO.VERIFICAR_CODIGO)}>
+                    Já possui um código de 6 dígitos? Digitar código
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* ──── MODO: VERIFICAR CÓDIGO (OTP) ──── */}
+            {modo === MODO.VERIFICAR_CODIGO && (
+              <form onSubmit={handleVerificarCodigo} noValidate>
+                <button type="button" className="tl-back" onClick={() => mudarModo(MODO.ESQUECEU)}>
+                  ← Alterar e-mail
+                </button>
+
+                <p className="tl-right-title">Verificar código</p>
+                <p className="tl-right-sub">
+                  Digite o código de 6 dígitos enviado para <strong>{email}</strong> ou clique no link recebido por e-mail.
+                </p>
+
+                <div className="tl-field">
+                  <label className="tl-label" htmlFor="codigo-otp">Código de 6 dígitos</label>
+                  <input
+                    id="codigo-otp"
+                    type="text"
+                    className="tl-input"
+                    placeholder="Ex: 123456"
+                    maxLength={6}
+                    value={codigo}
+                    onChange={e => setCodigo(e.target.value.replace(/\D/g, ''))}
+                    style={{ letterSpacing: '0.25em', fontSize: '1.1rem', textAlign: 'center', fontWeight: '700' }}
+                  />
+                </div>
+
+                {erro && <div className="tl-alert tl-alert-err">{erro}</div>}
+                {info && <div className="tl-alert tl-alert-info">{info}</div>}
+
+                <button type="submit" className="tl-btn tl-btn-primary" disabled={loading || codigo.length < 6}>
+                  {loading ? 'Verificando…' : 'Validar Código →'}
+                </button>
+
+                <div style={{ marginTop: '1.2rem', textAlign: 'center', fontSize: '0.78rem', color: '#64748b' }}>
+                  Não recebeu o e-mail? Verifique sua pasta de <strong>SPAM</strong> ou{' '}
+                  <button type="button" className="tl-link" onClick={handleEsqueceu} disabled={loading}>
+                    reenviar código
+                  </button>.
+                </div>
               </form>
             )}
 
@@ -826,7 +956,7 @@ export default function TelaLogin({ onEntrar }) {
                 </button>
 
                 <p className="tl-right-title">Criar nova senha</p>
-                <p className="tl-right-sub">Escolha uma senha segura para proteger seu acesso.</p>
+                <p className="tl-right-sub">Escolha uma nova senha para acessar o MIB Church.</p>
 
                 <div className="tl-field">
                   <label className="tl-label" htmlFor="nova">Nova senha</label>

@@ -228,7 +228,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
     if (!ev || !ev.data_evento) return '';
     const dataInicio = parseDatabaseDate(ev.data_evento);
     const dataFim = extrairHoraFim(ev);
-    
+
     const formatarHora = (d) => {
       const bDate = new Date(d.getTime() - 3 * 3600 * 1000);
       const hh = String(bDate.getUTCHours()).padStart(2, '0');
@@ -249,7 +249,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
     try {
       const date = parseDatabaseDate(dateInput);
       const bDate = new Date(date.getTime() - 3 * 3600 * 1000);
-      
+
       const YYYY = bDate.getUTCFullYear();
       const MM = String(bDate.getUTCMonth() + 1).padStart(2, '0');
       const DD = String(bDate.getUTCDate()).padStart(2, '0');
@@ -408,7 +408,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
       const configs = cultosPadrao.filter(c => Number(c.dayOfWeek) === dayOfWeek);
       configs.forEach(config => {
         const [hours, minutes] = config.time.split(':').map(Number);
-        
+
         // Criar data no fuso Brasília (UTC-3)
         const dataEvento = new Date(Date.UTC(anoGeracao, Number(mesGeracao), day, hours + 3, minutes));
 
@@ -440,7 +440,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
       if (evt.date && evt.titulo) {
         const [y, m, d] = evt.date.split('-').map(Number);
         const [hours, minutes] = evt.time.split(':').map(Number);
-        
+
         const dataEvento = new Date(Date.UTC(y, m - 1, d, hours + 3, minutes));
 
         let dataFim = null;
@@ -531,7 +531,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
     const dataInfo = obterInfoDataBrasilia(isoString);
     const nomesDias = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
     const diaSemana = nomesDias[dataInfo.diaSemanaIndex];
-    
+
     const formatarHora = (dStr) => {
       const d = parseDatabaseDate(dStr);
       const bDate = new Date(d.getTime() - 3 * 3600 * 1000);
@@ -589,10 +589,10 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
     try {
       await escalasService.excluirEvento(eventoSelecionado.id);
       mostrarToast('✓ Evento excluído com sucesso!');
-      
+
       const novosEventos = await escalasService.listarEventos();
       setEventos(novosEventos || []);
-      
+
       const filtrados = (novosEventos || []).filter(ev => {
         const data = new Date(ev.data_evento);
         return data.getMonth() === filtroMes && data.getFullYear() === filtroAno;
@@ -643,10 +643,10 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
       const eventoAtualizado = await executarAtualizarEvento(eventoEditando.id, payload);
       setModalEditar(false);
       mostrarToast('✓ Evento atualizado com sucesso!');
-      
+
       const novosEventos = await escalasService.listarEventos();
       setEventos(novosEventos || []);
-      
+
       const atualizadoNaLista = novosEventos.find(e => e.id === eventoEditando.id);
       if (atualizadoNaLista) {
         setEventoSelecionado(atualizadoNaLista);
@@ -684,7 +684,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
     try {
       const funcs = await escalasService.listarFuncoes(ministerioId);
       setListaFuncoes(funcs || []);
-      
+
       const pms = await escalasService.listarPessoasMinisterio(ministerioId);
       setListaPessoas(pms || []);
     } catch (error) {
@@ -833,14 +833,14 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
   // Copiar escala formatada para WhatsApp
   function copiarWhatsApp() {
     if (!eventoSelecionado || escalas.length === 0) return;
-    
+
     const dataInfo = obterInfoDataBrasilia(eventoSelecionado.data_evento);
     const nomesDiasLongos = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
     const nomesMeses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-    
+
     const diaSemanaLong = nomesDiasLongos[dataInfo.diaSemanaIndex];
     const mesNome = nomesMeses[dataInfo.mesIndex];
-    
+
     const dataFormatada = `${diaSemanaLong}, ${Number(dataInfo.diaNum)} de ${mesNome}`;
     const horaFormatada = obterHoraExibicao(eventoSelecionado);
 
@@ -867,14 +867,14 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
   // Copiar escala de um ministério específico para WhatsApp
   function copiarWhatsAppMinisterio(grupo) {
     if (!eventoSelecionado || !grupo || grupo.itens.length === 0) return;
-    
+
     const dataInfo = obterInfoDataBrasilia(eventoSelecionado.data_evento);
     const nomesDiasLongos = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
     const nomesMeses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-    
+
     const diaSemanaLong = nomesDiasLongos[dataInfo.diaSemanaIndex];
     const mesNome = nomesMeses[dataInfo.mesIndex];
-    
+
     const dataFormatada = `${diaSemanaLong}, ${Number(dataInfo.diaNum)} de ${mesNome}`;
     const horaFormatada = obterHoraExibicao(eventoSelecionado);
 
@@ -902,7 +902,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
       setFuncoesExportar([]);
       return;
     }
-    
+
     async function buscarDadosMensais() {
       setCarregandoExportar(true);
       try {
@@ -914,7 +914,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
         }
         const dados = await escalasService.listarEscalasMes(eventIds, minExportarId);
         setDadosMensaisExportar(dados || []);
-        
+
         // Fetch and sort functions of the ministry to ensure fixed order/position
         const funcs = await escalasService.listarFuncoes(minExportarId);
         const funcsOrdenadas = (funcs || []).sort((a, b) => a.nome.localeCompare(b.nome));
@@ -925,7 +925,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
         setCarregandoExportar(false);
       }
     }
-    
+
     buscarDadosMensais();
   }, [modalExportarMensal, minExportarId, filtroMes, filtroAno, eventosFiltrados]);
 
@@ -934,24 +934,24 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
     if (!minExportarId) return;
     const ministerio = listaMinisterios.find(m => m.id === minExportarId);
     if (!ministerio) return;
-    
+
     setCarregandoExportar(true);
     const container = document.createElement('div');
     try {
       container.style.cssText = 'position:fixed;left:-9999px;top:0;width:1080px;';
       document.body.appendChild(container);
-      
+
       const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
       const nomesDias = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
-      
+
       const cardsHTML = eventosFiltrados.map((ev) => {
         const dataInfo = obterInfoDataBrasilia(ev.data_evento);
         const diaSemanaStr = nomesDias[dataInfo.diaSemanaIndex];
-        
+
         // Find volunteers for this event and this ministry
         const atribuicoes = dadosMensaisExportar.filter(item => item.evento_id === ev.id);
         const hasVolunteers = atribuicoes.length > 0;
-        
+
         const assignmentsHTML = hasVolunteers ? funcoesExportar.map((func) => {
           const item = atribuicoes.find(att => att.funcao_id === func.id);
           const statusIcon = item ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') : '';
@@ -968,14 +968,14 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
             </div>
           `;
         }).join('') : '<div style="font-size:20px; color:#94a3b8; font-style:italic; grid-column:span 2;">Sem voluntários escalados</div>';
-        
+
         const fardaSel = ev.fardamentos?.[minExportarId];
         const uniformHTML = fardaSel
           ? `<div style="display:flex; align-items:center; gap:6px; margin-top:4px; padding-top:8px; border-top:1px dashed rgba(15, 23, 42, 0.1); font-size:14px; font-weight:800; color:#475569; grid-column: span 2;">
               👕 Farda: ${fardaSel}
              </div>`
           : '';
-          
+
         return `
           <div style="display:flex; align-items:center; gap:28px; background:rgba(255,255,255,0.96); border-radius:32px; padding:24px 32px; box-shadow:0 12px 35px rgba(0,0,0,0.15); border:1px solid rgba(255,255,255,0.6); width:100%; text-align:left; box-sizing:border-box;">
             <div style="width:110px; height:110px; border-radius:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.18); flex-shrink:0; background:linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);">
@@ -995,7 +995,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
           </div>
         `;
       }).join('');
-      
+
       container.innerHTML = `
         <div style="box-sizing:border-box; width:1080px; min-height:1920px; height:auto; padding:56px 48px; font-family:'Montserrat',Arial,sans-serif; display:flex; flex-direction:column; gap:32px; position:relative; overflow:hidden; background:linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#311042 100%);">
           <div style="border-radius:40px; padding:48px; display:flex; flex-direction:column; align-items:flex-start; gap:24px; border:1px solid rgba(255,255,255,0.12); box-shadow:0 20px 50px rgba(0,0,0,0.25); background:linear-gradient(135deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0.03) 100%); z-index:2; width:100%; box-sizing:border-box;">
@@ -1012,17 +1012,17 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
           </div>
         </div>
       `;
-      
+
       // Delay to ensure rendering is complete
       await new Promise(resolve => setTimeout(resolve, 300));
-      
+
       const computedHeight = container.firstElementChild.scrollHeight;
       const imgData = await toPng(container.firstElementChild, { width: 1080, height: computedHeight });
-      
+
       const link = document.createElement('a');
       link.download = `Escala_Mensal_${ministerio.nome}_${MESES[filtroMes]}_${filtroAno}.png`;
       link.href = imgData;
-      
+
       if (navigator.share && !isDownloadOnly) {
         const blob = await (await fetch(imgData)).blob();
         const file = new File([blob], link.download, { type: 'image/png' });
@@ -1095,10 +1095,6 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
 
       {/* Grid Principal */}
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight">Escalas de Serviço</h2>
-          <p className="text-xs text-slate-500">Configure os voluntários para os cultos e programações da igreja.</p>
-        </div>
 
         <div className="flex items-center gap-2">
           {!isMembroNormal && (
@@ -1173,47 +1169,40 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
                 <button
                   key={ev.id}
                   onClick={() => selecionarEvento(ev, true)}
-                  className={`w-full text-left p-2.5 rounded-xl border transition-all duration-200 flex items-center justify-between cursor-pointer group ${
-                    eventoSelecionado?.id === ev.id
+                  className={`w-full text-left p-2.5 rounded-xl border transition-all duration-200 flex items-center justify-between cursor-pointer group ${eventoSelecionado?.id === ev.id
                       ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100'
                       : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-xs text-slate-700'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {/* Calendar Badge */}
-                    <div className={`w-11 h-12 rounded-lg border flex flex-col overflow-hidden shrink-0 shadow-xs transition bg-white ${
-                      eventoSelecionado?.id === ev.id ? 'border-white/20' : cores.border
-                    }`}>
-                      <div className={`text-[8px] font-black py-0.5 text-center tracking-wider uppercase ${
-                        eventoSelecionado?.id === ev.id ? 'bg-white/20 text-white' : `${cores.bgHeader} ${cores.textHeader}`
+                    <div className={`w-11 h-12 rounded-lg border flex flex-col overflow-hidden shrink-0 shadow-xs transition bg-white ${eventoSelecionado?.id === ev.id ? 'border-white/20' : cores.border
                       }`}>
+                      <div className={`text-[8px] font-black py-0.5 text-center tracking-wider uppercase ${eventoSelecionado?.id === ev.id ? 'bg-white/20 text-white' : `${cores.bgHeader} ${cores.textHeader}`
+                        }`}>
                         {diaSemanaStr}
                       </div>
-                      <div className={`flex-1 flex items-center justify-center font-black text-base leading-none ${
-                        eventoSelecionado?.id === ev.id ? 'text-blue-600 font-bold' : 'text-slate-800'
-                      }`}>
+                      <div className={`flex-1 flex items-center justify-center font-black text-base leading-none ${eventoSelecionado?.id === ev.id ? 'text-blue-600 font-bold' : 'text-slate-800'
+                        }`}>
                         {diaNum}
                       </div>
                     </div>
 
                     <div className="min-w-0 pr-1">
-                      <h4 className={`font-bold text-xs truncate leading-snug ${
-                        eventoSelecionado?.id === ev.id ? 'text-white' : 'text-slate-800 group-hover:text-blue-600 transition-colors'
-                      }`}>
+                      <h4 className={`font-bold text-xs truncate leading-snug ${eventoSelecionado?.id === ev.id ? 'text-white' : 'text-slate-800 group-hover:text-blue-600 transition-colors'
+                        }`}>
                         {ev.titulo}
                       </h4>
-                      <p className={`text-[10px] mt-0.5 truncate flex items-center gap-1 ${
-                        eventoSelecionado?.id === ev.id ? 'text-white/70' : 'text-slate-400'
-                      }`}>
+                      <p className={`text-[10px] mt-0.5 truncate flex items-center gap-1 ${eventoSelecionado?.id === ev.id ? 'text-white/70' : 'text-slate-400'
+                        }`}>
                         📍 {ev.local || 'Templo Sede'}
                       </p>
                     </div>
                   </div>
 
                   <div className="text-right shrink-0">
-                    <span className={`text-[10px] font-black block ${
-                      eventoSelecionado?.id === ev.id ? 'text-white' : 'text-slate-700'
-                    }`}>
+                    <span className={`text-[10px] font-black block ${eventoSelecionado?.id === ev.id ? 'text-white' : 'text-slate-700'
+                      }`}>
                       {obterHoraExibicao(ev)}
                     </span>
                   </div>
@@ -1237,172 +1226,170 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
             )}
             {eventoSelecionado ? (
               <>
-              {/* Header do Evento */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-5 border-b border-slate-100">
-                <div>
-                  <h3 className="text-xl font-black text-slate-800 tracking-tight">
-                    {eventoSelecionado.titulo}
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1">
-                    <span>📅 {new Date(eventoSelecionado.data_evento).toLocaleDateString('pt-BR')}</span>
-                    <span>· ⏰ {obterHoraExibicao(eventoSelecionado)}</span>
-                    <span>· 📍 {eventoSelecionado.local || 'Templo Sede'}</span>
-                  </p>
-                </div>
+                {/* Header do Evento */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-5 border-b border-slate-100">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-800 tracking-tight">
+                      {eventoSelecionado.titulo}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1">
+                      <span>📅 {new Date(eventoSelecionado.data_evento).toLocaleDateString('pt-BR')}</span>
+                      <span>· ⏰ {obterHoraExibicao(eventoSelecionado)}</span>
+                      <span>· 📍 {eventoSelecionado.local || 'Templo Sede'}</span>
+                    </p>
+                  </div>
 
-                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                  {!isMembroNormal && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => abrirModalEditar(eventoSelecionado)}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
-                        title="Editar este Evento"
-                      >
-                        <Pencil size={13} />
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={excluirEventoAtual}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
-                        title="Excluir este Evento"
-                      >
-                        <Trash2 size={13} />
-                        Excluir
-                      </button>
-                    </>
-                  )}
-                  <button
-                    type="button"
-                    onClick={copiarWhatsApp}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
-                    title="Copiar texto formatado para WhatsApp"
-                  >
-                    <Share2 size={13} />
-                    WhatsApp
-                  </button>
-                  {!isMembroNormal && (
+                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                    {!isMembroNormal && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => abrirModalEditar(eventoSelecionado)}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                          title="Editar este Evento"
+                        >
+                          <Pencil size={13} />
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={excluirEventoAtual}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                          title="Excluir este Evento"
+                        >
+                          <Trash2 size={13} />
+                          Excluir
+                        </button>
+                      </>
+                    )}
                     <button
                       type="button"
-                      onClick={abrirModalEscala}
-                      className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer"
+                      onClick={copiarWhatsApp}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                      title="Copiar texto formatado para WhatsApp"
                     >
-                      <Plus size={13} strokeWidth={3} />
-                      Escalar
+                      <Share2 size={13} />
+                      WhatsApp
                     </button>
+                    {!isMembroNormal && (
+                      <button
+                        type="button"
+                        onClick={abrirModalEscala}
+                        className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer"
+                      >
+                        <Plus size={13} strokeWidth={3} />
+                        Escalar
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Escalas Agrupadas */}
+                <div className="space-y-6">
+                  {Object.values(escalasAgrupadas).map((grupo) => (
+                    <div key={grupo.nome} className="border border-slate-100 rounded-2xl p-4 bg-slate-50/30">
+                      <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100 flex-wrap gap-2">
+                        <div className="flex items-center gap-3">
+                          <h4 className="font-black text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                            <span>🎵</span>
+                            {grupo.nome}
+                          </h4>
+
+                          {/* Seletor de Fardamento */}
+                          {grupo.fardamentos && grupo.fardamentos.length > 0 && (
+                            <div className="flex items-center gap-1.5 ml-2 bg-slate-100 py-0.5 px-2 rounded-lg border border-slate-200">
+                              <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">👕 Farda:</span>
+                              <select
+                                value={eventoSelecionado?.fardamentos?.[grupo.id] || ''}
+                                onChange={e => handleMudarFardamentoDia(grupo.id, e.target.value)}
+                                className="bg-transparent text-[10px] font-bold text-slate-700 outline-none cursor-pointer border-none p-0 focus:ring-0"
+                              >
+                                <option value="">Nenhuma</option>
+                                {grupo.fardamentos.map(f => (
+                                  <option key={f} value={f}>{f}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => copiarWhatsAppMinisterio(grupo)}
+                            className="text-[10px] font-black uppercase tracking-wider text-emerald-600 hover:text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg hover:bg-emerald-100 transition cursor-pointer flex items-center gap-1"
+                            title="Copiar escala deste ministério para WhatsApp"
+                          >
+                            <Share2 size={11} />
+                            WhatsApp
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => rodarAutoEscala(grupo.id)}
+                            className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg hover:bg-blue-100 transition cursor-pointer"
+                            title="Montar escala automaticamente com base no histórico e disponibilidade."
+                          >
+                            ⚡ AutoEscala
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        {grupo.itens.map((item) => (
+                          <div
+                            key={item.id}
+                            className="bg-white rounded-xl border border-slate-100 p-3 flex justify-between items-center group relative hover:border-slate-200 transition"
+                          >
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-xs font-bold text-slate-800">
+                                  {item.pessoas?.nome}
+                                </p>
+                                {/* Status Badge */}
+                                <span className={`w-2 h-2 rounded-full inline-block ${item.status === 'confirmado' ? 'bg-emerald-500' : item.status === 'recusado' ? 'bg-red-500' : 'bg-amber-400'
+                                  }`} title={`Status: ${item.status}`} />
+                              </div>
+                              <p className="text-[10px] text-slate-500 mt-0.5">
+                                {item.ministerio_funcoes?.nome || 'Geral'}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${item.status === 'confirmado' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                                  item.status === 'recusado' ? 'bg-red-50 text-red-700 border border-red-100' :
+                                    'bg-amber-50 text-amber-700 border border-amber-100'
+                                }`}>
+                                {item.status}
+                              </span>
+                              {!isMembroNormal && (
+                                <button
+                                  type="button"
+                                  onClick={() => excluirEscala(item.id)}
+                                  className="p-1 text-slate-300 hover:text-red-600 transition cursor-pointer"
+                                  title="Remover da escala"
+                                >
+                                  <X size={14} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  {escalas.length === 0 && (
+                    <div className="py-20 text-center text-slate-400 italic text-sm border-2 border-dashed border-slate-100 rounded-2xl">
+                      Nenhum voluntário escalado para este evento. Clique em "Escalar" ou utilize o botão de "AutoEscala" nos ministérios para iniciar.
+                    </div>
                   )}
                 </div>
+              </>
+            ) : (
+              <div className="py-24 text-center text-slate-400 italic">
+                Selecione um evento na barra lateral para carregar sua escala de voluntários.
               </div>
-
-              {/* Escalas Agrupadas */}
-              <div className="space-y-6">
-                {Object.values(escalasAgrupadas).map((grupo) => (
-                  <div key={grupo.nome} className="border border-slate-100 rounded-2xl p-4 bg-slate-50/30">
-                    <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100 flex-wrap gap-2">
-                      <div className="flex items-center gap-3">
-                        <h4 className="font-black text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                          <span>🎵</span>
-                          {grupo.nome}
-                        </h4>
-                        
-                        {/* Seletor de Fardamento */}
-                        {grupo.fardamentos && grupo.fardamentos.length > 0 && (
-                          <div className="flex items-center gap-1.5 ml-2 bg-slate-100 py-0.5 px-2 rounded-lg border border-slate-200">
-                            <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">👕 Farda:</span>
-                            <select
-                              value={eventoSelecionado?.fardamentos?.[grupo.id] || ''}
-                              onChange={e => handleMudarFardamentoDia(grupo.id, e.target.value)}
-                              className="bg-transparent text-[10px] font-bold text-slate-700 outline-none cursor-pointer border-none p-0 focus:ring-0"
-                            >
-                              <option value="">Nenhuma</option>
-                              {grupo.fardamentos.map(f => (
-                                <option key={f} value={f}>{f}</option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => copiarWhatsAppMinisterio(grupo)}
-                          className="text-[10px] font-black uppercase tracking-wider text-emerald-600 hover:text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg hover:bg-emerald-100 transition cursor-pointer flex items-center gap-1"
-                          title="Copiar escala deste ministério para WhatsApp"
-                        >
-                          <Share2 size={11} />
-                          WhatsApp
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => rodarAutoEscala(grupo.id)}
-                          className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg hover:bg-blue-100 transition cursor-pointer"
-                          title="Montar escala automaticamente com base no histórico e disponibilidade."
-                        >
-                          ⚡ AutoEscala
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      {grupo.itens.map((item) => (
-                        <div
-                          key={item.id}
-                          className="bg-white rounded-xl border border-slate-100 p-3 flex justify-between items-center group relative hover:border-slate-200 transition"
-                        >
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <p className="text-xs font-bold text-slate-800">
-                                {item.pessoas?.nome}
-                              </p>
-                              {/* Status Badge */}
-                              <span className={`w-2 h-2 rounded-full inline-block ${
-                                item.status === 'confirmado' ? 'bg-emerald-500' : item.status === 'recusado' ? 'bg-red-500' : 'bg-amber-400'
-                              }`} title={`Status: ${item.status}`} />
-                            </div>
-                            <p className="text-[10px] text-slate-500 mt-0.5">
-                              {item.ministerio_funcoes?.nome || 'Geral'}
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-1">
-                            <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
-                              item.status === 'confirmado' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
-                              item.status === 'recusado' ? 'bg-red-50 text-red-700 border border-red-100' :
-                              'bg-amber-50 text-amber-700 border border-amber-100'
-                            }`}>
-                              {item.status}
-                            </span>
-                            {!isMembroNormal && (
-                              <button
-                                type="button"
-                                onClick={() => excluirEscala(item.id)}
-                                className="p-1 text-slate-300 hover:text-red-600 transition cursor-pointer"
-                                title="Remover da escala"
-                              >
-                                <X size={14} />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-
-                {escalas.length === 0 && (
-                  <div className="py-20 text-center text-slate-400 italic text-sm border-2 border-dashed border-slate-100 rounded-2xl">
-                    Nenhum voluntário escalado para este evento. Clique em "Escalar" ou utilize o botão de "AutoEscala" nos ministérios para iniciar.
-                  </div>
-                )}
-              </div>
-            </>
-          ) : (
-            <div className="py-24 text-center text-slate-400 italic">
-              Selecione um evento na barra lateral para carregar sua escala de voluntários.
-            </div>
-          )}
+            )}
           </div>
         </div>
       </div>
@@ -1694,22 +1681,20 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
                 <button
                   type="button"
                   onClick={() => setAbaGerador('config')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${
-                    abaGerador === 'config'
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${abaGerador === 'config'
                       ? 'bg-[#1e3a8a] text-white shadow-xs'
                       : 'text-slate-500 hover:text-slate-700'
-                  }`}
+                    }`}
                 >
                   ⚙️ Configurar Regras
                 </button>
                 <button
                   type="button"
                   onClick={calcularPreviaEventos}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${
-                    abaGerador === 'previa'
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition ${abaGerador === 'previa'
                       ? 'bg-[#1e3a8a] text-white shadow-xs'
                       : 'text-slate-500 hover:text-slate-700'
-                  }`}
+                    }`}
                 >
                   📋 Prévia e Geração
                 </button>
@@ -1942,11 +1927,10 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
                       return (
                         <label
                           key={item.id_temp}
-                          className={`flex items-start gap-3 p-3.5 border rounded-xl transition cursor-pointer select-none ${
-                            item.incluir
+                          className={`flex items-start gap-3 p-3.5 border rounded-xl transition cursor-pointer select-none ${item.incluir
                               ? 'bg-blue-50/40 border-blue-200 hover:bg-blue-50'
                               : 'bg-slate-50 border-slate-100 text-slate-450 hover:bg-slate-100'
-                          }`}
+                            }`}
                         >
                           <input
                             type="checkbox"
@@ -1955,11 +1939,10 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
                             className="w-4 h-4 text-blue-600 border-slate-350 rounded focus:ring-blue-500 mt-0.5 cursor-pointer"
                           />
                           <div className="min-w-0">
-                            <span className={`inline-block text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md mb-1.5 ${
-                              item.isCustom 
-                                ? 'bg-amber-100 text-amber-800 border border-amber-200/50' 
+                            <span className={`inline-block text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md mb-1.5 ${item.isCustom
+                                ? 'bg-amber-100 text-amber-800 border border-amber-200/50'
                                 : 'bg-slate-200 text-slate-650'
-                            }`}>
+                              }`}>
                               {item.isCustom ? 'Especial' : 'Recorrente'}
                             </span>
                             <h5 className={`text-xs font-bold truncate ${item.incluir ? 'text-slate-800' : 'text-slate-400 line-through'}`}>
@@ -2149,7 +2132,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
               {/* Prévia */}
               <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/30 flex flex-col items-center">
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Prévia do Layout Mobile</p>
-                
+
                 {carregandoExportar ? (
                   <div className="py-20 text-center text-slate-500 font-bold text-sm animate-pulse">Carregando dados da escala...</div>
                 ) : !minExportarId ? (
@@ -2183,7 +2166,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
                         .mensal-export-footer-logo { height: 90px; object-fit: contain; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15)); }
                         .mensal-export-footer-tagline { font-size: 16px; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; opacity: 0.6; color: #fff; margin-top: 4px; }
                       `}</style>
-                      
+
                       <div className="mensal-export-page">
                         <div className="mensal-export-header">
                           <div className="mensal-export-header-badge">
@@ -2193,18 +2176,18 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
                             {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes].toUpperCase()} {filtroAno}
                           </div>
                         </div>
-                        
+
                         <div className="mensal-export-list">
                           <div className="mensal-export-list-title">Escala Mensal de Voluntários</div>
-                          
+
                           {eventosFiltrados.map((ev) => {
                             const dataInfo = obterInfoDataBrasilia(ev.data_evento);
                             const diaSemanaStr = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'][dataInfo.diaSemanaIndex];
-                            
+
                             const atribuicoes = dadosMensaisExportar.filter(item => item.evento_id === ev.id);
                             const fardaSel = ev.fardamentos?.[minExportarId];
                             const hasVolunteers = atribuicoes.length > 0;
-                            
+
                             return (
                               <div key={ev.id} className="mensal-export-card">
                                 <div className="mensal-export-date-badge">
@@ -2221,7 +2204,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
                                       const item = atribuicoes.find(att => att.funcao_id === func.id);
                                       const statusIcon = item ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') : '';
                                       const nomePessoa = item?.pessoas?.nome || '— —';
-                                      
+
                                       return (
                                         <div key={func.id} className="mensal-export-assignment-cell">
                                           <div className="mensal-export-assignment-role" style={{ color: '#2563eb' }}>{func.nome}</div>
@@ -2249,7 +2232,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
                             );
                           })}
                         </div>
-                        
+
                         <div className="mensal-export-footer">
                           <img src="https://guznbiqposfhqalqjggw.supabase.co/storage/v1/object/public/fotos-membros/logo_betesda_branca.png" className="mensal-export-footer-logo" />
                           <div className="mensal-export-footer-tagline">MIB CHURCH · DEPARTAMENTO DE COMUNICAÇÃO</div>
@@ -2270,7 +2253,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
               >
                 Fechar
               </button>
-              
+
               <div className="flex gap-2">
                 <button
                   type="button"

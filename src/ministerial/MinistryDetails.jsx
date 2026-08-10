@@ -836,9 +836,14 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
                   onChange={(e) => setLider(e.target.checked)}
                   className="w-4 h-4 rounded text-blue-600 border-slate-350 focus:ring-blue-500 cursor-pointer"
                 />
-                <label htmlFor="checkbox-lider" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
-                  Definir este membro como Líder do Ministério
-                </label>
+                <div>
+                  <label htmlFor="checkbox-lider" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                    Definir este membro como Líder do Ministério
+                  </label>
+                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">
+                    💡 <em>Membros e Líderes de Célula marcados como líder terão a função <strong>"Escalar"</strong> habilitada no Gestor Ministerial.</em>
+                  </p>
+                </div>
               </div>
 
               {/* Disponibilidade */}

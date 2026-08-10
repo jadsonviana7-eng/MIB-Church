@@ -180,6 +180,7 @@ function calcularPermissoesPorCargo(membro) {
   if (chave.includes('lider') || chave.includes('supervisor')) {
     push('Células', ['Lista de células', 'Reuniões', 'Detalhes da célula', 'Membros da célula']);
     push('Pessoas', ['Ficha do membro']);
+    push('Gestão Ministerial', ['Escalas (Minhas Escalas / Escalar se for Líder de Ministério)']);
     return itens;
   }
 
@@ -187,6 +188,7 @@ function calcularPermissoesPorCargo(membro) {
     push('Utilitários', ['Escalas Ministerial', 'Calculadora de Tributos', 'Teste de Temperamento', 'Pedido de Oração']);
     push('Pessoas', ['Ver todos', 'Aniversariantes']);
     push('Células', ['Lista de células']);
+    push('Gestão Ministerial', ['Escalas (Minhas Escalas / Escalar se for Líder de Ministério)']);
     return itens;
   }
 

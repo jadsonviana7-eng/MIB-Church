@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { 
-  Plus, Pencil, Trash2, X, ChevronRight, Eye,
+  Plus, Pencil, Trash2, X, ChevronRight, Eye, Info,
   Music, Heart, Sparkles, Shield, Home, Flame, BookOpen, Users, 
   Compass, Clapperboard, Award, Mic, MessageSquare, Calendar, 
   HelpingHand, Scroll, Smile, Globe, Video, Tv
@@ -153,6 +153,23 @@ export default function MinisteriosManager() {
           <Plus size={14} strokeWidth={3} />
           Novo Ministério
         </button>
+      </div>
+
+      {/* Observação de Políticas & Permissões */}
+      <div className="bg-gradient-to-r from-blue-50/90 via-slate-50 to-indigo-50/90 border border-blue-100/90 rounded-2xl p-4 sm:p-4.5 flex items-start gap-3.5 shadow-xs">
+        <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-100 mt-0.5">
+          <Info size={16} />
+        </div>
+        <div className="space-y-1 text-xs">
+          <h4 className="font-black text-slate-800 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+            📌 Observação sobre Políticas de Acesso & Escalas
+          </h4>
+          <p className="text-slate-600 leading-relaxed font-medium">
+            Se o <strong>Membro</strong> ou o <strong>Líder de Célula</strong> for cadastrado como <strong>Líder de algum ministério</strong>, a função 
+            <span className="inline-flex items-center px-2 py-0.5 mx-1 rounded-md text-[10px] font-bold bg-blue-600 text-white shadow-2xs">Escalar</span> 
+            no módulo <em>Gestor Ministerial</em> será automaticamente habilitada para que ele possa escalar e gerenciar a sua equipe.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">

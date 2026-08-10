@@ -94,7 +94,9 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
   const [funcoesExportar, setFuncoesExportar] = useState([]);
   const [carregandoExportar, setCarregandoExportar] = useState(false);
 
-  const isMembroNormal = membroLogado?.permissao === 'membro' && !isLiderMinisterio;
+  const permissaoLower = membroLogado?.permissao?.toLowerCase() || '';
+  const isPerfilRestrito = ['membro', 'lider-celula', 'lider', 'supervisor'].includes(permissaoLower);
+  const isMembroNormal = isPerfilRestrito && !isLiderMinisterio;
 
   const [modalGradeMobile, setModalGradeMobile] = useState(false);
 
@@ -1095,33 +1097,34 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
 
       {/* Grid Principal */}
       <div className="flex justify-between items-center">
-
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-3 gap-2 w-full sm:flex sm:items-center sm:gap-2.5 sm:w-auto">
           {!isMembroNormal && (
             <>
-              <button
-                onClick={() => setModalExportarMensal(true)}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-wider transition active:scale-95 cursor-pointer"
-              >
-                <Share2 size={14} strokeWidth={3} />
-                Exportar Mensal
-              </button>
               <button
                 onClick={() => {
                   setAbaGerador('config');
                   setModalGerador(true);
                 }}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-wider transition active:scale-95 cursor-pointer"
+                className="flex flex-col sm:flex-row items-center justify-center py-2.5 px-1.5 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl sm:rounded-xl text-[9px] sm:text-xs font-black uppercase tracking-wider shadow-md shadow-indigo-200/80 transition active:scale-95 cursor-pointer text-center sm:text-left gap-0.5 sm:gap-2"
               >
-                <Calendar size={14} strokeWidth={3} />
-                Gerador Mensal
+                <Calendar className="w-5 h-5 sm:w-4 sm:h-4 mb-1 sm:mb-0 shrink-0 text-indigo-100 sm:text-current" strokeWidth={2.5} />
+                <span>Gerador Mensal</span>
               </button>
+
               <button
                 onClick={() => setModalEvento(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer"
+                className="flex flex-col sm:flex-row items-center justify-center py-2.5 px-1.5 sm:px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl sm:rounded-xl text-[9px] sm:text-xs font-black uppercase tracking-wider shadow-md shadow-blue-200/80 transition active:scale-95 cursor-pointer text-center sm:text-left gap-0.5 sm:gap-2"
               >
-                <Plus size={14} strokeWidth={3} />
-                Novo Evento
+                <Plus className="w-5 h-5 sm:w-4 sm:h-4 mb-1 sm:mb-0 shrink-0 text-blue-100 sm:text-current" strokeWidth={3} />
+                <span>Novo Evento</span>
+              </button>
+
+              <button
+                onClick={() => setModalExportarMensal(true)}
+                className="flex flex-col sm:flex-row items-center justify-center py-2.5 px-1.5 sm:px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl sm:rounded-xl text-[9px] sm:text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-200/80 transition active:scale-95 cursor-pointer text-center sm:text-left gap-0.5 sm:gap-2"
+              >
+                <Share2 className="w-5 h-5 sm:w-4 sm:h-4 mb-1 sm:mb-0 shrink-0 text-emerald-100 sm:text-current" strokeWidth={2.5} />
+                <span>Exportar Mensal</span>
               </button>
             </>
           )}
@@ -1396,9 +1399,9 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
 
       {/* Modal - Novo Evento */}
       {modalEvento && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-2.5 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
                 Novo Evento Ministerial
               </h3>
@@ -1407,7 +1410,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4">
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase mb-1.5">Título do Evento</label>
                 <input
@@ -1419,7 +1422,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 uppercase mb-1.5">Data e Hora Início</label>
                   <input
@@ -1463,11 +1466,11 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
               </div>
             </div>
 
-            <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex gap-3">
-              <button type="button" onClick={() => setModalEvento(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-white transition cursor-pointer">
+            <div className="p-4 sm:p-6 border-t border-slate-100 bg-slate-50/50 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
+              <button type="button" onClick={() => setModalEvento(false)} className="w-full sm:flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-white transition cursor-pointer text-center">
                 Cancelar
               </button>
-              <button type="button" onClick={salvarEvento} disabled={salvando} className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer">
+              <button type="button" onClick={salvarEvento} disabled={salvando} className="w-full sm:flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer text-center">
                 {salvando ? 'Salvando...' : 'Salvar Evento'}
               </button>
             </div>
@@ -1477,9 +1480,9 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
 
       {/* Modal - Adicionar Escalado */}
       {modalEscala && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-2.5 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
                 Escalar Voluntário
               </h3>
@@ -1488,7 +1491,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4">
               {/* Selecionar Ministério */}
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Ministério</label>
@@ -1559,7 +1562,7 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
                         </div>
                         {/* Resultados da Busca */}
                         {buscaVoluntario.trim() !== '' && (
-                          <div className="absolute z-10 w-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                          <div className="absolute z-10 w-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto">
                             {voluntáriosFiltrados.map(p => (
                               <button
                                 key={p.id}
@@ -1595,18 +1598,18 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
               )}
             </div>
 
-            <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex gap-3">
+            <div className="p-4 sm:p-6 border-t border-slate-100 bg-slate-50/50 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={fecharModalEscala}
-                className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-white transition cursor-pointer"
+                className="w-full sm:flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-white transition cursor-pointer text-center"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={adicionarEscala}
-                className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer"
+                className="w-full sm:flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer text-center"
               >
                 Salvar Escala
               </button>

@@ -90,7 +90,8 @@ export default function DashboardMembro({ membroLogado, onNavigate, onVerPerfil 
         }).sort((a, b) => {
           const diaA = parseInt(a.data_nascimento.split('-')[2], 10);
           const diaB = parseInt(b.data_nascimento.split('-')[2], 10);
-          return diaA - diaB;
+          if (diaA !== diaB) return diaA - diaB;
+          return (a.nome || '').localeCompare(b.nome || '');
         });
 
         // 3. Carregar Próximas Escalas (Buscando de escalas em Gestão Ministerial)

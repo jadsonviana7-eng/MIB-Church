@@ -112,10 +112,24 @@ export default function OverviewDashboard({
   const faixasDados = useMemo(() => agrupamentoPor(pessoasAtivas, (p) => faixasEtarias.find((f) => f.id === faixaDaIdade(p.data_nascimento))?.curto || 'Não informada'), [pessoasAtivas]);
   const faixasCelulas = useMemo(() => agrupamentoPor(celulas, (c) => c.faixa_etaria || 'Não informada'), [celulas]);
 
-  const aniversariantesMes = useMemo(() => pessoasAtivas.filter((p) => {
-    if (!p.data_nascimento) return false;
-    return new Date(`${p.data_nascimento}T00:00:00`).getMonth() === new Date().getMonth();
-  }), [pessoasAtivas]);
+  const aniversariantesMes = useMemo(() => {
+    return pessoasAtivas
+      .filter((p) => {
+        if (!p.data_nascimento) return false;
+        const parts = p.data_nascimento.split('-');
+        if (parts.length >= 2) {
+          const m = parseInt(parts[1], 10) - 1;
+          return m === new Date().getMonth();
+        }
+        return new Date(`${p.data_nascimento}T00:00:00`).getMonth() === new Date().getMonth();
+      })
+      .sort((a, b) => {
+        const diaA = parseInt(a.data_nascimento.split('-')[2], 10) || new Date(`${a.data_nascimento}T00:00:00`).getDate();
+        const diaB = parseInt(b.data_nascimento.split('-')[2], 10) || new Date(`${b.data_nascimento}T00:00:00`).getDate();
+        if (diaA !== diaB) return diaA - diaB;
+        return (a.nome || '').localeCompare(b.nome || '');
+      });
+  }, [pessoasAtivas]);
 
   const novosConvertidosTrend = useMemo(() => {
     const dados = agrupamentoPor(pessoas.filter(p => p.data_conversao), (p) => {

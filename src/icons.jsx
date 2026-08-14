@@ -112,7 +112,7 @@ export const submenuIconKey = {
   celulas:  { painel: 'c-painel', lista: 'c-lista', adicionar: 'c-adicionar', reunioes: 'c-reunioes', relatorios: 'c-relatorios' },
   financeiro: { resumo: 'f-resumo', transacoes: 'f-transacoes', relatorios: 'f-relatorios', historico: 'f-historico', categorias: 'f-categorias', contas: 'f-contas', importar: 'f-importar' },
   escolas: { resumo: 'e-resumo', cursos: 'e-cursos', turmas: 'e-turmas', disciplinas: 'e-disciplinas', professores: 'e-professores', alunos: 'e-alunos', aulas: 'e-aulas', avaliacoes: 'e-avaliacoes', 'ficha-aluno': 'e-ficha-aluno', inscricoes: 'e-inscricoes' },
-  gestao: { dashboard: 'e-resumo', equipes: 'p-todos', escalas: 'a-calendario', historico: 'f-historico', relatorios: 'e-avaliacoes', config: 'configuracoes' },
+  gestao: { dashboard: 'e-resumo', config: 'p-todos', escalas: 'a-calendario', relatorios: 'e-avaliacoes', historico: 'f-historico' },
   agenda: { calendario: 'a-calendario', eventos: 'a-eventos', mural: 'a-mural' },
   utilitarios: { 
     resumo: 'u-resumo', escalas: 'u-escalas', 'relatorio-semanal': 'u-relatorio-semanal', calculadora: 'u-calculadora',

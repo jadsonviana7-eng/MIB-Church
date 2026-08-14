@@ -76,7 +76,60 @@ export const escalasService = {
     return data;
   },
 
+  async verificarConflitoEscala({ eventoId, pessoaId }) {
+    if (!eventoId || !pessoaId) return { temConflito: false };
+
+    const { data, error } = await supabase
+      .from('escalas')
+      .select(`
+        id,
+        ministerio_id,
+        evento_id,
+        pessoas (
+          nome
+        ),
+        ministerios (
+          nome
+        ),
+        eventos_ministeriais (
+          titulo
+        )
+      `)
+      .eq('evento_id', eventoId)
+      .eq('pessoa_id', pessoaId)
+      .limit(1);
+
+    if (error) {
+      console.warn('Erro ao verificar conflito de escala:', error);
+      return { temConflito: false };
+    }
+
+    if (data && data.length > 0) {
+      const e = data[0];
+      return {
+        temConflito: true,
+        pessoaNome: e.pessoas?.nome || 'Esta pessoa',
+        ministerioNome: e.ministerios?.nome || 'outro ministério',
+        eventoTitulo: e.eventos_ministeriais?.titulo || 'este evento'
+      };
+    }
+
+    return { temConflito: false };
+  },
+
   async adicionarEscala(payload) {
+    if (payload.evento_id && payload.pessoa_id) {
+      const conflito = await this.verificarConflitoEscala({
+        eventoId: payload.evento_id,
+        pessoaId: payload.pessoa_id
+      });
+      if (conflito && conflito.temConflito) {
+        const err = new Error(`ESTA_PESSOA_JA_ESCALADA::${conflito.pessoaNome}::${conflito.ministerioNome}::${conflito.eventoTitulo}`);
+        err.conflito = conflito;
+        throw err;
+      }
+    }
+
     const { error } = await supabase
       .from('escalas')
       .insert(payload);

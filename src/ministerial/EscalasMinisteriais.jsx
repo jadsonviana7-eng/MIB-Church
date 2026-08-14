@@ -43,6 +43,25 @@ export default function EscalasMinisteriais({
   const [voluntarioSelecionado, setVoluntarioSelecionado] = useState(null);
 
   const [notificacao, setNotificacao] = useState('');
+  const [modalConflito, setModalConflito] = useState(null); // { pessoaNome, ministerioNome, eventoTitulo }
+
+  // Suporte ao botão voltar do celular para fechar o modal de conflito
+  useEffect(() => {
+    if (modalConflito) {
+      try {
+        window.history.pushState({ modalConflito: true }, '');
+      } catch (e) {}
+
+      const handlePop = () => {
+        setModalConflito(null);
+      };
+
+      window.addEventListener('popstate', handlePop, { once: true });
+      return () => {
+        window.removeEventListener('popstate', handlePop);
+      };
+    }
+  }, [modalConflito]);
 
   // Filtro de Período
   const [filtroMes, setFiltroMes] = useState(() => (initialFiltroMes !== null && initialFiltroMes !== undefined) ? initialFiltroMes : new Date().getMonth());
@@ -728,6 +747,19 @@ export default function EscalasMinisteriais({
       selecionarEvento(eventoSelecionado);
       mostrarToast('✓ Voluntário escalado com sucesso!');
     } catch (error) {
+      if (error.conflito || error.message?.includes('ESTA_PESSOA_JA_ESCALADA')) {
+        let conflitoObj = error.conflito;
+        if (!conflitoObj && error.message) {
+          const parts = error.message.split('::');
+          conflitoObj = {
+            pessoaNome: parts[1] || voluntarioSelecionado?.pessoas?.nome || 'Esta pessoa',
+            ministerioNome: parts[2] || 'outro ministério',
+            eventoTitulo: parts[3] || eventoSelecionado?.titulo || 'este evento'
+          };
+        }
+        setModalConflito(conflitoObj);
+        return;
+      }
       console.error('Erro ao escalar voluntário:', error);
       alert('Erro ao escalar: ' + error.message);
     }
@@ -2313,6 +2345,36 @@ export default function EscalasMinisteriais({
                   Baixar PNG
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pequeno de Notificação de Conflito de Escala */}
+      {modalConflito && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-md p-6 overflow-hidden text-center space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shrink-0 shadow-inner">
+              <AlertCircle size={26} />
+            </div>
+            
+            <div>
+              <h3 className="text-base font-black text-slate-800 tracking-tight">
+                Conflito de Escala Detectado
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed mt-2.5 font-medium">
+                <strong className="text-slate-900 font-bold">{modalConflito.pessoaNome}</strong> não poderá ser escalado(a) pois já está escalado(a) no ministério <strong className="text-blue-700 font-bold">{modalConflito.ministerioNome}</strong> para o evento <strong className="text-slate-900 font-bold">{modalConflito.eventoTitulo}</strong>.
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setModalConflito(null)}
+                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+              >
+                Entendido
+              </button>
             </div>
           </div>
         </div>

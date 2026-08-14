@@ -67,7 +67,7 @@ export default function App() {
   const [celulasSubmenu, setCelulasSubmenu] = useState('painel');
   const [financeiroSubmenu, setFinanceiroSubmenu] = useState('resumo');
   const [escolasSubmenu, setEscolasSubmenu] = useState('resumo'); // Novo estado para o submenu de Escolas
-  const [gestaoMinisterialSubmenu, setGestaoMinisterialSubmenu] = useState('escalas');
+  const [gestaoMinisterialSubmenu, setGestaoMinisterialSubmenu] = useState('dashboard');
   const [agendaSubmenu, setAgendaSubmenu] = useState('calendario');
   const [utilitariosSubmenu, setUtilitariosSubmenu] = useState('resumo');
 
@@ -420,16 +420,36 @@ export default function App() {
     return Array.isArray(atuacoes) ? atuacoes.length > 0 : Boolean(atuacoes);
   }, [membroLogado]);
 
-  const perfilAtual = membroLogado?.permissao?.toLowerCase() || '';
-  const isPerfilLiderCelula = ['lider-celula', 'lider', 'supervisor'].includes(perfilAtual);
-
   const celulasDoLider = useMemo(() => {
-    if (!isPerfilLiderCelula || !membroLogado?.id) return [];
+    if (!membroLogado?.id) return [];
     return celulas.filter(c =>
       String(c.lider_id || '') === String(membroLogado.id) ||
       String(c.co_lider_id || '') === String(membroLogado.id)
     );
-  }, [celulas, isPerfilLiderCelula, membroLogado?.id]);
+  }, [celulas, membroLogado?.id]);
+
+  const isAdminOuPastor = useMemo(() => {
+    if (!membroLogado) return false;
+    const p = (membroLogado.permissao || '').toLowerCase();
+    return p === 'admin' || p === 'pastor' || p === 'secretaria';
+  }, [membroLogado]);
+
+  const isPerfilLiderCelula = useMemo(() => {
+    if (!membroLogado) return false;
+    const p = (membroLogado.permissao || '').toLowerCase();
+    const c = (membroLogado.cargo || '').toLowerCase();
+
+    const temPermissaoDeclarada = p.includes('lider') || p.includes('celula') || p.includes('supervisor') ||
+                                 c.includes('lider') || c.includes('supervisor');
+
+    return temPermissaoDeclarada || celulasDoLider.length > 0;
+  }, [membroLogado, celulasDoLider]);
+
+  // Restrição de visualização (exclusiva para quem é apenas líder de célula e NÃO é admin/pastor)
+  const isApenasLiderCelula = useMemo(() => {
+    if (!membroLogado || isAdminOuPastor) return false;
+    return isPerfilLiderCelula;
+  }, [membroLogado, isAdminOuPastor, isPerfilLiderCelula]);
 
   const idsCelulasDoLider = useMemo(
     () => new Set(celulasDoLider.map(c => String(c.id))),
@@ -437,22 +457,23 @@ export default function App() {
   );
 
   const pessoasVisiveis = useMemo(() => {
-    if (!isPerfilLiderCelula) return pessoas;
+    if (!isApenasLiderCelula) return pessoas;
     return pessoas.filter(p =>
       String(p.id) === String(membroLogado?.id) ||
       (p.celula_id && idsCelulasDoLider.has(String(p.celula_id)))
     );
-  }, [pessoas, isPerfilLiderCelula, membroLogado?.id, idsCelulasDoLider]);
+  }, [pessoas, isApenasLiderCelula, membroLogado?.id, idsCelulasDoLider]);
 
   const celulasVisiveis = useMemo(
-    () => (isPerfilLiderCelula ? celulasDoLider : celulas),
-    [isPerfilLiderCelula, celulasDoLider, celulas]
+    () => (isApenasLiderCelula ? (celulasDoLider.length > 0 ? celulasDoLider : celulas) : celulas),
+    [isApenasLiderCelula, celulasDoLider, celulas]
   );
 
   const relatoriosCelulaVisiveis = useMemo(() => {
-    if (!isPerfilLiderCelula) return relatoriosCelula;
+    if (!isApenasLiderCelula) return relatoriosCelula;
+    if (idsCelulasDoLider.size === 0) return relatoriosCelula;
     return relatoriosCelula.filter(r => idsCelulasDoLider.has(String(r.celula_id)));
-  }, [relatoriosCelula, isPerfilLiderCelula, idsCelulasDoLider]);
+  }, [relatoriosCelula, isApenasLiderCelula, idsCelulasDoLider]);
 
   /**
    * Verifica se o membro logado tem acesso a um módulo ou bloco específico.
@@ -485,6 +506,13 @@ export default function App() {
 
     // Segue as regras padrões de cargo/perfil (Aditivo/Fallback)
     const p = membroLogado.permissao?.toLowerCase() || '';
+
+    // Se for líder de célula (seja por perfil, cargo ou por liderar uma célula no BD), concede acesso às funções de célula
+    if (modulo === 'Células' && isPerfilLiderCelula) {
+      if (acao === 'excluir') return false;
+      if (acao === 'editar' || acao === 'adicionar') return true;
+      return true;
+    }
 
     if (p === 'membro') {
       if (modulo === 'Gestão Ministerial') {
@@ -657,11 +685,10 @@ export default function App() {
 
   const submenusGestao = useMemo(() => [
     ['dashboard', 'Dashboard'],
-    ['equipes', 'Equipes'],
+    ['config', 'Ministérios'],
     ['escalas', 'Escalas'],
-    ['historico', 'Histórico'],
     ['relatorios', 'Relatórios'],
-    ['config', 'Configurações']
+    ['historico', 'Histórico'],
   ].filter(([id, label]) => hasAccess('Gestão Ministerial', label)), [hasAccess]);
 
   const submenusAgenda = useMemo(() => [
@@ -1489,7 +1516,7 @@ export default function App() {
             <div>
               <MenuButton
                 ativo={moduloAtual === 'gestao'}
-                onClick={() => navegar('gestao', 'escalas')}
+                onClick={() => navegar('gestao', 'dashboard')}
                 icon={MenuIcons.gestaoMinisterial}
                 hasSubmenu={submenusGestao.length > 0}
                 expanded={mobileDropdownAberto === 'gestao'}
@@ -1647,7 +1674,7 @@ export default function App() {
         {/* Nova HomePage como a tela principal do dashboard */}
         {moduloAtual === 'dashboard' && (
           <>
-            {['lider', 'lider-celula', 'supervisor'].includes(membroLogado?.permissao?.toLowerCase()) ? (
+            {isApenasLiderCelula ? (
               membroSelecionadoId ? (
                 <DetalhesMembro
                   pessoaId={membroSelecionadoId}

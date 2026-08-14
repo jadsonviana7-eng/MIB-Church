@@ -67,7 +67,17 @@ export default function CelulasModulo({
     }
   }, [reuniaoSelecionadaId, relatoriosCelula, onMarcarReuniaoComoVista]);
 
-  const isMembro = membroLogado?.permissao === 'membro';
+  const isLiderCelula = useMemo(() => {
+    if (!membroLogado) return false;
+    const p = (membroLogado.permissao || '').toLowerCase();
+    const c = (membroLogado.cargo || '').toLowerCase();
+
+    if (['admin', 'pastor'].includes(p)) return true;
+    if (p.includes('lider') || p.includes('celula') || p.includes('supervisor') || c.includes('lider') || c.includes('supervisor')) return true;
+    return celulas.some(cell => String(cell.lider_id || '') === String(membroLogado.id) || String(cell.co_lider_id || '') === String(membroLogado.id));
+  }, [membroLogado, celulas]);
+
+  const isMembro = !isLiderCelula;
 
   const abrirReuniao = (relatorio) => {
     if (onMarcarReuniaoComoVista) {
@@ -259,7 +269,7 @@ export default function CelulasModulo({
           )}
         </Card>
         <Card className={`p-5 space-y-4 h-fit ${
-          ['lider-celula', 'lider', 'supervisor'].includes(membroLogado?.permissao)
+          isLiderCelula
             ? 'hidden xl:block'
             : ''
         }`}>
@@ -2227,8 +2237,12 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
 
   const podeEditar = useMemo(() => {
     if (!membroLogado) return false;
-    if (['admin', 'pastor'].includes(membroLogado.permissao)) return true;
-    if (['lider-celula', 'lider', 'supervisor'].includes(membroLogado.permissao) && celula && String(celula.lider_id) === String(membroLogado.id)) return true;
+    const p = (membroLogado.permissao || '').toLowerCase();
+    const c = (membroLogado.cargo || '').toLowerCase();
+
+    if (['admin', 'pastor'].includes(p)) return true;
+    if (celula && (String(celula.lider_id || '') === String(membroLogado.id) || String(celula.co_lider_id || '') === String(membroLogado.id))) return true;
+    if (p.includes('lider') || p.includes('celula') || p.includes('supervisor') || c.includes('lider') || c.includes('supervisor')) return true;
     return false;
   }, [membroLogado, celula]);
 

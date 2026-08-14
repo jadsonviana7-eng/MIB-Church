@@ -328,7 +328,12 @@ export const ministeriosService = {
           id,
           nome,
           foto_url,
-          cargo
+          cargo,
+          telefone
+        ),
+        ministerios (
+          id,
+          nome
         )
       `)
       .eq('ativo', true);
@@ -343,12 +348,25 @@ export const ministeriosService = {
         pessoa_id,
         ministerio_id,
         pessoas (
+          id,
+          nome,
+          foto_url,
+          cargo,
+          telefone
+        ),
+        ministerios (
+          id,
+          nome
+        ),
+        ministerio_funcoes (
+          id,
           nome
         ),
         eventos_ministeriais (
           id,
           titulo,
-          data_evento
+          data_evento,
+          local
         )
       `);
     if (errEsc) throw errEsc;
@@ -362,11 +380,20 @@ export const ministeriosService = {
       console.warn('Erro ao obter historico_ministerial:', errHist);
     }
 
+    // 5. Funções Ministeriais Mapeadas
+    const { data: funcoes, error: errFunc } = await supabase
+      .from('ministerio_funcoes')
+      .select('id, nome, ministerio_id, ministerios(id, nome)');
+    if (errFunc) {
+      console.warn('Erro ao obter ministerio_funcoes:', errFunc);
+    }
+
     return {
       ministerios: ministerios || [],
       membros: membros || [],
       escalas: escalas || [],
-      historicos: historicos || []
+      historicos: historicos || [],
+      funcoes: funcoes || []
     };
   }
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import DashboardMinisterialV2 from './ministerial/DashboardMinisterialV2';
 import EscalasMinisteriais from './ministerial/EscalasMinisteriais';
 import MinisteriosManager from './ministerial/MinisteriosManager';
@@ -9,6 +9,20 @@ import { LayoutDashboard, Calendar, Clock, BarChart3, Settings } from 'lucide-re
 export default function GestaoMinisterial(props) {
   const { submenu, onNavigate } = props;
   const aba = submenu || 'dashboard';
+
+  const [filtroMinisterioId, setFiltroMinisterioId] = useState(null);
+  const [filtroStatusEscala, setFiltroStatusEscala] = useState(null);
+  const [filtroMesEscala, setFiltroMesEscala] = useState(null);
+  const [filtroAnoEscala, setFiltroAnoEscala] = useState(null);
+
+  const handleNavegarTab = (novaAba, filtros = {}) => {
+    if (filtros.ministerioId !== undefined) setFiltroMinisterioId(filtros.ministerioId);
+    if (filtros.status !== undefined) setFiltroStatusEscala(filtros.status);
+    if (filtros.mes !== undefined) setFiltroMesEscala(filtros.mes);
+    if (filtros.ano !== undefined) setFiltroAnoEscala(filtros.ano);
+
+    onNavigate(novaAba);
+  };
 
   const abas = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
@@ -25,7 +39,7 @@ export default function GestaoMinisterial(props) {
         {abas.map((a) => (
           <button
             key={a.id}
-            onClick={() => onNavigate(a.id)}
+            onClick={() => handleNavegarTab(a.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
               aba === a.id 
                 ? 'bg-[#1e3a8a] text-white shadow-lg shadow-blue-100' 
@@ -39,11 +53,24 @@ export default function GestaoMinisterial(props) {
       </div>
 
       <div className="animate-in fade-in duration-300">
-        {aba === 'dashboard' && <DashboardMinisterialV2 {...props} />}
-        {aba === 'escalas' && <EscalasMinisteriais {...props} />}
-        {aba === 'historico' && <HistoricoMinisterial {...props} />}
-        {aba === 'relatorios' && <RelatoriosMinisterial {...props} />}
-        {aba === 'config' && <MinisteriosManager {...props} />}
+        {aba === 'dashboard' && <DashboardMinisterialV2 {...props} onNavegarTab={handleNavegarTab} />}
+        {aba === 'escalas' && (
+          <EscalasMinisteriais 
+            {...props} 
+            initialFiltroMinisterioId={filtroMinisterioId}
+            initialStatus={filtroStatusEscala}
+            initialFiltroMes={filtroMesEscala}
+            initialFiltroAno={filtroAnoEscala}
+          />
+        )}
+        {aba === 'historico' && <HistoricoMinisterial {...props} initialStatus={filtroStatusEscala} />}
+        {aba === 'relatorios' && <RelatoriosMinisterial {...props} onNavegarTab={handleNavegarTab} />}
+        {aba === 'config' && (
+          <MinisteriosManager 
+            {...props} 
+            initialSelectedMinistryId={filtroMinisterioId}
+          />
+        )}
       </div>
     </div>
   );

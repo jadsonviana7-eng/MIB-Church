@@ -5,7 +5,14 @@ import { autoEscalaService } from './services/autoEscalaService';
 import { supabase } from '../supabaseClient';
 import { toPng } from 'html-to-image';
 
-export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio }) {
+export default function EscalasMinisteriais({ 
+  membroLogado, 
+  isLiderMinisterio,
+  initialFiltroMinisterioId = null,
+  initialStatus = null,
+  initialFiltroMes = null,
+  initialFiltroAno = null
+}) {
   const [eventos, setEventos] = useState([]);
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [escalas, setEscalas] = useState([]);
@@ -38,8 +45,17 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
   const [notificacao, setNotificacao] = useState('');
 
   // Filtro de Período
-  const [filtroMes, setFiltroMes] = useState(new Date().getMonth());
-  const [filtroAno, setFiltroAno] = useState(new Date().getFullYear());
+  const [filtroMes, setFiltroMes] = useState(() => (initialFiltroMes !== null && initialFiltroMes !== undefined) ? initialFiltroMes : new Date().getMonth());
+  const [filtroAno, setFiltroAno] = useState(() => (initialFiltroAno !== null && initialFiltroAno !== undefined) ? initialFiltroAno : new Date().getFullYear());
+  const [filtroMinisterioId, setFiltroMinisterioId] = useState(initialFiltroMinisterioId);
+  const [filtroStatus, setFiltroStatus] = useState(initialStatus);
+
+  useEffect(() => {
+    if (initialFiltroMes !== null && initialFiltroMes !== undefined) setFiltroMes(initialFiltroMes);
+    if (initialFiltroAno !== null && initialFiltroAno !== undefined) setFiltroAno(initialFiltroAno);
+    if (initialFiltroMinisterioId !== undefined) setFiltroMinisterioId(initialFiltroMinisterioId);
+    if (initialStatus !== undefined) setFiltroStatus(initialStatus);
+  }, [initialFiltroMes, initialFiltroAno, initialFiltroMinisterioId, initialStatus]);
 
   // Estado de Edição de Evento
   const [modalEditar, setModalEditar] = useState(false);
@@ -1043,6 +1059,27 @@ export default function EscalasMinisteriais({ membroLogado, isLiderMinisterio })
 
   return (
     <div className="space-y-6 relative">
+      {/* Banner de Filtro Ativo do Dashboard V3 */}
+      {(filtroMinisterioId || filtroStatus) && (
+        <div className="bg-blue-50/90 border border-blue-200 rounded-2xl p-4 flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2 text-xs text-blue-900 font-bold">
+            <span className="bg-blue-600 text-white p-1.5 rounded-lg text-[10px]">📌</span>
+            <span>
+              Filtro ativo do Dashboard V3: {filtroMinisterioId && `Ministério ID #${filtroMinisterioId}`} {filtroStatus && `Status: ${filtroStatus}`}
+            </span>
+          </div>
+          <button
+            onClick={() => {
+              setFiltroMinisterioId(null);
+              setFiltroStatus(null);
+            }}
+            className="text-xs font-black text-blue-600 hover:text-blue-800 bg-white px-3 py-1.5 rounded-xl border border-blue-200 cursor-pointer shadow-xs"
+          >
+            ❌ Limpar Filtros
+          </button>
+        </div>
+      )}
+
       {/* Notificação flutuante */}
       {notificacao && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-800 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-in slide-in-from-bottom-2 duration-300">

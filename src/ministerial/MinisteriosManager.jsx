@@ -40,11 +40,11 @@ const PRESET_COLORS = [
   { name: 'Cinza Executivo', value: '#4b5563' }
 ];
 
-export default function MinisteriosManager() {
+export default function MinisteriosManager({ initialSelectedMinistryId = null }) {
   const [ministerios, setMinisterios] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [selectedMinistryId, setSelectedMinistryId] = useState(null);
+  const [selectedMinistryId, setSelectedMinistryId] = useState(initialSelectedMinistryId);
 
   const [form, setForm] = useState({
     nome: '',
@@ -53,6 +53,12 @@ export default function MinisteriosManager() {
     cor_principal: '#2563eb',
     ativo: true
   });
+
+  useEffect(() => {
+    if (initialSelectedMinistryId) {
+      setSelectedMinistryId(initialSelectedMinistryId);
+    }
+  }, [initialSelectedMinistryId]);
 
   useEffect(() => {
     carregar();

@@ -836,11 +836,94 @@ export default function App() {
     setModuloAtual('dashboard');
   }
 
+  // ── Navegação Mobile & Botão Voltar (HTML5 History API) ────────────────────
+  useEffect(() => {
+    // Sincroniza o estado inicial no histórico se necessário
+    if (!window.history.state) {
+      try {
+        window.history.replaceState({
+          modulo: 'dashboard',
+          isRoot: true
+        }, '');
+      } catch (e) {}
+    }
+
+    const handlePopState = (event) => {
+      // 1. Prioridade: fechar gaveta do menu / buscas / notificações mobile se estiverem abertos
+      if (menuAberto) {
+        setMenuAberto(false);
+        return;
+      }
+      if (buscaAberta || buscaMobileAberta) {
+        setBuscaAberta(false);
+        setBuscaMobileAberta(false);
+        return;
+      }
+      if (notificacoesAberto) {
+        setNotificacoesAberto(false);
+        return;
+      }
+
+      // 2. Prioridade: fechar modais de detalhes em exibição (Membro, Célula, Reunião, Caderneta)
+      if (membroSelecionadoId !== null) {
+        setMembroSelecionadoId(null);
+        return;
+      }
+      if (celulaSelecionadaId !== null) {
+        setCelulaSelecionadaId(null);
+        return;
+      }
+      if (reuniaoSelecionadaId !== null) {
+        setReuniaoSelecionadaId(null);
+        return;
+      }
+      if (alunoSelecionadoParaCadernetaId !== null) {
+        setAlunoSelecionadoParaCadernetaId(null);
+        return;
+      }
+      if (turmaSelecionadaId !== null) {
+        setTurmaSelecionadaId(null);
+        return;
+      }
+
+      // 3. Prioridade: restaurar módulo/submenus anteriores salvos na pilha
+      const state = event.state;
+      if (state && state.modulo) {
+        setModuloAtual(state.modulo);
+        if (state.pessoasSubmenu) setPessoasSubmenu(state.pessoasSubmenu);
+        if (state.celulasSubmenu) setCelulasSubmenu(state.celulasSubmenu);
+        if (state.financeiroSubmenu) setFinanceiroSubmenu(state.financeiroSubmenu);
+        if (state.escolasSubmenu) setEscolasSubmenu(state.escolasSubmenu);
+        if (state.gestaoMinisterialSubmenu) setGestaoMinisterialSubmenu(state.gestaoMinisterialSubmenu);
+        if (state.agendaSubmenu) setAgendaSubmenu(state.agendaSubmenu);
+        if (state.utilitariosSubmenu) setUtilitariosSubmenu(state.utilitariosSubmenu);
+        setMembroSelecionadoId(state.membroSelecionadoId || null);
+        setCelulaSelecionadaId(state.celulaSelecionadaId || null);
+        setReuniaoSelecionadaId(state.reuniaoSelecionadaId || null);
+      } else {
+        // Se voltou além do histórico gravado, vai para o dashboard principal
+        setModuloAtual('dashboard');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [
+    menuAberto,
+    buscaAberta,
+    buscaMobileAberta,
+    notificacoesAberto,
+    membroSelecionadoId,
+    celulaSelecionadaId,
+    reuniaoSelecionadaId,
+    alunoSelecionadoParaCadernetaId,
+    turmaSelecionadaId
+  ]);
+
   function navegar(modulo, submenu = null) {
     setModuloAtual(modulo);
     setMenuAberto(false);
     // Limpa estados de seleção ao navegar para garantir que submenus abram corretamente
-    // Isso evita que a ficha de um membro impeça a abertura de outra tela do mesmo módulo
     setMembroSelecionadoId(null);
     setCelulaSelecionadaId(null);
     setReuniaoSelecionadaId(null);
@@ -852,15 +935,40 @@ export default function App() {
       setAlunoSelecionadoParaCadernetaId(null);
     }
 
+    let pSub = pessoasSubmenu;
+    let cSub = celulasSubmenu;
+    let fSub = financeiroSubmenu;
+    let eSub = escolasSubmenu;
+    let gSub = gestaoMinisterialSubmenu;
+    let aSub = agendaSubmenu;
+    let uSub = utilitariosSubmenu;
+
     if (submenu) {
-      if (modulo === 'pessoas') setPessoasSubmenu(submenu);
-      if (modulo === 'celulas') setCelulasSubmenu(submenu);
-      if (modulo === 'financeiro') setFinanceiroSubmenu(submenu);
-      if (modulo === 'escolas') setEscolasSubmenu(submenu);
-      if (modulo === 'gestao') setGestaoMinisterialSubmenu(submenu);
-      if (modulo === 'agenda') setAgendaSubmenu(submenu);
-      if (modulo === 'utilitarios') setUtilitariosSubmenu(submenu);
+      if (modulo === 'pessoas') { setPessoasSubmenu(submenu); pSub = submenu; }
+      if (modulo === 'celulas') { setCelulasSubmenu(submenu); cSub = submenu; }
+      if (modulo === 'financeiro') { setFinanceiroSubmenu(submenu); fSub = submenu; }
+      if (modulo === 'escolas') { setEscolasSubmenu(submenu); eSub = submenu; }
+      if (modulo === 'gestao') { setGestaoMinisterialSubmenu(submenu); gSub = submenu; }
+      if (modulo === 'agenda') { setAgendaSubmenu(submenu); aSub = submenu; }
+      if (modulo === 'utilitarios') { setUtilitariosSubmenu(submenu); uSub = submenu; }
     }
+
+    // Registra o passo no histórico do navegador para permitir o botão voltar no celular
+    try {
+      window.history.pushState({
+        modulo,
+        pessoasSubmenu: pSub,
+        celulasSubmenu: cSub,
+        financeiroSubmenu: fSub,
+        escolasSubmenu: eSub,
+        gestaoMinisterialSubmenu: gSub,
+        agendaSubmenu: aSub,
+        utilitariosSubmenu: uSub,
+        membroSelecionadoId: null,
+        celulaSelecionadaId: null,
+        reuniaoSelecionadaId: null
+      }, '');
+    } catch (e) {}
   }
 
   function abrirPessoasFiltradas(novosFiltros) {
@@ -1707,6 +1815,8 @@ export default function App() {
           <GestaoMinisterial
             submenu={gestaoMinisterialSubmenu}
             onNavigate={(sub) => navegar('gestao', sub)}
+            onNavegarGlobal={(modulo, sub) => navegar(modulo, sub)}
+            onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
             membroLogado={membroLogado}
             usuarioLogado={usuarioLogado}
             hasAccess={hasAccess}

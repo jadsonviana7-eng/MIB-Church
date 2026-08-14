@@ -13,17 +13,41 @@ import {
   Calendar, 
   AlertTriangle, 
   ShieldCheck, 
-  Briefcase 
+  Briefcase,
+  Search,
+  X
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ministeriosService } from './services/ministeriosService';
 import { jsPDF } from 'jspdf';
 
-export default function RelatoriosMinisterial() {
+export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNavegarGlobal }) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'exportar'
   const [toastMsg, setToastMsg] = useState('');
   const [rawDados, setRawDados] = useState(null);
+  
+  // Modal de Detalhamento por Indicador (Pessoas/Voluntários)
+  const [modalIndicadorAberto, setModalIndicadorAberto] = useState(null); // null | 'voluntarios' | 'servicos' | 'pendentes' | 'recusadas'
+  const [buscaIndicador, setBuscaIndicador] = useState('');
+
+  // Suporte à seta "voltar" do celular para fechar o modal do indicador sem fechar o app
+  useEffect(() => {
+    if (modalIndicadorAberto) {
+      try {
+        window.history.pushState({ modalIndicador: modalIndicadorAberto }, '');
+      } catch (e) {}
+
+      const handlePop = () => {
+        setModalIndicadorAberto(null);
+      };
+
+      window.addEventListener('popstate', handlePop, { once: true });
+      return () => {
+        window.removeEventListener('popstate', handlePop);
+      };
+    }
+  }, [modalIndicadorAberto]);
   
   // State da Central de Respostas Estratégicas
   const [activeQuestao, setActiveQuestao] = useState('crescimento'); // 'crescimento' | 'sem_escalar' | 'sobrecarga' | 'lider_equipe'
@@ -996,6 +1020,79 @@ export default function RelatoriosMinisterial() {
     const escalasPendentes = escalas.filter(e => e.status === 'pendente' || !e.status).length;
     const escalasRecusadas = escalas.filter(e => e.status === 'recusado').length;
 
+    // 1. Lista de Voluntários Ativos (deduplicada por pessoa_id)
+    const mapaVoluntarios = new Map();
+    membros.forEach(m => {
+      if (m.pessoas?.nome && !mapaVoluntarios.has(m.pessoa_id)) {
+        mapaVoluntarios.set(m.pessoa_id, {
+          id: m.id,
+          pessoa_id: m.pessoa_id,
+          nome: m.pessoas?.nome || 'Voluntário',
+          foto_url: m.pessoas?.foto_url,
+          cargo: m.pessoas?.cargo,
+          telefone: m.pessoas?.telefone,
+          ministerio: m.ministerios?.nome || 'Ministério',
+          funcao: m.funcao || 'Voluntário',
+          statusBadge: '🔵 Ativo'
+        });
+      }
+    });
+    const listaVoluntariosAtivos = Array.from(mapaVoluntarios.values());
+
+    // 2. Lista de Serviços do Mês (escalas confirmadas do mês atual)
+    const listaServicosMes = escalasMesAtual
+      .filter(e => e.status === 'confirmado')
+      .map(e => ({
+        id: e.id,
+        pessoa_id: e.pessoa_id || e.pessoas?.id,
+        nome: e.pessoas?.nome || 'Voluntário',
+        foto_url: e.pessoas?.foto_url,
+        cargo: e.pessoas?.cargo,
+        telefone: e.pessoas?.telefone,
+        ministerio: e.ministerios?.nome || 'Ministério',
+        funcao: e.ministerio_funcoes?.nome || 'Geral',
+        evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
+        data_evento: e.eventos_ministeriais?.data_evento,
+        local: e.eventos_ministeriais?.local,
+        statusBadge: '🟢 Confirmado'
+      }));
+
+    // 3. Lista de Escalas Pendentes
+    const listaEscalasPendentes = escalas
+      .filter(e => e.status === 'pendente' || !e.status)
+      .map(e => ({
+        id: e.id,
+        pessoa_id: e.pessoa_id || e.pessoas?.id,
+        nome: e.pessoas?.nome || 'Voluntário',
+        foto_url: e.pessoas?.foto_url,
+        cargo: e.pessoas?.cargo,
+        telefone: e.pessoas?.telefone,
+        ministerio: e.ministerios?.nome || 'Ministério',
+        funcao: e.ministerio_funcoes?.nome || 'Geral',
+        evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
+        data_evento: e.eventos_ministeriais?.data_evento,
+        local: e.eventos_ministeriais?.local,
+        statusBadge: '🟡 Pendente'
+      }));
+
+    // 4. Lista de Recusas Gerais
+    const listaPessoasRecusadas = escalas
+      .filter(e => e.status === 'recusado')
+      .map(e => ({
+        id: e.id,
+        pessoa_id: e.pessoa_id || e.pessoas?.id,
+        nome: e.pessoas?.nome || 'Voluntário',
+        foto_url: e.pessoas?.foto_url,
+        cargo: e.pessoas?.cargo,
+        telefone: e.pessoas?.telefone,
+        ministerio: e.ministerios?.nome || 'Ministério',
+        funcao: e.ministerio_funcoes?.nome || 'Geral',
+        evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
+        data_evento: e.eventos_ministeriais?.data_evento,
+        local: e.eventos_ministeriais?.local,
+        statusBadge: '🔴 Recusado'
+      }));
+
     // 2. Gráfico 1: Membros por Ministério
     const membrosPorMin = {};
     membros.forEach(m => {
@@ -1024,13 +1121,15 @@ export default function RelatoriosMinisterial() {
 
     // 4. Gráfico 3: Top 10 Voluntários (confirmados)
     const voluntarioCounts = {};
+    const voluntarioPessoaIdMap = {};
     escalas.forEach(e => {
       if (e.status === 'confirmado' && e.pessoas?.nome) {
         voluntarioCounts[e.pessoas.nome] = (voluntarioCounts[e.pessoas.nome] || 0) + 1;
+        voluntarioPessoaIdMap[e.pessoas.nome] = e.pessoa_id || e.pessoas.id;
       }
     });
     const graficoTopVoluntarios = Object.entries(voluntarioCounts)
-      .map(([nome, total]) => ({ nome, total }))
+      .map(([nome, total]) => ({ nome, total, pessoa_id: voluntarioPessoaIdMap[nome] }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 10);
 
@@ -1038,8 +1137,10 @@ export default function RelatoriosMinisterial() {
     const lideresMembros = membros.filter(m => m.lider === true && m.pessoas?.nome);
     const liderStats = {};
     const liderNamesMap = {}; // pessoa_id -> nome
+    const liderPessoaIdMap = {};
     lideresMembros.forEach(l => {
       liderNamesMap[l.pessoa_id] = l.pessoas.nome;
+      liderPessoaIdMap[l.pessoas.nome] = l.pessoa_id;
     });
 
     Object.keys(liderNamesMap).forEach(lPessoaId => {
@@ -1059,7 +1160,7 @@ export default function RelatoriosMinisterial() {
     });
 
     const graficoTopLideres = Object.entries(liderStats)
-      .map(([nome, total]) => ({ nome, total }))
+      .map(([nome, total]) => ({ nome, total, pessoa_id: liderPessoaIdMap[nome] }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 10);
 
@@ -1080,6 +1181,7 @@ export default function RelatoriosMinisterial() {
     });
 
     const rankingCrescimento = ministerios.map(min => ({
+      id: min.id,
       nome: min.nome,
       cor: min.cor_principal || '#10b981',
       novosMembros: crescimentoPorMin[min.id] || 0,
@@ -1114,6 +1216,7 @@ export default function RelatoriosMinisterial() {
       const ultimaData = ultimaEscalaPorVoluntario[pessoaId];
       if (!ultimaData) {
         voluntarioSemEscala.push({
+          pessoa_id: Number(pessoaId),
           nome: pessoa.nome,
           foto_url: pessoa.foto_url,
           detalhe: 'Nunca foi escalado',
@@ -1129,6 +1232,7 @@ export default function RelatoriosMinisterial() {
         const dataFormatada = `${DD}/${MM}/${YYYY}`;
         
         voluntarioSemEscala.push({
+          pessoa_id: Number(pessoaId),
           nome: pessoa.nome,
           foto_url: pessoa.foto_url,
           detalhe: `Sem escalas há ${diffDays} dias (${dataFormatada})`,
@@ -1155,6 +1259,7 @@ export default function RelatoriosMinisterial() {
       }
 
       return {
+        id: min.id,
         nome: min.nome,
         cor: min.cor_principal || '#3b82f6',
         membrosCount,
@@ -1170,6 +1275,10 @@ export default function RelatoriosMinisterial() {
       participacoesMes,
       escalasPendentes,
       escalasRecusadas,
+      listaVoluntariosAtivos,
+      listaServicosMes,
+      listaEscalasPendentes,
+      listaPessoasRecusadas,
       graficoMembrosPorMin,
       graficoParticipacoesPorMin,
       graficoTopVoluntarios,
@@ -1234,60 +1343,100 @@ export default function RelatoriosMinisterial() {
           {/* CARDS INDICADORES */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Card 1 */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-1 h-full bg-blue-500" />
+            <div 
+              onClick={() => {
+                setModalIndicadorAberto('voluntarios');
+                setBuscaIndicador('');
+              }}
+              className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-blue-300 transition-all duration-200"
+              title="Clique para ver a lista das pessoas deste indicador"
+            >
+              <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 group-hover:w-1.5 transition-all" />
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Voluntários Ativos</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                    Voluntários Ativos
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 text-[9px]">→</span>
+                  </p>
                   <h2 className="text-2xl sm:text-3xl font-black mt-1 text-slate-800 tracking-tight">{stats.totalVoluntarios}</h2>
                   <p className="text-[9px] text-slate-400 mt-1">Integrados em ministérios</p>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Users size={18} />
                 </div>
               </div>
             </div>
 
             {/* Card 2 */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
+            <div 
+              onClick={() => {
+                setModalIndicadorAberto('servicos');
+                setBuscaIndicador('');
+              }}
+              className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-emerald-300 transition-all duration-200"
+              title="Clique para ver as pessoas com serviços confirmados no mês"
+            >
+              <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 group-hover:w-1.5 transition-all" />
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Serviços do Mês</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                    Serviços do Mês
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-emerald-500 text-[9px]">→</span>
+                  </p>
                   <h2 className="text-2xl sm:text-3xl font-black mt-1 text-slate-800 tracking-tight">{stats.participacoesMes}</h2>
                   <p className="text-[9px] text-slate-400 mt-1">Escalas confirmadas</p>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <CheckCircle size={18} />
                 </div>
               </div>
             </div>
 
             {/* Card 3 */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
+            <div 
+              onClick={() => {
+                setModalIndicadorAberto('pendentes');
+                setBuscaIndicador('');
+              }}
+              className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-amber-300 transition-all duration-200"
+              title="Clique para ver as pessoas com escalas pendentes"
+            >
+              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 group-hover:w-1.5 transition-all" />
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Escalas Pendentes</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                    Escalas Pendentes
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-amber-500 text-[9px]">→</span>
+                  </p>
                   <h2 className="text-2xl sm:text-3xl font-black mt-1 text-slate-800 tracking-tight">{stats.escalasPendentes}</h2>
                   <p className="text-[9px] text-slate-400 mt-1">Aguardando resposta</p>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <AlertCircle size={18} />
                 </div>
               </div>
             </div>
 
             {/* Card 4 */}
-            <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-1 h-full bg-rose-500" />
+            <div 
+              onClick={() => {
+                setModalIndicadorAberto('recusadas');
+                setBuscaIndicador('');
+              }}
+              className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-rose-300 transition-all duration-200"
+              title="Clique para ver apenas as pessoas que recusaram as escalas"
+            >
+              <div className="absolute top-0 left-0 w-1 h-full bg-rose-500 group-hover:w-1.5 transition-all" />
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Recusas Gerais</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                    Recusas Gerais
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-rose-500 text-[9px]">→</span>
+                  </p>
                   <h2 className="text-2xl sm:text-3xl font-black mt-1 text-slate-800 tracking-tight">{stats.escalasRecusadas}</h2>
                   <p className="text-[9px] text-slate-400 mt-1">Ausências notificadas</p>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <XCircle size={18} />
                 </div>
               </div>
@@ -1306,14 +1455,21 @@ export default function RelatoriosMinisterial() {
                 </div>
                 <div className="space-y-3.5">
                   {stats.graficoMembrosPorMin.map((item) => (
-                    <div key={item.id} className="space-y-1.5">
-                      <div className="flex justify-between text-xs font-bold text-slate-600">
+                    <div 
+                      key={item.id} 
+                      onClick={() => {
+                        if (onNavegarTab) onNavegarTab('config', { ministerioId: item.id });
+                      }}
+                      className="space-y-1.5 p-2 rounded-xl hover:bg-slate-50 transition-all cursor-pointer group"
+                      title={`Clique para ver detalhes do ministério ${item.nome}`}
+                    >
+                      <div className="flex justify-between text-xs font-bold text-slate-600 group-hover:text-blue-600 transition-colors">
                         <span>{item.nome}</span>
                         <span className="font-black text-slate-800">{item.total} voluntários</span>
                       </div>
                       <div className="w-full bg-slate-50 border border-slate-100 h-3 rounded-full overflow-hidden">
                         <div 
-                          className="h-full rounded-full transition-all duration-500" 
+                          className="h-full rounded-full transition-all duration-500 group-hover:opacity-90" 
                           style={{ 
                             width: `${(item.total / maxMembros) * 100}%`,
                             backgroundColor: item.cor 
@@ -1336,14 +1492,22 @@ export default function RelatoriosMinisterial() {
                 </div>
                 <div className="space-y-3.5">
                   {stats.graficoParticipacoesPorMin.map((item) => (
-                    <div key={item.id} className="space-y-1.5">
-                      <div className="flex justify-between text-xs font-bold text-slate-600">
+                    <div 
+                      key={item.id} 
+                      onClick={() => {
+                        const agora = new Date();
+                        if (onNavegarTab) onNavegarTab('escalas', { ministerioId: item.id, mes: agora.getMonth(), ano: agora.getFullYear() });
+                      }}
+                      className="space-y-1.5 p-2 rounded-xl hover:bg-purple-50/50 transition-all cursor-pointer group"
+                      title={`Clique para filtrar escalas do ministério ${item.nome}`}
+                    >
+                      <div className="flex justify-between text-xs font-bold text-slate-600 group-hover:text-purple-600 transition-colors">
                         <span>{item.nome}</span>
                         <span className="font-black text-slate-800">{item.total} escalas confirmadas</span>
                       </div>
                       <div className="w-full bg-slate-50 border border-slate-100 h-3 rounded-full overflow-hidden">
                         <div 
-                          className="h-full rounded-full transition-all duration-500 shadow-sm" 
+                          className="h-full rounded-full transition-all duration-500 shadow-sm group-hover:opacity-90" 
                           style={{ 
                             width: `${(item.total / maxParticipacoes) * 100}%`,
                             backgroundColor: item.cor 
@@ -1369,7 +1533,16 @@ export default function RelatoriosMinisterial() {
                 </div>
                 <div className="divide-y divide-slate-50">
                   {stats.graficoTopVoluntarios.map((item, index) => (
-                    <div key={item.nome} className="flex items-center justify-between text-xs py-2.5 first:pt-0 last:pb-0">
+                    <div 
+                      key={item.nome} 
+                      onClick={() => {
+                        if (item.pessoa_id && onVerMembro) onVerMembro(item.pessoa_id);
+                      }}
+                      className={`flex items-center justify-between text-xs py-2.5 px-2 rounded-xl transition-all ${
+                        item.pessoa_id ? 'cursor-pointer hover:bg-amber-50/60 hover:scale-[1.01]' : ''
+                      } first:pt-2 last:pb-2`}
+                      title={item.pessoa_id ? `Ver perfil de ${item.nome}` : ''}
+                    >
                       <span className="flex items-center gap-2.5 text-slate-600 font-bold">
                         <span className="w-5 h-5 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-[10px] font-black">{index + 1}</span>
                         {item.nome}
@@ -1391,7 +1564,16 @@ export default function RelatoriosMinisterial() {
                 </div>
                 <div className="divide-y divide-slate-50">
                   {stats.graficoTopLideres.map((item, index) => (
-                    <div key={item.nome} className="flex items-center justify-between text-xs py-2.5 first:pt-0 last:pb-0">
+                    <div 
+                      key={item.nome} 
+                      onClick={() => {
+                        if (item.pessoa_id && onVerMembro) onVerMembro(item.pessoa_id);
+                      }}
+                      className={`flex items-center justify-between text-xs py-2.5 px-2 rounded-xl transition-all ${
+                        item.pessoa_id ? 'cursor-pointer hover:bg-blue-50/60 hover:scale-[1.01]' : ''
+                      } first:pt-2 last:pb-2`}
+                      title={item.pessoa_id ? `Ver perfil do líder ${item.nome}` : ''}
+                    >
                       <span className="flex items-center gap-2.5 text-slate-600 font-bold">
                         <span className="w-5 h-5 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-black">{index + 1}</span>
                         {item.nome}
@@ -1480,16 +1662,23 @@ export default function RelatoriosMinisterial() {
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     {stats.rankingCrescimento.slice(0, 4).map((min) => (
-                      <div key={min.nome} className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between">
+                      <div 
+                        key={min.nome} 
+                        onClick={() => {
+                          if (min.id && onNavegarTab) onNavegarTab('config', { ministerioId: min.id });
+                        }}
+                        className="bg-slate-900/60 border border-slate-800 hover:border-blue-500/50 rounded-xl p-3.5 flex items-center justify-between cursor-pointer hover:bg-slate-900 transition-all group"
+                        title={`Ver ministério ${min.nome}`}
+                      >
                         <div>
-                          <p className="text-xs font-bold text-white">{min.nome}</p>
+                          <p className="text-xs font-bold text-white group-hover:text-blue-300 transition-colors">{min.nome}</p>
                           <p className="text-[10px] text-slate-400 mt-0.5">Total de membros: {min.totalMembros}</p>
                         </div>
                         <div className="text-right">
                           <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${
                             min.novosMembros > 0 
                               ? 'bg-emerald-950/50 text-emerald-400 border-emerald-500/20' 
-                              : 'bg-slate-800 text-slate-405 border-slate-700'
+                              : 'bg-slate-800 text-slate-400 border-slate-700'
                           }`}>
                             {min.novosMembros > 0 ? `+${min.novosMembros} novos` : 'Estável'}
                           </span>
@@ -1508,18 +1697,26 @@ export default function RelatoriosMinisterial() {
                   </div>
                   <div className="max-h-[220px] overflow-y-auto pr-1 space-y-2 custom-scrollbar">
                     {stats.voluntarioSemEscala.map((vol) => (
-                      <div key={vol.nome} className="bg-slate-900/60 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+                      <div 
+                        key={vol.nome} 
+                        onClick={() => {
+                          if (vol.pessoa_id && onVerMembro) onVerMembro(vol.pessoa_id);
+                          else if (onNavegarTab) onNavegarTab('escalas');
+                        }}
+                        className="bg-slate-900/60 border border-slate-800 hover:border-amber-500/50 rounded-xl p-3 flex items-center gap-3 cursor-pointer hover:bg-slate-900 transition-all group"
+                        title={`Ver perfil de ${vol.nome}`}
+                      >
                         <img
                           src={vol.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(vol.nome)}`}
-                          className="w-8 h-8 rounded-full object-cover"
+                          className="w-8 h-8 rounded-full object-cover border border-slate-700"
                           alt=""
                         />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-white truncate">{vol.nome}</p>
+                          <p className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors truncate">{vol.nome}</p>
                           <p className="text-[10px] text-slate-400 mt-0.5">{vol.detalhe}</p>
                         </div>
                         <div className="text-slate-400 flex items-center">
-                          <AlertTriangle className="text-amber-500" size={14} />
+                          <AlertTriangle className="text-amber-500 group-hover:scale-110 transition-transform" size={14} />
                         </div>
                       </div>
                     ))}
@@ -1534,16 +1731,23 @@ export default function RelatoriosMinisterial() {
                 <div className="space-y-4">
                   <div>
                     <h4 className="text-sm font-black text-white">Sobrecarga de Voluntários no Mês</h4>
-                    <p className="text-[10px] text-slate-450 mt-0.5">
+                    <p className="text-[10px] text-slate-400 mt-0.5">
                       Fator calculado dividindo o total de escalas confirmadas pela quantidade de membros ativos. Fatores altos indicam que poucos voluntários estão trabalhando excessivamente.
                     </p>
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     {stats.rankingSobrecarga.slice(0, 4).map((min) => (
-                      <div key={min.nome} className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between gap-3">
+                      <div 
+                        key={min.nome} 
+                        onClick={() => {
+                          if (min.id && onNavegarTab) onNavegarTab('escalas', { ministerioId: min.id });
+                        }}
+                        className="bg-slate-900/60 border border-slate-800 hover:border-red-500/50 rounded-xl p-3.5 flex flex-col justify-between gap-3 cursor-pointer hover:bg-slate-900 transition-all group"
+                        title={`Filtrar escalas de ${min.nome}`}
+                      >
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="text-xs font-bold text-white">{min.nome}</p>
+                            <p className="text-xs font-bold text-white group-hover:text-red-300 transition-colors">{min.nome}</p>
                             <p className="text-[10px] text-slate-400 mt-0.5">
                               {min.participacoesMin} participações · {min.membrosCount} membros
                             </p>
@@ -1570,15 +1774,24 @@ export default function RelatoriosMinisterial() {
                   </div>
                   <div className="grid md:grid-cols-3 gap-4">
                     {stats.graficoTopLideres.slice(0, 6).map((item, index) => (
-                      <div key={item.nome} className="bg-slate-900/60 border border-slate-800 rounded-xl p-4 text-center flex flex-col justify-center items-center relative">
+                      <div 
+                        key={item.nome} 
+                        onClick={() => {
+                          if (item.pessoa_id && onVerMembro) onVerMembro(item.pessoa_id);
+                        }}
+                        className={`bg-slate-900/60 border border-slate-800 hover:border-blue-500/50 rounded-xl p-4 text-center flex flex-col justify-center items-center relative transition-all group ${
+                          item.pessoa_id ? 'cursor-pointer hover:bg-slate-900' : ''
+                        }`}
+                        title={item.pessoa_id ? `Ver perfil do líder ${item.nome}` : ''}
+                      >
                         <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-black flex items-center justify-center">
                           #{index + 1}
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center mb-2.5 mt-1 border border-blue-500/15">
+                        <div className="w-10 h-10 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center mb-2.5 mt-1 border border-blue-500/15 group-hover:scale-110 transition-transform">
                           <ShieldCheck size={20} />
                         </div>
-                        <p className="text-xs font-bold text-white">{item.nome}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5 font-bold uppercase tracking-wider text-blue-450">{item.total} pessoas</p>
+                        <p className="text-xs font-bold text-white group-hover:text-blue-300 transition-colors">{item.nome}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 font-bold uppercase tracking-wider text-blue-400">{item.total} pessoas</p>
                       </div>
                     ))}
                     {stats.graficoTopLideres.length === 0 && (
@@ -1740,6 +1953,202 @@ export default function RelatoriosMinisterial() {
           </div>
         </div>
       )}
+
+      {/* MODAL UNIFICADO DE PESSOAS DO INDICADOR */}
+      {modalIndicadorAberto && stats && (() => {
+        let configModal = {
+          titulo: '',
+          subtitulo: '',
+          corBadge: '',
+          lista: [],
+          corBordaHover: ''
+        };
+
+        if (modalIndicadorAberto === 'voluntarios') {
+          configModal = {
+            titulo: 'Voluntários Ativos Cadastrados',
+            subtitulo: 'Listagem de todos os voluntários vinculados a equipes ministeriais.',
+            corBadge: 'bg-blue-50 text-blue-700 border-blue-100',
+            corBordaHover: 'hover:border-blue-200',
+            lista: stats.listaVoluntariosAtivos
+          };
+        } else if (modalIndicadorAberto === 'servicos') {
+          configModal = {
+            titulo: 'Serviços Confirmados do Mês',
+            subtitulo: 'Voluntários com participações confirmadas nas escalas do mês atual.',
+            corBadge: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+            corBordaHover: 'hover:border-emerald-200',
+            lista: stats.listaServicosMes
+          };
+        } else if (modalIndicadorAberto === 'pendentes') {
+          configModal = {
+            titulo: 'Escalas Pendentes de Resposta',
+            subtitulo: 'Voluntários escalados aguardando confirmação ou justificativa.',
+            corBadge: 'bg-amber-50 text-amber-700 border-amber-100',
+            corBordaHover: 'hover:border-amber-200',
+            lista: stats.listaEscalasPendentes
+          };
+        } else if (modalIndicadorAberto === 'recusadas') {
+          configModal = {
+            titulo: 'Voluntários que Recusaram Escalas',
+            subtitulo: 'Listagem de voluntários que notificaram ausência ou recusaram participações.',
+            corBadge: 'bg-rose-50 text-rose-700 border-rose-100',
+            corBordaHover: 'hover:border-rose-200',
+            lista: stats.listaPessoasRecusadas
+          };
+        }
+
+        const listaFiltrada = configModal.lista.filter(item => {
+          if (!buscaIndicador) return true;
+          const b = buscaIndicador.toLowerCase();
+          return (
+            item.nome.toLowerCase().includes(b) ||
+            (item.ministerio && item.ministerio.toLowerCase().includes(b)) ||
+            (item.evento && item.evento.toLowerCase().includes(b)) ||
+            (item.funcao && item.funcao.toLowerCase().includes(b))
+          );
+        });
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh]">
+              
+              {/* Header do Modal */}
+              <div className="bg-slate-900 p-5 text-white flex justify-between items-start shrink-0">
+                <div>
+                  <h3 className="text-lg font-black tracking-tight flex items-center gap-2">
+                    {configModal.titulo}
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1">
+                    {configModal.subtitulo}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setModalIndicadorAberto(null)}
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Subheader / Busca */}
+              <div className="p-4 bg-slate-50 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3 shrink-0">
+                <div className="relative w-full sm:w-80">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Filtrar por nome, ministério ou evento..."
+                    value={buscaIndicador}
+                    onChange={(e) => setBuscaIndicador(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-400 font-medium text-slate-700"
+                  />
+                </div>
+                <span className="text-xs font-black text-slate-500 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
+                  Total: <strong className="text-slate-800 font-black">{listaFiltrada.length} pessoas</strong>
+                </span>
+              </div>
+
+              {/* Lista de Pessoas */}
+              <div className="p-5 overflow-y-auto space-y-3 custom-scrollbar flex-1">
+                {listaFiltrada.map((item, idx) => {
+                  const dataInfo = item.data_evento ? new Date(item.data_evento).toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) : null;
+
+                  return (
+                    <div 
+                      key={item.id || idx}
+                      className={`bg-white border border-slate-100 ${configModal.corBordaHover} rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs hover:shadow-md transition`}
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <img
+                          src={item.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(item.nome)}&background=3b82f6&color=fff`}
+                          alt=""
+                          className="w-11 h-11 rounded-full object-cover border-2 border-slate-100 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 
+                              onClick={() => {
+                                setModalIndicadorAberto(null);
+                                if (item.pessoa_id && onVerMembro) onVerMembro(item.pessoa_id);
+                              }}
+                              className="text-sm font-black text-slate-800 hover:text-blue-600 transition-colors cursor-pointer truncate"
+                              title="Clique para ver o perfil completo do voluntário"
+                            >
+                              {item.nome}
+                            </h4>
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md border shrink-0 ${configModal.corBadge}`}>
+                              {item.statusBadge}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 mt-0.5 truncate font-medium">
+                            <strong className="text-slate-700 font-bold">{item.ministerio}</strong> · {item.funcao}
+                          </p>
+                          {dataInfo && (
+                            <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
+                              <span>📅 {item.evento}</span>
+                              <span>· ⏰ {dataInfo}</span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-50 w-full sm:w-auto justify-end">
+                        {item.pessoa_id && onVerMembro && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setModalIndicadorAberto(null);
+                              onVerMembro(item.pessoa_id);
+                            }}
+                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                          >
+                            Ver Ficha
+                          </button>
+                        )}
+                        {item.telefone && (
+                          <a
+                            href={`https://wa.me/55${item.telefone.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center gap-1"
+                          >
+                            <span>💬 WhatsApp</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {listaFiltrada.length === 0 && (
+                  <div className="py-16 text-center text-slate-400 italic text-xs">
+                    Nenhum registro encontrado para este indicador.
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setModalIndicadorAberto(null)}
+                  className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Fechar
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

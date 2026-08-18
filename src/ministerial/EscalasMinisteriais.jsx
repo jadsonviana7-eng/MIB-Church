@@ -41,6 +41,8 @@ export default function EscalasMinisteriais({
   const [listaPessoas, setListaPessoas] = useState([]); // Membros do ministério selecionado
   const [buscaVoluntario, setBuscaVoluntario] = useState('');
   const [voluntarioSelecionado, setVoluntarioSelecionado] = useState(null);
+  const [atribuicoesModal, setAtribuicoesModal] = useState({}); // { [funcao_id]: pessoa_id }
+  const [salvandoEscalasMultiplas, setSalvandoEscalasMultiplas] = useState(false);
 
   const [notificacao, setNotificacao] = useState('');
   const [modalConflito, setModalConflito] = useState(null); // { pessoaNome, ministerioNome, eventoTitulo }
@@ -698,12 +700,17 @@ export default function EscalasMinisteriais({
   }
 
   // Carregar dados auxiliares ao abrir modal de escalar
-  async function abrirModalEscala() {
+  async function abrirModalEscala(ministerioId = null) {
     if (!eventoSelecionado) return;
     try {
       const mins = await escalasService.listarMinisterios();
       setListaMinisterios(mins || []);
       setModalEscala(true);
+      if (ministerioId) {
+        handleSelecionarMinisterio(ministerioId);
+      } else {
+        setNovaEscala({ ministerio_id: '', funcao_id: '', pessoa_id: '' });
+      }
     } catch (error) {
       console.error('Erro ao carregar ministérios:', error);
     }
@@ -713,6 +720,8 @@ export default function EscalasMinisteriais({
     setNovaEscala(prev => ({ ...prev, ministerio_id: ministerioId, funcao_id: '', pessoa_id: '' }));
     setVoluntarioSelecionado(null);
     setBuscaVoluntario('');
+    setAtribuicoesModal({});
+
     if (!ministerioId) {
       setListaFuncoes([]);
       setListaPessoas([]);
@@ -722,10 +731,86 @@ export default function EscalasMinisteriais({
       const funcs = await escalasService.listarFuncoes(ministerioId);
       setListaFuncoes(funcs || []);
 
-      const pms = await escalasService.listarPessoasMinisterio(ministerioId);
+      let pms = await escalasService.listarPessoasMinisterio(ministerioId);
+      if (!pms || pms.length === 0) {
+        const { data: todasp } = await supabase.from('pessoas').select('id, nome').order('nome');
+        pms = (todasp || []).map(p => ({ pessoa_id: p.id, pessoas: p }));
+      }
       setListaPessoas(pms || []);
+
+      // Pré-carregar atribuições já existentes no evento para este ministério
+      const jaEscalados = escalas.filter(e => String(e.ministerio_id) === String(ministerioId));
+      const mapaInicial = {};
+      jaEscalados.forEach(e => {
+        if (e.funcao_id && e.pessoa_id) {
+          mapaInicial[e.funcao_id] = String(e.pessoa_id);
+        }
+      });
+      setAtribuicoesModal(mapaInicial);
     } catch (error) {
       console.error('Erro ao carregar funções/pessoas:', error);
+    }
+  }
+
+  async function salvarEscalasMultiplas() {
+    if (!novaEscala.ministerio_id || !eventoSelecionado) return;
+    setSalvandoEscalasMultiplas(true);
+
+    try {
+      const minId = novaEscala.ministerio_id;
+      const jaEscalados = escalas.filter(e => String(e.ministerio_id) === String(minId));
+      const jaEscaladosPorFuncao = {};
+      jaEscalados.forEach(e => {
+        if (e.funcao_id) {
+          jaEscaladosPorFuncao[e.funcao_id] = e;
+        }
+      });
+
+      for (const funcao of listaFuncoes) {
+        const novaPessoaId = atribuicoesModal[funcao.id];
+        const itemExistente = jaEscaladosPorFuncao[funcao.id];
+
+        if (novaPessoaId && novaPessoaId !== '') {
+          if (!itemExistente) {
+            await escalasService.adicionarEscala({
+              evento_id: eventoSelecionado.id,
+              ministerio_id: minId,
+              funcao_id: funcao.id,
+              pessoa_id: novaPessoaId,
+              status: 'pendente'
+            });
+          } else if (String(itemExistente.pessoa_id) !== String(novaPessoaId)) {
+            await supabase
+              .from('escalas')
+              .update({ pessoa_id: novaPessoaId })
+              .eq('id', itemExistente.id);
+          }
+        } else if (itemExistente) {
+          await escalasService.excluirEscala(itemExistente.id);
+        }
+      }
+
+      fecharModalEscala();
+      await selecionarEvento(eventoSelecionado);
+      mostrarToast('✓ Escala do ministério salva com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar escalas do ministério:', error);
+      if (error.conflito || error.message?.includes('ESTA_PESSOA_JA_ESCALADA')) {
+        let conflitoObj = error.conflito;
+        if (!conflitoObj && error.message) {
+          const parts = error.message.split('::');
+          conflitoObj = {
+            pessoaNome: parts[1] || 'Esta pessoa',
+            ministerioNome: parts[2] || 'outro ministério',
+            eventoTitulo: parts[3] || eventoSelecionado?.titulo || 'este evento'
+          };
+        }
+        setModalConflito(conflitoObj);
+      } else {
+        alert('Erro ao salvar escala: ' + error.message);
+      }
+    } finally {
+      setSalvandoEscalasMultiplas(false);
     }
   }
 
@@ -1368,24 +1453,43 @@ export default function EscalasMinisteriais({
                           </h4>
 
                           {/* Seletor de Fardamento */}
-                          {grupo.fardamentos && grupo.fardamentos.length > 0 && (
-                            <div className="flex items-center gap-1.5 ml-2 bg-slate-100 py-0.5 px-2 rounded-lg border border-slate-200">
-                              <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">👕 Farda:</span>
-                              <select
-                                value={eventoSelecionado?.fardamentos?.[grupo.id] || ''}
-                                onChange={e => handleMudarFardamentoDia(grupo.id, e.target.value)}
-                                className="bg-transparent text-[10px] font-bold text-slate-700 outline-none cursor-pointer border-none p-0 focus:ring-0"
-                              >
-                                <option value="">Nenhuma</option>
-                                {grupo.fardamentos.map(f => (
-                                  <option key={f} value={f}>{f}</option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
+                          {(() => {
+                            const nomeMinNorm = grupo.nome ? grupo.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+                            const eIntercessaoOuIntroducao = nomeMinNorm.includes('intercessao') || nomeMinNorm.includes('introducao');
+                            const temFardamentos = grupo.fardamentos && grupo.fardamentos.length > 0;
+                            if (!temFardamentos && !eIntercessaoOuIntroducao) return null;
+
+                            const opcoesFardamento = temFardamentos 
+                              ? grupo.fardamentos 
+                              : ["Farda Oficial", "Camisa Preta", "Camisa Branca", "Camisa Azul", "Social"];
+
+                            return (
+                              <div className="flex items-center gap-1.5 ml-2 bg-slate-100 py-0.5 px-2 rounded-lg border border-slate-200">
+                                <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">👕 Farda:</span>
+                                <select
+                                  value={eventoSelecionado?.fardamentos?.[grupo.id] || ''}
+                                  onChange={e => handleMudarFardamentoDia(grupo.id, e.target.value)}
+                                  className="bg-transparent text-[10px] font-bold text-slate-700 outline-none cursor-pointer border-none p-0 focus:ring-0"
+                                >
+                                  <option value="">Nenhuma</option>
+                                  {opcoesFardamento.map(f => (
+                                    <option key={f} value={f}>{f}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => abrirModalEscala(grupo.id)}
+                            className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg hover:bg-blue-100 transition cursor-pointer flex items-center gap-1"
+                            title="Escalar voluntário neste ministério"
+                          >
+                            <Plus size={11} /> Escalar
+                          </button>
                           <button
                             type="button"
                             onClick={() => copiarWhatsAppMinisterio(grupo)}
@@ -1469,8 +1573,8 @@ export default function EscalasMinisteriais({
       {/* Modal - Novo Evento */}
       {modalEvento && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-2.5 sm:p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
                 Novo Evento Ministerial
               </h3>
@@ -1479,7 +1583,7 @@ export default function EscalasMinisteriais({
               </button>
             </div>
 
-            <div className="p-4 sm:p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto">
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase mb-1.5">Título do Evento</label>
                 <input
@@ -1535,8 +1639,8 @@ export default function EscalasMinisteriais({
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 border-t border-slate-100 bg-slate-50/50 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
-              <button type="button" onClick={() => setModalEvento(false)} className="w-full sm:flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-white transition cursor-pointer text-center">
+            <div className="p-4 sm:p-6 border-t border-slate-100 bg-white/95 backdrop-blur-xs shrink-0 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] z-10">
+              <button type="button" onClick={() => setModalEvento(false)} className="w-full sm:flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-center">
                 Cancelar
               </button>
               <button type="button" onClick={salvarEvento} disabled={salvando} className="w-full sm:flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer text-center">
@@ -1550,8 +1654,8 @@ export default function EscalasMinisteriais({
       {/* Modal - Adicionar Escalado */}
       {modalEscala && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-2.5 sm:p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
                 Escalar Voluntário
               </h3>
@@ -1560,7 +1664,7 @@ export default function EscalasMinisteriais({
               </button>
             </div>
 
-            <div className="p-4 sm:p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto">
               {/* Selecionar Ministério */}
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Ministério</label>
@@ -1577,110 +1681,126 @@ export default function EscalasMinisteriais({
               </div>
 
               {novaEscala.ministerio_id && (
-                <>
-                  {/* Selecionar Função */}
-                  <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Função</label>
-                    <select
-                      value={novaEscala.funcao_id}
-                      onChange={(e) => setNovaEscala(prev => ({ ...prev, funcao_id: e.target.value }))}
-                      className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white outline-none focus:border-blue-500 transition cursor-pointer"
-                    >
-                      <option value="">Selecione a função da escala...</option>
-                      {listaFuncoes.map(f => (
-                        <option key={f.id} value={f.id}>{f.nome}</option>
-                      ))}
-                    </select>
-                  </div>
+                <div className="space-y-4 pt-2 border-t border-slate-100">
+                  {/* Seletor de Fardamento no Modal */}
+                  {(() => {
+                    let minSelObj = listaMinisterios.find(m => String(m.id) === String(novaEscala.ministerio_id));
+                    if (!minSelObj) {
+                      const itemEscala = escalas.find(e => String(e.ministerio_id) === String(novaEscala.ministerio_id));
+                      if (itemEscala?.ministerios) {
+                        minSelObj = itemEscala.ministerios;
+                      }
+                    }
 
-                  {/* Campo de Busca Dinâmica de Voluntário no Ministério */}
-                  <div className="relative">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Pesquisar Membro da Equipe</label>
-                    {voluntarioSelecionado ? (
-                      <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-xl p-3">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={voluntarioSelecionado.pessoas?.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(voluntarioSelecionado.pessoas?.nome)}`}
-                            alt=""
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                          <div>
-                            <p className="text-xs font-bold text-blue-900">{voluntarioSelecionado.pessoas?.nome}</p>
-                            <p className="text-[10px] text-blue-700">{voluntarioSelecionado.funcao || 'Voluntário'}</p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setVoluntarioSelecionado(null)}
-                          className="text-blue-500 hover:text-blue-700"
+                    const nomeMinNorm = minSelObj?.nome ? minSelObj.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+                    const eIntercessaoOuIntroducao = nomeMinNorm.includes('intercessao') || nomeMinNorm.includes('introducao');
+                    const temFardamentos = minSelObj?.fardamentos && Array.isArray(minSelObj.fardamentos) && minSelObj.fardamentos.length > 0;
+
+                    if (!temFardamentos && !eIntercessaoOuIntroducao) return null;
+
+                    const opcoesFardamento = temFardamentos 
+                      ? minSelObj.fardamentos 
+                      : ["Farda Oficial", "Camisa Preta", "Camisa Branca", "Camisa Azul", "Social"];
+
+                    return (
+                      <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1">
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                          <span>👕</span> Fardamento do Dia
+                        </label>
+                        <select
+                          value={eventoSelecionado?.fardamentos?.[novaEscala.ministerio_id] || ''}
+                          onChange={(e) => handleMudarFardamentoDia(novaEscala.ministerio_id, e.target.value)}
+                          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white outline-none focus:border-blue-500 transition cursor-pointer font-bold text-slate-700"
                         >
-                          ✕
-                        </button>
+                          <option value="">Nenhum / Não especificado</option>
+                          {opcoesFardamento.map(f => (
+                            <option key={f} value={f}>{f}</option>
+                          ))}
+                        </select>
+                        <p className="text-[9px] text-slate-400">
+                          Define a farda/vestimenta oficial para este ministério no dia do evento.
+                        </p>
                       </div>
-                    ) : (
-                      <>
-                        <div className="relative">
-                          <Search className="absolute left-3.5 top-3.5 text-slate-400" size={16} />
-                          <input
-                            type="text"
-                            value={buscaVoluntario}
-                            onChange={(e) => setBuscaVoluntario(e.target.value)}
-                            placeholder="Digite o nome do membro do ministério..."
-                            className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-blue-500 transition bg-slate-50/30"
-                          />
-                        </div>
-                        {/* Resultados da Busca */}
-                        {buscaVoluntario.trim() !== '' && (
-                          <div className="absolute z-10 w-full mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto">
-                            {voluntáriosFiltrados.map(p => (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => {
-                                  setVoluntarioSelecionado(p);
-                                  setBuscaVoluntario('');
-                                }}
-                                className="w-full text-left p-3 hover:bg-slate-50 transition flex items-center gap-3 border-b border-slate-50 last:border-0 cursor-pointer"
-                              >
-                                <img
-                                  src={p.pessoas?.foto_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(p.pessoas?.nome)}`}
-                                  alt=""
-                                  className="w-8 h-8 rounded-full object-cover"
-                                />
-                                <div>
-                                  <p className="text-xs font-bold text-slate-800">{p.pessoas?.nome}</p>
-                                  <p className="text-[10px] text-slate-400">{p.funcao || 'Voluntário'}</p>
-                                </div>
-                              </button>
-                            ))}
-                            {voluntáriosFiltrados.length === 0 && (
-                              <div className="p-4 text-center text-xs text-slate-400 italic">
-                                Nenhum membro disponível encontrado.
-                              </div>
+                    );
+                  })()}
+
+                  {/* Lista de Funções para Escala Multifunção */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                        Funções da Equipe ({listaFuncoes.length})
+                      </label>
+                      <span className="text-[9px] text-slate-400 font-bold">
+                        Selecione os voluntários para cada função
+                      </span>
+                    </div>
+
+                    <div className="space-y-3">
+                      {listaFuncoes.map(funcao => (
+                        <div key={funcao.id} className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 space-y-1.5 hover:border-blue-200 transition">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs font-black text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
+                              <span className="text-blue-600">📌</span> {funcao.nome}
+                            </span>
+                            {atribuicoesModal[funcao.id] ? (
+                              <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                                ✓ Selecionado
+                              </span>
+                            ) : (
+                              <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                                Vago
+                              </span>
                             )}
                           </div>
-                        )}
-                      </>
-                    )}
+
+                          <select
+                            value={atribuicoesModal[funcao.id] || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setAtribuicoesModal(prev => ({ ...prev, [funcao.id]: val }));
+                            }}
+                            className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-xs bg-white outline-none focus:border-blue-500 transition cursor-pointer font-bold text-slate-700"
+                          >
+                            <option value="">— Selecionar Voluntário —</option>
+                            {listaPessoas.map(p => {
+                              const pId = p.pessoas?.id || p.pessoa_id || p.id;
+                              const pNome = p.pessoas?.nome || p.nome;
+                              return (
+                                <option key={pId} value={pId}>
+                                  {pNome} {p.funcao ? `(${p.funcao})` : ''}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+                      ))}
+
+                      {listaFuncoes.length === 0 && (
+                        <div className="py-8 text-center text-xs text-slate-400 italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                          Nenhuma função cadastrada para este ministério.
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </>
+                </div>
               )}
             </div>
 
-            <div className="p-4 sm:p-6 border-t border-slate-100 bg-slate-50/50 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3">
+            <div className="p-4 sm:p-6 border-t border-slate-100 bg-white/95 backdrop-blur-xs shrink-0 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] z-10">
               <button
                 type="button"
                 onClick={fecharModalEscala}
-                className="w-full sm:flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-white transition cursor-pointer text-center"
+                className="w-full sm:flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-center"
               >
                 Cancelar
               </button>
               <button
                 type="button"
-                onClick={adicionarEscala}
-                className="w-full sm:flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer text-center"
+                onClick={salvarEscalasMultiplas}
+                disabled={salvandoEscalasMultiplas || !novaEscala.ministerio_id}
+                className="w-full sm:flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer text-center disabled:opacity-50"
               >
-                Salvar Escala
+                {salvandoEscalasMultiplas ? 'Salvando Escalas...' : 'Salvar Escalas do Ministério'}
               </button>
             </div>
           </div>
@@ -2087,8 +2207,8 @@ export default function EscalasMinisteriais({
       {/* Modal - Editar Evento */}
       {modalEditar && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
                 Editar Evento Ministerial
               </h3>
@@ -2097,7 +2217,7 @@ export default function EscalasMinisteriais({
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 flex-1 overflow-y-auto">
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase mb-1.5">Título do Evento</label>
                 <input
@@ -2153,8 +2273,8 @@ export default function EscalasMinisteriais({
               </div>
             </div>
 
-            <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex gap-3">
-              <button type="button" onClick={() => setModalEditar(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-white transition cursor-pointer">
+            <div className="p-6 border-t border-slate-100 bg-white/95 backdrop-blur-xs shrink-0 flex gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] z-10">
+              <button type="button" onClick={() => setModalEditar(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
                 Cancelar
               </button>
               <button type="button" onClick={salvarEdicaoEvento} disabled={salvando} className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer">

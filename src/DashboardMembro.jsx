@@ -198,39 +198,43 @@ export default function DashboardMembro({ membroLogado, onNavigate, onVerPerfil 
 
           {avisos.length > 0 ? (
             <div className="relative h-52 sm:h-60 rounded-xl overflow-hidden w-full">
-              {avisos.map((aviso, idx) => {
-                const hasLink = !!aviso.link_externo;
-                return (
-                  <div
-                    key={aviso.id}
-                    onClick={hasLink ? () => window.open(aviso.link_externo, '_blank', 'noopener,noreferrer') : undefined}
-                    className={`absolute inset-0 transition-all duration-700 w-full h-full ${
-                      idx === avisoAtivoIdx ? 'opacity-100 z-10' : 'opacity-0 -z-10'
-                    } ${hasLink ? 'cursor-pointer hover:opacity-95' : ''}`}
-                  >
-                    {aviso.imagem_url ? (
-                      <img
-                        src={aviso.imagem_url}
-                        alt={aviso.titulo}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-slate-100 p-4 flex flex-col justify-center">
-                        <h4 className="font-bold text-sm text-slate-800 line-clamp-1">{aviso.titulo}</h4>
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                          {aviso.subtitulo || (aviso.conteudo_html ? aviso.conteudo_html.replace(/<[^>]+>/g, '') : '')}
-                        </p>
-                      </div>
-                    )}
-                    {/* Overlay gradiente escuro na base (se for imagem) */}
-                    {aviso.imagem_url && (
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
-                        <h4 className="font-bold text-sm text-white line-clamp-1">{aviso.titulo}</h4>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {/* Trilha do Carrossel com transição deslizar da direita para a esquerda */}
+              <div 
+                className="flex transition-transform duration-500 ease-in-out w-full h-full"
+                style={{ transform: `translateX(-${avisoAtivoIdx * 100}%)` }}
+              >
+                {avisos.map((aviso) => {
+                  const hasLink = !!aviso.link_externo;
+                  return (
+                    <div
+                      key={aviso.id}
+                      onClick={hasLink ? () => window.open(aviso.link_externo, '_blank', 'noopener,noreferrer') : undefined}
+                      className={`w-full h-full shrink-0 min-w-full relative ${hasLink ? 'cursor-pointer hover:opacity-95' : ''}`}
+                    >
+                      {aviso.imagem_url ? (
+                        <img
+                          src={aviso.imagem_url}
+                          alt={aviso.titulo}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 p-4 flex flex-col justify-center">
+                          <h4 className="font-bold text-sm text-slate-800 line-clamp-1">{aviso.titulo}</h4>
+                          <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+                            {aviso.subtitulo || (aviso.conteudo_html ? aviso.conteudo_html.replace(/<[^>]+>/g, '') : '')}
+                          </p>
+                        </div>
+                      )}
+                      {/* Overlay gradiente escuro na base (se for imagem) */}
+                      {aviso.imagem_url && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
+                          <h4 className="font-bold text-sm text-white line-clamp-1">{aviso.titulo}</h4>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <div className="text-center text-slate-400 text-xs italic opacity-70">
@@ -420,7 +424,7 @@ export default function DashboardMembro({ membroLogado, onNavigate, onVerPerfil 
               <h4 className="font-black text-xs text-rose-700 uppercase tracking-widest">Aniversariantes do Mês</h4>
             </div>
 
-            <div className="p-4 flex-1 overflow-y-auto max-h-[500px] custom-scrollbar">
+            <div className="p-4 flex-1">
               {loading ? (
                 <div className="animate-pulse space-y-3">
                   {[1, 2, 3, 4].map(i => (

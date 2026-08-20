@@ -46,6 +46,7 @@ export default function EscalasMinisteriais({
 
   const [notificacao, setNotificacao] = useState('');
   const [modalConflito, setModalConflito] = useState(null); // { pessoaNome, ministerioNome, eventoTitulo }
+  const [modalAvisoMinisterio, setModalAvisoMinisterio] = useState(false);
 
   // Suporte ao botão voltar do celular para fechar o modal de conflito
   useEffect(() => {
@@ -886,24 +887,54 @@ export default function EscalasMinisteriais({
     }
   }
 
-  async function rodarAutoEscala(ministerioId) {
-    if (!eventoSelecionado || !ministerioId) return;
-    mostrarToast('⚡ Rodando AutoEscala inteligente...');
-    try {
-      const res = await autoEscalaService.gerarEscala({
-        eventoId: eventoSelecionado.id,
-        ministerioId
-      });
-      selecionarEvento(eventoSelecionado);
-      if (res && res.length > 0) {
-        mostrarToast(`✓ AutoEscala: ${res.length} voluntários escalados!`);
-      } else {
-        mostrarToast('AutoEscala concluída (nenhum voluntário adicional elegível).');
-      }
-    } catch (error) {
-      console.error('Erro ao rodar AutoEscala:', error);
-      alert('Erro na AutoEscala: ' + error.message);
+  async function preencherAutoEscalaModal(minIdParam) {
+    const minId = minIdParam || novaEscala.ministerio_id;
+    if (!minId) {
+      setModalAvisoMinisterio(true);
+      return;
     }
+    if (!eventoSelecionado) return;
+
+    setSalvandoEscalasMultiplas(true);
+    try {
+      mostrarToast('⚡ Gerando sugestões inteligentes...');
+      const sugestoes = await autoEscalaService.obterSugestoes({
+        eventoId: eventoSelecionado.id,
+        ministerioId: minId
+      });
+
+      if (!sugestoes || sugestoes.length === 0) {
+        mostrarToast('AutoEscala: nenhum voluntário adicional elegível encontrado.');
+        return;
+      }
+
+      const novoMapa = { ...atribuicoesModal };
+      let cont = 0;
+      sugestoes.forEach(s => {
+        if (s.funcao_id && s.pessoa_id) {
+          novoMapa[s.funcao_id] = String(s.pessoa_id);
+          cont++;
+        }
+      });
+
+      setAtribuicoesModal(novoMapa);
+      mostrarToast(`⚡ AutoEscala sugeriu ${cont} voluntário(s)! Revise e clique em Salvar.`);
+    } catch (error) {
+      console.error('Erro ao preencher AutoEscala no modal:', error);
+      mostrarToast('⚠️ Erro na AutoEscala: ' + error.message);
+    } finally {
+      setSalvandoEscalasMultiplas(false);
+    }
+  }
+
+  async function rodarAutoEscala(ministerioId) {
+    if (!ministerioId) {
+      setModalAvisoMinisterio(true);
+      return;
+    }
+    if (!eventoSelecionado) return;
+    await abrirModalEscala(ministerioId);
+    preencherAutoEscalaModal(ministerioId);
   }
 
   async function responderEscala(escalaId, status) {
@@ -965,9 +996,47 @@ export default function EscalasMinisteriais({
     });
   }, [eventos, filtroMes, filtroAno]);
 
+  // Auxiliar para copiar texto e abrir WhatsApp
+  async function copiarEAbrirWhatsApp(texto, toastMsg) {
+    let copiou = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(texto);
+        copiou = true;
+      }
+    } catch (err) {
+      console.warn('Clipboard write failed:', err);
+    }
+
+    if (!copiou) {
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = texto;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        copiou = true;
+      } catch (_) {}
+    }
+
+    try {
+      const urlWa = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
+      window.open(urlWa, '_blank');
+    } catch (_) {}
+
+    mostrarToast(toastMsg);
+  }
+
   // Copiar escala formatada para WhatsApp
   function copiarWhatsApp() {
-    if (!eventoSelecionado || escalas.length === 0) return;
+    if (!eventoSelecionado || escalas.length === 0) {
+      mostrarToast('⚠️ Nenhum voluntário escalado para este evento.');
+      return;
+    }
 
     const dataInfo = obterInfoDataBrasilia(eventoSelecionado.data_evento);
     const nomesDiasLongos = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
@@ -994,14 +1063,15 @@ export default function EscalasMinisteriais({
       texto += `\n`;
     });
 
-    navigator.clipboard.writeText(texto).then(() => {
-      mostrarToast('✓ Escala copiada para a Área de Transferência!');
-    });
+    copiarEAbrirWhatsApp(texto, '✓ Escala copiada e WhatsApp aberto!');
   }
 
   // Copiar escala de um ministério específico para WhatsApp
   function copiarWhatsAppMinisterio(grupo) {
-    if (!eventoSelecionado || !grupo || grupo.itens.length === 0) return;
+    if (!eventoSelecionado || !grupo || grupo.itens.length === 0) {
+      mostrarToast('⚠️ Nenhum voluntário escalado para este ministério.');
+      return;
+    }
 
     const dataInfo = obterInfoDataBrasilia(eventoSelecionado.data_evento);
     const nomesDiasLongos = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
@@ -1025,9 +1095,7 @@ export default function EscalasMinisteriais({
       texto += ` • _${item.ministerio_funcoes?.nome || 'Função'}:_ *${item.pessoas?.nome}* ${statusIcon}\n`;
     });
 
-    navigator.clipboard.writeText(texto).then(() => {
-      mostrarToast(`✓ Escala do ${grupo.nome} copiada!`);
-    });
+    copiarEAbrirWhatsApp(texto, `✓ Escala do ${grupo.nome} copiada e WhatsApp aberto!`);
   }
 
   // Sincroniza dados para a exportação da escala mensal
@@ -1374,12 +1442,21 @@ export default function EscalasMinisteriais({
         </div>
 
         {/* Painel Direito - Grade da Escala */}
-        <div className={`col-span-12 lg:col-span-8 ${modalGradeMobile ? 'fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 lg:static lg:bg-transparent lg:p-0 lg:flex-none lg:block' : 'hidden lg:block'}`}>
-          <div className={`bg-white rounded-2xl border border-slate-100/80 p-6 shadow-sm w-full ${modalGradeMobile ? 'max-h-[90vh] overflow-y-auto relative' : 'h-full'}`}>
+        <div className={`col-span-12 lg:col-span-8 ${modalGradeMobile ? 'fixed inset-0 z-50 bg-white flex flex-col p-0 lg:static lg:bg-transparent lg:p-0 lg:flex-none lg:block' : 'hidden lg:block'}`}>
+          <div className={`bg-white w-full ${modalGradeMobile ? 'h-full min-h-screen rounded-none p-4 sm:p-6 overflow-y-auto relative flex flex-col flex-1' : 'rounded-2xl border border-slate-100/80 p-6 shadow-sm h-full'}`}>
             {modalGradeMobile && (
-              <button type="button" onClick={() => setModalGradeMobile(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 lg:hidden cursor-pointer bg-slate-100 rounded-full p-1 z-10">
-                <X size={20} />
-              </button>
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 lg:hidden sticky top-0 bg-white/95 backdrop-blur-xs z-30 -mt-1 pt-1">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                  <span>📋</span> Detalhes do Evento
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setModalGradeMobile(false)}
+                  className="text-slate-600 hover:text-slate-900 cursor-pointer bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full transition flex items-center gap-1 text-xs font-bold"
+                >
+                  <X size={16} /> Fechar
+                </button>
+              </div>
             )}
             {eventoSelecionado ? (
               <>
@@ -1445,8 +1522,8 @@ export default function EscalasMinisteriais({
                 <div className="space-y-6">
                   {Object.values(escalasAgrupadas).map((grupo) => (
                     <div key={grupo.nome} className="border border-slate-100 rounded-2xl p-4 bg-slate-50/30">
-                      <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100 flex-wrap gap-2">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-4 pb-3 border-b border-slate-100">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
                           <h4 className="font-black text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
                             <span>🎵</span>
                             {grupo.nome}
@@ -1464,7 +1541,7 @@ export default function EscalasMinisteriais({
                               : ["Farda Oficial", "Camisa Preta", "Camisa Branca", "Camisa Azul", "Social"];
 
                             return (
-                              <div className="flex items-center gap-1.5 ml-2 bg-slate-100 py-0.5 px-2 rounded-lg border border-slate-200">
+                              <div className="flex items-center gap-1.5 bg-slate-100 py-0.5 px-2 rounded-lg border border-slate-200 shrink-0">
                                 <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">👕 Farda:</span>
                                 <select
                                   value={eventoSelecionado?.fardamentos?.[grupo.id] || ''}
@@ -1481,28 +1558,33 @@ export default function EscalasMinisteriais({
                           })()}
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => abrirModalEscala(grupo.id)}
-                            className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg hover:bg-blue-100 transition cursor-pointer flex items-center gap-1"
-                            title="Escalar voluntário neste ministério"
-                          >
-                            <Plus size={11} /> Escalar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => copiarWhatsAppMinisterio(grupo)}
-                            className="text-[10px] font-black uppercase tracking-wider text-emerald-600 hover:text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-lg hover:bg-emerald-100 transition cursor-pointer flex items-center gap-1"
-                            title="Copiar escala deste ministério para WhatsApp"
-                          >
-                            <Share2 size={11} />
-                            WhatsApp
-                          </button>
+                        <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
+                          {/* Linha superior no mobile: + Escalar e WhatsApp em 50% cada */}
+                          <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center">
+                            <button
+                              type="button"
+                              onClick={() => abrirModalEscala(grupo.id)}
+                              className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1.5 rounded-lg hover:bg-blue-100 transition cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap w-full sm:w-auto"
+                              title="Escalar voluntário neste ministério"
+                            >
+                              <Plus size={11} /> Escalar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => copiarWhatsAppMinisterio(grupo)}
+                              className="text-[10px] font-black uppercase tracking-wider text-emerald-600 hover:text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 transition cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap w-full sm:w-auto"
+                              title="Copiar escala deste ministério para WhatsApp"
+                            >
+                              <Share2 size={11} />
+                              WhatsApp
+                            </button>
+                          </div>
+
+                          {/* Linha inferior no mobile: AutoEscala em 100% da largura */}
                           <button
                             type="button"
                             onClick={() => rodarAutoEscala(grupo.id)}
-                            className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg hover:bg-blue-100 transition cursor-pointer"
+                            className="w-full sm:w-auto text-[10px] font-black uppercase tracking-wider text-amber-700 hover:text-amber-900 bg-amber-50 px-2.5 py-1.5 rounded-lg hover:bg-amber-100 border border-amber-200/60 transition cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap"
                             title="Montar escala automaticamente com base no histórico e disponibilidade."
                           >
                             ⚡ AutoEscala
@@ -1572,8 +1654,8 @@ export default function EscalasMinisteriais({
 
       {/* Modal - Novo Evento */}
       {modalEvento && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-2.5 sm:p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-none sm:rounded-2xl shadow-xl w-full h-full sm:h-auto sm:max-w-md sm:max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
                 Novo Evento Ministerial
@@ -1653,8 +1735,8 @@ export default function EscalasMinisteriais({
 
       {/* Modal - Adicionar Escalado */}
       {modalEscala && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-2.5 sm:p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-none sm:rounded-2xl shadow-xl w-full h-full sm:h-auto sm:max-w-md sm:max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
                 Escalar Voluntário
@@ -1671,7 +1753,7 @@ export default function EscalasMinisteriais({
                 <select
                   value={novaEscala.ministerio_id}
                   onChange={(e) => handleSelecionarMinisterio(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white outline-none focus:border-blue-500 transition cursor-pointer"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white outline-none focus:border-blue-500 transition cursor-pointer font-bold text-slate-700"
                 >
                   <option value="">Selecione um ministério...</option>
                   {listaMinisterios.map(m => (
@@ -1680,61 +1762,67 @@ export default function EscalasMinisteriais({
                 </select>
               </div>
 
-              {novaEscala.ministerio_id && (
-                <div className="space-y-4 pt-2 border-t border-slate-100">
-                  {/* Seletor de Fardamento no Modal */}
-                  {(() => {
-                    let minSelObj = listaMinisterios.find(m => String(m.id) === String(novaEscala.ministerio_id));
-                    if (!minSelObj) {
-                      const itemEscala = escalas.find(e => String(e.ministerio_id) === String(novaEscala.ministerio_id));
-                      if (itemEscala?.ministerios) {
-                        minSelObj = itemEscala.ministerios;
-                      }
+              <div className="space-y-4 pt-2 border-t border-slate-100">
+                {/* Seletor de Fardamento no Modal */}
+                {novaEscala.ministerio_id && (() => {
+                  let minSelObj = listaMinisterios.find(m => String(m.id) === String(novaEscala.ministerio_id));
+                  if (!minSelObj) {
+                    const itemEscala = escalas.find(e => String(e.ministerio_id) === String(novaEscala.ministerio_id));
+                    if (itemEscala?.ministerios) {
+                      minSelObj = itemEscala.ministerios;
                     }
+                  }
 
-                    const nomeMinNorm = minSelObj?.nome ? minSelObj.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
-                    const eIntercessaoOuIntroducao = nomeMinNorm.includes('intercessao') || nomeMinNorm.includes('introducao');
-                    const temFardamentos = minSelObj?.fardamentos && Array.isArray(minSelObj.fardamentos) && minSelObj.fardamentos.length > 0;
+                  const nomeMinNorm = minSelObj?.nome ? minSelObj.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+                  const eIntercessaoOuIntroducao = nomeMinNorm.includes('intercessao') || nomeMinNorm.includes('introducao');
+                  const temFardamentos = minSelObj?.fardamentos && Array.isArray(minSelObj.fardamentos) && minSelObj.fardamentos.length > 0;
 
-                    if (!temFardamentos && !eIntercessaoOuIntroducao) return null;
+                  if (!temFardamentos && !eIntercessaoOuIntroducao) return null;
 
-                    const opcoesFardamento = temFardamentos 
-                      ? minSelObj.fardamentos 
-                      : ["Farda Oficial", "Camisa Preta", "Camisa Branca", "Camisa Azul", "Social"];
+                  const opcoesFardamento = temFardamentos 
+                    ? minSelObj.fardamentos 
+                    : ["Farda Oficial", "Camisa Preta", "Camisa Branca", "Camisa Azul", "Social"];
 
-                    return (
-                      <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1">
-                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                          <span>👕</span> Fardamento do Dia
-                        </label>
-                        <select
-                          value={eventoSelecionado?.fardamentos?.[novaEscala.ministerio_id] || ''}
-                          onChange={(e) => handleMudarFardamentoDia(novaEscala.ministerio_id, e.target.value)}
-                          className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white outline-none focus:border-blue-500 transition cursor-pointer font-bold text-slate-700"
-                        >
-                          <option value="">Nenhum / Não especificado</option>
-                          {opcoesFardamento.map(f => (
-                            <option key={f} value={f}>{f}</option>
-                          ))}
-                        </select>
-                        <p className="text-[9px] text-slate-400">
-                          Define a farda/vestimenta oficial para este ministério no dia do evento.
-                        </p>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Lista de Funções para Escala Multifunção */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                        Funções da Equipe ({listaFuncoes.length})
+                  return (
+                    <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1">
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <span>👕</span> Fardamento do Dia
                       </label>
-                      <span className="text-[9px] text-slate-400 font-bold">
-                        Selecione os voluntários para cada função
-                      </span>
+                      <select
+                        value={eventoSelecionado?.fardamentos?.[novaEscala.ministerio_id] || ''}
+                        onChange={(e) => handleMudarFardamentoDia(novaEscala.ministerio_id, e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white outline-none focus:border-blue-500 transition cursor-pointer font-bold text-slate-700"
+                      >
+                        <option value="">Nenhum / Não especificado</option>
+                        {opcoesFardamento.map(f => (
+                          <option key={f} value={f}>{f}</option>
+                        ))}
+                      </select>
+                      <p className="text-[9px] text-slate-400">
+                        Define a farda/vestimenta oficial para este ministério no dia do evento.
+                      </p>
                     </div>
+                  );
+                })()}
 
+                {/* Lista de Funções para Escala Multifunção */}
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                      Funções da Equipe {novaEscala.ministerio_id ? `(${listaFuncoes.length})` : ''}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => preencherAutoEscalaModal()}
+                      disabled={salvandoEscalasMultiplas}
+                      className="text-[10px] font-black uppercase tracking-wider text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 active:scale-95 disabled:opacity-50"
+                      title="Preencher automaticamente as funções usando histórico e disponibilidade"
+                    >
+                      ⚡ Sugerir com AutoEscala
+                    </button>
+                  </div>
+
+                  {novaEscala.ministerio_id ? (
                     <div className="space-y-3">
                       {listaFuncoes.map(funcao => (
                         <div key={funcao.id} className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 space-y-1.5 hover:border-blue-200 transition">
@@ -1781,9 +1869,13 @@ export default function EscalasMinisteriais({
                         </div>
                       )}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="py-8 text-center text-xs text-slate-400 italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                      Selecione um ministério no menu suspenso acima para carregar os voluntários da equipe.
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="p-4 sm:p-6 border-t border-slate-100 bg-white/95 backdrop-blur-xs shrink-0 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] z-10">
@@ -2206,8 +2298,8 @@ export default function EscalasMinisteriais({
 
       {/* Modal - Editar Evento */}
       {modalEditar && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-none sm:rounded-2xl shadow-xl w-full h-full sm:h-auto sm:max-w-md sm:max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b border-slate-100 bg-slate-50/50 shrink-0">
               <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
                 Editar Evento Ministerial
@@ -2492,6 +2584,36 @@ export default function EscalasMinisteriais({
                 type="button"
                 onClick={() => setModalConflito(null)}
                 className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Pequeno de Aviso para Selecionar Ministério */}
+      {modalAvisoMinisterio && (
+        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-sm p-6 overflow-hidden text-center space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shrink-0 shadow-inner">
+              <AlertCircle size={26} />
+            </div>
+
+            <div>
+              <h3 className="text-base font-black text-slate-800 tracking-tight">
+                Selecione um Ministério
+              </h3>
+              <p className="text-xs text-slate-600 leading-relaxed mt-2 font-medium">
+                Por favor, selecione um ministério no menu suspenso antes de acionar a <strong>AutoEscala</strong>.
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setModalAvisoMinisterio(false)}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-100 cursor-pointer"
               >
                 Entendido
               </button>

@@ -12,6 +12,96 @@ export const meses = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ];
 
+export function extrairDataInfo(dataVal) {
+  if (!dataVal) return null;
+  const str = String(dataVal).trim();
+
+  // 1. Formato YYYY-MM-DD ou YYYY/MM/DD (com ou sem horário)
+  const matchISO = str.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (matchISO) {
+    const ano = parseInt(matchISO[1], 10);
+    const mes = parseInt(matchISO[2], 10) - 1;
+    const dia = parseInt(matchISO[3], 10);
+    if (!isNaN(ano) && !isNaN(mes) && !isNaN(dia) && mes >= 0 && mes <= 11) {
+      return { ano, mes, dia };
+    }
+  }
+
+  // 2. Formato BR DD/MM/YYYY ou DD-MM-YYYY
+  const matchBR = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+  if (matchBR) {
+    const dia = parseInt(matchBR[1], 10);
+    const mes = parseInt(matchBR[2], 10) - 1;
+    const ano = parseInt(matchBR[3], 10);
+    if (!isNaN(ano) && !isNaN(mes) && !isNaN(dia) && mes >= 0 && mes <= 11) {
+      return { ano, mes, dia };
+    }
+  }
+
+  // 3. Formato BR curto DD/MM/YY
+  const matchBRCurto = str.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2})$/);
+  if (matchBRCurto) {
+    const dia = parseInt(matchBRCurto[1], 10);
+    const mes = parseInt(matchBRCurto[2], 10) - 1;
+    let ano = parseInt(matchBRCurto[3], 10);
+    ano += ano < 50 ? 2000 : 1900;
+    if (!isNaN(ano) && !isNaN(mes) && !isNaN(dia) && mes >= 0 && mes <= 11) {
+      return { ano, mes, dia };
+    }
+  }
+
+  // 4. Fallback genérico JS Date
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    return { ano: d.getFullYear(), mes: d.getMonth(), dia: d.getDate() };
+  }
+  return null;
+}
+
+export function extrairValorNumerico(val) {
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  if (!val) return 0;
+  let str = String(val).trim();
+  str = str.replace(/[R$\s]/g, '');
+  if (str.includes('.') && str.includes(',')) {
+    str = str.replace(/\./g, '').replace(',', '.');
+  } else if (str.includes(',')) {
+    str = str.replace(',', '.');
+  }
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : n;
+}
+
+export function classificarTransacao(t) {
+  if (!t) return { tipo: 'receita', valor: 0, infoData: null, status: 'pago', isCancelado: false };
+
+  const infoData = extrairDataInfo(t.data || t.created_at || t.data_transacao || t.data_vencimento || t.data_pagamento);
+  let valor = extrairValorNumerico(t.valor);
+
+  let tipo = 'receita';
+  const tipoStr = String(t.tipo || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+
+  if (tipoStr.includes('despesa') || tipoStr.includes('saida') || tipoStr.includes('pagamento') || tipoStr.includes('debito')) {
+    tipo = 'despesa';
+  } else if (tipoStr.includes('receita') || tipoStr.includes('dizimo') || tipoStr.includes('oferta') || tipoStr.includes('entrada') || tipoStr.includes('doacao') || tipoStr.includes('credito')) {
+    tipo = 'receita';
+  } else if (valor < 0) {
+    tipo = 'despesa';
+    valor = Math.abs(valor);
+  }
+
+  const statusStr = String(t.status || '').toLowerCase().trim();
+  const isCancelado = statusStr === 'cancelado' || statusStr === 'excluido' || statusStr === 'inativo';
+
+  return {
+    tipo,
+    valor,
+    infoData,
+    status: statusStr,
+    isCancelado
+  };
+}
+
 export const faixasEtarias = [
   { id: 'criancas', nome: 'Crianças (0-11)', curto: 'Crianças' },
   { id: 'adolescentes', nome: 'Adolescentes (12-17)', curto: 'Adolescentes' },

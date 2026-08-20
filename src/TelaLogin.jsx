@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
+import { Eye, EyeOff } from 'lucide-react';
 
 /* ── perfis (usados apenas internamente) ── */
 const perfisAcesso = [
@@ -23,9 +24,10 @@ const MODO = {
 function traduzirErroAuth(msg) {
   if (!msg) return 'Ocorreu um erro. Tente novamente.';
   if (msg.includes('For security purposes')) return 'Por segurança, aguarde 60 segundos antes de solicitar um novo código.';
-  if (msg.includes('rate limit')) return 'Limite de envio de e-mails excedido. Aguarde alguns minutos e tente novamente.';
-  if (msg.includes('User not found') || msg.includes('email not found')) return 'Nenhum usuário encontrado com este e-mail.';
+  if (msg.includes('rate limit') || msg.includes('over_email_send_rate_limit')) return 'Limite de envio de e-mails excedido. Aguarde alguns minutos e tente novamente.';
+  if (msg.includes('User not found') || msg.includes('email not found') || msg.includes('Unable to validate email address')) return 'Nenhum usuário encontrado com este e-mail no Supabase Auth.';
   if (msg.includes('Invalid token') || msg.includes('Token has expired') || msg.includes('otp_expired')) return 'Código ou link expirado/inválido. Solicite um novo código.';
+  if (msg.includes('Invalid login credentials')) return 'E-mail ou senha incorretos.';
   return msg;
 }
 
@@ -43,6 +45,9 @@ export default function TelaLogin({ onEntrar }) {
   const [erro, setErro] = useState('');
   const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarNovaSenha, setMostrarNovaSenha] = useState(false);
+  const [mostrarConfirmarSenha, setMostrarConfirmarSenha] = useState(false);
   const [perfilIdentificado, setPerfilIdentificado] = useState(null);
   const canvasRef = useRef(null);
 
@@ -242,18 +247,6 @@ export default function TelaLogin({ onEntrar }) {
     setLoading(true); setErro(''); setInfo('');
     try {
       const eClean = email.trim().toLowerCase();
-      // Verifica se o e-mail está cadastrado na tabela de pessoas
-      const { data: pessoa } = await supabase
-        .from('pessoas')
-        .select('id, email')
-        .eq('email', eClean)
-        .maybeSingle();
-
-      if (!pessoa) {
-        setErro('E-mail não encontrado no sistema da igreja. Verifique o endereço digitado.');
-        return;
-      }
-
       const { error } = await supabase.auth.resetPasswordForEmail(eClean, {
         redirectTo: window.location.origin + '/?reset=1',
       });
@@ -515,6 +508,33 @@ export default function TelaLogin({ onEntrar }) {
           border-color: #3b82f6;
           background: #fff;
           box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+        }
+        .tl-input-wrap {
+          position: relative;
+          display: flex;
+          align-items: center;
+          width: 100%;
+        }
+        .tl-input-wrap .tl-input {
+          padding-right: 2.75rem;
+        }
+        .tl-toggle-pwd {
+          position: absolute;
+          right: 0.75rem;
+          background: transparent;
+          border: none;
+          color: #94a3b8;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.35rem;
+          border-radius: 8px;
+          transition: color .15s, background-color .15s;
+        }
+        .tl-toggle-pwd:hover {
+          color: #1e293b;
+          background-color: #f1f5f9;
         }
 
         /* chip perfil */
@@ -837,15 +857,26 @@ export default function TelaLogin({ onEntrar }) {
 
                 <div className="tl-field">
                   <label className="tl-label" htmlFor="senha">Senha</label>
-                  <input
-                    id="senha"
-                    type="password"
-                    className="tl-input"
-                    placeholder="••••••••"
-                    value={senha}
-                    onChange={e => setSenha(e.target.value)}
-                    autoComplete="current-password"
-                  />
+                  <div className="tl-input-wrap">
+                    <input
+                      id="senha"
+                      type={mostrarSenha ? "text" : "password"}
+                      className="tl-input"
+                      placeholder="••••••••"
+                      value={senha}
+                      onChange={e => setSenha(e.target.value)}
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      className="tl-toggle-pwd"
+                      onClick={() => setMostrarSenha(!mostrarSenha)}
+                      title={mostrarSenha ? "Ocultar senha" : "Visualizar senha"}
+                      aria-label={mostrarSenha ? "Ocultar senha" : "Visualizar senha"}
+                    >
+                      {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="tl-actions-row">
@@ -960,28 +991,50 @@ export default function TelaLogin({ onEntrar }) {
 
                 <div className="tl-field">
                   <label className="tl-label" htmlFor="nova">Nova senha</label>
-                  <input
-                    id="nova"
-                    type="password"
-                    className="tl-input"
-                    placeholder="Mínimo 6 caracteres"
-                    value={novaSenha}
-                    onChange={e => setNovaSenha(e.target.value)}
-                    autoComplete="new-password"
-                  />
+                  <div className="tl-input-wrap">
+                    <input
+                      id="nova"
+                      type={mostrarNovaSenha ? "text" : "password"}
+                      className="tl-input"
+                      placeholder="Mínimo 6 caracteres"
+                      value={novaSenha}
+                      onChange={e => setNovaSenha(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="tl-toggle-pwd"
+                      onClick={() => setMostrarNovaSenha(!mostrarNovaSenha)}
+                      title={mostrarNovaSenha ? "Ocultar senha" : "Visualizar senha"}
+                      aria-label={mostrarNovaSenha ? "Ocultar senha" : "Visualizar senha"}
+                    >
+                      {mostrarNovaSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="tl-field">
                   <label className="tl-label" htmlFor="confirmar">Confirmar nova senha</label>
-                  <input
-                    id="confirmar"
-                    type="password"
-                    className="tl-input"
-                    placeholder="Repita a senha"
-                    value={confirmarSenha}
-                    onChange={e => setConfirmarSenha(e.target.value)}
-                    autoComplete="new-password"
-                  />
+                  <div className="tl-input-wrap">
+                    <input
+                      id="confirmar"
+                      type={mostrarConfirmarSenha ? "text" : "password"}
+                      className="tl-input"
+                      placeholder="Repita a senha"
+                      value={confirmarSenha}
+                      onChange={e => setConfirmarSenha(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="tl-toggle-pwd"
+                      onClick={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+                      title={mostrarConfirmarSenha ? "Ocultar senha" : "Visualizar senha"}
+                      aria-label={mostrarConfirmarSenha ? "Ocultar senha" : "Visualizar senha"}
+                    >
+                      {mostrarConfirmarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 {erro && <div className="tl-alert tl-alert-err">{erro}</div>}
@@ -1001,28 +1054,50 @@ export default function TelaLogin({ onEntrar }) {
 
                 <div className="tl-field">
                   <label className="tl-label" htmlFor="nova_definitiva">Nova senha definitiva</label>
-                  <input
-                    id="nova_definitiva"
-                    type="password"
-                    className="tl-input"
-                    placeholder="Mínimo 6 caracteres"
-                    value={novaSenha}
-                    onChange={e => setNovaSenha(e.target.value)}
-                    autoComplete="new-password"
-                  />
+                  <div className="tl-input-wrap">
+                    <input
+                      id="nova_definitiva"
+                      type={mostrarNovaSenha ? "text" : "password"}
+                      className="tl-input"
+                      placeholder="Mínimo 6 caracteres"
+                      value={novaSenha}
+                      onChange={e => setNovaSenha(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="tl-toggle-pwd"
+                      onClick={() => setMostrarNovaSenha(!mostrarNovaSenha)}
+                      title={mostrarNovaSenha ? "Ocultar senha" : "Visualizar senha"}
+                      aria-label={mostrarNovaSenha ? "Ocultar senha" : "Visualizar senha"}
+                    >
+                      {mostrarNovaSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="tl-field">
                   <label className="tl-label" htmlFor="confirmar_definitiva">Confirmar nova senha</label>
-                  <input
-                    id="confirmar_definitiva"
-                    type="password"
-                    className="tl-input"
-                    placeholder="Repita a senha"
-                    value={confirmarSenha}
-                    onChange={e => setConfirmarSenha(e.target.value)}
-                    autoComplete="new-password"
-                  />
+                  <div className="tl-input-wrap">
+                    <input
+                      id="confirmar_definitiva"
+                      type={mostrarConfirmarSenha ? "text" : "password"}
+                      className="tl-input"
+                      placeholder="Repita a senha"
+                      value={confirmarSenha}
+                      onChange={e => setConfirmarSenha(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      className="tl-toggle-pwd"
+                      onClick={() => setMostrarConfirmarSenha(!mostrarConfirmarSenha)}
+                      title={mostrarConfirmarSenha ? "Ocultar senha" : "Visualizar senha"}
+                      aria-label={mostrarConfirmarSenha ? "Ocultar senha" : "Visualizar senha"}
+                    >
+                      {mostrarConfirmarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 {erro && <div className="tl-alert tl-alert-err">{erro}</div>}

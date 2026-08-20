@@ -382,7 +382,7 @@ export function SelectFiltro({ label, valor, onChange, opcoes }) {
   return (
     <div>
       <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">{label}</label>
-      <select value={valor} onChange={(e) => onChange(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 bg-white cursor-pointer">
+      <select value={valor} onChange={(e) => onChange(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 bg-white cursor-pointer h-[42px]">
         <option value="">Todos</option>
         {opcoes.map((o) => {
           const itemValor = typeof o === 'object' ? o.valor : o;

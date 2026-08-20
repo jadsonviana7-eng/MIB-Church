@@ -374,34 +374,38 @@ export default function DashboardLider({
 
           {avisos.length > 0 ? (
             <div className="relative h-28 rounded-xl overflow-hidden w-full">
-              {avisos.map((aviso, idx) => {
-                const hasLink = !!aviso.link_externo;
-                return (
-                  <div
-                    key={aviso.id}
-                    onClick={hasLink ? () => window.open(aviso.link_externo, '_blank', 'noopener,noreferrer') : undefined}
-                    className={`absolute inset-0 transition-all duration-700 w-full h-full ${
-                      idx === avisoAtivoIdx ? 'opacity-100 z-10' : 'opacity-0 -z-10'
-                    } ${hasLink ? 'cursor-pointer hover:opacity-95' : ''}`}
-                  >
-                    {aviso.imagem_url ? (
-                      <img src={aviso.imagem_url} alt={aviso.titulo} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-slate-50 p-3 flex flex-col justify-center">
-                        <h4 className="font-bold text-xs text-slate-800 line-clamp-1">{aviso.titulo}</h4>
-                        <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">
-                          {aviso.subtitulo || (aviso.conteudo_html ? aviso.conteudo_html.replace(/<[^>]+>/g, '') : '')}
-                        </p>
-                      </div>
-                    )}
-                    {aviso.imagem_url && (
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
-                        <h4 className="font-bold text-xs text-white line-clamp-1">{aviso.titulo}</h4>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {/* Trilha do Carrossel com transição deslizar da direita para a esquerda */}
+              <div 
+                className="flex transition-transform duration-500 ease-in-out w-full h-full"
+                style={{ transform: `translateX(-${avisoAtivoIdx * 100}%)` }}
+              >
+                {avisos.map((aviso) => {
+                  const hasLink = !!aviso.link_externo;
+                  return (
+                    <div
+                      key={aviso.id}
+                      onClick={hasLink ? () => window.open(aviso.link_externo, '_blank', 'noopener,noreferrer') : undefined}
+                      className={`w-full h-full shrink-0 min-w-full relative ${hasLink ? 'cursor-pointer hover:opacity-95' : ''}`}
+                    >
+                      {aviso.imagem_url ? (
+                        <img src={aviso.imagem_url} alt={aviso.titulo} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-slate-50 p-3 flex flex-col justify-center">
+                          <h4 className="font-bold text-xs text-slate-800 line-clamp-1">{aviso.titulo}</h4>
+                          <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">
+                            {aviso.subtitulo || (aviso.conteudo_html ? aviso.conteudo_html.replace(/<[^>]+>/g, '') : '')}
+                          </p>
+                        </div>
+                      )}
+                      {aviso.imagem_url && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2">
+                          <h4 className="font-bold text-xs text-white line-clamp-1">{aviso.titulo}</h4>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <div className="text-center text-slate-400 text-xs italic opacity-70">

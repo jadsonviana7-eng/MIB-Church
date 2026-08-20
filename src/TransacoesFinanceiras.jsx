@@ -25,6 +25,7 @@ export default function TransacoesFinanceiras({
   const [pessoasDisponiveis, setPessoasDisponiveis] = useState([]);
   const [transacoes, setTransacoes] = useState([]);
   const [carregando, setCarregando] = useState(true);
+  const [buscaNome, setBuscaNome] = useState('');
 
   const podeEditar = hasAccess('Financeiro', 'Transações', 'editar');
 
@@ -316,11 +317,43 @@ export default function TransacoesFinanceiras({
       case 'limpar':
         setDataInicioFiltro('');
         setDataFimFiltro('');
+        setBuscaNome('');
         return;
     }
     setDataInicioFiltro(formatarParaISO(inicio));
     setDataFimFiltro(formatarParaISO(fim));
   };
+
+  // Helper para normalizar textos removendo acentos e convertendo para minúsculas
+  const normalizarTexto = (str) => {
+    if (!str) return '';
+    return String(str)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  };
+
+  // Filtra as transações em tempo real por nome (contribuinte, descrição, observações, categoria, conta)
+  const transacoesFiltradas = useMemo(() => {
+    if (!buscaNome.trim()) return transacoes;
+    const termo = normalizarTexto(buscaNome.trim());
+
+    return transacoes.filter(t => {
+      const contribuinte = normalizarTexto(t.contribuinte || t.pessoas?.nome);
+      const descricao = normalizarTexto(t.descricao);
+      const obs = normalizarTexto(t.observacoes || t.observacao);
+      const categoria = normalizarTexto(t.categoria || t.categorias_financeiras?.nome);
+      const conta = normalizarTexto(t.conta || t.contas_financeiras?.nome);
+
+      return (
+        contribuinte.includes(termo) ||
+        descricao.includes(termo) ||
+        obs.includes(termo) ||
+        categoria.includes(termo) ||
+        conta.includes(termo)
+      );
+    });
+  }, [transacoes, buscaNome]);
 
   // Filtra as categorias com base no tipo selecionado
   const categoriasFiltradas = useMemo(() => {
@@ -332,7 +365,7 @@ export default function TransacoesFinanceiras({
 
   // Cálculo do sumário baseado nas transações filtradas
   const resumoMensal = useMemo(() => {
-    return transacoes.reduce((acc, t) => {
+    return transacoesFiltradas.reduce((acc, t) => {
       const tipo = t.tipo?.toLowerCase();
       const status = t.status?.toLowerCase();
       const valor = Number(t.valor) || 0;
@@ -342,7 +375,7 @@ export default function TransacoesFinanceiras({
       if (tipo === 'despesa' && status === 'pendente') acc.aPagar += valor;
       return acc;
     }, { recebido: 0, pago: 0, aPagar: 0 });
-  }, [transacoes]);
+  }, [transacoesFiltradas]);
 
   // Efeito para limpar a categoria selecionada se ela não pertencer mais ao tipo escolhido
   useEffect(() => {
@@ -357,18 +390,40 @@ export default function TransacoesFinanceiras({
 
   return (
     <div className="space-y-6 mx-1">
-      <div className="print:hidden mx-[3px] sm:mx-0">
-        <PageHeader titulo="Transações Financeiras" breadcrumb={['Resumo', 'Transações']} onNavigate={onVoltar} />
-      </div>
-
       {/* Seção de Filtros e Atalhos - Desktop */}
       <div className="space-y-4">
         <div className="hidden md:flex flex-wrap items-end gap-3">
-          <div className="min-w-[240px] relative datepicker-container">
+          {/* Campo de Pesquisa por Nome */}
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Pesquisar por Nome</label>
+            <div className="relative flex items-center">
+              <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Nome do contribuinte ou descrição..."
+                value={buscaNome}
+                onChange={(e) => setBuscaNome(e.target.value)}
+                className="w-full pl-9 pr-8 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10 transition-all shadow-sm h-[42px]"
+              />
+              {buscaNome && (
+                <button
+                  type="button"
+                  onClick={() => setBuscaNome('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full cursor-pointer text-xs font-bold flex items-center justify-center"
+                  title="Limpar busca"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="min-w-[220px] relative datepicker-container">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Data da Movimentação</label>
             <div
               onClick={() => setCalendarioAberto(!calendarioAberto)}
-              className={`flex items-center gap-3 px-3 py-2.5 bg-white border rounded-xl cursor-pointer transition-all shadow-sm group ${calendarioAberto ? 'border-[#1e3a8a] ring-2 ring-[#1e3a8a]/10' : 'border-slate-200 hover:border-slate-300'}`}
+              className={`flex items-center gap-3 px-3 h-[42px] bg-white border rounded-xl cursor-pointer transition-all shadow-sm group ${calendarioAberto ? 'border-[#1e3a8a] ring-2 ring-[#1e3a8a]/10' : 'border-slate-200 hover:border-slate-300'}`}
             >
               <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -383,8 +438,8 @@ export default function TransacoesFinanceiras({
           </div>
           <div className="flex-1 min-w-[120px]"><SelectFiltro label="Tipo" valor={tipoTransacaoFiltro} onChange={setTipoTransacaoFiltro} opcoes={['Receita', 'Despesa', 'Transferência']} /></div>
           <div className="flex-1 min-w-[120px]"><SelectFiltro label="Status" valor={statusTransacaoFiltro} onChange={setStatusTransacaoFiltro} opcoes={['Pago', 'Pendente', 'Cancelado']} /></div>
-          <div className="flex-1 min-w-[140px]"><SelectFiltro label="Conta" valor={contaFiltro} onChange={setContaFiltro} opcoes={contasDisponiveis.map(c => ({ valor: c.id, label: c.nome }))} /></div>
-          <div className="flex-1 min-w-[140px]"><SelectFiltro label="Categoria" valor={categoriaFiltro} onChange={setCategoriaFiltro} opcoes={categoriasFiltradas.map(c => ({ valor: c.id, label: c.nome }))} /></div>
+          <div className="flex-1 min-w-[130px]"><SelectFiltro label="Conta" valor={contaFiltro} onChange={setContaFiltro} opcoes={contasDisponiveis.map(c => ({ valor: c.id, label: c.nome }))} /></div>
+          <div className="flex-1 min-w-[130px]"><SelectFiltro label="Categoria" valor={categoriaFiltro} onChange={setCategoriaFiltro} opcoes={categoriasFiltradas.map(c => ({ valor: c.id, label: c.nome }))} /></div>
         </div>
 
         {/* Atalhos de Período (Desktop) e Ações (Ambos) */}
@@ -430,6 +485,33 @@ export default function TransacoesFinanceiras({
             </div>
           )}
           <div className="p-6 space-y-5 overflow-y-auto max-h-[70vh]">
+            {/* Pesquisar por Nome (Mobile Drawer) */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">Pesquisar por Nome</label>
+              <div className="relative flex items-center">
+                <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Nome do contribuinte ou descrição..."
+                  value={buscaNome}
+                  onChange={(e) => setBuscaNome(e.target.value)}
+                  className="w-full pl-9 pr-8 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10 transition-all shadow-sm h-[42px]"
+                />
+                {buscaNome && (
+                  <button
+                    type="button"
+                    onClick={() => setBuscaNome('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full cursor-pointer text-xs font-bold flex items-center justify-center"
+                    title="Limpar busca"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="relative datepicker-container">
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">Período</label>
               <div
@@ -467,6 +549,32 @@ export default function TransacoesFinanceiras({
               Aplicar Filtros
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Barra de Pesquisa Rápida por Nome (Mobile) */}
+      <div className="md:hidden relative mb-2 -top-[20px]">
+        <div className="relative flex items-center">
+          <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Pesquisar por nome..."
+            value={buscaNome}
+            onChange={(e) => setBuscaNome(e.target.value)}
+            className="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10 transition-all shadow-sm h-[42px]"
+          />
+          {buscaNome && (
+            <button
+              type="button"
+              onClick={() => setBuscaNome('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full cursor-pointer text-xs font-bold flex items-center justify-center"
+              title="Limpar busca"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
 
@@ -537,10 +645,42 @@ export default function TransacoesFinanceiras({
       {/* Tabela de Transações Recentes Abaixo */}
       <Card className="p-0">
         <CardHeader titulo="Transações Recentes" />
+
+        {/* Badge informando filtro por nome ativo */}
+        {buscaNome.trim() && (
+          <div className="p-3 bg-blue-50/80 border-b border-blue-100 flex items-center justify-between text-xs text-blue-900 px-4">
+            <span className="font-semibold">
+              Filtrando por nome: <strong>"{buscaNome}"</strong> ({transacoesFiltradas.length} lançamento{transacoesFiltradas.length !== 1 ? 's' : ''} encontrado{transacoesFiltradas.length !== 1 ? 's' : ''})
+            </span>
+            <button
+              type="button"
+              onClick={() => setBuscaNome('')}
+              className="font-bold text-blue-700 hover:text-blue-950 underline cursor-pointer"
+            >
+              Limpar busca
+            </button>
+          </div>
+        )}
+
         {carregando ? (
           <div className="p-10 text-center text-sm text-slate-400">Carregando transações...</div>
-        ) : transacoes.length === 0 ? (
-          <div className="p-10 text-center text-sm text-slate-400">Nenhuma transação encontrada com os filtros.</div>
+        ) : transacoesFiltradas.length === 0 ? (
+          <div className="p-10 text-center text-sm text-slate-400">
+            {buscaNome.trim() ? (
+              <div className="space-y-2">
+                <p className="font-semibold text-slate-600">Nenhuma transação encontrada para o nome "{buscaNome}".</p>
+                <button
+                  type="button"
+                  onClick={() => setBuscaNome('')}
+                  className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition cursor-pointer"
+                >
+                  Limpar filtro de pesquisa
+                </button>
+              </div>
+            ) : (
+              'Nenhuma transação encontrada com os filtros.'
+            )}
+          </div>
         ) : (
           <div className="overflow-x-auto hidden sm:block"> {/* Tabela visível apenas em telas maiores */}
             <table className="table-mib">
@@ -557,7 +697,7 @@ export default function TransacoesFinanceiras({
                 </tr>
               </thead>
               <tbody>
-                {transacoes.map(t => {
+                {transacoesFiltradas.map(t => {
                   const tipoNormalizado = t.tipo?.toLowerCase();
                   return (
                     <tr key={t.id} onClick={() => podeEditar && abrirModal(tipoNormalizado, t)} className={`${podeEditar ? 'cursor-pointer hover:bg-slate-50' : ''} transition`}>
@@ -566,8 +706,8 @@ export default function TransacoesFinanceiras({
                       <td className="font-medium text-slate-900">{t.contribuinte || '—'}</td>
                       <td>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tipoNormalizado === 'receita' ? 'bg-emerald-100 text-emerald-800' :
-                            tipoNormalizado === 'despesa' ? 'bg-red-100 text-red-800' :
-                              'bg-blue-100 text-blue-800'
+                          tipoNormalizado === 'despesa' ? 'bg-red-100 text-red-800' :
+                            'bg-blue-100 text-blue-800'
                           }`}>
                           {t.tipo}
                         </span>
@@ -575,8 +715,8 @@ export default function TransacoesFinanceiras({
                       <td>{t.categoria}</td>
                       <td>{t.conta}</td>
                       <td>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${t.status === 'Pago' ? 'bg-green-100 text-green-800' :
-                            t.status === 'Pendente' ? 'bg-amber-100 text-amber-800' :
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${t.status?.toLowerCase() === 'pago' ? 'bg-emerald-100 text-emerald-800' :
+                            t.status?.toLowerCase() === 'pendente' ? 'bg-amber-100 text-amber-800' :
                               'bg-red-100 text-red-800'
                           }`}>
                           {t.status}
@@ -619,14 +759,30 @@ export default function TransacoesFinanceiras({
         <div className="sm:hidden divide-y divide-slate-100/50 border-y border-slate-100/50">
           {carregando ? (
             <div className="p-10 text-center text-sm text-slate-400">Carregando transações...</div>
-          ) : transacoes.length === 0 ? (
-            <div className="p-10 text-center text-sm text-slate-400">Nenhuma transação encontrada com os filtros.</div>
+          ) : transacoesFiltradas.length === 0 ? (
+            <div className="p-10 text-center text-sm text-slate-400">
+              {buscaNome.trim() ? (
+                <div className="space-y-2">
+                  <p className="font-semibold text-slate-600">Nenhuma transação encontrada para "{buscaNome}".</p>
+                  <button
+                    type="button"
+                    onClick={() => setBuscaNome('')}
+                    className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition cursor-pointer"
+                  >
+                    Limpar filtro
+                  </button>
+                </div>
+              ) : (
+                'Nenhuma transação encontrada com os filtros.'
+              )}
+            </div>
           ) : (
-            transacoes.map((t, idx) => {
+            transacoesFiltradas.map((t, idx) => {
               const tipoNormalizado = t.tipo?.toLowerCase();
               const valorColor = tipoNormalizado === 'receita' ? 'text-emerald-600' : 'text-red-600';
-              const statusColor = t.status === 'Pago' ? 'text-green-600' : t.status === 'Pendente' ? 'text-amber-600' : 'text-red-600';
-              const statusBg = t.status === 'Pago' ? 'bg-green-50' : t.status === 'Pendente' ? 'bg-amber-50' : 'bg-red-50';
+              const statusNormalizado = t.status?.toLowerCase();
+              const statusColor = statusNormalizado === 'pago' ? 'text-emerald-700' : statusNormalizado === 'pendente' ? 'text-amber-700' : 'text-red-700';
+              const statusBg = statusNormalizado === 'pago' ? 'bg-emerald-50' : statusNormalizado === 'pendente' ? 'bg-amber-50' : 'bg-red-50';
 
               // Alternância de tom de fundo
               const bgRow = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40';
@@ -650,11 +806,10 @@ export default function TransacoesFinanceiras({
                         {t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
                       </span>
                       <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${
-                        tipoNormalizado === 'receita' ? 'bg-emerald-100 text-emerald-800' :
-                        tipoNormalizado === 'despesa' ? 'bg-red-100 text-red-800' :
-                        'bg-blue-100 text-blue-800'
-                      }`}>
+                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${tipoNormalizado === 'receita' ? 'bg-emerald-100 text-emerald-800' :
+                          tipoNormalizado === 'despesa' ? 'bg-red-100 text-red-800' :
+                            'bg-blue-100 text-blue-800'
+                        }`}>
                         {t.tipo}
                       </span>
                       <span className="w-1 h-1 rounded-full bg-slate-300"></span>
@@ -944,8 +1099,8 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
                 type="button"
                 onClick={() => setStatus(status === 'pago' ? 'pendente' : 'pago')}
                 className={`w-full py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition flex items-center justify-center gap-2 shadow-xs ${status === 'pago'
-                    ? `bg-emerald-600 border-emerald-600 text-white shadow-emerald-200` // Verde para Pago
-                    : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600' // Discreto para Pendente
+                  ? `bg-emerald-600 border-emerald-600 text-white shadow-emerald-200` // Verde para Pago
+                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600' // Discreto para Pendente
                   }`}
               >
                 {status === 'pago' ? '✓' : '○'} {labelStatus}
@@ -1015,8 +1170,8 @@ function BtnAtalho({ label, onClick, destaque }) {
       type="button"
       onClick={onClick}
       className={`px-5 py-1.5 rounded-lg text-sm font-normal transition ${destaque
-          ? 'bg-[#1e3a8a] text-white hover:bg-[#1e40af]'
-          : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600 border border-slate-200'
+        ? 'bg-[#1e3a8a] text-white hover:bg-[#1e40af]'
+        : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600 border border-slate-200'
         }`}
     >
       {label}

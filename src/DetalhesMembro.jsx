@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import Cropper from 'react-easy-crop';
 import { supabase } from './supabaseClient';
 import { Card, CardHeader, CampoLinha, CampoInput, uploadImagemCelula } from './ui';
+import { Eye, EyeOff } from 'lucide-react';
 import SidebarVinculos from './SidebarVinculos';
 import { calcularIdade } from './churchUtils';
 import { ModalLancarTransacao } from './TransacoesFinanceiras';
@@ -371,6 +372,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
   const [permissao, setPermissao] = useState('');
   const [senhaNovoAcesso, setSenhaNovoAcesso] = useState('');
   const [confirmarSenhaNovoAcesso, setConfirmarSenhaNovoAcesso] = useState('');
+  const [mostrarSenhaNovoAcesso, setMostrarSenhaNovoAcesso] = useState(false);
   const [criandoAcesso, setCriandoAcesso] = useState(false);
   const [mensagemAcesso, setMensagemAcesso] = useState('');
   const [avaliacaoEscola, setAvaliacaoEscola] = useState('');
@@ -2334,11 +2336,45 @@ function AcessoSistemaPanel({
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-3 items-end">
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Senha inicial</label>
-              <input type="password" value={senhaNovoAcesso} onChange={(e) => setSenhaNovoAcesso(e.target.value)} minLength={6} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800" />
+              <div className="relative flex items-center">
+                <input 
+                  type={mostrarSenhaNovoAcesso ? "text" : "password"} 
+                  value={senhaNovoAcesso} 
+                  onChange={(e) => setSenhaNovoAcesso(e.target.value)} 
+                  minLength={6} 
+                  className="w-full pl-3 pr-9 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800" 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setMostrarSenhaNovoAcesso(!mostrarSenhaNovoAcesso)} 
+                  className="absolute right-2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                  title={mostrarSenhaNovoAcesso ? "Ocultar senha" : "Visualizar senha"}
+                  aria-label={mostrarSenhaNovoAcesso ? "Ocultar senha" : "Visualizar senha"}
+                >
+                  {mostrarSenhaNovoAcesso ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-500 mb-1">Confirmar senha</label>
-              <input type="password" value={confirmarSenhaNovoAcesso} onChange={(e) => setConfirmarSenhaNovoAcesso(e.target.value)} minLength={6} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800" />
+              <div className="relative flex items-center">
+                <input 
+                  type={mostrarSenhaNovoAcesso ? "text" : "password"} 
+                  value={confirmarSenhaNovoAcesso} 
+                  onChange={(e) => setConfirmarSenhaNovoAcesso(e.target.value)} 
+                  minLength={6} 
+                  className="w-full pl-3 pr-9 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800" 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setMostrarSenhaNovoAcesso(!mostrarSenhaNovoAcesso)} 
+                  className="absolute right-2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                  title={mostrarSenhaNovoAcesso ? "Ocultar senha" : "Visualizar senha"}
+                  aria-label={mostrarSenhaNovoAcesso ? "Ocultar senha" : "Visualizar senha"}
+                >
+                  {mostrarSenhaNovoAcesso ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
             <button type="button" onClick={onCriarAcesso} disabled={criandoAcesso} className="btn-primary px-4 py-2 rounded-xl text-xs font-semibold disabled:opacity-50">
               {criandoAcesso ? 'Criando...' : 'Criar usuário'}

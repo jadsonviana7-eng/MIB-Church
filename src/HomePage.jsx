@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { supabase } from './supabaseClient';
 import { Card, CardHeader, Avatar, DoughnutCard, CombinationCard, ColumnChart, StatCard, ModalWrapper } from './ui';
 import { MenuIcons } from './icons'; 
-import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona } from './churchUtils';
+import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona, extrairDataInfo } from './churchUtils';
 import PainelAprovacoes from './PainelAprovacoes';
 import { 
   Users, Home, Flame, Calendar, DollarSign, Award, Sparkles,
@@ -202,8 +202,7 @@ export default function HomePage({
     try {
       const { data, error } = await supabase
         .from('transacoes_financeiras')
-        .select('*')
-        .eq('status', 'pago');
+        .select('*');
 
       if (error) {
         setHasFinanceAccess(false);
@@ -220,13 +219,16 @@ export default function HomePage({
 
         data.forEach(t => {
           const valor = Number(t.valor) || 0;
-          const dataT = new Date(t.data + 'T00:00:00');
-          const isMesAtual = dataT.getMonth() === mesCorrente && dataT.getFullYear() === anoCorrente;
+          const info = extrairDataInfo(t.data);
+          if (!info) return;
 
-          if (t.tipo === 'receita') {
+          const isMesAtual = info.mes === mesCorrente && info.ano === anoCorrente;
+          const tipo = t.tipo?.toLowerCase();
+
+          if (tipo === 'receita') {
             saldoTotal += valor;
             if (isMesAtual) receitasMes += valor;
-          } else if (t.tipo === 'despesa') {
+          } else if (tipo === 'despesa') {
             saldoTotal -= valor;
             if (isMesAtual) despesasMes += valor;
           }
@@ -245,10 +247,11 @@ export default function HomePage({
           let desp = 0;
 
           data.forEach(t => {
-            const dataT = new Date(t.data + 'T00:00:00');
-            if (dataT.getMonth() === mesIndex && dataT.getFullYear() === anoRef) {
-              if (t.tipo === 'receita') rec += Number(t.valor) || 0;
-              if (t.tipo === 'despesa') desp += Number(t.valor) || 0;
+            const info = extrairDataInfo(t.data);
+            if (info && info.mes === mesIndex && info.ano === anoRef) {
+              const tipo = t.tipo?.toLowerCase();
+              if (tipo === 'receita') rec += Number(t.valor) || 0;
+              if (tipo === 'despesa') desp += Number(t.valor) || 0;
             }
           });
 
@@ -391,39 +394,35 @@ export default function HomePage({
         {/* ── ABA 1: VISÃO GERAL (INCLUI AVISOS E ATALHOS) ── */}
         {abaAtiva === 'visao_geral' && (
           <div className="space-y-5">
-            {/* Cards de Indicadores Premium Mobile com Cores, Contraste e Ícones Maiores */}
+            {/* Cards de Indicadores Mobile com Cores Sólidas */}
             <div className="grid grid-cols-2 gap-3">
               <CardMobileIndicador
                 label="Membros"
                 valor={totalPessoasAtivas}
                 detalhe="Ativos"
                 icon={Users}
-                gradient="from-blue-600 to-indigo-750"
-                shadowColor="shadow-blue-500/10"
+                colorBg="bg-blue-600"
               />
               <CardMobileIndicador
                 label="Células"
                 valor={totalCelulasAtivas}
                 detalhe="Ativas"
                 icon={Home}
-                gradient="from-emerald-600 to-teal-750"
-                shadowColor="shadow-emerald-500/10"
+                colorBg="bg-emerald-600"
               />
               <CardMobileIndicador
                 label="Convertidos"
                 valor={novosConvertidosMes}
                 detalhe="Este Mês"
                 icon={Sparkles}
-                gradient="from-purple-600 to-fuchsia-750"
-                shadowColor="shadow-purple-500/10"
+                colorBg="bg-purple-600"
               />
               <CardMobileIndicador
                 label="Batismo"
                 valor={`${taxaBatismo}%`}
                 detalhe={`${totalBatizados} bat.`}
                 icon={Award}
-                gradient="from-amber-500 to-orange-655"
-                shadowColor="shadow-amber-500/10"
+                colorBg="bg-amber-500"
               />
             </div>
 
@@ -438,20 +437,26 @@ export default function HomePage({
                   Nenhum aviso ativo para exibição.
                 </div>
               ) : (
-                <div className="relative w-full">
-                  {/* Card do aviso ativo */}
-                  {(() => {
-                    const av = avisos[avisoAtivoIdx] || avisos[0];
-                    if (!av) return null;
-                    return (
+                <div className="relative w-full overflow-hidden rounded-xl">
+                  {/* Trilha do Carrossel com transição deslizar da direita para a esquerda */}
+                  <div 
+                    className="flex transition-transform duration-500 ease-in-out w-full"
+                    style={{ transform: `translateX(-${avisoAtivoIdx * 100}%)` }}
+                  >
+                    {avisos.map((av) => (
                       <div 
                         key={av.id}
                         onClick={() => handleActionAviso(av)}
-                        className="w-full bg-white border border-slate-100 rounded-xl shadow-3xs overflow-hidden active:scale-[0.99] transition-all cursor-pointer relative animate-in fade-in duration-300"
+                        className="w-full shrink-0 min-w-full bg-white border border-slate-100 rounded-xl shadow-3xs overflow-hidden active:scale-[0.99] transition-all cursor-pointer relative"
                       >
-                        {av.imagem_url && (
+                        {av.imagem_url ? (
                           <div className="w-full h-52 sm:h-60 overflow-hidden bg-slate-50 shrink-0 relative">
-                            <img src={av.imagem_url} className="w-full h-full object-cover animate-in zoom-in-95 duration-500" alt="" />
+                            <img src={av.imagem_url} className="w-full h-full object-cover" alt="" />
+                          </div>
+                        ) : (
+                          <div className="w-full h-52 sm:h-60 bg-gradient-to-br from-blue-900 to-indigo-900 p-6 flex flex-col justify-center text-white">
+                            <h3 className="font-extrabold text-lg line-clamp-2">{av.titulo}</h3>
+                            {av.subtitulo && <p className="text-xs text-blue-200 mt-2 line-clamp-3">{av.subtitulo}</p>}
                           </div>
                         )}
                         <div className="p-3.5 flex items-center justify-between text-[8px] font-black uppercase text-slate-450 tracking-wider">
@@ -463,8 +468,8 @@ export default function HomePage({
                           )}
                         </div>
                       </div>
-                    );
-                  })()}
+                    ))}
+                  </div>
 
                   {/* Setas de navegação (apenas se houver mais de um aviso) */}
                   {avisos.length > 1 && (
@@ -549,8 +554,8 @@ export default function HomePage({
               {aniversariantesMes.length === 0 ? (
                 <p className="text-center text-[10px] text-slate-400 italic py-2">Nenhum aniversariante no mês.</p>
               ) : (
-                <div className="max-h-[220px] overflow-y-auto pr-1 space-y-2 scrollbar-hide">
-                  {aniversariantesMes.slice(0, 5).map((pessoa) => (
+                <div className="space-y-2">
+                  {aniversariantesMes.map((pessoa) => (
                     <div 
                       key={pessoa.id} 
                       onClick={() => onVerMembro(pessoa.id)}
@@ -886,10 +891,10 @@ export default function HomePage({
   );
 }
 
-function CardMobileIndicador({ label, valor, detalhe, icon: Icon, gradient, shadowColor }) {
+function CardMobileIndicador({ label, valor, detalhe, icon: Icon, colorBg = 'bg-blue-600' }) {
   return (
     <div className="p-4 rounded-2xl bg-white border border-slate-100 shadow-3xs flex items-center gap-4 text-slate-800 animate-in fade-in slide-in-from-top-1 duration-300">
-      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 text-white shadow-xs`}>
+      <div className={`w-12 h-12 rounded-xl ${colorBg} flex items-center justify-center shrink-0 text-white shadow-xs`}>
         <Icon className="w-6.5 h-6.5 text-white" strokeWidth={1.8} />
       </div>
       <div className="flex-1 min-w-0">

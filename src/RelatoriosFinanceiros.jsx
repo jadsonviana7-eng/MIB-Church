@@ -883,7 +883,7 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
                                 {t.contas_financeiras?.nome || 'Sem Conta'}
                               </span>
                               {t.status && (
-                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${t.status === 'pago' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>
+                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${t.status?.toLowerCase() === 'pago' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                                   {t.status}
                                 </span>
                               )}

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import { supabase } from './supabaseClient';
 import { uploadImagemCelula } from './ui'; // Importar a função de upload
+import { Eye, EyeOff } from 'lucide-react';
 import {
   mascaraCPF,
   mascaraTelefone,
@@ -58,6 +59,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
   const [permissaoAcesso, setPermissaoAcesso] = useState('membro');
   const [senhaAcesso, setSenhaAcesso] = useState('');
   const [confirmarSenhaAcesso, setConfirmarSenhaAcesso] = useState('');
+  const [mostrarSenhaAcesso, setMostrarSenhaAcesso] = useState(false);
 
   // Estrutura de Família (Filhos)
   const [conjugeId, setConjugeId] = useState('');
@@ -524,11 +526,45 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-1">Senha inicial</label>
-                    <input type="password" value={senhaAcesso} onChange={e => setSenhaAcesso(e.target.value)} minLength={6} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-800" />
+                    <div className="relative flex items-center">
+                      <input 
+                        type={mostrarSenhaAcesso ? "text" : "password"} 
+                        value={senhaAcesso} 
+                        onChange={e => setSenhaAcesso(e.target.value)} 
+                        minLength={6} 
+                        className="w-full pl-3 pr-9 py-2 border border-slate-200 rounded-xl text-xs text-slate-800" 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setMostrarSenhaAcesso(!mostrarSenhaAcesso)} 
+                        className="absolute right-2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                        title={mostrarSenhaAcesso ? "Ocultar senha" : "Visualizar senha"}
+                        aria-label={mostrarSenhaAcesso ? "Ocultar senha" : "Visualizar senha"}
+                      >
+                        {mostrarSenhaAcesso ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-500 mb-1">Confirmar senha</label>
-                    <input type="password" value={confirmarSenhaAcesso} onChange={e => setConfirmarSenhaAcesso(e.target.value)} minLength={6} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-800" />
+                    <div className="relative flex items-center">
+                      <input 
+                        type={mostrarSenhaAcesso ? "text" : "password"} 
+                        value={confirmarSenhaAcesso} 
+                        onChange={e => setConfirmarSenhaAcesso(e.target.value)} 
+                        minLength={6} 
+                        className="w-full pl-3 pr-9 py-2 border border-slate-200 rounded-xl text-xs text-slate-800" 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setMostrarSenhaAcesso(!mostrarSenhaAcesso)} 
+                        className="absolute right-2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                        title={mostrarSenhaAcesso ? "Ocultar senha" : "Visualizar senha"}
+                        aria-label={mostrarSenhaAcesso ? "Ocultar senha" : "Visualizar senha"}
+                      >
+                        {mostrarSenhaAcesso ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

@@ -1,12 +1,12 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Avatar, DoughnutCard, CombinationCard, ColumnChart, Recentes, PageHeader, StatCard } from './ui';
-import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona } from './churchUtils';
+import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona, extrairDataInfo } from './churchUtils';
 import PainelAprovacoes from './PainelAprovacoes';
 import { supabase } from './supabaseClient';
 import { 
   Users, Home, Calendar, DollarSign, Award, ArrowUpRight, 
   TrendingUp, TrendingDown, Target, UserCheck, Percent, 
-  BookOpen, ChevronRight, Sparkles, Zap, Activity, Plus, ShieldAlert,
+  BookOpen, ChevronRight, ChevronLeft, Sparkles, Zap, Activity, Plus, ShieldAlert,
   Smile, Coins, HelpCircle
 } from 'lucide-react';
 import { 
@@ -51,6 +51,117 @@ export default function OverviewDashboard({
   const [financeData, setFinanceData] = useState(null);
   const [hasFinanceAccess, setHasFinanceAccess] = useState(true);
   const podeVerFinanceiro = hasAccess('Financeiro');
+
+  // Estados para Banners de Eventos (Transição deslizar Direita -> Esquerda)
+  const [bannersEventos, setBannersEventos] = useState([]);
+  const [bannerIndex, setBannerIndex] = useState(0);
+  const [isBannerHovered, setIsBannerHovered] = useState(false);
+
+  // Carrega eventos e avisos ativos para o carrossel de banners
+  useEffect(() => {
+    let isMounted = true;
+    async function carregarBanners() {
+      try {
+        const hoje = new Date().toISOString().split('T')[0];
+
+        // 1. Mural de Avisos
+        const { data: avisosData } = await supabase
+          .from('mural_avisos')
+          .select('*')
+          .eq('ativo', true)
+          .or(`data_expiracao.is.null,data_expiracao.gte.${hoje}`)
+          .order('prioridade', { ascending: false });
+
+        // 2. Agenda de Eventos
+        const { data: eventosData } = await supabase
+          .from('agenda_eventos')
+          .select('*')
+          .eq('publicado', true)
+          .order('data_inicio', { ascending: true })
+          .limit(5);
+
+        const listaBanners = [];
+
+        if (eventosData && eventosData.length > 0) {
+          eventosData.forEach(ev => {
+            listaBanners.push({
+              id: `evento-${ev.id}`,
+              titulo: ev.titulo,
+              subtitulo: ev.subtitulo || (ev.data_inicio ? `Data: ${new Date(ev.data_inicio).toLocaleDateString('pt-BR')}` : 'Evento Especial MIB'),
+              imagem_url: ev.capa_url || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&q=80',
+              tipo: ev.tipo || 'Evento Especial',
+              badge: 'Próximo Evento',
+              link: `/inscricao-evento/${ev.id}`,
+              isEvento: true,
+              eventoId: ev.id
+            });
+          });
+        }
+
+        if (avisosData && avisosData.length > 0) {
+          avisosData.forEach(av => {
+            listaBanners.push({
+              id: `aviso-${av.id}`,
+              titulo: av.titulo,
+              subtitulo: av.subtitulo || (av.conteudo_html ? av.conteudo_html.replace(/<[^>]+>/g, '') : ''),
+              imagem_url: av.imagem_url || 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?auto=format&fit=crop&w=1200&q=80',
+              tipo: 'Comunicado',
+              badge: 'Destaque',
+              link: av.link_externo,
+              isEvento: false
+            });
+          });
+        }
+
+        // Banners demonstrativos padrão se a base estiver vazia
+        if (listaBanners.length === 0) {
+          listaBanners.push(
+            {
+              id: 'def-1',
+              titulo: 'Grande Culto de Celebração & Louvor',
+              subtitulo: 'Venha cultuar conosco e experimentar a presença de Deus neste domingo às 18h.',
+              imagem_url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=1200&q=80',
+              tipo: 'Celebração',
+              badge: 'Domingo • 18h'
+            },
+            {
+              id: 'def-2',
+              titulo: 'Conferência de Células & Liderança MIB',
+              subtitulo: 'Treinamento, unção e capacitação para todos os líderes e membros de células.',
+              imagem_url: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=1200&q=80',
+              tipo: 'Conferência',
+              badge: 'Inscrições Abertas'
+            },
+            {
+              id: 'def-3',
+              titulo: 'Rede de Jovens MIB — Movimento Teen & Jovens',
+              subtitulo: 'Todos os sábados às 19h30 no templo principal. Traga um amigo!',
+              imagem_url: 'https://images.unsplash.com/photo-1438232992991-995b7058bbb3?auto=format&fit=crop&w=1200&q=80',
+              tipo: 'Rede de Jovens',
+              badge: 'Sábado • 19:30h'
+            }
+          );
+        }
+
+        if (isMounted) {
+          setBannersEventos(listaBanners);
+        }
+      } catch (err) {
+        console.warn('Erro ao carregar banners:', err);
+      }
+    }
+    carregarBanners();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Rotação automática dos Banners (a cada 5s com transição deslizar da direita para a esquerda)
+  useEffect(() => {
+    if (bannersEventos.length <= 1 || isBannerHovered) return;
+    const timer = setInterval(() => {
+      setBannerIndex(prev => (prev + 1) % bannersEventos.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [bannersEventos.length, isBannerHovered]);
 
   // 1. Processamento Geral de Pessoas Ativas
   const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo'), [pessoas]);
@@ -169,8 +280,7 @@ export default function OverviewDashboard({
     try {
       const { data, error } = await supabase
         .from('transacoes_financeiras')
-        .select('*')
-        .eq('status', 'pago');
+        .select('*');
 
       if (error) {
         setHasFinanceAccess(false);
@@ -187,13 +297,16 @@ export default function OverviewDashboard({
 
         data.forEach(t => {
           const valor = Number(t.valor) || 0;
-          const dataT = new Date(t.data + 'T00:00:00');
-          const isMesAtual = dataT.getMonth() === mesCorrente && dataT.getFullYear() === anoCorrente;
+          const info = extrairDataInfo(t.data);
+          if (!info) return;
 
-          if (t.tipo === 'receita') {
+          const isMesAtual = info.mes === mesCorrente && info.ano === anoCorrente;
+          const tipo = t.tipo?.toLowerCase();
+
+          if (tipo === 'receita') {
             saldoTotal += valor;
             if (isMesAtual) receitasMes += valor;
-          } else if (t.tipo === 'despesa') {
+          } else if (tipo === 'despesa') {
             saldoTotal -= valor;
             if (isMesAtual) despesasMes += valor;
           }
@@ -212,10 +325,11 @@ export default function OverviewDashboard({
           let desp = 0;
 
           data.forEach(t => {
-            const dataT = new Date(t.data + 'T00:00:00');
-            if (dataT.getMonth() === mesIndex && dataT.getFullYear() === anoRef) {
-              if (t.tipo === 'receita') rec += Number(t.valor) || 0;
-              if (t.tipo === 'despesa') desp += Number(t.valor) || 0;
+            const info = extrairDataInfo(t.data);
+            if (info && info.mes === mesIndex && info.ano === anoRef) {
+              const tipo = t.tipo?.toLowerCase();
+              if (tipo === 'receita') rec += Number(t.valor) || 0;
+              if (tipo === 'despesa') desp += Number(t.valor) || 0;
             }
           });
 
@@ -304,7 +418,105 @@ export default function OverviewDashboard({
         </div>
       </div>
 
-      {/* 2. MENU DE ABAS PREMIUM (TABS NAVIGATION) */}
+      {/* 2. BANNERS DE EVENTOS (CARROSSEL COM TRANSIÇÃO DESLIZAR DA DIREITA PARA A ESQUERDA) */}
+      {bannersEventos.length > 0 && (
+        <div 
+          className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-md group"
+          onMouseEnter={() => setIsBannerHovered(true)}
+          onMouseLeave={() => setIsBannerHovered(false)}
+        >
+          {/* Trilha do Carrossel (Horizontal flex layout: transform translateX move os elementos deslizando da direita para a esquerda) */}
+          <div 
+            className="flex transition-transform duration-500 ease-in-out w-full"
+            style={{ transform: `translateX(-${bannerIndex * 100}%)` }}
+          >
+            {bannersEventos.map((item, idx) => (
+              <div 
+                key={item.id || idx} 
+                className="w-full shrink-0 min-w-full relative h-48 sm:h-56 md:h-64 overflow-hidden"
+              >
+                <img 
+                  src={item.imagem_url} 
+                  alt={item.titulo}
+                  className="w-full h-full object-cover"
+                />
+                {/* Overlay gradiente escuro */}
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-transparent flex flex-col justify-end p-5 sm:p-7 text-white">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-blue-600/90 backdrop-blur-md text-white text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-wider shadow-sm">
+                      {item.badge || item.tipo || 'Evento'}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-white/10 backdrop-blur-md px-2.5 py-0.5 rounded-full">
+                      {item.tipo}
+                    </span>
+                  </div>
+                  <h3 className="text-lg sm:text-2xl font-black tracking-tight leading-tight line-clamp-1">
+                    {item.titulo}
+                  </h3>
+                  {item.subtitulo && (
+                    <p className="text-xs sm:text-sm text-slate-200 mt-1 font-medium line-clamp-2 max-w-2xl">
+                      {item.subtitulo}
+                    </p>
+                  )}
+                  {item.link && (
+                    <div className="mt-3">
+                      <button 
+                        onClick={() => {
+                          if (item.link.startsWith('http')) {
+                            window.open(item.link, '_blank');
+                          } else if (item.isEvento) {
+                            onNavigate('agenda', 'eventos');
+                          }
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-blue-50 transition-all shadow-sm active:scale-95 cursor-pointer"
+                      >
+                        <span>Saiba mais</span>
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Setas de Navegação Manual */}
+          {bannersEventos.length > 1 && (
+            <>
+              <button
+                onClick={() => setBannerIndex(prev => (prev === 0 ? bannersEventos.length - 1 : prev - 1))}
+                className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/40 hover:bg-slate-900/80 backdrop-blur-md text-white border border-white/20 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-10 cursor-pointer active:scale-90"
+                aria-label="Banner anterior"
+              >
+                <ChevronLeft size={20} strokeWidth={2.5} />
+              </button>
+              <button
+                onClick={() => setBannerIndex(prev => (prev + 1) % bannersEventos.length)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/40 hover:bg-slate-900/80 backdrop-blur-md text-white border border-white/20 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-10 cursor-pointer active:scale-90"
+                aria-label="Próximo banner"
+              >
+                <ChevronRight size={20} strokeWidth={2.5} />
+              </button>
+
+              {/* Bolinhas Indicadoras (Dots Pagination) */}
+              <div className="absolute bottom-3 right-5 flex items-center gap-1.5 z-10 bg-slate-950/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                {bannersEventos.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setBannerIndex(i)}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                      i === bannerIndex ? 'w-6 bg-white' : 'w-2 bg-white/40 hover:bg-white/70'
+                    }`}
+                    aria-label={`Ir para banner ${i + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 3. MENU DE ABAS PREMIUM (TABS NAVIGATION) */}
       <div className="flex bg-white/70 backdrop-blur-md p-1.5 rounded-2xl shadow-sm border border-slate-200/80 overflow-x-auto scrollbar-hide gap-1.5">
         {[
           { id: 'visao_geral', label: 'Visão Geral', icon: <Users size={16} /> },
@@ -394,39 +606,35 @@ export default function OverviewDashboard({
                 />
               </div>
 
-              {/* StatCards para Mobile com Cores Diferenciadas, Contraste e Ícones Maiores */}
+              {/* StatCards para Mobile com Cores Sólidas */}
               <div className="sm:hidden grid grid-cols-1 gap-4">
                 <CardMobileIndicador
                   label="Total de Pessoas"
                   valor={totalPessoasAtivas}
                   detalhe="Membros Ativos"
                   icon={Users}
-                  gradient="from-blue-600 via-blue-700 to-indigo-800"
-                  shadowColor="shadow-blue-500/10"
+                  colorBg="bg-blue-600"
                 />
                 <CardMobileIndicador
                   label="Células"
                   valor={totalCelulas}
                   detalhe="Ativas"
                   icon={Home}
-                  gradient="from-emerald-600 via-emerald-700 to-teal-800"
-                  shadowColor="shadow-emerald-500/10"
+                  colorBg="bg-emerald-600"
                 />
                 <CardMobileIndicador
                   label="Novos Convertidos"
                   valor={novosConvertidosMes}
                   detalhe="Este Mês"
                   icon={Sparkles}
-                  gradient="from-purple-600 via-purple-700 to-fuchsia-800"
-                  shadowColor="shadow-purple-500/10"
+                  colorBg="bg-purple-600"
                 />
                 <CardMobileIndicador
                   label="Taxa de Batismo"
                   valor={`${taxaBatismo}%`}
                   detalhe={`${totalBatizados} batizados`}
                   icon={Award}
-                  gradient="from-amber-500 via-amber-600 to-orange-700"
-                  shadowColor="shadow-amber-500/10"
+                  colorBg="bg-amber-500"
                 />
               </div>
 
@@ -468,8 +676,8 @@ export default function OverviewDashboard({
                     {aniversariantesMes.length === 0 ? (
                       <p className="text-center text-xs text-slate-400 italic py-4">Sem aniversariantes no mês atual.</p>
                     ) : (
-                      <div className="max-h-[300px] overflow-y-auto pr-1 space-y-2.5 scrollbar-hide">
-                        {aniversariantesMes.slice(0, 8).map((pessoa) => (
+                      <div className="space-y-2.5">
+                        {aniversariantesMes.map((pessoa) => (
                           <div 
                             key={pessoa.id} 
                             onClick={() => onVerMembro(pessoa.id)}
@@ -827,10 +1035,10 @@ export default function OverviewDashboard({
   );
 }
 
-function CardMobileIndicador({ label, valor, detalhe, icon: Icon, gradient, shadowColor }) {
+function CardMobileIndicador({ label, valor, detalhe, icon: Icon, colorBg = 'bg-blue-600' }) {
   return (
     <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-xs flex items-center gap-5 text-slate-850 animate-in fade-in slide-in-from-top-1 duration-300">
-      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 text-white shadow-sm`}>
+      <div className={`w-14 h-14 rounded-2xl ${colorBg} flex items-center justify-center shrink-0 text-white shadow-sm`}>
         <Icon className="w-8 h-8 text-white" strokeWidth={1.8} />
       </div>
       <div className="flex-1 min-w-0">

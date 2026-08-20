@@ -2,10 +2,9 @@ import { supabase } from '../../supabaseClient';
 
 export const autoEscalaService = {
   /**
-   * Executa a autoescala inteligente para um ministério em um determinado evento.
-   * Seleciona voluntários com base em disponibilidade e revezamento de histórico.
+   * Retorna apenas as sugestões de autoescala sem persistir no banco.
    */
-  async gerarEscala({ eventoId, ministerioId }) {
+  async obterSugestoes({ eventoId, ministerioId }) {
     // 1. Obter informações do evento para identificar o dia da semana
     const { data: evento, error: errEvento } = await supabase
       .from('eventos_ministeriais')
@@ -83,7 +82,6 @@ export const autoEscalaService = {
         bloqueios.forEach(b => {
           const inicio = new Date(b.data_inicio);
           const fim = new Date(b.data_fim);
-          // O evento está dentro do intervalo do bloqueio (inclusivo)
           if (dataEventoObj >= inicio && dataEventoObj <= fim) {
             blockedPessoas.add(b.pessoa_id);
           }
@@ -93,7 +91,7 @@ export const autoEscalaService = {
       console.warn('Erro ao obter bloqueios, ignorando:', e);
     }
 
-    // 5. Obter escalas já existentes para este evento (para evitar duplicidade no mesmo evento)
+    // 5. Obter escalas já existentes para este evento
     const { data: escalasEvento, error: errEscalasEv } = await supabase
       .from('escalas')
       .select('pessoa_id')
@@ -104,7 +102,7 @@ export const autoEscalaService = {
       (escalasEvento || []).map(e => e.pessoa_id).filter(Boolean)
     );
 
-    // 6. Obter o histórico de escalas passadas do ministério para analisar revezamento
+    // 6. Obter histórico
     const { data: historicoEscalas, error: errHist } = await supabase
       .from('escalas')
       .select('pessoa_id, created_at, status')
@@ -123,17 +121,15 @@ export const autoEscalaService = {
       }
     });
 
-    // 7. Preparar os voluntários elegíveis estruturando os critérios
-    // Sistema IGNORA completamente membros com bloqueios ativos (férias, afastamento, etc.)
+    // 7. Preparar elegíveis
     const candidatosFiltradosPorBloqueio = membrosAtivos.filter(m => !blockedPessoas.has(m.pessoa_id));
 
     const voluntariosElegiveis = candidatosFiltradosPorBloqueio.map(m => {
       const pessoaId = m.pessoa_id;
-      // Se não houver registro de disponibilidade, consideramos disponível por padrão (true)
       const disponivel = mapaDisponibilidade[pessoaId] !== false;
       const jaEscalado = pessoasJaEscaladasNoEvento.has(pessoaId);
       const totalServido = participacoesPorPessoa[pessoaId] || 0;
-      const ultimaVezServida = ultimaParticipacaoPorPessoa[pessoaId] || 0; // 0 significa nunca
+      const ultimaVezServida = ultimaParticipacaoPorPessoa[pessoaId] || 0;
 
       return {
         membro: m,
@@ -146,20 +142,14 @@ export const autoEscalaService = {
       };
     });
 
-    // 8. Distribuir voluntários para cada função do ministério
+    // 8. Distribuir voluntários
     const novasEscalas = [];
     const pessoasSelecionadasNestaAutoEscala = new Set();
 
     for (const funcao of funcoes) {
-      // Filtrar candidatos para esta função específica
-      // O candidato deve:
-      // - Estar apto para a função (ter a função nas multifunções)
-      // - Estar disponível no dia do evento (Regra Estrita: A escala só considera dias disponíveis)
-      // - Não estar já escalado em outro cargo no mesmo evento (evitar sobreposição)
-      // - Não ter sido já selecionado nesta mesma autoescala
       let candidatos = voluntariosElegiveis.filter(v => {
         const funcoesDoMembro = v.membro.funcao ? v.membro.funcao.split(',').map(s => s.trim().toLowerCase()) : [];
-        const apto = funcoesDoMembro.includes(funcao.nome.toLowerCase());
+        const apto = funcoesDoMembro.length === 0 || funcoesDoMembro.includes(funcao.nome.toLowerCase());
         return apto && 
           v.disponivel && 
           !v.jaEscalado && 
@@ -167,18 +157,13 @@ export const autoEscalaService = {
       });
 
       if (candidatos.length === 0) {
-        continue; // Sem candidatos disponíveis (disponíveis no dia) para esta função
+        continue;
       }
 
-      // Ordenar candidatos pelos critérios de inteligência:
-      // 1. Quem serviu há mais tempo (menor data de última vez servida) deve ser priorizado (Prioridade 3)
-      // 2. Em caso de empate, quem tem menor quantidade de participações (Prioridade 4)
       candidatos.sort((a, b) => {
-        // Ordenação por revezamento: quem nunca serviu (0) vai primeiro.
         if (a.ultimaVezServida !== b.ultimaVezServida) {
           return a.ultimaVezServida - b.ultimaVezServida; 
         }
-        // Desempate por quantidade
         return a.totalServido - b.totalServido;
       });
 
@@ -194,7 +179,15 @@ export const autoEscalaService = {
       });
     }
 
-    // 9. Salvar as novas atribuições de escalas no Supabase
+    return novasEscalas;
+  },
+
+  /**
+   * Executa a autoescala inteligente e salva diretamente no banco.
+   */
+  async gerarEscala({ eventoId, ministerioId }) {
+    const novasEscalas = await this.obterSugestoes({ eventoId, ministerioId });
+
     if (novasEscalas.length > 0) {
       const { data, error: errInsert } = await supabase
         .from('escalas')
@@ -203,7 +196,6 @@ export const autoEscalaService = {
 
       if (errInsert) throw errInsert;
       
-      // Registrar no histórico de cada pessoa
       for (const esc of novasEscalas) {
         try {
           await supabase

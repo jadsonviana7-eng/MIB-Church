@@ -24,6 +24,7 @@ export default function EscalasMinisteriais({
     titulo: '',
     descricao: '',
     local: '',
+    pregador: '',
     data_evento: '',
     data_fim: ''
   });
@@ -39,6 +40,9 @@ export default function EscalasMinisteriais({
   const [listaMinisterios, setListaMinisterios] = useState([]);
   const [listaFuncoes, setListaFuncoes] = useState([]);
   const [listaPessoas, setListaPessoas] = useState([]); // Membros do ministério selecionado
+  const [todasPessoasSistema, setTodasPessoasSistema] = useState([]); // Todas as pessoas cadastradas
+  const [pregadorModal, setPregadorModal] = useState(''); // Pregador digitado ou selecionado no modal
+  const [salvandoPregador, setSalvandoPregador] = useState(false);
   const [buscaVoluntario, setBuscaVoluntario] = useState('');
   const [voluntarioSelecionado, setVoluntarioSelecionado] = useState(null);
   const [atribuicoesModal, setAtribuicoesModal] = useState({}); // { [funcao_id]: pessoa_id }
@@ -86,6 +90,7 @@ export default function EscalasMinisteriais({
     titulo: '',
     descricao: '',
     local: '',
+    pregador: '',
     data_evento: '',
     data_fim: ''
   });
@@ -122,6 +127,7 @@ export default function EscalasMinisteriais({
     timeEnd: '21:30',
     titulo: '',
     local: '',
+    pregador: '',
     descricao: ''
   });
   const [previaEventos, setPreviaEventos] = useState([]);
@@ -187,6 +193,10 @@ export default function EscalasMinisteriais({
       }
       const mins = await escalasService.listarMinisterios();
       setListaMinisterios(mins || []);
+
+      // Carregar todas as pessoas para sugestão rápida de pregador / membros
+      const { data: todasp } = await supabase.from('pessoas').select('id, nome').order('nome');
+      setTodasPessoasSistema(todasp || []);
     } catch (error) {
       console.error('Erro ao carregar eventos:', error);
     }
@@ -243,6 +253,7 @@ export default function EscalasMinisteriais({
   }
 
   function extrairHoraFim(evento) {
+    if (!evento) return null;
     if (evento.data_fim) {
       return parseDatabaseDate(evento.data_fim);
     }
@@ -259,9 +270,99 @@ export default function EscalasMinisteriais({
     return null;
   }
 
+  function extrairPregador(evento) {
+    if (!evento) return '';
+    if (evento.pregador && typeof evento.pregador === 'string' && evento.pregador.trim()) {
+      return evento.pregador.trim();
+    }
+    if (evento.fardamentos && evento.fardamentos._pregador) {
+      return evento.fardamentos._pregador.trim();
+    }
+    if (evento.descricao) {
+      const match = evento.descricao.match(/\[PREGADOR:(.+?)\]/);
+      if (match && match[1]) {
+        return match[1].trim();
+      }
+    }
+    return '';
+  }
+
   function obterDescricaoSemFim(descricao) {
     if (!descricao) return '';
-    return descricao.replace(/\[FIM:(.+?)\]/, '').trim();
+    return descricao
+      .replace(/\[FIM:(.+?)\]/g, '')
+      .replace(/\[PREGADOR:(.+?)\]/g, '')
+      .trim();
+  }
+
+  function obterDescricaoSemMetadados(descricao) {
+    return obterDescricaoSemFim(descricao);
+  }
+
+  function isMinisterioCultos(minObjOrNome) {
+    if (!minObjOrNome) return false;
+    const nome = typeof minObjOrNome === 'string' ? minObjOrNome : (minObjOrNome.nome || '');
+    const norm = nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    return norm === 'cultos' || norm === 'culto' || norm.includes('culto');
+  }
+
+  async function salvarPregadorEvento(eventoId, nomePregador) {
+    if (!eventoId) return null;
+    const pregadorLimpo = (nomePregador || '').trim();
+    
+    // Obter dados do evento atual para manter fardamentos e horário de término intactos
+    const evBase = eventos.find(e => e.id === eventoId) || eventoSelecionado || {};
+    const fardamentosAtuais = evBase.fardamentos || {};
+    const novosFardamentos = { ...fardamentosAtuais, _pregador: pregadorLimpo };
+    const descLimpa = obterDescricaoSemMetadados(evBase.descricao);
+    const dataFimObj = extrairHoraFim(evBase);
+    let novaDesc = descLimpa;
+    if (dataFimObj) novaDesc = `${novaDesc} [FIM:${dataFimObj.toISOString()}]`.trim();
+    if (pregadorLimpo) novaDesc = `${novaDesc} [PREGADOR:${pregadorLimpo}]`.trim();
+
+    // 1. Tentar salvar diretamente na coluna pregador + fallback de metadados
+    try {
+      const { data, error } = await supabase
+        .from('eventos_ministeriais')
+        .update({
+          pregador: pregadorLimpo || null,
+          fardamentos: novosFardamentos,
+          descricao: novaDesc
+        })
+        .eq('id', eventoId)
+        .select()
+        .single();
+
+      if (!error && data) {
+        setEventoSelecionado(data);
+        setEventos(prev => prev.map(e => e.id === data.id ? data : e));
+        return data;
+      }
+      throw error || new Error('Erro na atualização');
+    } catch (err) {
+      // 2. Fallback resiliente: caso a coluna 'pregador' ainda não exista no Supabase
+      try {
+        const { data: data2, error: err2 } = await supabase
+          .from('eventos_ministeriais')
+          .update({
+            fardamentos: novosFardamentos,
+            descricao: novaDesc
+          })
+          .eq('id', eventoId)
+          .select()
+          .single();
+
+        if (err2) throw err2;
+        if (data2) {
+          setEventoSelecionado(data2);
+          setEventos(prev => prev.map(e => e.id === data2.id ? data2 : e));
+          return data2;
+        }
+      } catch (fallbackErr) {
+        console.error('Erro ao salvar pregador:', fallbackErr);
+        throw fallbackErr;
+      }
+    }
   }
 
   function obterHoraExibicao(ev) {
@@ -361,13 +462,18 @@ export default function EscalasMinisteriais({
     try {
       return await escalasService.criarEvento(payload);
     } catch (error) {
-      const erroColuna = error.code === 'PGRST204' || (error.message && error.message.includes('data_fim'));
+      const erroColuna = error.code === 'PGRST204' || (error.message && (error.message.includes('data_fim') || error.message.includes('pregador')));
       if (erroColuna) {
-        const { data_fim, ...rest } = payload;
-        const descricaoComFim = data_fim ? `${rest.descricao || ''} [FIM:${data_fim}]`.trim() : rest.descricao;
+        const { data_fim, pregador, fardamentos, ...rest } = payload;
+        let descComMeta = rest.descricao || '';
+        if (data_fim) descComMeta = `${descComMeta} [FIM:${data_fim}]`.trim();
+        if (pregador) descComMeta = `${descComMeta} [PREGADOR:${pregador}]`.trim();
+        const novosFardamentos = { ...(fardamentos || {}), ...(pregador ? { _pregador: pregador } : {}) };
+
         return await escalasService.criarEvento({
           ...rest,
-          descricao: descricaoComFim
+          fardamentos: novosFardamentos,
+          descricao: descComMeta
         });
       }
       throw error;
@@ -378,12 +484,20 @@ export default function EscalasMinisteriais({
     try {
       return await escalasService.criarEventosEmLote(payloads);
     } catch (error) {
-      const erroColuna = error.code === 'PGRST204' || (error.message && error.message.includes('data_fim'));
+      const erroColuna = error.code === 'PGRST204' || (error.message && (error.message.includes('data_fim') || error.message.includes('pregador')));
       if (erroColuna) {
         const novosPayloads = payloads.map(p => {
-          const { data_fim, ...rest } = p;
-          const descricaoComFim = data_fim ? `${rest.descricao || ''} [FIM:${data_fim}]`.trim() : rest.descricao;
-          return { ...rest, descricao: descricaoComFim };
+          const { data_fim, pregador, fardamentos, ...rest } = p;
+          let descComMeta = rest.descricao || '';
+          if (data_fim) descComMeta = `${descComMeta} [FIM:${data_fim}]`.trim();
+          if (pregador) descComMeta = `${descComMeta} [PREGADOR:${pregador}]`.trim();
+          const novosFardamentos = { ...(fardamentos || {}), ...(pregador ? { _pregador: pregador } : {}) };
+
+          return {
+            ...rest,
+            fardamentos: novosFardamentos,
+            descricao: descComMeta
+          };
         });
         return await escalasService.criarEventosEmLote(novosPayloads);
       }
@@ -395,13 +509,18 @@ export default function EscalasMinisteriais({
     try {
       return await escalasService.atualizarEvento(id, payload);
     } catch (error) {
-      const erroColuna = error.code === 'PGRST204' || (error.message && error.message.includes('data_fim'));
+      const erroColuna = error.code === 'PGRST204' || (error.message && (error.message.includes('data_fim') || error.message.includes('pregador')));
       if (erroColuna) {
-        const { data_fim, ...rest } = payload;
-        const descricaoComFim = data_fim ? `${rest.descricao || ''} [FIM:${data_fim}]`.trim() : rest.descricao;
+        const { data_fim, pregador, fardamentos, ...rest } = payload;
+        let descComMeta = rest.descricao || '';
+        if (data_fim) descComMeta = `${descComMeta} [FIM:${data_fim}]`.trim();
+        if (pregador) descComMeta = `${descComMeta} [PREGADOR:${pregador}]`.trim();
+        const novosFardamentos = { ...(fardamentos || {}), ...(pregador ? { _pregador: pregador } : {}) };
+
         return await escalasService.atualizarEvento(id, {
           ...rest,
-          descricao: descricaoComFim
+          fardamentos: novosFardamentos,
+          descricao: descComMeta
         });
       }
       throw error;
@@ -421,12 +540,13 @@ export default function EscalasMinisteriais({
         titulo: novoEvento.titulo,
         local: novoEvento.local,
         descricao: novoEvento.descricao,
+        pregador: novoEvento.pregador ? novoEvento.pregador.trim() : null,
         data_evento: parsedInicio.toISOString(),
         data_fim: parsedFim ? parsedFim.toISOString() : null
       };
       await executarCriarEvento(payload);
       setModalEvento(false);
-      setNovoEvento({ titulo: '', descricao: '', local: '', data_evento: '', data_fim: '' });
+      setNovoEvento({ titulo: '', descricao: '', local: '', pregador: '', data_evento: '', data_fim: '' });
       carregarEventos();
     } catch (error) {
       alert("Erro ao salvar evento: " + error.message);
@@ -499,6 +619,7 @@ export default function EscalasMinisteriais({
           data_evento: dataEvento.toISOString(),
           data_fim: dataFim,
           local: evt.local || localPadrao || 'Templo Sede',
+          pregador: evt.pregador ? evt.pregador.trim() : null,
           descricao: evt.descricao || 'Programação especial.',
           incluir: true,
           isCustom: true
@@ -551,6 +672,7 @@ export default function EscalasMinisteriais({
       timeEnd: '21:30',
       titulo: '',
       local: '',
+      pregador: '',
       descricao: ''
     });
   }
@@ -595,6 +717,7 @@ export default function EscalasMinisteriais({
         data_evento: item.data_evento,
         data_fim: item.data_fim || null,
         local: item.local,
+        pregador: item.pregador ? item.pregador.trim() : null,
         descricao: item.descricao
       }));
 
@@ -655,8 +778,9 @@ export default function EscalasMinisteriais({
     setEventoEditando({
       id: evento.id,
       titulo: evento.titulo,
-      descricao: obterDescricaoSemFim(evento.descricao),
+      descricao: obterDescricaoSemMetadados(evento.descricao),
       local: evento.local || '',
+      pregador: extrairPregador(evento),
       data_evento: formatarParaInputDateTime(evento.data_evento),
       data_fim: dataFimObj ? formatarParaInputDateTime(dataFimObj.toISOString()) : ''
     });
@@ -676,6 +800,7 @@ export default function EscalasMinisteriais({
         titulo: eventoEditando.titulo,
         local: eventoEditando.local,
         descricao: eventoEditando.descricao,
+        pregador: eventoEditando.pregador ? eventoEditando.pregador.trim() : null,
         data_evento: parsedInicio.toISOString(),
         data_fim: parsedFim ? parsedFim.toISOString() : null
       };
@@ -701,16 +826,21 @@ export default function EscalasMinisteriais({
   }
 
   // Carregar dados auxiliares ao abrir modal de escalar
-  async function abrirModalEscala(ministerioId = null) {
+  async function abrirModalEscala(param = null) {
     if (!eventoSelecionado) return;
+    const ministerioId = (typeof param === 'string' || typeof param === 'number') ? String(param) : null;
     try {
       const mins = await escalasService.listarMinisterios();
       setListaMinisterios(mins || []);
+      setPregadorModal(extrairPregador(eventoSelecionado));
       setModalEscala(true);
       if (ministerioId) {
         handleSelecionarMinisterio(ministerioId);
       } else {
         setNovaEscala({ ministerio_id: '', funcao_id: '', pessoa_id: '' });
+        setListaFuncoes([]);
+        setListaPessoas([]);
+        setAtribuicoesModal({});
       }
     } catch (error) {
       console.error('Erro ao carregar ministérios:', error);
@@ -749,51 +879,79 @@ export default function EscalasMinisteriais({
       });
       setAtribuicoesModal(mapaInicial);
     } catch (error) {
-      console.error('Erro ao carregar funções/pessoas:', error);
+      console.error('Erro ao carregar dados do ministério:', error);
+    }
+  }
+
+  async function salvarApenasPregador() {
+    if (!eventoSelecionado) return;
+    setSalvandoPregador(true);
+    try {
+      const evAtualizado = await salvarPregadorEvento(eventoSelecionado.id, pregadorModal);
+      if (evAtualizado) {
+        setEventoSelecionado(evAtualizado);
+        setEventos(prev => prev.map(e => e.id === evAtualizado.id ? evAtualizado : e));
+      }
+      mostrarToast('✓ Pregador do culto salvo com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar pregador:', error);
+      alert('Erro ao salvar pregador: ' + error.message);
+    } finally {
+      setSalvandoPregador(false);
     }
   }
 
   async function salvarEscalasMultiplas() {
-    if (!novaEscala.ministerio_id || !eventoSelecionado) return;
+    if (!eventoSelecionado) return;
     setSalvandoEscalasMultiplas(true);
 
     try {
+      let evAtualizado = eventoSelecionado;
+      // 1. Sincroniza o pregador do evento se tiver sido modificado
+      const pregadorAtual = extrairPregador(eventoSelecionado);
+      if (pregadorModal.trim() !== pregadorAtual.trim()) {
+        evAtualizado = (await salvarPregadorEvento(eventoSelecionado.id, pregadorModal)) || eventoSelecionado;
+      }
+
+      // 2. Se um ministério estiver selecionado, salva as atribuições das funções
       const minId = novaEscala.ministerio_id;
-      const jaEscalados = escalas.filter(e => String(e.ministerio_id) === String(minId));
-      const jaEscaladosPorFuncao = {};
-      jaEscalados.forEach(e => {
-        if (e.funcao_id) {
-          jaEscaladosPorFuncao[e.funcao_id] = e;
-        }
-      });
-
-      for (const funcao of listaFuncoes) {
-        const novaPessoaId = atribuicoesModal[funcao.id];
-        const itemExistente = jaEscaladosPorFuncao[funcao.id];
-
-        if (novaPessoaId && novaPessoaId !== '') {
-          if (!itemExistente) {
-            await escalasService.adicionarEscala({
-              evento_id: eventoSelecionado.id,
-              ministerio_id: minId,
-              funcao_id: funcao.id,
-              pessoa_id: novaPessoaId,
-              status: 'pendente'
-            });
-          } else if (String(itemExistente.pessoa_id) !== String(novaPessoaId)) {
-            await supabase
-              .from('escalas')
-              .update({ pessoa_id: novaPessoaId })
-              .eq('id', itemExistente.id);
+      if (minId) {
+        const jaEscalados = escalas.filter(e => String(e.ministerio_id) === String(minId));
+        const jaEscaladosPorFuncao = {};
+        jaEscalados.forEach(e => {
+          if (e.funcao_id) {
+            jaEscaladosPorFuncao[e.funcao_id] = e;
           }
-        } else if (itemExistente) {
-          await escalasService.excluirEscala(itemExistente.id);
+        });
+
+        for (const funcao of listaFuncoes) {
+          const novaPessoaId = atribuicoesModal[funcao.id];
+          const itemExistente = jaEscaladosPorFuncao[funcao.id];
+
+          if (novaPessoaId && novaPessoaId !== '') {
+            if (!itemExistente) {
+              await escalasService.adicionarEscala({
+                evento_id: eventoSelecionado.id,
+                ministerio_id: minId,
+                funcao_id: funcao.id,
+                pessoa_id: novaPessoaId,
+                status: 'pendente'
+              });
+            } else if (String(itemExistente.pessoa_id) !== String(novaPessoaId)) {
+              await supabase
+                .from('escalas')
+                .update({ pessoa_id: novaPessoaId })
+                .eq('id', itemExistente.id);
+            }
+          } else if (itemExistente) {
+            await escalasService.excluirEscala(itemExistente.id);
+          }
         }
       }
 
       fecharModalEscala();
-      await selecionarEvento(eventoSelecionado);
-      mostrarToast('✓ Escala do ministério salva com sucesso!');
+      await selecionarEvento(evAtualizado);
+      mostrarToast(minId ? '✓ Escala e dados do evento salvos!' : '✓ Dados do evento atualizados!');
     } catch (error) {
       console.error('Erro ao salvar escalas do ministério:', error);
       if (error.conflito || error.message?.includes('ESTA_PESSOA_JA_ESCALADA')) {
@@ -808,7 +966,7 @@ export default function EscalasMinisteriais({
         }
         setModalConflito(conflitoObj);
       } else {
-        alert('Erro ao salvar escala: ' + error.message);
+        alert('Erro ao salvar: ' + error.message);
       }
     } finally {
       setSalvandoEscalasMultiplas(false);
@@ -957,6 +1115,7 @@ export default function EscalasMinisteriais({
     setListaPessoas([]);
     setBuscaVoluntario('');
     setVoluntarioSelecionado(null);
+    setPregadorModal('');
   }
 
   function mostrarToast(msg) {
@@ -966,20 +1125,68 @@ export default function EscalasMinisteriais({
 
   // Agrupar escalas do evento atual por ministério
   const escalasAgrupadas = useMemo(() => {
-    return escalas.reduce((acc, item) => {
+    const acc = escalas.reduce((map, item) => {
       const minNome = item.ministerios?.nome || 'Sem Ministério';
-      if (!acc[minNome]) {
-        acc[minNome] = {
+      if (!map[minNome]) {
+        map[minNome] = {
           id: item.ministerio_id,
           nome: minNome,
           fardamentos: item.ministerios?.fardamentos || [],
           itens: []
         };
       }
-      acc[minNome].itens.push(item);
-      return acc;
+      map[minNome].itens.push(item);
+      return map;
     }, {});
-  }, [escalas]);
+
+    // Se houver pregador definido no evento, incluir na função de Pregação do ministério Cultos
+    const pregadorEv = extrairPregador(eventoSelecionado);
+    if (pregadorEv && eventoSelecionado) {
+      // Procura ministério Cultos nos grupos existentes ou na lista de ministérios
+      let minCultosEntry = Object.values(acc).find(g => isMinisterioCultos(g.nome));
+      if (!minCultosEntry) {
+        const minCultosObj = listaMinisterios.find(m => isMinisterioCultos(m.nome));
+        if (minCultosObj) {
+          const nomeMin = minCultosObj.nome;
+          acc[nomeMin] = {
+            id: minCultosObj.id,
+            nome: nomeMin,
+            fardamentos: minCultosObj.fardamentos || [],
+            itens: []
+          };
+          minCultosEntry = acc[nomeMin];
+        }
+      }
+
+      if (minCultosEntry) {
+        const jaTemFuncPregacao = minCultosEntry.itens.some(i => 
+          (i.ministerio_funcoes?.nome || '').toLowerCase().includes('prega') ||
+          (i.ministerio_funcoes?.nome || '').toLowerCase().includes('palavra')
+        );
+        if (!jaTemFuncPregacao) {
+          minCultosEntry.itens.unshift({
+            id: `pregador-manual-${eventoSelecionado.id}`,
+            isPregadorManual: true,
+            ministerio_id: minCultosEntry.id,
+            pessoas: { nome: pregadorEv },
+            ministerio_funcoes: { nome: 'Pregação' },
+            status: 'confirmado'
+          });
+        } else {
+          // Se já tem item de pregação mas o nome estava vazio, preenche com o pregador do evento
+          minCultosEntry.itens = minCultosEntry.itens.map(i => {
+            const ehPrega = (i.ministerio_funcoes?.nome || '').toLowerCase().includes('prega') || (i.ministerio_funcoes?.nome || '').toLowerCase().includes('palavra');
+            if (ehPrega && !i.pessoas?.nome) {
+              return { ...i, pessoas: { nome: pregadorEv } };
+            }
+            return i;
+          });
+        }
+      }
+    }
+
+    return acc;
+  }, [escalas, eventoSelecionado, listaMinisterios]);
 
   // Filtrar voluntários no modal de escalação
   const voluntáriosFiltrados = useMemo(() => {
@@ -1047,11 +1254,16 @@ export default function EscalasMinisteriais({
 
     const dataFormatada = `${diaSemanaLong}, ${Number(dataInfo.diaNum)} de ${mesNome}`;
     const horaFormatada = obterHoraExibicao(eventoSelecionado);
+    const pregador = extrairPregador(eventoSelecionado);
 
     let texto = `*MIB CHURCH — ESCALA DE VOLUNTÁRIOS*\n`;
     texto += `*EVENTO:* ${eventoSelecionado.titulo.toUpperCase()}\n`;
     texto += `*DATA:* ${dataFormatada} às ${horaFormatada}\n`;
-    texto += `*LOCAL:* ${eventoSelecionado.local || 'Templo Sede'}\n\n`;
+    texto += `*LOCAL:* ${eventoSelecionado.local || 'Templo Sede'}\n`;
+    if (pregador) {
+      texto += `*PREGADOR:* ${pregador}\n`;
+    }
+    texto += `\n`;
 
     Object.entries(escalasAgrupadas).forEach(([minNome, grupo]) => {
       const fardaSel = eventoSelecionado?.fardamentos?.[grupo.id];
@@ -1082,11 +1294,16 @@ export default function EscalasMinisteriais({
 
     const dataFormatada = `${diaSemanaLong}, ${Number(dataInfo.diaNum)} de ${mesNome}`;
     const horaFormatada = obterHoraExibicao(eventoSelecionado);
+    const pregador = extrairPregador(eventoSelecionado);
 
     let texto = `*MIB CHURCH — ESCALA DE VOLUNTÁRIOS*\n`;
     texto += `*EVENTO:* ${eventoSelecionado.titulo.toUpperCase()}\n`;
     texto += `*DATA:* ${dataFormatada} às ${horaFormatada}\n`;
-    texto += `*LOCAL:* ${eventoSelecionado.local || 'Templo Sede'}\n\n`;
+    texto += `*LOCAL:* ${eventoSelecionado.local || 'Templo Sede'}\n`;
+    if (pregador) {
+      texto += `*PREGADOR:* ${pregador}\n`;
+    }
+    texto += `\n`;
 
     const fardaSel = eventoSelecionado?.fardamentos?.[grupo.id];
     texto += `*${grupo.nome.toUpperCase()}*${fardaSel ? ` _(Farda: ${fardaSel})_` : ''}\n`;
@@ -1120,7 +1337,16 @@ export default function EscalasMinisteriais({
 
         // Fetch and sort functions of the ministry to ensure fixed order/position
         const funcs = await escalasService.listarFuncoes(minExportarId);
-        const funcsOrdenadas = (funcs || []).sort((a, b) => a.nome.localeCompare(b.nome));
+        let funcsOrdenadas = (funcs || []).sort((a, b) => a.nome.localeCompare(b.nome));
+
+        // Se for ministério Cultos e não tiver função de Pregação, inclui na lista para exibição
+        const minSel = listaMinisterios.find(m => m.id === minExportarId);
+        if (minSel && isMinisterioCultos(minSel.nome)) {
+          const temPregacao = funcsOrdenadas.some(f => f.nome.toLowerCase().includes('prega') || f.nome.toLowerCase().includes('palavra'));
+          if (!temPregacao) {
+            funcsOrdenadas = [{ id: '_pregacao_cultos', nome: 'Pregação' }, ...funcsOrdenadas];
+          }
+        }
         setFuncoesExportar(funcsOrdenadas);
       } catch (error) {
         console.error('Erro ao carregar dados da escala mensal para exportação:', error);
@@ -1153,28 +1379,34 @@ export default function EscalasMinisteriais({
 
         // Find volunteers for this event and this ministry
         const atribuicoes = dadosMensaisExportar.filter(item => item.evento_id === ev.id);
-        const hasVolunteers = atribuicoes.length > 0;
+        const pregadorEv = extrairPregador(ev);
+        const hasVolunteers = atribuicoes.length > 0 || (pregadorEv && isMinisterioCultos(ministerio.nome));
 
         const assignmentsHTML = hasVolunteers ? funcoesExportar.map((func) => {
           const item = atribuicoes.find(att => att.funcao_id === func.id);
-          const statusIcon = item ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') : '';
-          const nomePessoa = item?.pessoas?.nome || '— —';
+          const isFuncPregacao = func.nome.toLowerCase().includes('prega') || func.nome.toLowerCase().includes('palavra') || func.id === '_pregacao_cultos';
+          const nomePessoa = item?.pessoas?.nome || (isFuncPregacao && pregadorEv ? pregadorEv : '— —');
+          const statusIcon = item 
+            ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') 
+            : (isFuncPregacao && pregadorEv ? '🟢' : '');
+
           return `
             <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
               <div style="font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#2563eb; opacity:0.85;">
                 ${func.nome}
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:24px; font-weight:800; color:${item ? '#0f172a' : '#94a3b8'}; font-style:${item ? 'normal' : 'italic'};">${nomePessoa}</span>
-                ${item ? `<span style="font-size:12px;">${statusIcon}</span>` : ''}
+                <span style="font-size:24px; font-weight:800; color:${nomePessoa !== '— —' ? '#0f172a' : '#94a3b8'}; font-style:${nomePessoa !== '— —' ? 'normal' : 'italic'};">${nomePessoa}</span>
+                ${statusIcon ? `<span style="font-size:12px;">${statusIcon}</span>` : ''}
               </div>
             </div>
           `;
         }).join('') : '<div style="font-size:20px; color:#94a3b8; font-style:italic; grid-column:span 2;">Sem voluntários escalados</div>';
 
         const fardaSel = ev.fardamentos?.[minExportarId];
+
         const uniformHTML = fardaSel
-          ? `<div style="display:flex; align-items:center; gap:6px; margin-top:4px; padding-top:8px; border-top:1px dashed rgba(15, 23, 42, 0.1); font-size:14px; font-weight:800; color:#475569; grid-column: span 2;">
+          ? `<div style="display:flex; align-items:center; gap:6px; margin-top:2px; padding-top:6px; border-top:1px dashed rgba(15, 23, 42, 0.1); font-size:14px; font-weight:800; color:#475569; grid-column: span 2;">
               👕 Farda: ${fardaSel}
              </div>`
           : '';
@@ -1422,6 +1654,11 @@ export default function EscalasMinisteriais({
                         }`}>
                         📍 {ev.local || 'Templo Sede'}
                       </p>
+                      {extrairPregador(ev) && (
+                        <p className={`text-[9px] font-black mt-0.5 truncate flex items-center gap-1 ${eventoSelecionado?.id === ev.id ? 'text-white/90' : 'text-blue-700'}`}>
+                          <span>🎙️</span> {extrairPregador(ev)}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -1508,7 +1745,7 @@ export default function EscalasMinisteriais({
                     {!isMembroNormal && (
                       <button
                         type="button"
-                        onClick={abrirModalEscala}
+                        onClick={() => abrirModalEscala()}
                         className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer"
                       >
                         <Plus size={13} strokeWidth={3} />
@@ -1710,6 +1947,19 @@ export default function EscalasMinisteriais({
               </div>
 
               <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1.5 flex items-center gap-1.5">
+                  <span>🎙️</span> Pregador do Culto (Opcional)
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-500 transition bg-slate-50/30"
+                  value={novoEvento.pregador}
+                  onChange={e => setNovoEvento({ ...novoEvento, pregador: e.target.value })}
+                  placeholder="Ex: Pr. João Silva ou Pr. Convidado de Fora..."
+                />
+              </div>
+
+              <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase mb-1.5">Descrição</label>
                 <textarea
                   className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-500 transition resize-none bg-slate-50/30"
@@ -1738,16 +1988,23 @@ export default function EscalasMinisteriais({
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-none sm:rounded-2xl shadow-xl w-full h-full sm:h-auto sm:max-w-md sm:max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50 shrink-0">
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
-                Escalar Voluntário
-              </h3>
+              <div>
+                <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+                  Escalar Voluntários & Pregador
+                </h3>
+                {eventoSelecionado && (
+                  <p className="text-[10px] text-slate-500 font-bold truncate max-w-[280px]">
+                    {eventoSelecionado.titulo} · {obterHoraExibicao(eventoSelecionado)}
+                  </p>
+                )}
+              </div>
               <button type="button" onClick={fecharModalEscala} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X size={20} />
               </button>
             </div>
 
             <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto">
-              {/* Selecionar Ministério */}
+              {/* 1. Selecionar Ministério no TOPO do modal */}
               <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Ministério</label>
                 <select
@@ -1755,12 +2012,75 @@ export default function EscalasMinisteriais({
                   onChange={(e) => handleSelecionarMinisterio(e.target.value)}
                   className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white outline-none focus:border-blue-500 transition cursor-pointer font-bold text-slate-700"
                 >
-                  <option value="">Selecione um ministério...</option>
+                  <option value="">Selecione um ministério para escalar voluntários...</option>
                   {listaMinisterios.map(m => (
                     <option key={m.id} value={m.id}>{m.nome}</option>
                   ))}
                 </select>
               </div>
+
+              {/* 2. Seção de Pregador: EXIBIDA SOMENTE SE O MINISTÉRIO FOR CULTOS */}
+              {(() => {
+                const minSelObj = listaMinisterios.find(m => String(m.id) === String(novaEscala.ministerio_id));
+                if (!minSelObj || !isMinisterioCultos(minSelObj.nome)) return null;
+
+                return (
+                  <div className="bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-slate-50 border border-blue-200/90 rounded-2xl p-3.5 sm:p-4 space-y-2.5 shadow-xs animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-[10px] font-black text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="text-base">🎙️</span> Pregador do Culto
+                      </label>
+                      {pregadorModal && (
+                        <button
+                          type="button"
+                          onClick={() => setPregadorModal('')}
+                          className="text-[9px] font-bold text-rose-600 hover:text-rose-800 transition cursor-pointer"
+                          title="Limpar pregador"
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={pregadorModal}
+                        onChange={(e) => setPregadorModal(e.target.value)}
+                        placeholder="Digite o nome do pregador (ex: Pr. Marcos - Convidado)..."
+                        className="w-full border border-blue-200 rounded-xl px-3 py-2.5 text-xs bg-white outline-none focus:border-blue-500 transition font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-normal shadow-xs"
+                      />
+
+                      {/* Seleção Rápida de Membro Cadastrado */}
+                      {todasPessoasSistema.length > 0 && (
+                        <div className="flex items-center gap-2 pt-0.5">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider shrink-0">
+                            Ou selecione:
+                          </span>
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                setPregadorModal(e.target.value);
+                              }
+                            }}
+                            className="w-full border border-slate-200 rounded-lg px-2 py-1 text-[11px] bg-white outline-none focus:border-blue-500 transition cursor-pointer text-slate-600 font-medium"
+                          >
+                            <option value="">— Membro cadastrado —</option>
+                            {todasPessoasSistema.map(p => (
+                              <option key={p.id} value={p.nome}>{p.nome}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between text-[9px] text-blue-800/80 pt-0.5">
+                      <span>💡 Insira pregadores visitantes ou membros cadastrados.</span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div className="space-y-4 pt-2 border-t border-slate-100">
                 {/* Seletor de Fardamento no Modal */}
@@ -1889,10 +2209,14 @@ export default function EscalasMinisteriais({
               <button
                 type="button"
                 onClick={salvarEscalasMultiplas}
-                disabled={salvandoEscalasMultiplas || !novaEscala.ministerio_id}
+                disabled={salvandoEscalasMultiplas || (!novaEscala.ministerio_id && pregadorModal.trim() === extrairPregador(eventoSelecionado).trim())}
                 className="w-full sm:flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer text-center disabled:opacity-50"
               >
-                {salvandoEscalasMultiplas ? 'Salvando Escalas...' : 'Salvar Escalas do Ministério'}
+                {salvandoEscalasMultiplas 
+                  ? 'Salvando...' 
+                  : novaEscala.ministerio_id 
+                    ? 'Salvar Escalas do Ministério' 
+                    : 'Salvar Pregador do Evento'}
               </button>
             </div>
           </div>
@@ -2166,15 +2490,25 @@ export default function EscalasMinisteriais({
                           />
                         </div>
                         <div>
-                          <label className="block text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">Local (opcional)</label>
+                          <label className="block text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">Pregador (opcional)</label>
                           <input
                             type="text"
-                            value={novoEventoCustom.local}
-                            onChange={(e) => setNovoEventoCustom(prev => ({ ...prev, local: e.target.value }))}
+                            value={novoEventoCustom.pregador}
+                            onChange={(e) => setNovoEventoCustom(prev => ({ ...prev, pregador: e.target.value }))}
                             className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs bg-white outline-none focus:border-blue-500 transition text-slate-750"
-                            placeholder="Deixar em branco para padrão"
+                            placeholder="Ex: Pr. Convidado ou Membro"
                           />
                         </div>
+                      </div>
+                      <div>
+                        <label className="block text-[8px] font-black text-slate-400 uppercase tracking-wider mb-1">Local (opcional)</label>
+                        <input
+                          type="text"
+                          value={novoEventoCustom.local}
+                          onChange={(e) => setNovoEventoCustom(prev => ({ ...prev, local: e.target.value }))}
+                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs bg-white outline-none focus:border-blue-500 transition text-slate-750"
+                          placeholder="Deixar em branco para padrão"
+                        />
                       </div>
                       <div className="flex justify-stretch sm:justify-end pt-1">
                         <button
@@ -2354,6 +2688,19 @@ export default function EscalasMinisteriais({
               </div>
 
               <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase mb-1.5 flex items-center gap-1.5">
+                  <span>🎙️</span> Pregador do Culto (Opcional)
+                </label>
+                <input
+                  type="text"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-500 transition bg-slate-50/30"
+                  value={eventoEditando.pregador}
+                  onChange={e => setEventoEditando({ ...eventoEditando, pregador: e.target.value })}
+                  placeholder="Ex: Pr. João Silva ou Pr. Convidado de Fora..."
+                />
+              </div>
+
+              <div>
                 <label className="block text-[10px] font-black text-slate-400 uppercase mb-1.5">Descrição</label>
                 <textarea
                   className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-500 transition resize-none bg-slate-50/30"
@@ -2469,8 +2816,10 @@ export default function EscalasMinisteriais({
                             const diaSemanaStr = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'][dataInfo.diaSemanaIndex];
 
                             const atribuicoes = dadosMensaisExportar.filter(item => item.evento_id === ev.id);
+                            const pregadorEv = extrairPregador(ev);
                             const fardaSel = ev.fardamentos?.[minExportarId];
-                            const hasVolunteers = atribuicoes.length > 0;
+                            const minObjSel = listaMinisterios.find(m => m.id === minExportarId);
+                            const hasVolunteers = atribuicoes.length > 0 || (pregadorEv && isMinisterioCultos(minObjSel?.nome));
 
                             return (
                               <div key={ev.id} className="mensal-export-card">
@@ -2486,17 +2835,20 @@ export default function EscalasMinisteriais({
                                   <div className="mensal-export-assignments-grid">
                                     {hasVolunteers ? funcoesExportar.map((func) => {
                                       const item = atribuicoes.find(att => att.funcao_id === func.id);
-                                      const statusIcon = item ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') : '';
-                                      const nomePessoa = item?.pessoas?.nome || '— —';
+                                      const isFuncPregacao = func.nome.toLowerCase().includes('prega') || func.nome.toLowerCase().includes('palavra') || func.id === '_pregacao_cultos';
+                                      const nomePessoa = item?.pessoas?.nome || (isFuncPregacao && pregadorEv ? pregadorEv : '— —');
+                                      const statusIcon = item 
+                                        ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') 
+                                        : (isFuncPregacao && pregadorEv ? '🟢' : '');
 
                                       return (
                                         <div key={func.id} className="mensal-export-assignment-cell">
                                           <div className="mensal-export-assignment-role" style={{ color: '#2563eb' }}>{func.nome}</div>
                                           <div className="mensal-export-assignment-name-row">
-                                            <span className={item ? "mensal-export-assignment-name" : "mensal-export-assignment-name-empty"}>
+                                            <span className={nomePessoa !== '— —' ? "mensal-export-assignment-name" : "mensal-export-assignment-name-empty"}>
                                               {nomePessoa}
                                             </span>
-                                            {item && <span style={{ fontSize: '12px' }}>{statusIcon}</span>}
+                                            {statusIcon && <span style={{ fontSize: '12px' }}>{statusIcon}</span>}
                                           </div>
                                         </div>
                                       );

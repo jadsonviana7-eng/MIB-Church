@@ -87,8 +87,9 @@ export default function DashboardLider({
     if (!membroLogado?.id || celulas.length === 0) return null;
     return celulas.find(c => 
       String(c.lider_id || '') === String(membroLogado.id) ||
-      String(c.co_lider_id || '') === String(membroLogado.id)
-    );
+      String(c.co_lider_id || '') === String(membroLogado.id) ||
+      (membroLogado.celula_id && String(c.id) === String(membroLogado.celula_id))
+    ) || (celulas.length > 0 ? celulas[0] : null);
   }, [membroLogado, celulas]);
 
   // Membros cadastrados na célula do líder

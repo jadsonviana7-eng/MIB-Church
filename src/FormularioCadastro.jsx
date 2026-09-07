@@ -185,7 +185,7 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
       batizado_aguas: batizadoAguas,
       conjuge_id: conjugeId || null,
       atuacao: atuacao.trim() || null,
-      permissao: criarAcesso ? permissaoAcesso : null,
+      permissao: permissaoAcesso || 'membro',
     };
 
     const { data: novaPessoa, error } = await supabase.from('pessoas').insert([payload]).select();

@@ -424,9 +424,10 @@ export default function App() {
     if (!membroLogado?.id) return [];
     return celulas.filter(c =>
       String(c.lider_id || '') === String(membroLogado.id) ||
-      String(c.co_lider_id || '') === String(membroLogado.id)
+      String(c.co_lider_id || '') === String(membroLogado.id) ||
+      (membroLogado.celula_id && String(c.id) === String(membroLogado.celula_id) && ['lider-celula', 'lider', 'supervisor'].includes((membroLogado.permissao || '').toLowerCase()))
     );
-  }, [celulas, membroLogado?.id]);
+  }, [celulas, membroLogado]);
 
   const isAdminOuPastor = useMemo(() => {
     if (!membroLogado) return false;
@@ -437,10 +438,8 @@ export default function App() {
   const isPerfilLiderCelula = useMemo(() => {
     if (!membroLogado) return false;
     const p = (membroLogado.permissao || '').toLowerCase();
-    const c = (membroLogado.cargo || '').toLowerCase();
 
-    const temPermissaoDeclarada = p.includes('lider') || p.includes('celula') || p.includes('supervisor') ||
-                                 c.includes('lider') || c.includes('supervisor');
+    const temPermissaoDeclarada = p.includes('lider') || p.includes('celula') || p.includes('supervisor');
 
     return temPermissaoDeclarada || celulasDoLider.length > 0;
   }, [membroLogado, celulasDoLider]);
@@ -504,10 +503,10 @@ export default function App() {
       }
     }
 
-    // Segue as regras padrões de cargo/perfil (Aditivo/Fallback)
-    const p = membroLogado.permissao?.toLowerCase() || '';
+    // Segue as regras padrões de perfil de acesso (Aditivo/Fallback)
+    const p = membroLogado.permissao?.toLowerCase() || 'membro';
 
-    // Se for líder de célula (seja por perfil, cargo ou por liderar uma célula no BD), concede acesso às funções de célula
+    // Se for líder de célula (por perfil de permissão ou por liderar uma célula no BD), concede acesso às funções de célula
     if (modulo === 'Células' && isPerfilLiderCelula) {
       if (acao === 'excluir') return false;
       if (acao === 'editar' || acao === 'adicionar') return true;

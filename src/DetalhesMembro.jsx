@@ -103,7 +103,7 @@ function vinculosPermissaoMembro(membro) {
   if (membro?.permissoes_json && Object.keys(membro.permissoes_json).length > 0) {
     const list = [];
     const entries = Object.entries(membro.permissoes_json).filter(([_, v]) => v === true);
-    if (entries.length === 0) return calcularPermissoesPorCargo(membro);
+    if (entries.length === 0) return calcularPermissoesPorPerfil(membro);
 
     // Agrupa por módulo e bloco para exibir na tabela de resumo de forma legível
     const groups = {};
@@ -128,11 +128,11 @@ function vinculosPermissaoMembro(membro) {
     return list;
   }
 
-  return calcularPermissoesPorCargo(membro);
+  return calcularPermissoesPorPerfil(membro);
 }
 
-function calcularPermissoesPorCargo(membro) {
-  const chave = String(membro?.permissao || membro?.cargo || 'membro').toLowerCase();
+function calcularPermissoesPorPerfil(membro) {
+  const chave = String(membro?.permissao || 'membro').toLowerCase();
   const itens = [];
 
   const push = (modulo, blocos) => {
@@ -369,7 +369,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
   const [status, setStatus] = useState('ativo');
   const [batizadoAguas, setBatizadoAguas] = useState(false);
   const [atuacao, setAtuacao] = useState([]);
-  const [permissao, setPermissao] = useState('');
+  const [permissao, setPermissao] = useState('membro');
   const [senhaNovoAcesso, setSenhaNovoAcesso] = useState('');
   const [confirmarSenhaNovoAcesso, setConfirmarSenhaNovoAcesso] = useState('');
   const [mostrarSenhaNovoAcesso, setMostrarSenhaNovoAcesso] = useState(false);
@@ -606,7 +606,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
     setStatus(p.status || 'ativo');
     setBatizadoAguas(Boolean(p.batizado_aguas));
     setAtuacao(p.atuacao ? p.atuacao.split(',').map(s => s.trim()) : []);
-    setPermissao(p.permissao || '');
+    setPermissao(p.permissao || 'membro');
     setSenhaNovoAcesso('');
     setConfirmarSenhaNovoAcesso('');
     setMensagemAcesso('');
@@ -775,8 +775,8 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
   }, [endereco, numero, bairro, cidade, estado]);
 
   const permissoesVinculadas = useMemo(
-    () => (membro ? vinculosPermissaoMembro({ ...membro, permissao, cargo: cargo, permissoes_json: permissoesJson }) : []),
-    [membro, permissao, cargo, permissoesJson]
+    () => (membro ? vinculosPermissaoMembro({ ...membro, permissao, permissoes_json: permissoesJson }) : []),
+    [membro, permissao, permissoesJson]
   );
 
   const onFileChange = async (e) => {
@@ -865,7 +865,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
       tipo_membro: membro?.status === 'pendente' ? 'membro' : membro?.tipo_membro,
       batizado_aguas: batizadoAguas,
       atuacao: Array.isArray(atuacao) ? (atuacao.join(', ') || null) : (atuacao || null),
-      permissao: permissao.trim() || null,
+      permissao: permissao || 'membro',
       avaliacao_escola_discipulos: avaliacaoEscola.trim() || null,
       perfil_comportamental: perfilComportamental.trim() || null,
       atividade_cerebral: atividadeCerebral.trim() || null,
@@ -945,7 +945,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
     setCriandoAcesso(true);
     setMensagemAcesso('');
 
-    const perfilAcesso = permissao.trim() || cargo || 'membro';
+    const perfilAcesso = permissao || 'membro';
     const { error } = await supabase.functions.invoke('criar-usuario-membro', {
       body: {
         pessoaId,
@@ -2057,24 +2057,25 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
               <div className="section-group">
                 <CardHeader
                   titulo="Permissões"
-                  subtitulo={`Módulos vinculados ao perfil ${permissao || cargo || 'membro'}.`}
+                  subtitulo={`Módulos vinculados ao perfil ${permissao || 'membro'}.`}
                 />
                 <div className="section-body space-y-3">
-                  {!dis && (
-                    <AcessoSistemaPanel
-                      membro={membro}
-                      email={email}
-                      permissao={permissao}
-                      setPermissao={setPermissao}
-                      senhaNovoAcesso={senhaNovoAcesso}
-                      setSenhaNovoAcesso={setSenhaNovoAcesso}
-                      confirmarSenhaNovoAcesso={confirmarSenhaNovoAcesso}
-                      setConfirmarSenhaNovoAcesso={setConfirmarSenhaNovoAcesso}
-                      criandoAcesso={criandoAcesso}
-                      mensagemAcesso={mensagemAcesso}
-                      onCriarAcesso={handleCriarAcessoSistema}
-                    />
-                  )}
+                  <AcessoSistemaPanel
+                    membro={membro}
+                    email={email}
+                    permissao={permissao}
+                    setPermissao={setPermissao}
+                    senhaNovoAcesso={senhaNovoAcesso}
+                    setSenhaNovoAcesso={setSenhaNovoAcesso}
+                    confirmarSenhaNovoAcesso={confirmarSenhaNovoAcesso}
+                    setConfirmarSenhaNovoAcesso={setConfirmarSenhaNovoAcesso}
+                    mostrarSenhaNovoAcesso={mostrarSenhaNovoAcesso}
+                    setMostrarSenhaNovoAcesso={setMostrarSenhaNovoAcesso}
+                    criandoAcesso={criandoAcesso}
+                    mensagemAcesso={mensagemAcesso}
+                    onCriarAcesso={handleCriarAcessoSistema}
+                    dis={dis}
+                  />
 
                   {membroLogado?.permissao === 'admin' && (
                     <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mt-4">
@@ -2294,9 +2295,12 @@ function AcessoSistemaPanel({
   setSenhaNovoAcesso,
   confirmarSenhaNovoAcesso,
   setConfirmarSenhaNovoAcesso,
+  mostrarSenhaNovoAcesso,
+  setMostrarSenhaNovoAcesso,
   criandoAcesso,
   mensagemAcesso,
   onCriarAcesso,
+  dis = false,
 }) {
   const acessoAtivo = Boolean(membro?.auth_user_id || membro?.acesso_ativo);
 
@@ -2304,14 +2308,18 @@ function AcessoSistemaPanel({
     <div className="space-y-4">
       <div>
         <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Perfil de permissão (sistema)</label>
-        <select value={permissao} onChange={(e) => setPermissao(e.target.value)} className="w-full max-w-md px-3 py-2 text-sm border border-[var(--border)] rounded-xl bg-white">
-          <option value="">Usar cargo do membro</option>
-          <option value="admin">Admin</option>
-          <option value="pastor">Pastor</option>
+        <select
+          value={permissao || 'membro'}
+          onChange={(e) => setPermissao(e.target.value)}
+          disabled={dis}
+          className="w-full max-w-md px-3 py-2 text-sm border border-[var(--border)] rounded-xl bg-white disabled:bg-slate-100 disabled:text-slate-600 cursor-pointer disabled:cursor-not-allowed font-medium"
+        >
+          <option value="membro">Membro</option>
           <option value="lider-celula">Líder de Célula</option>
           <option value="secretaria">Secretaria</option>
           <option value="tesouraria">Tesouraria</option>
-          <option value="membro">Membro</option>
+          <option value="pastor">Pastor</option>
+          <option value="admin">Admin</option>
         </select>
       </div>
 
@@ -2341,8 +2349,9 @@ function AcessoSistemaPanel({
                   type={mostrarSenhaNovoAcesso ? "text" : "password"} 
                   value={senhaNovoAcesso} 
                   onChange={(e) => setSenhaNovoAcesso(e.target.value)} 
+                  disabled={dis}
                   minLength={6} 
-                  className="w-full pl-3 pr-9 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800" 
+                  className="w-full pl-3 pr-9 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800 disabled:bg-slate-100 disabled:cursor-not-allowed" 
                 />
                 <button 
                   type="button" 
@@ -2362,8 +2371,9 @@ function AcessoSistemaPanel({
                   type={mostrarSenhaNovoAcesso ? "text" : "password"} 
                   value={confirmarSenhaNovoAcesso} 
                   onChange={(e) => setConfirmarSenhaNovoAcesso(e.target.value)} 
+                  disabled={dis}
                   minLength={6} 
-                  className="w-full pl-3 pr-9 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800" 
+                  className="w-full pl-3 pr-9 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800 disabled:bg-slate-100 disabled:cursor-not-allowed" 
                 />
                 <button 
                   type="button" 
@@ -2376,7 +2386,7 @@ function AcessoSistemaPanel({
                 </button>
               </div>
             </div>
-            <button type="button" onClick={onCriarAcesso} disabled={criandoAcesso} className="btn-primary px-4 py-2 rounded-xl text-xs font-semibold disabled:opacity-50">
+            <button type="button" onClick={onCriarAcesso} disabled={criandoAcesso || dis} className="btn-primary px-4 py-2 rounded-xl text-xs font-semibold disabled:opacity-50">
               {criandoAcesso ? 'Criando...' : 'Criar usuário'}
             </button>
           </div>

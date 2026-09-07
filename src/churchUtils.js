@@ -181,7 +181,7 @@ export function valorCampoRelatorio(pessoa, campo, zonas = []) {
     case 'Campo de Atuacao':
       return pessoa.atuacao || 'Não informado';
     case 'Permissoes':
-      return pessoa.permissao || pessoa.cargo || 'Membro';
+      return pessoa.permissao || 'Membro';
     case 'Zona de moradia':
       return nomeZona(zonas, pessoa.zona_id);
     default:

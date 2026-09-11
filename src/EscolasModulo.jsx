@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
-import { PageHeader, Card, CardHeader, Avatar, StatCard, DoughnutCard, ColumnChart } from './ui'; 
+import { PageHeader, Card, CardHeader, Avatar, StatCard, DoughnutCard, ColumnChart } from './ui';
 import { agrupamentoPor } from './churchUtils';
-import { 
-  Users, Home, Calendar, Award, Sparkles, AlertCircle, Coins, Activity, 
+import {
+  Users, Home, Calendar, Award, Sparkles, AlertCircle, Coins, Activity,
   CheckCircle, Trophy, BookOpen, Flame, TrendingUp, HelpCircle
 } from 'lucide-react';
 
@@ -33,12 +33,12 @@ const getIconForCourse = (nome) => {
   };
 };
 
-export default function EscolasModulo({ 
-  submenu, 
-  onNavigate, 
-  pessoas = [], 
-  alunoSelecionadoParaCadernetaId, 
-  setAlunoSelecionadoParaCadernetaId, 
+export default function EscolasModulo({
+  submenu,
+  onNavigate,
+  pessoas = [],
+  alunoSelecionadoParaCadernetaId,
+  setAlunoSelecionadoParaCadernetaId,
   membroLogado,
   hasAccess,
   turmaSelecionadaId,
@@ -50,7 +50,7 @@ export default function EscolasModulo({
   const [carregando, setCarregando] = useState(false);
   const [escolaEditando, setEscolaEditando] = useState(null);
   const [isModalEdicaoAberto, setIsModalEdicaoAberto] = useState(false);
-  
+
   const podeEditar = hasAccess('Escolas', 'Cursos', 'editar');
 
   // Estados do formulário
@@ -70,7 +70,7 @@ export default function EscolasModulo({
   const [turmas, setTurmas] = useState([]);
   const [isModalEdicaoTurmaAberto, setIsModalEdicaoTurmaAberto] = useState(false);
   const [turmaEditando, setTurmaEditando] = useState(null);
-  
+
   // Detalhes da Turma Selecionada
   const [isAddingAlunos, setIsAddingAlunos] = useState(false); // Estado de carregamento local para o modal de adicionar alunos
   const [abaAtivaTurma, setAbaAtivaTurma] = useState('alunos');
@@ -100,11 +100,11 @@ export default function EscolasModulo({
   const [disciplinaParaEditar, setDisciplinaParaEditar] = useState(null);
   const [isModalAddAulaAberto, setIsModalAddAulaAberto] = useState(false);
   const [aulaParaEditar, setAulaParaEditar] = useState(null);
-  
+
   // Formulário Disciplina
   const [novaDisciplinaNome, setNovaDisciplinaNome] = useState('');
   const [novaDisciplinaProfId, setNovaDisciplinaProfId] = useState('');
-  
+
   // Formulário Aula
   const [novaAulaData, setNovaAulaData] = useState(new Date().toLocaleDateString('en-CA'));
   const [novaAulaDiscId, setNovaAulaDiscId] = useState('');
@@ -147,7 +147,7 @@ export default function EscolasModulo({
       .select('*, alunos(id, pessoa_id, pessoas(nome, foto_url))')
       .eq('turma_id', id);
     setAlunosTurma(dataAlunos || []);
-    const sortedAlunos = (dataAlunos || []).sort((a, b) => 
+    const sortedAlunos = (dataAlunos || []).sort((a, b) =>
       (a.alunos?.pessoas?.nome || "").localeCompare(b.alunos?.pessoas?.nome || "")
     );
     setAlunosTurma(sortedAlunos);
@@ -166,7 +166,7 @@ export default function EscolasModulo({
       .in('turma_disciplina_id', dataDisc?.map(d => d.id) || [])
       .order('data_aula', { ascending: false });
     setAulasTurma(dataAulas || []);
-    
+
     setCarregando(false);
   };
 
@@ -201,8 +201,8 @@ export default function EscolasModulo({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const { error } = await supabase.from('escolas').insert([{ 
-      nome, descricao, data_criacao: dataCriacao, gestores_ids: gestoresIds 
+    const { error } = await supabase.from('escolas').insert([{
+      nome, descricao, data_criacao: dataCriacao, gestores_ids: gestoresIds
     }]);
     if (error) alert('Erro ao inserir: ' + error.message);
     resetFormCriar();
@@ -211,8 +211,8 @@ export default function EscolasModulo({
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    const { error } = await supabase.from('escolas').update({ 
-      nome: editNome, descricao: editDescricao, data_criacao: editDataCriacao, gestores_ids: editGestoresIds 
+    const { error } = await supabase.from('escolas').update({
+      nome: editNome, descricao: editDescricao, data_criacao: editDataCriacao, gestores_ids: editGestoresIds
     }).eq('id', escolaEditando.id);
     if (error) alert('Erro ao atualizar: ' + error.message);
     setIsModalEdicaoAberto(false);
@@ -235,13 +235,13 @@ export default function EscolasModulo({
   };
 
   const toggleGestor = (id) => {
-    setGestoresIds(prev => 
+    setGestoresIds(prev =>
       prev.includes(id) ? prev.filter(gid => gid !== id) : [...prev, id]
     );
   };
 
   const toggleGestorEdit = (id) => {
-    setEditGestoresIds(prev => 
+    setEditGestoresIds(prev =>
       prev.includes(id) ? prev.filter(gid => gid !== id) : [...prev, id]
     );
   };
@@ -249,7 +249,7 @@ export default function EscolasModulo({
   const handleCriarTurma = async (e) => {
     e.preventDefault();
     if (!turmaCursoId) return alert('Selecione um curso para a turma.');
-    
+
     setCarregando(true);
     const { error } = await supabase.from('turmas').insert([{
       escola_id: turmaCursoId,
@@ -359,7 +359,7 @@ export default function EscolasModulo({
     e.preventDefault();
     setCarregando(true);
     const turma = turmas.find(t => t.id === turmaSelecionadaId);
-    
+
     try {
       // 1. Garantir que professor existe
       let { data: prof } = await supabase.from('professores').select('id').eq('pessoa_id', novaDisciplinaProfId).maybeSingle();
@@ -385,9 +385,9 @@ export default function EscolasModulo({
         if (vincError) throw vincError;
       } else {
         // Criar nova disciplina
-        const { data: disc, error: discError } = await supabase.from('disciplinas').insert([{ 
-          nome: novaDisciplinaNome, 
-          escola_id: turma.escola_id 
+        const { data: disc, error: discError } = await supabase.from('disciplinas').insert([{
+          nome: novaDisciplinaNome,
+          escola_id: turma.escola_id
         }]).select().single();
         if (discError) throw discError;
 
@@ -469,7 +469,7 @@ export default function EscolasModulo({
     setNovaAulaDiscId(aula.turma_disciplina_id);
     setNovaAulaAssunto(aula.conteudo_proposto || '');
     setNovaAulaDesc(aula.observacoes || '');
-    
+
     // Segurança: Garante que presencas seja um objeto, mesmo que venha como string do DB
     let p = aula.presencas || {};
     if (typeof p === 'string') {
@@ -488,7 +488,7 @@ export default function EscolasModulo({
   };
 
   const handleToggleMembroLista = (idPessoa) => {
-    setSelectedMembrosParaAdicionar(prev => 
+    setSelectedMembrosParaAdicionar(prev =>
       prev.includes(idPessoa) ? prev.filter(id => id !== idPessoa) : [...prev, idPessoa]
     );
   };
@@ -520,7 +520,7 @@ export default function EscolasModulo({
           -webkit-font-smoothing: antialiased;
         }
       `}</style>
-      <PageHeader titulo={getSubmenuTitle(submenu)} breadcrumb={breadcrumb} onNavigate={() => onNavigate('resumo')} />
+      <PageHeader titulo={getSubmenuTitle(submenu)} />
 
       {submenu === 'resumo' && (
         <DashboardEscolas escolas={escolas} turmas={turmas} pessoas={pessoas} onNavigate={onNavigate} />
@@ -530,79 +530,79 @@ export default function EscolasModulo({
         <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start">
           {/* PAINEL LATERAL DE CADASTRO */}
           {podeEditar && (
-          <Card className="p-0 overflow-hidden sticky top-24 !bg-[#202046] !border-none text-white shadow-xl">
-            <div className="hidden md:block bg-[#191938] border-b border-[#2e2e5e] p-4">
-              <h3 className="text-base font-extrabold text-white tracking-tight">Novo Curso</h3>
-            </div>
-
-            {/* Mobile: botão que expande o formulário (pushdown) */}
-            <button
-              type="button"
-              onClick={() => setMostrarFormNovoCurso(v => !v)}
-              className="md:hidden w-full flex items-center justify-between p-4 font-extrabold text-sm text-white bg-[#191938] border-b border-[#2e2e5e] rounded-t-2xl cursor-pointer"
-            >
-              <span>+ Criar Novo Curso</span>
-              <svg className={`w-4 h-4 transition-transform ${mostrarFormNovoCurso ? 'rotate-180' : ''} text-white/80`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            <div className={`${mostrarFormNovoCurso ? 'block' : 'hidden'} md:block`}>
-            <form onSubmit={handleSubmit} className="p-5 space-y-4">
-              <div>
-                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nome do Curso</label>
-                <input 
-                  type="text" required placeholder="Ex: Escola de Líderes..."
-                  value={nome} 
-                  onChange={e => setNome(e.target.value)} 
-                  className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm focus:ring-2 focus:ring-teal-400 outline-none" 
-                />
-              </div>
-              
-              <div>
-                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Data de Criação</label>
-                <input 
-                  type="date" required
-                  value={dataCriacao} 
-                  onChange={e => setDataCriacao(e.target.value)} 
-                  className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm focus:ring-2 focus:ring-teal-400 outline-none" 
-                />
+            <Card className="p-0 overflow-hidden sticky top-24 !bg-[#202046] !border-none text-white shadow-xl">
+              <div className="hidden md:block bg-[#191938] border-b border-[#2e2e5e] p-4">
+                <h3 className="text-base font-extrabold text-white tracking-tight">Novo Curso</h3>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Gestores</label>
-                <div className="border border-[#2e2e5e] rounded-xl p-2 bg-[#191938] max-h-40 overflow-y-auto space-y-1">
-                  {pessoas.map(p => (
-                    <label key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-[#2e2e5e] p-1.5 rounded-lg transition">
-                      <input type="checkbox" 
-                        checked={gestoresIds.includes(p.id)}
-                        onChange={() => toggleGestor(p.id)}
-                        className="rounded text-teal-500 focus:ring-teal-450 bg-[#2e2e5e] border-0" 
-                      />
-                      <span className="text-xs text-slate-300 truncate">{p.nome}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+              {/* Mobile: botão que expande o formulário (pushdown) */}
+              <button
+                type="button"
+                onClick={() => setMostrarFormNovoCurso(v => !v)}
+                className="md:hidden w-full flex items-center justify-between p-4 font-extrabold text-sm text-white bg-[#191938] border-b border-[#2e2e5e] rounded-t-2xl cursor-pointer"
+              >
+                <span>+ Criar Novo Curso</span>
+                <svg className={`w-4 h-4 transition-transform ${mostrarFormNovoCurso ? 'rotate-180' : ''} text-white/80`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-              <div>
-                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Descrição</label>
-                <textarea 
-                  rows="2" placeholder="Objetivos do curso..."
-                  value={descricao} onChange={e => setDescricao(e.target.value)} 
-                  className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm outline-none resize-none focus:ring-2 focus:ring-teal-400" 
-                />
-              </div>
+              <div className={`${mostrarFormNovoCurso ? 'block' : 'hidden'} md:block`}>
+                <form onSubmit={handleSubmit} className="p-5 space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nome do Curso</label>
+                    <input
+                      type="text" required placeholder="Ex: Escola de Líderes..."
+                      value={nome}
+                      onChange={e => setNome(e.target.value)}
+                      className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm focus:ring-2 focus:ring-teal-400 outline-none"
+                    />
+                  </div>
 
-              <div className="flex flex-col gap-2 pt-2">
-                <button type="submit" disabled={carregando}
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white text-sm font-black uppercase transition-all duration-300 shadow-md shadow-teal-950/20 disabled:opacity-50 cursor-pointer">
-                  {carregando ? 'Processando...' : '+ Criar Novo Curso'}
-                </button>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Data de Criação</label>
+                    <input
+                      type="date" required
+                      value={dataCriacao}
+                      onChange={e => setDataCriacao(e.target.value)}
+                      className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm focus:ring-2 focus:ring-teal-400 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Gestores</label>
+                    <div className="border border-[#2e2e5e] rounded-xl p-2 bg-[#191938] max-h-40 overflow-y-auto space-y-1">
+                      {pessoas.map(p => (
+                        <label key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-[#2e2e5e] p-1.5 rounded-lg transition">
+                          <input type="checkbox"
+                            checked={gestoresIds.includes(p.id)}
+                            onChange={() => toggleGestor(p.id)}
+                            className="rounded text-teal-500 focus:ring-teal-450 bg-[#2e2e5e] border-0"
+                          />
+                          <span className="text-xs text-slate-300 truncate">{p.nome}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Descrição</label>
+                    <textarea
+                      rows="2" placeholder="Objetivos do curso..."
+                      value={descricao} onChange={e => setDescricao(e.target.value)}
+                      className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm outline-none resize-none focus:ring-2 focus:ring-teal-400"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2 pt-2">
+                    <button type="submit" disabled={carregando}
+                      className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white text-sm font-black uppercase transition-all duration-300 shadow-md shadow-teal-950/20 disabled:opacity-50 cursor-pointer">
+                      {carregando ? 'Processando...' : '+ Criar Novo Curso'}
+                    </button>
+                  </div>
+                </form>
               </div>
-            </form>
-            </div>
-          </Card>
+            </Card>
           )}
 
           {/* CARDS DE CURSOS */}
@@ -610,7 +610,7 @@ export default function EscolasModulo({
             <div className="hidden md:block">
               <h3 className="text-base font-extrabold text-slate-800 tracking-tight">Cursos Cadastrados</h3>
             </div>
-            
+
             {carregando && escolas.length === 0 ? (
               <div className="p-10 text-center animate-pulse text-slate-400">Carregando cursos...</div>
             ) : escolas.length === 0 ? (
@@ -620,7 +620,7 @@ export default function EscolasModulo({
                 {escolas.map(escola => {
                   const numTurmas = turmas.filter(t => t.escola_id === escola.id).length;
                   const iconInfo = getIconForCourse(escola.nome);
-                  
+
                   return (
                     <button
                       key={escola.id}
@@ -633,7 +633,7 @@ export default function EscolasModulo({
                     >
                       {/* Edit Action (top-right absolute) */}
                       {podeEditar && (
-                        <button 
+                        <button
                           type="button"
                           onClick={e => { e.stopPropagation(); handleEditar(escola); }}
                           className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
@@ -647,7 +647,7 @@ export default function EscolasModulo({
 
                       {/* Delete Action (bottom-right absolute) */}
                       {podeEditar && (
-                        <button 
+                        <button
                           type="button"
                           onClick={e => { e.stopPropagation(); handleExcluir(escola.id); }}
                           className="absolute bottom-2 right-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
@@ -696,7 +696,7 @@ export default function EscolasModulo({
         turmaSelecionadaId && turmaAtiva ? (
           <DetalhesDaTurma
             turma={turmaAtiva}
-            abaAtiva={abaAtivaTurma} 
+            abaAtiva={abaAtivaTurma}
             setAbaAtiva={setAbaAtivaTurma}
             onVoltar={() => setTurmaSelecionadaId(null)}
             alunos={alunosTurma}
@@ -733,190 +733,189 @@ export default function EscolasModulo({
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start">
 
-          {/* PAINEL LATERAL DE CADASTRO */}
-          <Card className="p-0 overflow-hidden sticky top-24 col-span-full lg:col-span-1 !bg-[#202046] !border-none text-white shadow-xl">
-            {/* Mobile: botão que expande o formulário (pushdown) */}
-            <button
-              type="button"
-              onClick={() => setMostrarFormNovaTurma(v => !v)}
-              className="md:hidden w-full flex items-center justify-between p-4 font-extrabold text-sm text-white bg-[#191938] border-b border-[#2e2e5e] rounded-t-2xl cursor-pointer"
-            >
-              <span>+ Adicionar Turma</span>
-              <svg className={`w-4 h-4 transition-transform ${mostrarFormNovaTurma ? 'rotate-180' : ''} text-white/80`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            <div className={`${mostrarFormNovaTurma ? 'block' : 'hidden'} md:block`}>
-              <div className="hidden md:block bg-[#191938] border-b border-[#2e2e5e] p-4">
-                <h3 className="text-base font-extrabold text-white tracking-tight">Nova Turma</h3>
-              </div>
-              <form onSubmit={handleCriarTurma} className="p-5 space-y-4">
-              <div>
-                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Curso / Escola</label>
-                <select 
-                  required value={turmaCursoId} onChange={e => setTurmaCursoId(e.target.value)}
-                  className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400"
-                >
-                  <option value="" className="bg-[#202046] text-white">Selecione o curso...</option>
-                  {escolas.map(e => <option key={e.id} value={e.id} className="bg-[#202046] text-white">{e.nome}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nome da Turma</label>
-                <input 
-                  type="text" required placeholder="Ex: Turma Alpha 2024..."
-                  value={turmaNome} onChange={e => setTurmaNome(e.target.value)} 
-                  className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400" 
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Horário</label>
-                  <select value={turmaHorario} onChange={e => setTurmaHorario(e.target.value)} className="w-full px-2 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400">
-                    <option value="Manhã" className="bg-[#202046] text-white">Manhã</option>
-                    <option value="Tarde" className="bg-[#202046] text-white">Tarde</option>
-                    <option value="Noite" className="bg-[#202046] text-white">Noite</option>
-                    <option value="Não definido" className="bg-[#202046] text-white">Não definido</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Status</label>
-                  <select value={turmaStatus} onChange={e => setTurmaStatus(e.target.value)} className="w-full px-2 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400">
-                    <option value="Preparando turma" className="bg-[#202046] text-white">Preparando</option>
-                    <option value="Em andamento" className="bg-[#202046] text-white">Em andamento</option>
-                    <option value="Pausada" className="bg-[#202046] text-white">Pausada</option>
-                    <option value="Finalizada" className="bg-[#202046] text-white">Finalizada</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Descrição</label>
-                <textarea 
-                  rows="2" placeholder="Breve resumo da turma..."
-                  value={turmaDescricao} onChange={e => setTurmaDescricao(e.target.value)} 
-                  className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm outline-none resize-none focus:ring-2 focus:ring-teal-400" 
-                />
-              </div>
-
-              <button type="submit" disabled={carregando} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white text-sm font-black uppercase transition-all duration-300 shadow-md shadow-teal-950/20 disabled:opacity-50 cursor-pointer">
-                {carregando ? 'Processando...' : '+ Criar Nova Turma'}
+            {/* PAINEL LATERAL DE CADASTRO */}
+            <Card className="p-0 overflow-hidden sticky top-24 col-span-full lg:col-span-1 !bg-[#202046] !border-none text-white shadow-xl">
+              {/* Mobile: botão que expande o formulário (pushdown) */}
+              <button
+                type="button"
+                onClick={() => setMostrarFormNovaTurma(v => !v)}
+                className="md:hidden w-full flex items-center justify-between p-4 font-extrabold text-sm text-white bg-[#191938] border-b border-[#2e2e5e] rounded-t-2xl cursor-pointer"
+              >
+                <span>+ Adicionar Turma</span>
+                <svg className={`w-4 h-4 transition-transform ${mostrarFormNovaTurma ? 'rotate-180' : ''} text-white/80`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
-              </form>
-            </div>
-          </Card>
 
-          {/* CARDS DE TURMAS */}
-          <div className="space-y-4 col-span-full lg:col-span-1">
-            <div className="flex items-center justify-between gap-3">
-              <h3 className="text-base font-extrabold text-slate-800 tracking-tight">
-                {filtroCursoTurmas ? `Turmas de ${escolas.find(e => e.id === filtroCursoTurmas)?.nome || 'Curso'}` : "Turmas Ativas"}
-              </h3>
+              <div className={`${mostrarFormNovaTurma ? 'block' : 'hidden'} md:block`}>
+                <div className="hidden md:block bg-[#191938] border-b border-[#2e2e5e] p-4">
+                  <h3 className="text-base font-extrabold text-white tracking-tight">Nova Turma</h3>
+                </div>
+                <form onSubmit={handleCriarTurma} className="p-5 space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Curso / Escola</label>
+                    <select
+                      required value={turmaCursoId} onChange={e => setTurmaCursoId(e.target.value)}
+                      className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400"
+                    >
+                      <option value="" className="bg-[#202046] text-white">Selecione o curso...</option>
+                      {escolas.map(e => <option key={e.id} value={e.id} className="bg-[#202046] text-white">{e.nome}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Nome da Turma</label>
+                    <input
+                      type="text" required placeholder="Ex: Turma Alpha 2024..."
+                      value={turmaNome} onChange={e => setTurmaNome(e.target.value)}
+                      className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Horário</label>
+                      <select value={turmaHorario} onChange={e => setTurmaHorario(e.target.value)} className="w-full px-2 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400">
+                        <option value="Manhã" className="bg-[#202046] text-white">Manhã</option>
+                        <option value="Tarde" className="bg-[#202046] text-white">Tarde</option>
+                        <option value="Noite" className="bg-[#202046] text-white">Noite</option>
+                        <option value="Não definido" className="bg-[#202046] text-white">Não definido</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Status</label>
+                      <select value={turmaStatus} onChange={e => setTurmaStatus(e.target.value)} className="w-full px-2 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400">
+                        <option value="Preparando turma" className="bg-[#202046] text-white">Preparando</option>
+                        <option value="Em andamento" className="bg-[#202046] text-white">Em andamento</option>
+                        <option value="Pausada" className="bg-[#202046] text-white">Pausada</option>
+                        <option value="Finalizada" className="bg-[#202046] text-white">Finalizada</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Descrição</label>
+                    <textarea
+                      rows="2" placeholder="Breve resumo da turma..."
+                      value={turmaDescricao} onChange={e => setTurmaDescricao(e.target.value)}
+                      className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm outline-none resize-none focus:ring-2 focus:ring-teal-400"
+                    />
+                  </div>
+
+                  <button type="submit" disabled={carregando} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white text-sm font-black uppercase transition-all duration-300 shadow-md shadow-teal-950/20 disabled:opacity-50 cursor-pointer">
+                    {carregando ? 'Processando...' : '+ Criar Nova Turma'}
+                  </button>
+                </form>
+              </div>
+            </Card>
+
+            {/* CARDS DE TURMAS */}
+            <div className="space-y-4 col-span-full lg:col-span-1">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-base font-extrabold text-slate-800 tracking-tight">
+                  {filtroCursoTurmas ? `Turmas de ${escolas.find(e => e.id === filtroCursoTurmas)?.nome || 'Curso'}` : "Turmas Ativas"}
+                </h3>
+                {filtroCursoTurmas && (
+                  <button
+                    onClick={() => setFiltroCursoTurmas('')}
+                    className="px-3 py-1.5 text-xs font-bold text-[#055F6D] hover:text-[#044c57] bg-[#055F6D]/5 hover:bg-[#055F6D]/10 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    ← Ver Todas
+                  </button>
+                )}
+              </div>
+
+              {/* Mobile filter clear indicator */}
               {filtroCursoTurmas && (
-                <button 
-                  onClick={() => setFiltroCursoTurmas('')}
-                  className="px-3 py-1.5 text-xs font-bold text-[#055F6D] hover:text-[#044c57] bg-[#055F6D]/5 hover:bg-[#055F6D]/10 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
-                >
-                  ← Ver Todas
-                </button>
+                <div className="md:hidden p-3 bg-slate-50 border border-slate-150 rounded-xl flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700">Filtrando: {escolas.find(e => e.id === filtroCursoTurmas)?.nome}</span>
+                  <button
+                    onClick={() => setFiltroCursoTurmas('')}
+                    className="text-xs font-black text-[#055F6D] cursor-pointer"
+                  >
+                    Limpar
+                  </button>
+                </div>
+              )}
+
+              {(filtroCursoTurmas ? turmas.filter(t => t.escola_id === filtroCursoTurmas) : turmas).length === 0 ? (
+                <div className="p-10 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-white italic">Nenhuma turma cadastrada para este filtro.</div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {(filtroCursoTurmas ? turmas.filter(t => t.escola_id === filtroCursoTurmas) : turmas).map(t => {
+                    const iconInfo = getIconForCourse(t.escolas?.nome || '');
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => handleAbrirTurma(t.id)}
+                        className="flex flex-col items-center justify-between p-4 sm:p-6 rounded-2xl border border-slate-150 bg-white hover:bg-slate-50/50 hover:border-slate-350 hover:shadow-md hover:scale-[1.03] active:scale-97 transition-all duration-300 text-center w-full aspect-square group cursor-pointer relative"
+                      >
+                        {/* Edit Action (top-right absolute) */}
+                        {podeEditar && (
+                          <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); handleEditarTurma(t); }}
+                            className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
+                            title="Editar Turma"
+                          >
+                            <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                        )}
+
+                        {/* Delete Action (bottom-right absolute) */}
+                        {podeEditar && (
+                          <button
+                            type="button"
+                            onClick={e => { e.stopPropagation(); handleExcluirTurma(t.id); }}
+                            className="absolute bottom-2 right-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
+                            title="Remover Turma"
+                          >
+                            <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        )}
+
+                        {/* Icon Container */}
+                        <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl flex items-center justify-center shrink-0 transition-colors mt-2 md:mt-4 ${iconInfo.bg}`}>
+                          {iconInfo.icon}
+                        </div>
+
+                        {/* Title and Highlighted Status/Schedule */}
+                        <div className="flex-1 flex flex-col justify-center my-2 md:my-3 w-full">
+                          <h4 className="text-xs md:text-sm lg:text-base font-bold text-slate-800 line-clamp-2 leading-snug px-1 mb-1" title={t.nome}>
+                            {t.nome}
+                          </h4>
+                          <p className="text-[10px] md:text-xs text-[#202046]/80 font-semibold truncate px-2 mb-1.5">
+                            {t.escolas?.nome || 'Sem curso'}
+                          </p>
+                          <div className="flex flex-wrap items-center justify-center gap-1.5">
+                            <span className="text-[9px] md:text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200 uppercase tracking-wide">
+                              {t.horario}
+                            </span>
+                            <span className={`text-[9px] md:text-xs font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wide ${t.status === 'Em andamento' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                              t.status === 'Finalizada' ? 'bg-slate-50 text-slate-500 border-slate-200' :
+                                'bg-amber-50 text-amber-600 border-amber-100'
+                              }`}>
+                              {t.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Hover action indicator */}
+                        <span className="text-[9px] font-bold text-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 uppercase tracking-wider mb-1">
+                          Gerenciar Turma →
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
-
-            {/* Mobile filter clear indicator */}
-            {filtroCursoTurmas && (
-              <div className="md:hidden p-3 bg-slate-50 border border-slate-150 rounded-xl flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">Filtrando: {escolas.find(e => e.id === filtroCursoTurmas)?.nome}</span>
-                <button 
-                  onClick={() => setFiltroCursoTurmas('')}
-                  className="text-xs font-black text-[#055F6D] cursor-pointer"
-                >
-                  Limpar
-                </button>
-              </div>
-            )}
-
-            {(filtroCursoTurmas ? turmas.filter(t => t.escola_id === filtroCursoTurmas) : turmas).length === 0 ? (
-              <div className="p-10 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-white italic">Nenhuma turma cadastrada para este filtro.</div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {(filtroCursoTurmas ? turmas.filter(t => t.escola_id === filtroCursoTurmas) : turmas).map(t => {
-                  const iconInfo = getIconForCourse(t.escolas?.nome || '');
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => handleAbrirTurma(t.id)}
-                      className="flex flex-col items-center justify-between p-4 sm:p-6 rounded-2xl border border-slate-150 bg-white hover:bg-slate-50/50 hover:border-slate-350 hover:shadow-md hover:scale-[1.03] active:scale-97 transition-all duration-300 text-center w-full aspect-square group cursor-pointer relative"
-                    >
-                      {/* Edit Action (top-right absolute) */}
-                      {podeEditar && (
-                        <button 
-                          type="button"
-                          onClick={e => { e.stopPropagation(); handleEditarTurma(t); }}
-                          className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
-                          title="Editar Turma"
-                        >
-                          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                      )}
-
-                      {/* Delete Action (bottom-right absolute) */}
-                      {podeEditar && (
-                        <button 
-                          type="button"
-                          onClick={e => { e.stopPropagation(); handleExcluirTurma(t.id); }}
-                          className="absolute bottom-2 right-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
-                          title="Remover Turma"
-                        >
-                          <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      )}
-
-                      {/* Icon Container */}
-                      <div className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl flex items-center justify-center shrink-0 transition-colors mt-2 md:mt-4 ${iconInfo.bg}`}>
-                        {iconInfo.icon}
-                      </div>
-
-                      {/* Title and Highlighted Status/Schedule */}
-                      <div className="flex-1 flex flex-col justify-center my-2 md:my-3 w-full">
-                        <h4 className="text-xs md:text-sm lg:text-base font-bold text-slate-800 line-clamp-2 leading-snug px-1 mb-1" title={t.nome}>
-                          {t.nome}
-                        </h4>
-                        <p className="text-[10px] md:text-xs text-[#202046]/80 font-semibold truncate px-2 mb-1.5">
-                          {t.escolas?.nome || 'Sem curso'}
-                        </p>
-                        <div className="flex flex-wrap items-center justify-center gap-1.5">
-                          <span className="text-[9px] md:text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200 uppercase tracking-wide">
-                            {t.horario}
-                          </span>
-                          <span className={`text-[9px] md:text-xs font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wide ${
-                            t.status === 'Em andamento' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                            t.status === 'Finalizada' ? 'bg-slate-50 text-slate-500 border-slate-200' :
-                            'bg-amber-50 text-amber-600 border-amber-100'
-                          }`}>
-                            {t.status}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Hover action indicator */}
-                      <span className="text-[9px] font-bold text-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 uppercase tracking-wider mb-1">
-                        Gerenciar Turma →
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
           </div>
-        </div>
         )
       )}
 
@@ -991,26 +990,26 @@ export default function EscolasModulo({
               </div>
               <button onClick={() => setIsModalEdicaoAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 hover:text-rose-500 transition cursor-pointer">✕</button>
             </div>
-            
+
             <form onSubmit={handleUpdate} className="flex flex-col flex-1 overflow-hidden">
               <div className="p-6 space-y-5 overflow-y-auto flex-1">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nome do Curso</label>
-                  <input 
+                  <input
                     type="text" required
-                    value={editNome} 
-                    onChange={e => setEditNome(e.target.value)} 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#202046]/20 outline-none" 
+                    value={editNome}
+                    onChange={e => setEditNome(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#202046]/20 outline-none"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data de Criação</label>
-                  <input 
+                  <input
                     type="date" required
-                    value={editDataCriacao} 
-                    onChange={e => setEditDataCriacao(e.target.value)} 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none" 
+                    value={editDataCriacao}
+                    onChange={e => setEditDataCriacao(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none"
                   />
                 </div>
 
@@ -1019,10 +1018,10 @@ export default function EscolasModulo({
                   <div className="border border-slate-200 rounded-xl p-2 bg-slate-50 max-h-40 overflow-y-auto space-y-1">
                     {pessoas.map(p => (
                       <label key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-white p-1.5 rounded-lg transition">
-                        <input type="checkbox" 
+                        <input type="checkbox"
                           checked={editGestoresIds.includes(p.id)}
                           onChange={() => toggleGestorEdit(p.id)}
-                          className="rounded text-[#055F6D] focus:ring-[#055F6D]" 
+                          className="rounded text-[#055F6D] focus:ring-[#055F6D]"
                         />
                         <span className="text-xs text-slate-600 truncate">{p.nome}</span>
                       </label>
@@ -1032,10 +1031,10 @@ export default function EscolasModulo({
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Descrição</label>
-                  <textarea 
+                  <textarea
                     rows="3"
-                    value={editDescricao} onChange={e => setEditDescricao(e.target.value)} 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none resize-none" 
+                    value={editDescricao} onChange={e => setEditDescricao(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none resize-none"
                   />
                 </div>
               </div>
@@ -1064,12 +1063,12 @@ export default function EscolasModulo({
               </div>
               <button onClick={() => setIsModalEdicaoTurmaAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 hover:text-rose-500 transition cursor-pointer">✕</button>
             </div>
-            
+
             <form onSubmit={handleUpdateTurma} className="flex flex-col flex-1 overflow-hidden">
               <div className="p-6 space-y-5 overflow-y-auto flex-1">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Curso / Escola</label>
-                  <select 
+                  <select
                     required value={editTurmaCursoId} onChange={e => setEditTurmaCursoId(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
                   >
@@ -1079,10 +1078,10 @@ export default function EscolasModulo({
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Nome da Turma</label>
-                  <input 
+                  <input
                     type="text" required
-                    value={editTurmaNome} onChange={e => setEditTurmaNome(e.target.value)} 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none" 
+                    value={editTurmaNome} onChange={e => setEditTurmaNome(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none"
                   />
                 </div>
 
@@ -1109,10 +1108,10 @@ export default function EscolasModulo({
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Descrição</label>
-                  <textarea 
+                  <textarea
                     rows="3"
-                    value={editTurmaDescricao} onChange={e => setEditTurmaDescricao(e.target.value)} 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none resize-none" 
+                    value={editTurmaDescricao} onChange={e => setEditTurmaDescricao(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none resize-none"
                   />
                 </div>
               </div>
@@ -1136,8 +1135,8 @@ export default function EscolasModulo({
           <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
             {pessoas.filter(p => !alunosTurma.some(a => a.alunos?.pessoa_id === p.id)).map(p => (
               <label key={p.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer transition">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   checked={selectedMembrosParaAdicionar.includes(p.id)}
                   onChange={() => handleToggleMembroLista(p.id)}
                   className="rounded text-[#202046] focus:ring-[#202046]"
@@ -1203,7 +1202,7 @@ export default function EscolasModulo({
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Assunto da Aula</label>
                 <input type="text" required value={novaAulaAssunto} onChange={e => setNovaAulaAssunto(e.target.value)} className="w-full px-3 py-2 border rounded-xl" placeholder="Ex: Introdução ao Pentateuco" />
               </div>
-              
+
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Observações</label>
                 <textarea rows="2" value={novaAulaDesc} onChange={e => setNovaAulaDesc(e.target.value)} className="w-full px-3 py-2 border rounded-xl resize-none" placeholder="Relato do professor sobre a aula ministrada..." />
@@ -1276,20 +1275,20 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
     // Montar matriz de presença para cada aluno
     const dados = alunos.map(aluno => {
       const presencasPorDia = {};
-      
+
       aulasFiltradas.forEach(aula => {
         const d = new Date(aula.data_aula);
         const da = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
         const dia = da.getDate();
-        
+
         // Processar o JSON de presenças
         let pObj = aula.presencas || {};
-        if (typeof pObj === 'string') { try { pObj = JSON.parse(pObj); } catch(e) { pObj = {}; } }
-        
+        if (typeof pObj === 'string') { try { pObj = JSON.parse(pObj); } catch (e) { pObj = {}; } }
+
         // Se já houver registro 'P' para o dia, mantém. Se for 'F' e encontrar um 'P', atualiza.
         const statusAnterior = presencasPorDia[dia];
         const statusAtual = pObj[aluno.aluno_id] ? 'P' : 'F';
-        
+
         if (statusAnterior !== 'P') {
           presencasPorDia[dia] = statusAtual;
         }
@@ -1384,13 +1383,11 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                       key={tab.id}
                       type="button"
                       onClick={() => setAbaAtiva(tab.id)}
-                      className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2 rounded-t-xl text-[11px] font-black whitespace-nowrap transition-all shrink-0 border-b-2 cursor-pointer ${
-                        tab.mobileOnly ? 'sm:hidden' : ''
-                      } ${
-                        isAtivo
+                      className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2 rounded-t-xl text-[11px] font-black whitespace-nowrap transition-all shrink-0 border-b-2 cursor-pointer ${tab.mobileOnly ? 'sm:hidden' : ''
+                        } ${isAtivo
                           ? 'bg-white text-slate-900 shadow-sm'
                           : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-white/60'
-                      }`}
+                        }`}
                       style={{ borderBottomColor: isAtivo ? tab.cor : 'transparent' }}
                       title={tab.label}
                     >
@@ -1398,7 +1395,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                       <span className="hidden sm:inline">{tab.label}</span>
                       {tab.badge !== null && (
                         <span
-                        className="hidden sm:inline text-[9px] font-black px-1.5 py-0.5 rounded-full ml-0.5"
+                          className="hidden sm:inline text-[9px] font-black px-1.5 py-0.5 rounded-full ml-0.5"
                           style={
                             isAtivo
                               ? { backgroundColor: tab.cor, color: 'white' }
@@ -1438,54 +1435,52 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
 
         {abaAtiva === 'alunos' && (
           <div className="space-y-4">
-          <Card className="p-0 overflow-hidden">
-            <table className="table-mib">
-              <thead><tr><th>Aluno</th><th>Status na Turma</th><th className="hidden sm:table-cell">Matrícula</th><th className="text-right pr-2 sm:pr-6">Ações</th></tr></thead>
-              <tbody>
-                {alunos.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhum aluno matriculado nesta turma.</td></tr> : 
-                  alunos.map(a => (
-                    <tr key={a.id} onClick={() => onVerAluno(a.alunos?.pessoa_id)} className="cursor-pointer hover:bg-slate-50 transition">
-                      <td><div className="flex items-center gap-2"><Avatar pessoa={a.alunos?.pessoas} tamanho="w-8 h-8"/><span className="text-sm text-slate-700">{a.alunos?.pessoas?.nome}</span></div></td>
-                      <td>
-                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border uppercase ${
-                          a.status === 'ativo' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
-                          a.status === 'desistente' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                          'bg-slate-100 text-slate-500 border-slate-200'
-                        }`}>
-                          {a.status}
-                        </span>
-                      </td>
-                      <td className="font-mono text-xs text-slate-400 hidden sm:table-cell">{a.alunos?.matricula || '---'}</td>
-                      <td className="text-right pr-2 sm:pr-6">
-                        <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
-                          <button 
-                            onClick={() => onUpdateStatusAluno(a.id, a.status === 'ativo' ? 'desistente' : 'ativo')}
-                            className={`transition p-1.5 rounded-lg cursor-pointer ${
-                              a.status === 'ativo' 
-                                ? 'text-slate-400 hover:text-rose-500 hover:bg-rose-50' 
+            <Card className="p-0 overflow-hidden">
+              <table className="table-mib">
+                <thead><tr><th>Aluno</th><th>Status na Turma</th><th className="hidden sm:table-cell">Matrícula</th><th className="text-right pr-2 sm:pr-6">Ações</th></tr></thead>
+                <tbody>
+                  {alunos.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhum aluno matriculado nesta turma.</td></tr> :
+                    alunos.map(a => (
+                      <tr key={a.id} onClick={() => onVerAluno(a.alunos?.pessoa_id)} className="cursor-pointer hover:bg-slate-50 transition">
+                        <td><div className="flex items-center gap-2"><Avatar pessoa={a.alunos?.pessoas} tamanho="w-8 h-8" /><span className="text-sm text-slate-700">{a.alunos?.pessoas?.nome}</span></div></td>
+                        <td>
+                          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border uppercase ${a.status === 'ativo' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                            a.status === 'desistente' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                              'bg-slate-100 text-slate-500 border-slate-200'
+                            }`}>
+                            {a.status}
+                          </span>
+                        </td>
+                        <td className="font-mono text-xs text-slate-400 hidden sm:table-cell">{a.alunos?.matricula || '---'}</td>
+                        <td className="text-right pr-2 sm:pr-6">
+                          <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
+                            <button
+                              onClick={() => onUpdateStatusAluno(a.id, a.status === 'ativo' ? 'desistente' : 'ativo')}
+                              className={`transition p-1.5 rounded-lg cursor-pointer ${a.status === 'ativo'
+                                ? 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
                                 : 'text-slate-400 hover:text-emerald-500 hover:bg-emerald-50'
-                            }`}
-                            title={a.status === 'ativo' ? 'Desativar Aluno' : 'Reativar Aluno'}
-                          >
-                            
-                            {a.status === 'ativo' ? (
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                              </svg>
-                            ) : (
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            )}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                }
-              </tbody>
-            </table>
-          </Card>
+                                }`}
+                              title={a.status === 'ativo' ? 'Desativar Aluno' : 'Reativar Aluno'}
+                            >
+
+                              {a.status === 'ativo' ? (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                </svg>
+                              ) : (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  }
+                </tbody>
+              </table>
+            </Card>
           </div>
         )}
 
@@ -1529,58 +1524,58 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
 
         {abaAtiva === 'aulas' && (
           <div className="space-y-4">
-          <Card className="p-0 overflow-hidden">
-            <table className="table-mib">
-              <thead>
-                <tr>
-                  <th>Data</th>
-                  <th className="hidden sm:table-cell">Assunto</th>
-                  <th className="text-center">Presenças</th>
-                  <th className="text-right pr-2 sm:pr-6">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {aulas.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhuma aula registrada ainda.</td></tr> : 
-                  aulas.map(aula => {
-                    // Garantia de processamento do JSON de presenças
-                    let pObj = aula.presencas || {};
-                    if (typeof pObj === 'string') { try { pObj = JSON.parse(pObj); } catch(e) { pObj = {}; } }
-                    const presentesCount = Object.values(pObj).filter(v => v === true).length;
+            <Card className="p-0 overflow-hidden">
+              <table className="table-mib">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th className="hidden sm:table-cell">Assunto</th>
+                    <th className="text-center">Presenças</th>
+                    <th className="text-right pr-2 sm:pr-6">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {aulas.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhuma aula registrada ainda.</td></tr> :
+                    aulas.map(aula => {
+                      // Garantia de processamento do JSON de presenças
+                      let pObj = aula.presencas || {};
+                      if (typeof pObj === 'string') { try { pObj = JSON.parse(pObj); } catch (e) { pObj = {}; } }
+                      const presentesCount = Object.values(pObj).filter(v => v === true).length;
 
-                    return (
-                      <tr key={aula.id}>
-                        <td className="font-bold text-slate-700 text-sm">
-                          {new Date(aula.data_aula).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
-                          {aula.conteudo_proposto && (
-                            <div className="sm:hidden mt-1">
-                              <span className="block text-xs text-slate-500">{aula.conteudo_proposto}</span>
+                      return (
+                        <tr key={aula.id}>
+                          <td className="font-bold text-slate-700 text-sm">
+                            {new Date(aula.data_aula).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                            {aula.conteudo_proposto && (
+                              <div className="sm:hidden mt-1">
+                                <span className="block text-xs text-slate-500">{aula.conteudo_proposto}</span>
+                              </div>
+                            )}
+                          </td>
+                          <td className="text-xs text-slate-500 hidden sm:table-cell">{aula.conteudo_proposto}</td>
+                          <td className="text-center">
+                            <span className="text-[14px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100 uppercase tracking-tighter">
+                              {presentesCount}
+                            </span>
+                          </td>
+                          <td className="text-right pr-2 sm:pr-6">
+                            <div className="flex items-center justify-end gap-2 sm:gap-4">
+                              <button onClick={() => onEditAula(aula)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Ver/Editar Chamada">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                              </button>
+                              <button onClick={() => onExcluirAula(aula.id)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Excluir Aula">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
                             </div>
-                          )}
-                        </td>
-                        <td className="text-xs text-slate-500 hidden sm:table-cell">{aula.conteudo_proposto}</td>
-                        <td className="text-center">
-                          <span className="text-[14px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100 uppercase tracking-tighter">
-                            {presentesCount}
-                          </span>
-                        </td>
-                        <td className="text-right pr-2 sm:pr-6">
-                          <div className="flex items-center justify-end gap-2 sm:gap-4">
-                          <button onClick={() => onEditAula(aula)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Ver/Editar Chamada">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                          </button>
-                          <button onClick={() => onExcluirAula(aula.id)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Excluir Aula">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                          </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                }
-              </tbody>
-            </table>
-          </Card>
-        </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  }
+                </tbody>
+              </table>
+            </Card>
+          </div>
         )}
 
         {abaAtiva === 'frequencias' && (
@@ -1606,9 +1601,9 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                   </button>
                   <div className="flex items-center justify-between sm:justify-start gap-3 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm h-[38px]">
                     <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Exibir dias vazios</span>
-                    <button 
+                    <button
                       type="button"
-                      onClick={() => setEsconderDiasSemRegistro(!esconderDiasSemRegistro)} 
+                      onClick={() => setEsconderDiasSemRegistro(!esconderDiasSemRegistro)}
                       className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${!esconderDiasSemRegistro ? 'bg-[#202046]' : 'bg-slate-200'}`}
                     >
                       <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${!esconderDiasSemRegistro ? 'translate-x-4' : 'translate-x-0'}`} />
@@ -1627,7 +1622,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                       <tr className="bg-slate-50">
                         <th className="sticky left-0 bg-slate-50 z-10 min-w-[120px] sm:min-w-[160px]">Aluno</th>
                         {/* Gerar colunas para os dias */}
-                        {(esconderDiasSemRegistro ? relatorioFrequencia.diasComAula : Array.from({length: 31}, (_, i) => i + 1)).map(dia => (
+                        {(esconderDiasSemRegistro ? relatorioFrequencia.diasComAula : Array.from({ length: 31 }, (_, i) => i + 1)).map(dia => (
                           <th key={dia} className="text-center w-7 sm:w-8 min-w-[28px] sm:min-w-[32px] px-0.5 sm:px-1">{dia}</th>
                         ))}
                       </tr>
@@ -1636,15 +1631,14 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                       {relatorioFrequencia.dados.map((row, idx) => (
                         <tr key={idx}>
                           <td className="sticky left-0 bg-white z-10 font-medium text-slate-700 text-xs border-r min-w-[120px] sm:min-w-[160px] truncate">{row.nome}</td>
-                          {(esconderDiasSemRegistro ? relatorioFrequencia.diasComAula : Array.from({length: 31}, (_, i) => i + 1)).map(dia => {
+                          {(esconderDiasSemRegistro ? relatorioFrequencia.diasComAula : Array.from({ length: 31 }, (_, i) => i + 1)).map(dia => {
                             const status = row.presencas[dia];
                             return (
                               <td key={dia} className="text-center p-0">
-                                <span className={`inline-block w-full py-2 text-[10px] font-semibold ${
-                                  status === 'P' ? 'text-emerald-600 bg-emerald-50/50' : 
-                                  status === 'F' ? 'text-rose-600 bg-rose-50/50' : 
-                                  'text-slate-200'
-                                }`}>
+                                <span className={`inline-block w-full py-2 text-[10px] font-semibold ${status === 'P' ? 'text-emerald-600 bg-emerald-50/50' :
+                                  status === 'F' ? 'text-rose-600 bg-rose-50/50' :
+                                    'text-slate-200'
+                                  }`}>
                                   {status || '-'}
                                 </span>
                               </td>
@@ -2002,7 +1996,7 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
         setCarregandoStats(false);
       }
     }
-    
+
     if (modoDemo) {
       setStats(demoStats);
       setCarregandoStats(false);
@@ -2032,7 +2026,7 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
         </div>
         <div className="flex items-center gap-2 self-start sm:self-center bg-slate-50 border border-slate-200/60 px-3 py-1.5 rounded-lg">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Modo Demo</span>
-          <button 
+          <button
             onClick={() => setModoDemo(v => !v)}
             className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-300 cursor-pointer ${modoDemo ? 'bg-[#1e3a8a]' : 'bg-slate-350'}`}
           >
@@ -2052,11 +2046,10 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
           <button
             key={tab.id}
             onClick={() => setAbaAtivaDashboard(tab.id)}
-            className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-205 cursor-pointer whitespace-nowrap md:flex-1 ${
-              abaAtivaDashboard === tab.id 
-                ? 'bg-[#1e3a8a] text-white shadow-xs' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
-            }`}
+            className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-205 cursor-pointer whitespace-nowrap md:flex-1 ${abaAtivaDashboard === tab.id
+              ? 'bg-[#1e3a8a] text-white shadow-xs'
+              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+              }`}
           >
             {tab.icon}
             <span>{tab.label}</span>
@@ -2069,10 +2062,10 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* LINHA 1: INDICADORES RÁPIDOS */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard 
-              label="Total de Alunos" 
-              valor={activeStats.totalAlunos} 
-              detalhe="Alunos matriculados" 
+            <StatCard
+              label="Total de Alunos"
+              valor={activeStats.totalAlunos}
+              detalhe="Alunos matriculados"
               icone={<span className="text-3xl">🎓</span>}
               className="!rounded-t-none"
             />
@@ -2081,10 +2074,10 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
               className="cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
               title="Ir para Cursos"
             >
-              <StatCard 
-                label="Cursos Disponíveis" 
-                valor={escolas.length || 4} 
-                detalhe="Escolas ativas" 
+              <StatCard
+                label="Cursos Disponíveis"
+                valor={escolas.length || 4}
+                detalhe="Escolas ativas"
                 icone={<span className="text-3xl">🏫</span>}
                 className="!rounded-t-none"
               />
@@ -2094,18 +2087,18 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
               className="cursor-pointer transition-transform hover:scale-[1.02] active:scale-[0.98]"
               title="Ir para Turmas"
             >
-              <StatCard 
-                label="Turmas Ativas" 
-                valor={turmas.filter(t => t.status === 'Em andamento').length || 3} 
-                detalhe="Em andamento" 
+              <StatCard
+                label="Turmas Ativas"
+                valor={turmas.filter(t => t.status === 'Em andamento').length || 3}
+                detalhe="Em andamento"
                 icone={<span className="text-3xl">👥</span>}
                 className="!rounded-t-none"
               />
             </div>
-            <StatCard 
-              label="Frequência Média" 
-              valor={`${activeStats.frequenciaGeral}%`} 
-              detalhe="Presenças em aula" 
+            <StatCard
+              label="Frequência Média"
+              valor={`${activeStats.frequenciaGeral}%`}
+              detalhe="Presenças em aula"
               icone={<span className="text-3xl">📈</span>}
               className="!rounded-t-none"
             />
@@ -2148,7 +2141,7 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
                 </table>
               </div>
             </Card>
-            
+
             <Card className="p-6 bg-gradient-to-br from-[#202046] to-[#0891b2] text-white !rounded-t-none border-none">
               <h4 className="font-black uppercase tracking-widest text-[10px] opacity-70 mb-4">Dica de Gestão Escolar</h4>
               <p className="text-xs leading-relaxed font-medium">
@@ -2171,8 +2164,8 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
                 {/* SVG simplificado de Progresso Circular */}
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="42" stroke="#e2e8f0" strokeWidth="8" fill="transparent" />
-                  <circle 
-                    cx="50" cy="50" r="42" stroke="#1e3a8a" strokeWidth="8" fill="transparent" 
+                  <circle
+                    cx="50" cy="50" r="42" stroke="#1e3a8a" strokeWidth="8" fill="transparent"
                     strokeDasharray={263.8}
                     strokeDashoffset={263.8 - (263.8 * activeStats.frequenciaGeral) / 100}
                     strokeLinecap="round"
@@ -2199,7 +2192,7 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
                   {activeStats.alunosEmRisco.length} Alertas
                 </span>
               </div>
-              
+
               {activeStats.alunosEmRisco.length === 0 ? (
                 <div className="p-10 text-center text-xs text-slate-400 italic">Nenhum aluno em situação de risco de frequência. Parabéns!</div>
               ) : (
@@ -2286,7 +2279,7 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
               <h4 className="font-extrabold text-slate-800 text-sm">Melhores Resultados em Avaliações Recentes</h4>
               <p className="text-[10px] text-slate-500 font-medium">Notas máximas ou de destaque nas provas e trabalhos de disciplinas ativas.</p>
             </div>
-            
+
             {activeStats.melhoresNotas.length === 0 ? (
               <div className="p-10 text-center text-xs text-slate-400 italic">Sem notas registradas recentemente.</div>
             ) : (
@@ -2372,8 +2365,8 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
                   O sistema cruza dados de conclusão do curso <strong>Escola de Líderes</strong> com as notas médias superiores a 9.0 e assiduidade completa. Alunos com estes requisitos são indicados automaticamente ao conselho pastoral para liderar novas células.
                 </p>
               </div>
-              <button 
-                onClick={() => onNavigate('alunos')} 
+              <button
+                onClick={() => onNavigate('alunos')}
                 className="shrink-0 px-5 py-3 bg-[#0891b2] hover:bg-[#06b6d4] text-white rounded-2xl text-xs font-bold transition shadow-lg shadow-cyan-950 cursor-pointer"
               >
                 🎓 Acessar Fichas dos Alunos

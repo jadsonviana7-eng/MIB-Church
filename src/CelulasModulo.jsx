@@ -2383,7 +2383,7 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
               </div>
 
               {/* Data e Tema */}
-              <div className="grid grid-cols-2 gap-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                 <div>
                   <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Data</span>
                   <span className="text-sm font-bold text-slate-700">
@@ -2392,7 +2392,7 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
                 </div>
                 <div>
                   <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Tema / Assunto</span>
-                  <span className="text-sm font-bold text-slate-700 truncate block">
+                  <span className="text-sm font-bold text-slate-700 break-words block">
                     {editTema || '—'}
                   </span>
                 </div>

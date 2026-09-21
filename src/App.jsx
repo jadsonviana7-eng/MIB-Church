@@ -614,7 +614,10 @@ export default function App() {
       if (filtros.genero && p.genero !== filtros.genero) return false;
       if (filtros.faixaEtaria && faixaDaIdade(p.data_nascimento) !== filtros.faixaEtaria) return false;
       if (filtros.zona && String(p.zona_id) !== String(filtros.zona)) return false;
-      if (filtros.cargo && p.cargo !== filtros.cargo) return false;
+      if (filtros.cargo) {
+        const cargosPessoa = p.cargo ? p.cargo.split(',').map(s => s.trim().toLowerCase()) : [];
+        if (!cargosPessoa.includes(filtros.cargo.toLowerCase()) && p.cargo !== filtros.cargo) return false;
+      }
       if (filtros.atuacao) {
         const roles = p.atuacao ? p.atuacao.split(',').map(s => s.trim().toLowerCase()) : [];
         if (!roles.includes(filtros.atuacao.toLowerCase())) return false;
@@ -783,20 +786,29 @@ export default function App() {
       try {
         if (activeSessaoId) return;
 
+        const novaSessaoId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+          ? crypto.randomUUID() 
+          : undefined;
+
+        const payload = {
+          usuario_id: membroLogado.id,
+          usuario_email: membroLogado.email || usuarioLogado.email,
+          usuario_nome: membroLogado.nome
+        };
+        if (novaSessaoId) payload.id = novaSessaoId;
+
         // 1. Criar entrada na tabela sessoes_sistema
         const { data, error } = await supabase
           .from('sessoes_sistema')
-          .insert([{
-            usuario_id: membroLogado.id,
-            usuario_email: membroLogado.email || usuarioLogado.email,
-            usuario_nome: membroLogado.nome
-          }])
+          .insert([payload])
           .select('id')
-          .single();
+          .maybeSingle();
 
-        if (!error && data?.id) {
-          activeSessaoId = data.id;
-          sessionStorage.setItem('mibHeartbeatSessaoId', data.id);
+        const idFinal = data?.id || (error ? null : novaSessaoId);
+
+        if (idFinal) {
+          activeSessaoId = idFinal;
+          sessionStorage.setItem('mibHeartbeatSessaoId', idFinal);
 
           // 2. Registrar evento de LOGIN em logs_sistema
           await supabase.from('logs_sistema').insert([{
@@ -804,7 +816,7 @@ export default function App() {
             usuario_email: membroLogado.email || usuarioLogado.email,
             usuario_nome: membroLogado.nome,
             acao: 'LOGIN',
-            detalhes: { agent: navigator.userAgent, sessao_id: data.id }
+            detalhes: { agent: navigator.userAgent, sessao_id: idFinal }
           }]);
         }
       } catch (err) {

@@ -164,7 +164,7 @@ export default function DashboardMembro({ membroLogado, onNavigate, onVerPerfil 
       {/* HEADER DE BOAS VINDAS E AVISOS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Banner de Boas Vindas */}
-        <div className="lg:col-span-2 relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#4338ca] text-white p-6 md:p-8 shadow-xl flex items-center justify-between">
+        <div className="lg:col-span-2 relative rounded-b-3xl rounded-t-none overflow-hidden bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#4338ca] text-white p-6 md:p-8 shadow-xl flex items-center justify-between">
           <div className="absolute top-0 right-0 p-8 opacity-10">
             <Sparkles size={120} />
           </div>

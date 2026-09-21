@@ -148,6 +148,8 @@ CREATE TABLE transacoes_financeiras (
   tipo TEXT NOT NULL, -- 'receita', 'despesa', 'transferencia'
   descricao TEXT NOT NULL,
   valor DECIMAL(10, 2) NOT NULL,
+  quantidade DECIMAL(10, 2), -- Quantidade de itens (para despesas como limpeza e consumo)
+  valor_unitario DECIMAL(10, 2), -- Valor por unidade
   status TEXT DEFAULT 'pendente', -- 'pago', 'pendente', 'cancelado'
   pessoa_id uuid REFERENCES pessoas(id),
   categoria_id uuid REFERENCES categorias_financeiras(id),

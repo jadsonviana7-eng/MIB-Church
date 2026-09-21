@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient';
 import { PageHeader, Card, CardHeader, SelectFiltro } from './ui';
 import { registrarLogFinanceiro } from './financeiroUtils';
 import { mascaraMoeda, desmascararMoeda } from './mascaras';
+import ModalImportarNFCe from './ModalImportarNFCe';
 
 export default function TransacoesFinanceiras({
   dataInicioFiltro, setDataInicioFiltro,
@@ -702,7 +703,14 @@ export default function TransacoesFinanceiras({
                   return (
                     <tr key={t.id} onClick={() => podeEditar && abrirModal(tipoNormalizado, t)} className={`${podeEditar ? 'cursor-pointer hover:bg-slate-50' : ''} transition`}>
                       <td>{t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
-                      <td className="text-slate-600 font-normal">{t.descricao}</td>
+                      <td className="text-slate-600 font-normal">
+                        <div>{t.descricao}</div>
+                        {t.quantidade && t.valor_unitario && (
+                          <div className="text-[11px] text-amber-600 font-semibold mt-0.5">
+                            {t.quantidade} un × R$ {Number(t.valor_unitario).toFixed(2)}
+                          </div>
+                        )}
+                      </td>
                       <td className="font-medium text-slate-900">{t.contribuinte || '—'}</td>
                       <td>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tipoNormalizado === 'receita' ? 'bg-emerald-100 text-emerald-800' :
@@ -820,6 +828,11 @@ export default function TransacoesFinanceiras({
 
                     {/* Descrição principal */}
                     <p className="text-sm font-extrabold text-slate-800 leading-tight mt-1 truncate">{t.descricao}</p>
+                    {t.quantidade && t.valor_unitario && (
+                      <p className="text-[10px] text-amber-600 font-bold mt-0.5">
+                        {t.quantidade} un × R$ {Number(t.valor_unitario).toFixed(2)}
+                      </p>
+                    )}
 
                     {/* Informação adicional (Doador/Categoria) */}
                     <p className="text-[11px] text-slate-500 mt-1 truncate">
@@ -877,7 +890,9 @@ export default function TransacoesFinanceiras({
 export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pessoas, onSucesso, pessoaIdInicial = '', transacaoParaEditar = null, usuarioLogado }) {
   const [data, setData] = useState(transacaoParaEditar?.data || new Date().toISOString().split('T')[0]);
   const [descricao, setDescricao] = useState(transacaoParaEditar?.descricao || '');
-  const [valor, setValor] = useState(transacaoParaEditar?.valor ? mascaraMoeda(transacaoParaEditar.valor * 100) : '');
+  const [valor, setValor] = useState(transacaoParaEditar?.valor != null ? mascaraMoeda(Math.round(Number(transacaoParaEditar.valor) * 100)) : '');
+  const [quantidade, setQuantidade] = useState(transacaoParaEditar?.quantidade != null ? String(transacaoParaEditar.quantidade) : '');
+  const [valorUnitario, setValorUnitario] = useState(transacaoParaEditar?.valor_unitario != null ? mascaraMoeda(Math.round(Number(transacaoParaEditar.valor_unitario) * 100)) : '');
   const [status, setStatus] = useState(transacaoParaEditar?.status?.toLowerCase() || 'pago'); // 'pago' ou 'pendente'
   const [pessoaId, setPessoaId] = useState(transacaoParaEditar?.pessoa_id || pessoaIdInicial);
   const [categoriaId, setCategoriaId] = useState(transacaoParaEditar?.categoria_id || '');
@@ -893,6 +908,68 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
   });
   const [anotacoes, setAnotacoes] = useState(transacaoParaEditar?.anotacoes || '');
   const [enviando, setEnviando] = useState(false);
+  const [modalNFCeAberto, setModalNFCeAberto] = useState(false);
+
+  function handleImportarNFCe(dadosNota) {
+    if (!dadosNota) return;
+
+    if (dadosNota.data) setData(dadosNota.data);
+    if (dadosNota.descricaoSugerida) setDescricao(dadosNota.descricaoSugerida);
+    if (dadosNota.valorTotal != null) {
+      setValor(mascaraMoeda(Math.round(Number(dadosNota.valorTotal) * 100)));
+    }
+
+    if (dadosNota.categoriaSugerida && categorias?.length) {
+      const catEncontrada = categorias.find(c =>
+        c.nome.toLowerCase().includes(dadosNota.categoriaSugerida)
+      );
+      if (catEncontrada) {
+        setCategoriaId(catEncontrada.id);
+      }
+    }
+
+    if (dadosNota.itens?.length) {
+      setQuantidade(String(dadosNota.itens.length));
+      if (dadosNota.itens.length === 1) {
+        setValorUnitario(mascaraMoeda(Math.round(Number(dadosNota.itens[0].valorUnitario) * 100)));
+      }
+    }
+
+    if (dadosNota.textoAnotacoes) {
+      setAnotacoes(prev => (prev ? `${prev}\n\n${dadosNota.textoAnotacoes}` : dadosNota.textoAnotacoes));
+    }
+  }
+
+  const categoriaSelecionada = useMemo(() => {
+    return categorias?.find(c => String(c.id) === String(categoriaId));
+  }, [categorias, categoriaId]);
+
+  const ehLimpezaOuConsumo = useMemo(() => {
+    if (tipo !== 'despesa' || !categoriaSelecionada?.nome) return false;
+    const nomeNorm = categoriaSelecionada.nome.toLowerCase();
+    return nomeNorm.includes('limpeza') || nomeNorm.includes('consumo');
+  }, [tipo, categoriaSelecionada]);
+
+  const handleQuantidadeChange = (novaQtd) => {
+    setQuantidade(novaQtd);
+    const qtdNum = parseFloat(String(novaQtd).replace(',', '.'));
+    const unitNum = desmascararMoeda(valorUnitario);
+    if (!isNaN(qtdNum) && qtdNum > 0 && unitNum && unitNum > 0) {
+      const totalCalc = qtdNum * unitNum;
+      setValor(mascaraMoeda(Math.round(totalCalc * 100)));
+    }
+  };
+
+  const handleValorUnitarioChange = (novoUnit) => {
+    const valorFormatado = mascaraMoeda(novoUnit);
+    setValorUnitario(valorFormatado);
+    const qtdNum = parseFloat(String(quantidade).replace(',', '.'));
+    const unitNum = desmascararMoeda(valorFormatado);
+    if (!isNaN(qtdNum) && qtdNum > 0 && unitNum && unitNum > 0) {
+      const totalCalc = qtdNum * unitNum;
+      setValor(mascaraMoeda(Math.round(totalCalc * 100)));
+    }
+  };
 
   const corPrincipal = tipo === 'receita' ? 'emerald' : 'rose';
   const labelStatus = tipo === 'receita' ? (status === 'pago' ? 'Recebido' : 'Pendente') : (status === 'pago' ? 'Pago' : 'Pendente');
@@ -925,10 +1002,16 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
     e.preventDefault();
     setEnviando(true);
 
+    const qtdNum = parseFloat(String(quantidade).replace(',', '.'));
+    const unitNum = desmascararMoeda(valorUnitario);
+    const valorFinal = desmascararMoeda(valor);
+
     const payloadBase = {
       tipo,
       descricao: descricao.trim(),
-      valor: desmascararMoeda(valor) || 0,
+      valor: valorFinal !== null ? Math.round(valorFinal * 100) / 100 : 0,
+      quantidade: (ehLimpezaOuConsumo && !isNaN(qtdNum) && qtdNum > 0) ? Math.round(qtdNum * 100) / 100 : null,
+      valor_unitario: (ehLimpezaOuConsumo && unitNum && unitNum > 0) ? Math.round(unitNum * 100) / 100 : null,
       status: (tipoLancamento === 'repetido' && !transacaoParaEditar) ? 'pendente' : status,
       pessoa_id: pessoaId || null,
       categoria_id: categoriaId || null,
@@ -1003,9 +1086,21 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 sm:p-4">
       <div className="bg-white rounded-none sm:rounded-3xl border-none sm:border sm:border-slate-200 shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[95vh]">
         <div className={`p-3 sm:p-4 border-b border-slate-100 flex items-center justify-between ${corHeader}`}>
-          <div>
+          <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
             <h3 className="font-bold text-slate-900 text-sm sm:text-base uppercase tracking-tight">{transacaoParaEditar ? 'Editar' : 'Nova'} {tipo}</h3>
-
+            {tipo === 'despesa' && !transacaoParaEditar && (
+              <button
+                type="button"
+                onClick={() => setModalNFCeAberto(true)}
+                className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition active:scale-95 cursor-pointer"
+                title="Escanear QR Code, colar link da SEFAZ ou importar arquivo XML"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                </svg>
+                <span>Ler Nota Fiscal (QR Code)</span>
+              </button>
+            )}
           </div>
           <button type="button" onClick={onFechar} className="text-slate-400 hover:text-slate-600 font-bold p-2 text-xl">✕</button>
         </div>
@@ -1108,6 +1203,52 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
             </div>
           </div>
 
+          {/* Campos dinâmicos: Quantidade e Valor Unitário para Produtos de Limpeza e Consumo */}
+          {ehLimpezaOuConsumo && (
+            <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-2.5 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                  <span className="text-xs font-black text-amber-900 uppercase tracking-wider">
+                    Detalhamento do Item ({categoriaSelecionada?.nome})
+                  </span>
+                </div>
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-100/90 px-2 py-0.5 rounded-md">
+                  Calcula o Valor Total automaticamente
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-amber-900 mb-1">
+                    Quantidade
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    min="0"
+                    placeholder="Ex: 5"
+                    value={quantidade}
+                    onChange={e => handleQuantidadeChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-xl text-sm font-bold text-slate-800 bg-white focus:ring-2 focus:ring-amber-500/20 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-amber-900 mb-1">
+                    Valor Unitário (R$)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="R$ 0,00"
+                    value={valorUnitario}
+                    onChange={e => handleValorUnitarioChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-amber-300 rounded-xl text-sm font-bold text-slate-800 bg-white focus:ring-2 focus:ring-amber-500/20 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-bold text-slate-500 mb-1">Anotações Internas</label>
             <textarea
@@ -1160,6 +1301,13 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
           </div>
         </form>
       </div>
+
+      {modalNFCeAberto && (
+        <ModalImportarNFCe
+          onFechar={() => setModalNFCeAberto(false)}
+          onImportar={handleImportarNFCe}
+        />
+      )}
     </div>
   );
 }

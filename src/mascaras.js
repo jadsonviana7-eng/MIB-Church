@@ -37,6 +37,12 @@ export function mascaraCEP(valor) {
 }
 
 export function mascaraMoeda(valor) {
+  if (valor === null || valor === undefined || valor === '') return '';
+  if (typeof valor === 'number') {
+    const inteiro = Math.round(valor);
+    const numero = inteiro / 100;
+    return numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
   const n = soNumeros(valor);
   if (!n) return '';
   const numero = Number(n) / 100;
@@ -44,9 +50,11 @@ export function mascaraMoeda(valor) {
 }
 
 export function desmascararMoeda(valor) {
+  if (valor === null || valor === undefined || valor === '') return null;
+  if (typeof valor === 'number') return Math.round(valor * 100) / 100;
   const n = soNumeros(valor);
   if (!n) return null;
-  return Number(n) / 100;
+  return Math.round(Number(n)) / 100;
 }
 
 export function mascaraDataBR(valor) {

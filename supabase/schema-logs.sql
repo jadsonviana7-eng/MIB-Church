@@ -134,7 +134,11 @@ CREATE POLICY "Escrita de logs livre para autenticados" ON public.logs_sistema
 DROP POLICY IF EXISTS "Leitura de sessoes restrita" ON public.sessoes_sistema;
 CREATE POLICY "Leitura de sessoes restrita" ON public.sessoes_sistema
     FOR SELECT TO authenticated
-    USING (public.obter_perfil() IN ('admin', 'pastor'));
+    USING (
+        public.obter_perfil() IN ('admin', 'pastor')
+        OR usuario_id = public.obter_id_pessoa()
+        OR usuario_email = (auth.jwt()->>'email')
+    );
 
 DROP POLICY IF EXISTS "Insercao de sessoes livre para autenticados" ON public.sessoes_sistema;
 CREATE POLICY "Insercao de sessoes livre para autenticados" ON public.sessoes_sistema

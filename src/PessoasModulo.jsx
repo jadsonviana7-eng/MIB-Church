@@ -580,6 +580,10 @@ function AgrupamentoPessoas({ titulo, itens, campo, pessoas, abrirPessoasFiltrad
               const roles = p.atuacao ? p.atuacao.split(',').map(s => s.trim().toLowerCase()) : [];
               return roles.includes(String(val).toLowerCase());
             }
+            if (campo === 'cargo') {
+              const roles = p.cargo ? p.cargo.split(',').map(s => s.trim().toLowerCase()) : [];
+              return roles.includes(String(val).toLowerCase()) || String(p.cargo || '').toLowerCase() === String(val).toLowerCase();
+            }
             return String(p[campo] || '') === String(val);
           }).length;
           const iconInfo = getIconForField(campo, nomeItem);

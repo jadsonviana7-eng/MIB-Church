@@ -361,7 +361,9 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
   const [numero, setNumero] = useState('');
   const [bairro, setBairro] = useState('');
   const [estado, setEstado] = useState('');
-  const [cargo, setCargo] = useState('membro');
+  const [cargosSelecionados, setCargosSelecionados] = useState([]);
+  const [novoCargoPersonalizado, setNovoCargoPersonalizado] = useState('');
+  const cargo = useMemo(() => (cargosSelecionados.length > 0 ? cargosSelecionados.join(', ') : 'Membro'), [cargosSelecionados]);
   const [celulaId, setCelulaId] = useState('');
   const [zonaId, setZonaId] = useState('');
   const [dataBatismo, setDataBatismo] = useState('');
@@ -598,7 +600,10 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
     setNumero(p.numero || '');
     setBairro(p.bairro || '');
     setEstado(p.estado || '');
-    setCargo(p.cargo || 'membro');
+    const cargosArr = p.cargo
+      ? p.cargo.split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
+    setCargosSelecionados(cargosArr.length > 0 ? cargosArr : ['Membro']);
     setCelulaId(p.celula_id || '');
     setZonaId(p.zona_id || '');
     setDataBatismo(dataISOparaBR(p.data_batismo));
@@ -731,6 +736,42 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
     carregarFichaDoMembro();
   }, [pessoaId, listaPessoas, carregarFinanceiro, isStudentCadernetaView]);
 
+  const listaCargosUnicos = useMemo(() => {
+    const base = (cargos && cargos.length > 0 ? cargos : (cargosLista || []))
+      .map((c) => (typeof c === 'string' ? c : c.nome))
+      .filter(Boolean);
+
+    const padrao = [
+      'Pastor(a)',
+      'Presbítero(a)',
+      'Diácono/Diaconisa',
+      'Líder de Célula',
+      'Co-líder',
+      'Discipulador(a)',
+      'Missionário(a)',
+      'Evangelista',
+      'Cooperador(a)',
+      'Voluntário(a)',
+      'Membro'
+    ];
+
+    const unicos = new Set([...base, ...padrao, ...cargosSelecionados]);
+    return Array.from(unicos);
+  }, [cargos, cargosLista, cargosSelecionados]);
+
+  const toggleCargo = (nomeCargo) => {
+    if (!nomeCargo) return;
+    const nomeLimpo = nomeCargo.trim();
+    setCargosSelecionados((prev) => {
+      const existe = prev.some((c) => c.toLowerCase() === nomeLimpo.toLowerCase());
+      if (existe) {
+        return prev.filter((c) => c.toLowerCase() !== nomeLimpo.toLowerCase());
+      } else {
+        return [...prev, nomeLimpo];
+      }
+    });
+  };
+
   // Dynamic ABAS
   const dynamicAbas = useMemo(() => {
     if (isStudentCadernetaView) {
@@ -856,7 +897,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
       numero,
       bairro,
       estado,
-      cargo: cargo,
+      cargo: cargosSelecionados.length > 0 ? cargosSelecionados.join(', ') : 'Membro',
       celula_id: celulaId || null,
       zona_id: zonaId || null,
       data_batismo: dataBRparaISO(dataBatismo),
@@ -1177,7 +1218,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
                   {nomeCelula}
                 </span>
               </p>
-              <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Cargo</span> <span className="font-medium text-[var(--text-heading)] capitalize">{cargo || 'Membro'}</span></p>
+              <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">{cargosSelecionados.length > 1 ? 'Cargos' : 'Cargo'}</span> <span className="font-medium text-[var(--text-heading)] capitalize">{cargo || 'Membro'}</span></p>
               <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Telefone</span> <span className="font-medium text-[var(--text-heading)]">{telefone || '—'}</span></p>
               <p className="sm:col-span-2"><span className="text-[var(--text-muted)]">Endereço:</span> <span className="font-medium text-[var(--text-heading)]">{enderecoCompleto}</span></p>
             </div>
@@ -1187,7 +1228,13 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
               {celulaId && (
                 <span className="text-[9px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded border border-teal-100 font-black uppercase">Ativo</span>
               )}
-              <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 font-bold capitalize">{cargo || 'Membro'}</span>
+              {cargosSelecionados.length > 0 ? (
+                cargosSelecionados.map((c) => (
+                  <span key={c} className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 font-bold capitalize">{c}</span>
+                ))
+              ) : (
+                <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 font-bold capitalize">Membro</span>
+              )}
             </div>
           </div>
         </div>
@@ -1353,49 +1400,155 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
 
                 <div className="section-group">
                   <h3 className="section-title">Vida na Igreja</h3>
-                  <div className="section-body grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="section-body space-y-4">
+                    {/* Seleção de Múltiplos Cargos */}
                     {!dis ? (
-                      <>
-                        <div>
-                          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Cargo</label>
-                          <select value={cargo} onChange={(e) => setCargo(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
-                            <option value="">Selecione o cargo</option>
-                            {cargos.map((c) => <option key={c.id} value={c.nome}>{c.nome}</option>)}
-                            {cargo && !cargos.some((c) => c.nome === cargo) && <option value={cargo}>{cargo}</option>}
-                          </select>
+                      <div className="p-3.5 bg-slate-50/60 rounded-2xl border border-slate-200/80 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                            Cargos e Funções Eclesiásticas
+                          </label>
+                          <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">
+                            {cargosSelecionados.length === 0 ? 'Nenhum cargo selecionado' : `${cargosSelecionados.length} selecionado(s)`}
+                          </span>
                         </div>
-                        <div>
-                          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Célula</label>
-                          <select value={celulaId} onChange={(e) => setCelulaId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
-                            <option value="">Nenhuma</option>
-                            {celulas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                          </select>
+
+                        {/* Chips de Cargos Selecionados */}
+                        {cargosSelecionados.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {cargosSelecionados.map((c) => (
+                              <span
+                                key={c}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#055F6D] text-white shadow-xs animate-in fade-in"
+                              >
+                                <span>{c}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleCargo(c)}
+                                  className="w-4 h-4 rounded-full hover:bg-white/20 flex items-center justify-center text-white/90 hover:text-white transition-colors cursor-pointer text-sm leading-none"
+                                  title={`Remover ${c}`}
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Lista de Chips clicáveis para alternar cargos */}
+                        <div className="pt-1">
+                          <p className="text-[10px] text-slate-400 font-medium mb-1.5">Clique para selecionar ou desmarcar cargos:</p>
+                          <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                            {listaCargosUnicos.map((cNome) => {
+                              const selecionado = cargosSelecionados.some((s) => s.toLowerCase() === cNome.toLowerCase());
+                              return (
+                                <button
+                                  key={cNome}
+                                  type="button"
+                                  onClick={() => toggleCargo(cNome)}
+                                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 border cursor-pointer ${
+                                    selecionado
+                                      ? 'bg-teal-50 border-[#055F6D] text-[#055F6D] font-bold shadow-xs'
+                                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-100/70'
+                                  }`}
+                                >
+                                  <span className={`w-1.5 h-1.5 rounded-full ${selecionado ? 'bg-[#055F6D]' : 'bg-slate-300'}`} />
+                                  {cNome}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                        <div>
-                          <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Zona</label>
-                          <select value={zonaId} onChange={(e) => setZonaId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
-                            <option value="">Nenhuma</option>
-                            {zonas.map((z) => <option key={z.id} value={z.id}>{z.nome}</option>)}
-                          </select>
+
+                        {/* Adicionar Cargo Personalizado */}
+                        <div className="flex items-center gap-2 pt-1">
+                          <input
+                            type="text"
+                            placeholder="Outro cargo (digite e pressione Enter ou clique em +)"
+                            value={novoCargoPersonalizado}
+                            onChange={(e) => setNovoCargoPersonalizado(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (novoCargoPersonalizado.trim()) {
+                                  toggleCargo(novoCargoPersonalizado.trim());
+                                  setNovoCargoPersonalizado('');
+                                }
+                              }
+                            }}
+                            className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#055F6D]"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (novoCargoPersonalizado.trim()) {
+                                toggleCargo(novoCargoPersonalizado.trim());
+                                setNovoCargoPersonalizado('');
+                              }
+                            }}
+                            disabled={!novoCargoPersonalizado.trim()}
+                            className="px-3 py-1.5 text-xs font-semibold bg-slate-200 hover:bg-slate-300 disabled:opacity-40 rounded-xl text-slate-700 transition cursor-pointer"
+                          >
+                            + Adicionar
+                          </button>
                         </div>
-                      </>
+                      </div>
                     ) : (
-                      <>
-                        <CampoLinha label="Cargo" valor={cargo} />
-                        <CampoLinha label="Célula" valor={nomeCelula} />
-                        <CampoLinha label="Zona" valor={nomeZona} />
-                      </>
+                      <div className="sm:col-span-2 lg:col-span-3">
+                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">Cargos / Funções</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {cargosSelecionados.length > 0 ? (
+                            cargosSelecionados.map((c) => (
+                              <span
+                                key={c}
+                                className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200"
+                              >
+                                {c}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-slate-500 font-medium">Membro</span>
+                          )}
+                        </div>
+                      </div>
                     )}
-                    <CampoInput label="Data de conversão" value={dataConversao} onChange={setDataConversao} disabled={dis} mask={mascaraDataBR} />
-                    <CampoInput label="Data de batismo" value={dataBatismo} onChange={setDataBatismo} disabled={dis} mask={mascaraDataBR} />
-                    {!dis ? (
-                      <label className="flex items-center gap-2 text-xs font-medium text-[var(--text-primary)] pt-5">
-                        <input type="checkbox" checked={batizadoAguas} onChange={(e) => setBatizadoAguas(e.target.checked)} className="rounded" />
-                        Batizado nas águas
-                      </label>
-                    ) : (
-                      <CampoLinha label="Batizado nas águas" valor={batizadoAguas ? 'Sim' : 'Não'} />
-                    )}
+
+                    {/* Célula, Zona e outros campos */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {!dis ? (
+                        <>
+                          <div>
+                            <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Célula</label>
+                            <select value={celulaId} onChange={(e) => setCelulaId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
+                              <option value="">Nenhuma</option>
+                              {celulas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Zona</label>
+                            <select value={zonaId} onChange={(e) => setZonaId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
+                              <option value="">Nenhuma</option>
+                              {zonas.map((z) => <option key={z.id} value={z.id}>{z.nome}</option>)}
+                            </select>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <CampoLinha label="Célula" valor={nomeCelula} />
+                          <CampoLinha label="Zona" valor={nomeZona} />
+                        </>
+                      )}
+                      <CampoInput label="Data de conversão" value={dataConversao} onChange={setDataConversao} disabled={dis} mask={mascaraDataBR} />
+                      <CampoInput label="Data de batismo" value={dataBatismo} onChange={setDataBatismo} disabled={dis} mask={mascaraDataBR} />
+                      {!dis ? (
+                        <label className="flex items-center gap-2 text-xs font-medium text-[var(--text-primary)] pt-5">
+                          <input type="checkbox" checked={batizadoAguas} onChange={(e) => setBatizadoAguas(e.target.checked)} className="rounded" />
+                          Batizado nas águas
+                        </label>
+                      ) : (
+                        <CampoLinha label="Batizado nas águas" valor={batizadoAguas ? 'Sim' : 'Não'} />
+                      )}
+                    </div>
                   </div>
                 </div>
 

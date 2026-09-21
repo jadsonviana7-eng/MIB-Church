@@ -260,7 +260,8 @@ export default function TelaLogin({ onEntrar }) {
 
   async function handleVerificarCodigo(e) {
     e.preventDefault();
-    if (!codigo.trim()) { setErro('Informe o código de 6 dígitos enviado por e-mail.'); return; }
+    if (!codigo.trim()) { setErro('Informe o código de recuperação enviado por e-mail.'); return; }
+    if (codigo.trim().length < 6) { setErro('Informe o código completo enviado por e-mail.'); return; }
     setLoading(true); setErro(''); setInfo('');
     try {
       const { error } = await supabase.auth.verifyOtp({
@@ -931,7 +932,7 @@ export default function TelaLogin({ onEntrar }) {
 
                 <div style={{ marginTop: '1rem', textAlign: 'center' }}>
                   <button type="button" className="tl-link" onClick={() => mudarModo(MODO.VERIFICAR_CODIGO)}>
-                    Já possui um código de 6 dígitos? Digitar código
+                    Já possui o código de recuperação? Digitar código
                   </button>
                 </div>
               </form>
@@ -946,17 +947,17 @@ export default function TelaLogin({ onEntrar }) {
 
                 <p className="tl-right-title">Verificar código</p>
                 <p className="tl-right-sub">
-                  Digite o código de 6 dígitos enviado para <strong>{email}</strong> ou clique no link recebido por e-mail.
+                  Digite o código enviado para <strong>{email}</strong> ou clique no link recebido por e-mail.
                 </p>
 
                 <div className="tl-field">
-                  <label className="tl-label" htmlFor="codigo-otp">Código de 6 dígitos</label>
+                  <label className="tl-label" htmlFor="codigo-otp">Código de verificação</label>
                   <input
                     id="codigo-otp"
                     type="text"
                     className="tl-input"
-                    placeholder="Ex: 123456"
-                    maxLength={6}
+                    placeholder="Ex: 12345678"
+                    maxLength={8}
                     value={codigo}
                     onChange={e => setCodigo(e.target.value.replace(/\D/g, ''))}
                     style={{ letterSpacing: '0.25em', fontSize: '1.1rem', textAlign: 'center', fontWeight: '700' }}
@@ -966,7 +967,7 @@ export default function TelaLogin({ onEntrar }) {
                 {erro && <div className="tl-alert tl-alert-err">{erro}</div>}
                 {info && <div className="tl-alert tl-alert-info">{info}</div>}
 
-                <button type="submit" className="tl-btn tl-btn-primary" disabled={loading || codigo.length < 6}>
+                <button type="submit" className="tl-btn tl-btn-primary" disabled={loading || codigo.trim().length < 6}>
                   {loading ? 'Verificando…' : 'Validar Código →'}
                 </button>
 

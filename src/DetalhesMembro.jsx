@@ -197,7 +197,7 @@ function calcularPermissoesPorPerfil(membro) {
   return itens;
 }
 
-function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], onDadosAtualizados, cargosLista = [], atuacoesLista = [], isStudentCadernetaView = false, membroLogado, hasAccess }) {
+function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar, listaPessoas = [], onDadosAtualizados, cargosLista = [], atuacoesLista = [], isStudentCadernetaView = false, membroLogado, hasAccess }) {
   const [pessoaId, setPessoaId] = useState(propPessoaId);
   const [historicoNavegacao, setHistoricoNavegacao] = useState([]);
 
@@ -417,10 +417,16 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
   const [fotoFinalBlob, setFotoFinalBlob] = useState(null);
 
   // Estados para dados acadêmicos (se isStudentCadernetaView for true)
+  const [alunoId, setAlunoId] = useState(null);
+  const [turmasDoAluno, setTurmasDoAluno] = useState([]);
+  const [turmaSelecionadaAcademica, setTurmaSelecionadaAcademica] = useState(propTurmaId || null);
+  const [disciplinasAcademicas, setDisciplinasAcademicas] = useState([]);
   const [cadernetaDados, setCadernetaDados] = useState(null);
   const [faltasDados, setFaltasDados] = useState(null);
   const [carregandoAcademicos, setCarregandoAcademicos] = useState(false);
   const [crescimentoDados, setCrescimentoDados] = useState(null);
+  const [salvandoNotasAluno, setSalvandoNotasAluno] = useState(false);
+  const [mensagemSucessoNotas, setMensagemSucessoNotas] = useState('');
   const carregarFinanceiro = useCallback(async () => {
     if (!pessoaId) return;
     const { data: transacoes, error } = await supabase
@@ -519,48 +525,245 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
     }
   }, [abaAtiva, carregarHistoricoPresenca]);
 
-  const carregarDadosAcademicos = useCallback(async () => {
+  const carregarDadosAcademicos = useCallback(async (turmaIdOverride) => {
     if (!pessoaId || !isStudentCadernetaView) return;
     setCarregandoAcademicos(true);
     try {
-      // Dados simulados conforme a regra de 3 módulos e 3 avaliações
-      const criarModulo = (nome, n1, n2, n3, faltas) => ({
-        nome,
-        avaliacoes: [{ tipo: 'Avaliação 1', nota: n1 }, { tipo: 'Avaliação 2', nota: n2 }, { tipo: 'Avaliação 3', nota: n3 }],
-        media: (n1 + n2 + n3) / 3,
-        faltas
+      // 1. Obter registro do aluno a partir do pessoa_id
+      let { data: alunoData } = await supabase
+        .from('alunos')
+        .select('id, matricula')
+        .eq('pessoa_id', pessoaId)
+        .maybeSingle();
+
+      if (!alunoData) {
+        const { data: novoAluno, error: errCriar } = await supabase
+          .from('alunos')
+          .insert([{ pessoa_id: pessoaId }])
+          .select('id, matricula')
+          .single();
+        if (!errCriar && novoAluno) {
+          alunoData = novoAluno;
+        }
+      }
+
+      if (!alunoData) {
+        setCadernetaDados({ modulos: [] });
+        setFaltasDados({ modulos: [], total: 0 });
+        return;
+      }
+
+      setAlunoId(alunoData.id);
+
+      // 2. Buscar turmas nas quais o aluno está matriculado
+      const { data: matriculas } = await supabase
+        .from('alunos_turmas')
+        .select('id, turma_id, status, turmas(id, nome, escola_id, escolas(nome))')
+        .eq('aluno_id', alunoData.id);
+
+      const listaTurmas = (matriculas || []).map(m => ({
+        id: m.turmas?.id,
+        nome: m.turmas?.nome || 'Turma sem nome',
+        escolaNome: m.turmas?.escolas?.nome || 'Curso',
+        status: m.status || 'ativo',
+        matriculaTurmaId: m.id
+      })).filter(t => !!t.id);
+
+      setTurmasDoAluno(listaTurmas);
+
+      // Escolhe a turma alvo
+      let turmaAlvoId = turmaIdOverride || turmaSelecionadaAcademica || propTurmaId;
+      if (!turmaAlvoId || !listaTurmas.some(t => t.id === turmaAlvoId)) {
+        turmaAlvoId = listaTurmas[0]?.id || propTurmaId || null;
+      }
+
+      setTurmaSelecionadaAcademica(turmaAlvoId);
+
+      if (!turmaAlvoId) {
+        setCadernetaDados({ modulos: [] });
+        setFaltasDados({ modulos: [], total: 0 });
+        setCrescimentoDados({ observacoes: avaliacaoEscola || '' });
+        return;
+      }
+
+      // 3. Buscar disciplinas da turma selecionada
+      const { data: turmasDiscs } = await supabase
+        .from('turmas_disciplinas')
+        .select('id, turma_id, disciplina_id, disciplinas(id, nome), professores(pessoas(nome))')
+        .eq('turma_id', turmaAlvoId);
+
+      const tdList = turmasDiscs || [];
+      const tdIds = tdList.map(td => td.id);
+
+      // 4. Buscar avaliações já lançadas para esse aluno nessas disciplinas
+      let mapNotas = {};
+      let mapObs = {};
+      if (tdIds.length > 0) {
+        const { data: dataAvaliacoes } = await supabase
+          .from('avaliacoes')
+          .select('*')
+          .eq('aluno_id', alunoData.id)
+          .in('turma_disciplina_id', tdIds);
+
+        (dataAvaliacoes || []).forEach(av => {
+          mapNotas[av.turma_disciplina_id] = av.nota !== null && av.nota !== undefined ? Number(av.nota) : null;
+          mapObs[av.turma_disciplina_id] = av.observacao || '';
+        });
+      }
+
+      // 5. Buscar aulas para calcular presenças e faltas reais
+      let mapFaltas = {};
+      let mapTotalAulas = {};
+      if (tdIds.length > 0) {
+        const { data: dataAulas } = await supabase
+          .from('aulas')
+          .select('id, turma_disciplina_id, data_aula, presencas')
+          .in('turma_disciplina_id', tdIds);
+
+        (dataAulas || []).forEach(aula => {
+          const tdId = aula.turma_disciplina_id;
+          mapTotalAulas[tdId] = (mapTotalAulas[tdId] || 0) + 1;
+          let pObj = aula.presencas || {};
+          if (typeof pObj === 'string') {
+            try { pObj = JSON.parse(pObj); } catch (e) { pObj = {}; }
+          }
+          const presente = pObj[alunoData.id] === true || pObj[pessoaId] === true;
+          if (!presente) {
+            mapFaltas[tdId] = (mapFaltas[tdId] || 0) + 1;
+          }
+        });
+      }
+
+      // 6. Montar a estrutura de disciplinas/módulos
+      const modulosFormatados = tdList.map(td => {
+        const discNome = td.disciplinas?.nome || 'Disciplina';
+        const profNome = td.professores?.pessoas?.nome || 'Não atribuído';
+        const nota = mapNotas[td.id] !== undefined ? mapNotas[td.id] : null;
+        const obs = mapObs[td.id] || '';
+        const totalAulas = mapTotalAulas[td.id] || 0;
+        const totalFaltas = mapFaltas[td.id] || 0;
+        const totalPresencas = Math.max(0, totalAulas - totalFaltas);
+        const freq = totalAulas > 0 ? Math.round((totalPresencas / totalAulas) * 100) : 100;
+
+        return {
+          turmaDisciplinaId: td.id,
+          nome: discNome,
+          professor: profNome,
+          nota: nota,
+          notaInput: nota !== null ? String(nota) : '',
+          observacao: obs,
+          totalAulas,
+          faltas: totalFaltas,
+          presencas: totalPresencas,
+          frequencia: freq,
+          avaliacoes: [{ tipo: 'Avaliação Geral', nota: nota !== null ? nota : 0 }],
+          media: nota !== null ? nota : 0
+        };
       });
 
+      setDisciplinasAcademicas(modulosFormatados);
+
+      const notasValidas = modulosFormatados.filter(m => m.nota !== null).map(m => m.nota);
+      const mediaGeral = notasValidas.length > 0
+        ? (notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length)
+        : null;
+
+      const totalFaltasTurma = modulosFormatados.reduce((acc, m) => acc + m.faltas, 0);
+
       setCadernetaDados({
-        modulos: [
-          criarModulo('Módulo 1 - Vida Cristã Genuína', 8, 7.5, 9, 2),
-          criarModulo('Módulo 2 - Compreendendo o Modelo dos "12"', 6, 7, 6.5, 1),
-          criarModulo('Módulo 3', 10, 9, 8.5, 0)
-        ],
+        turmaId: turmaAlvoId,
+        mediaGeral,
+        modulos: modulosFormatados
       });
+
       setFaltasDados({
-        modulos: [{ nome: 'Módulo 1', faltas: 2 }, { nome: 'Módulo 2', faltas: 1 }, { nome: 'Módulo 3', faltas: 0 }],
-        total: 3,
+        modulos: modulosFormatados.map(m => ({ nome: m.nome, faltas: m.faltas, totalAulas: m.totalAulas, freq: m.frequencia })),
+        total: totalFaltasTurma
       });
-      setCrescimentoDados({ observacoes: 'Aluno muito participativo e dedicado. Demonstra grande potencial de liderança.' });
+
+      setCrescimentoDados({
+        observacoes: avaliacaoEscola || ''
+      });
+
     } catch (error) {
       console.error('Erro ao carregar dados acadêmicos:', error);
     } finally {
       setCarregandoAcademicos(false);
     }
-  }, [pessoaId, isStudentCadernetaView]);
+  }, [pessoaId, isStudentCadernetaView, propTurmaId, turmaSelecionadaAcademica, avaliacaoEscola]);
 
-  const handleNotaChange = (moduloIdx, avalIdx, valor) => {
-    const nota = parseFloat(valor) || 0;
-    setCadernetaDados(prev => {
-      if (!prev) return prev;
-      const modulos = [...prev.modulos];
-      const avaliacoes = [...modulos[moduloIdx].avaliacoes];
-      avaliacoes[avalIdx] = { ...avaliacoes[avalIdx], nota };
-      const media = avaliacoes.reduce((acc, a) => acc + a.nota, 0) / avaliacoes.length;
-      modulos[moduloIdx] = { ...modulos[moduloIdx], avaliacoes, media };
-      return { ...prev, modulos };
+  const handleNotaChange = (discIdx, valor) => {
+    setDisciplinasAcademicas(prev => {
+      const novaLista = [...prev];
+      if (!novaLista[discIdx]) return prev;
+      novaLista[discIdx] = {
+        ...novaLista[discIdx],
+        notaInput: valor,
+        nota: valor !== '' ? (parseFloat(String(valor).replace(',', '.')) || 0) : null
+      };
+      return novaLista;
     });
+  };
+
+  const handleObsDisciplinaChange = (discIdx, obs) => {
+    setDisciplinasAcademicas(prev => {
+      const novaLista = [...prev];
+      if (!novaLista[discIdx]) return prev;
+      novaLista[discIdx] = {
+        ...novaLista[discIdx],
+        observacao: obs
+      };
+      return novaLista;
+    });
+  };
+
+  const handleSalvarNotasAcademico = async () => {
+    if (!alunoId || disciplinasAcademicas.length === 0) return;
+    setSalvandoNotasAluno(true);
+    setMensagemSucessoNotas('');
+    try {
+      const registros = disciplinasAcademicas
+        .filter(d => d.turmaDisciplinaId)
+        .map(d => {
+          let n = null;
+          if (d.notaInput !== '' && d.notaInput !== null && d.notaInput !== undefined) {
+            const parsed = parseFloat(String(d.notaInput).replace(',', '.'));
+            if (!isNaN(parsed)) n = Math.min(10, Math.max(0, parsed));
+          } else if (d.nota !== null && d.nota !== undefined) {
+            n = d.nota;
+          }
+          return {
+            turma_disciplina_id: d.turmaDisciplinaId,
+            aluno_id: alunoId,
+            nota: n,
+            observacao: d.observacao || null
+          };
+        });
+
+      if (registros.length > 0) {
+        const { error } = await supabase
+          .from('avaliacoes')
+          .upsert(registros, { onConflict: 'turma_disciplina_id,aluno_id' });
+        if (error) throw error;
+      }
+
+      if (crescimentoDados?.observacoes !== undefined) {
+        await supabase
+          .from('pessoas')
+          .update({ avaliacao_escola_discipulos: crescimentoDados.observacoes || null })
+          .eq('id', pessoaId);
+      }
+
+      setMensagemSucessoNotas('✓ Notas e avaliações salvas com sucesso!');
+      setTimeout(() => setMensagemSucessoNotas(''), 4000);
+      if (onDadosAtualizados) onDadosAtualizados();
+      await carregarDadosAcademicos(turmaSelecionadaAcademica);
+    } catch (err) {
+      console.error('Erro ao salvar avaliações do aluno:', err);
+      window.alert('Erro ao salvar notas: ' + err.message);
+    } finally {
+      setSalvandoNotasAluno(false);
+    }
   };
 
   const handleFaltasChange = (moduloIdx, valor) => {
@@ -2079,54 +2282,195 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
             )}
 
             {abaAtiva === 'caderneta' && (
-              <div className="section-group">
-                <div><h3 className="section-title">Caderneta Escolar</h3><p className="section-subtitle">Notas e desempenho do aluno nos módulos do curso.</p></div>
+              <div className="section-group space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
+                  <div>
+                    <h3 className="section-title">Caderneta Escolar</h3>
+                    <p className="section-subtitle">Notas e avaliações oficiais registradas por disciplina.</p>
+                  </div>
+
+                  {/* Seletor de Turma se o aluno estiver em mais de uma */}
+                  {turmasDoAluno.length > 1 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase">Turma:</span>
+                      <select
+                        value={turmaSelecionadaAcademica || ''}
+                        onChange={(e) => {
+                          const novaT = e.target.value;
+                          setTurmaSelecionadaAcademica(novaT);
+                          carregarDadosAcademicos(novaT);
+                        }}
+                        className="px-3 py-1.5 text-xs font-bold border border-slate-200 rounded-xl bg-white text-[#055F6D] outline-none"
+                      >
+                        {turmasDoAluno.map(t => (
+                          <option key={t.id} value={t.id}>{t.escolaNome} - {t.nome}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                {/* Banner de Feedback de Salvamento */}
+                {mensagemSucessoNotas && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center justify-between animate-in fade-in">
+                    <span>{mensagemSucessoNotas}</span>
+                    <button type="button" onClick={() => setMensagemSucessoNotas('')} className="text-emerald-500 hover:text-emerald-700">✕</button>
+                  </div>
+                )}
+
                 <div className="section-body">
                   {carregandoAcademicos ? (
-                    <p className="text-sm text-slate-400 italic">Carregando caderneta...</p>
-                  ) : cadernetaDados?.modulos?.length === 0 ? (
-                    <p className="text-sm text-slate-400 italic">Nenhuma avaliação registrada ainda.</p>
+                    <div className="text-center py-10 text-sm text-slate-400 italic">Carregando caderneta do aluno...</div>
+                  ) : disciplinasAcademicas.length === 0 ? (
+                    <div className="text-center py-10 text-slate-400 italic text-sm">
+                      Nenhuma disciplina ou matrícula vinculada a este aluno no curso.
+                    </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {cadernetaDados?.modulos?.map((modulo, idx) => (
-                        <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                          <h4 className="font-bold text-slate-800 mb-2">{modulo.nome}</h4>
-                          <table className="w-full text-left text-xs">
-                            <thead>
-                              <tr className="text-slate-500 uppercase font-semibold">
-                                <th className="py-1">Avaliação</th>
-                                <th className="py-1 text-right">Nota</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {modulo.avaliacoes.map((aval, aIdx) => (
-                                <tr key={aIdx}>
-                                  <td className="py-1">{aval.tipo}</td>
-                                  <td className="py-1 text-right font-bold text-slate-700">
-                                    {modoEdicao ? (
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        max="10"
-                                        step="0.1"
-                                        value={aval.nota}
-                                        onChange={(e) => handleNotaChange(idx, aIdx, e.target.value)}
-                                        className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-[#055F6D]/20 outline-none"
-                                      />
+                    <div className="space-y-4">
+                      {/* Métricas Resumidas do Aluno */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-150">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Média Geral</p>
+                          <p className={`text-xl font-black ${
+                            cadernetaDados?.mediaGeral === null ? 'text-slate-400' :
+                            cadernetaDados.mediaGeral >= 7.0 ? 'text-emerald-600' :
+                            cadernetaDados.mediaGeral >= 5.0 ? 'text-amber-600' : 'text-rose-600'
+                          }`}>
+                            {cadernetaDados?.mediaGeral !== null ? cadernetaDados.mediaGeral.toFixed(1) : '---'}
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-150">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Disciplinas</p>
+                          <p className="text-xl font-black text-slate-700">
+                            {disciplinasAcademicas.filter(d => d.nota !== null).length} <span className="text-xs text-slate-400 font-bold">/ {disciplinasAcademicas.length}</span>
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-150">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Frequência</p>
+                          <p className="text-xl font-black text-teal-700">
+                            {disciplinasAcademicas.length > 0
+                              ? Math.round(disciplinasAcademicas.reduce((acc, d) => acc + d.frequencia, 0) / disciplinasAcademicas.length)
+                              : 100}%
+                          </p>
+                        </div>
+
+                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-150">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">Situação</p>
+                          <p className="text-sm font-black mt-1">
+                            {cadernetaDados?.mediaGeral === null ? (
+                              <span className="text-slate-400 uppercase">Em Andamento</span>
+                            ) : cadernetaDados.mediaGeral >= 7.0 ? (
+                              <span className="text-emerald-600 uppercase">✓ Aprovado</span>
+                            ) : cadernetaDados.mediaGeral >= 5.0 ? (
+                              <span className="text-amber-600 uppercase">Em Atenção</span>
+                            ) : (
+                              <span className="text-rose-600 uppercase">Reprovado</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Tabela de Lançamento e Visualização de Notas */}
+                      <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
+                        <table className="w-full text-left text-xs bg-white">
+                          <thead>
+                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-black uppercase text-[10px] tracking-wider">
+                              <th className="p-3">Disciplina</th>
+                              <th className="p-3 hidden sm:table-cell">Professor</th>
+                              <th className="p-3 text-center w-28">Nota (0 - 10)</th>
+                              <th className="p-3">Observação da Avaliação</th>
+                              <th className="p-3 text-center">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 text-slate-700">
+                            {disciplinasAcademicas.map((d, idx) => {
+                              const nNum = d.notaInput !== '' && d.notaInput !== null
+                                ? parseFloat(String(d.notaInput).replace(',', '.'))
+                                : d.nota;
+
+                              let estiloNota = 'border-slate-200 text-slate-700 focus:border-[#055F6D]';
+                              if (nNum !== null && !isNaN(nNum)) {
+                                if (nNum >= 7.0) estiloNota = 'bg-emerald-50 border-emerald-300 text-emerald-800 font-extrabold';
+                                else if (nNum >= 5.0) estiloNota = 'bg-amber-50 border-amber-300 text-amber-800 font-extrabold';
+                                else estiloNota = 'bg-rose-50 border-rose-300 text-rose-800 font-extrabold';
+                              }
+
+                              return (
+                                <tr key={d.turmaDisciplinaId || idx} className="hover:bg-slate-50/70 transition">
+                                  <td className="p-3 font-bold text-slate-800">
+                                    {d.nome}
+                                    <div className="sm:hidden text-[10px] text-slate-400 font-normal">{d.professor}</div>
+                                  </td>
+                                  <td className="p-3 text-slate-500 hidden sm:table-cell">{d.professor}</td>
+                                  <td className="p-3 text-center">
+                                    <input
+                                      type="text"
+                                      inputMode="decimal"
+                                      placeholder="-"
+                                      value={d.notaInput !== undefined ? d.notaInput : (d.nota !== null ? String(d.nota) : '')}
+                                      onChange={(e) => handleNotaChange(idx, e.target.value)}
+                                      onBlur={() => {
+                                        if (d.notaInput) {
+                                          const num = parseFloat(String(d.notaInput).replace(',', '.'));
+                                          if (!isNaN(num)) {
+                                            const clamped = Math.min(10, Math.max(0, num));
+                                            handleNotaChange(idx, String(clamped));
+                                          }
+                                        }
+                                      }}
+                                      className={`w-16 px-2 py-1.5 text-center text-xs border rounded-xl outline-none transition ${estiloNota}`}
+                                    />
+                                  </td>
+                                  <td className="p-3">
+                                    <input
+                                      type="text"
+                                      placeholder="Adicionar observação..."
+                                      value={d.observacao || ''}
+                                      onChange={(e) => handleObsDisciplinaChange(idx, e.target.value)}
+                                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:border-[#055F6D]"
+                                    />
+                                  </td>
+                                  <td className="p-3 text-center">
+                                    {nNum === null || isNaN(nNum) ? (
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-400">Pendente</span>
+                                    ) : nNum >= 7.0 ? (
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">Aprovado</span>
+                                    ) : nNum >= 5.0 ? (
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200">Recuperação</span>
                                     ) : (
-                                      aval.nota.toFixed(1)
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200">Reprovado</span>
                                     )}
                                   </td>
                                 </tr>
-                              ))}
-                              <tr className={`font-bold border-t border-slate-200 ${modulo.media < 7 ? 'text-rose-600' : 'text-[#055F6D]'}`}>
-                                <td className="py-1">Média do Módulo</td>
-                                <td className="py-1 text-right">{modulo.media.toFixed(1)}</td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      ))}
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Botão de Salvar Alterações */}
+                      <div className="flex justify-end pt-2">
+                        <button
+                          type="button"
+                          onClick={handleSalvarNotasAcademico}
+                          disabled={salvandoNotasAluno}
+                          className="px-5 py-2.5 bg-[#055F6D] hover:bg-[#034c57] text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                        >
+                          {salvandoNotasAluno ? (
+                            <>
+                              <span className="animate-spin">⏳</span>
+                              <span>Gravando Notas...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>💾</span>
+                              <span>Salvar Notas da Caderneta</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -2135,47 +2479,50 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
 
             {abaAtiva === 'faltas' && (
               <div className="section-group">
-                <div><h3 className="section-title">Registro de Faltas</h3><p className="section-subtitle">Controle de ausências do aluno por módulo.</p></div>
+                <div><h3 className="section-title">Registro de Faltas e Frequência</h3><p className="section-subtitle">Detalhamento das aulas ministradas e presença do aluno.</p></div>
                 <div className="section-body space-y-4">
                   {carregandoAcademicos ? (
                     <p className="text-sm text-slate-400 italic">Carregando faltas...</p>
-                  ) : faltasDados?.modulos?.length === 0 ? (
-                    <p className="text-sm text-slate-400 italic">Nenhuma falta registrada.</p>
+                  ) : disciplinasAcademicas.length === 0 ? (
+                    <p className="text-sm text-slate-400 italic">Nenhum registro de faltas ou aulas encontrado.</p>
                   ) : (
                     <>
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                        <h4 className="font-bold text-slate-800 mb-2">Faltas por Módulo</h4>
-                        <table className="w-full text-left text-xs">
+                      <div className="overflow-x-auto rounded-xl border border-slate-200">
+                        <table className="w-full text-left text-xs bg-white">
                           <thead>
-                            <tr className="text-slate-500 uppercase font-semibold">
-                              <th className="py-1">Módulo</th>
-                              <th className="py-1 text-right">Faltas</th>
+                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
+                              <th className="p-3">Disciplina</th>
+                              <th className="p-3 text-center">Aulas Ministradas</th>
+                              <th className="p-3 text-center">Presenças</th>
+                              <th className="p-3 text-center">Faltas</th>
+                              <th className="p-3 text-right pr-4">Frequência (%)</th>
                             </tr>
                           </thead>
-                          <tbody>
-                            {faltasDados?.modulos?.map((modulo, idx) => (
-                              <tr key={idx}>
-                                <td className="py-1">{modulo.nome}</td>
-                                <td className="py-1 text-right font-bold text-rose-600">
-                                  {modoEdicao ? (
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      value={modulo.faltas}
-                                      onChange={(e) => handleFaltasChange(idx, e.target.value)}
-                                      className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-rose-500/20 outline-none"
-                                    />
-                                  ) : (
-                                    modulo.faltas
-                                  )}
+                          <tbody className="divide-y divide-slate-100 text-slate-700">
+                            {disciplinasAcademicas.map((d, idx) => (
+                              <tr key={idx} className="hover:bg-slate-50">
+                                <td className="p-3 font-bold text-slate-800">{d.nome}</td>
+                                <td className="p-3 text-center text-slate-500">{d.totalAulas}</td>
+                                <td className="p-3 text-center font-semibold text-emerald-600">{d.presencas}</td>
+                                <td className="p-3 text-center font-semibold text-rose-600">{d.faltas}</td>
+                                <td className="p-3 text-right pr-4">
+                                  <span className={`font-black ${d.frequencia >= 75 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                    {d.frequencia}%
+                                  </span>
                                 </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                       </div>
-                      <div className="bg-rose-50 p-4 rounded-xl border border-rose-100 text-sm font-bold text-rose-700">
-                        Total de Faltas: {faltasDados?.total}
+
+                      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-150 text-xs">
+                        <span className="font-bold text-slate-600">
+                          Total de Faltas Acumuladas: <strong className="text-rose-600">{faltasDados?.total || 0}</strong>
+                        </span>
+                        <span className="text-slate-400 italic">
+                          * Presenças calculadas automaticamente a partir das aulas lançadas na turma.
+                        </span>
                       </div>
                     </>
                   )}
@@ -2184,22 +2531,36 @@ function DetalhesMembro({ pessoaId: propPessoaId, onFechar, listaPessoas = [], o
             )}
 
             {abaAtiva === 'crescimento' && (
-              <div className="section-group">
-                <div><h3 className="section-title">Avaliação de Crescimento</h3><p className="section-subtitle">Observações sobre o desenvolvimento do aluno na escola.</p></div>
+              <div className="section-group space-y-4">
+                <div>
+                  <h3 className="section-title">Avaliação de Crescimento e Desenvolvimento</h3>
+                  <p className="section-subtitle">Parecer pedagógico, observações pastorais e progresso do aluno.</p>
+                </div>
                 <div className="section-body space-y-4">
                   {carregandoAcademicos ? (
                     <p className="text-sm text-slate-400 italic">Carregando avaliação...</p>
                   ) : (
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                      <h4 className="font-bold text-slate-800 mb-2">Observações do Professor</h4>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                        Observações e Histórico de Desenvolvimento
+                      </label>
                       <textarea
                         value={crescimentoDados?.observacoes || ''}
                         onChange={(e) => setCrescimentoDados({ ...crescimentoDados, observacoes: e.target.value })}
-                        rows="5"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                        placeholder="Registre aqui as observações sobre o crescimento e desenvolvimento do aluno..."
-                        disabled={!modoEdicao} // Apenas editável em modo de edição
+                        rows="6"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#055F6D]"
+                        placeholder="Registre aqui as observações sobre o crescimento, discipulado, dedicação e pontos de atenção do aluno..."
                       />
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={handleSalvarNotasAcademico}
+                          disabled={salvandoNotasAluno}
+                          className="px-4 py-2 bg-[#055F6D] text-white rounded-xl text-xs font-bold hover:bg-[#034c57] transition shadow-xs cursor-pointer disabled:opacity-50"
+                        >
+                          {salvandoNotasAluno ? 'Salvando...' : 'Salvar Parecer / Observação'}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

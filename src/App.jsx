@@ -1891,7 +1891,11 @@ export default function App() {
             `}</style>
             <DetalhesMembro
               pessoaId={alunoSelecionadoParaCadernetaId}
-              onFechar={() => navegar('escolas', 'turmas')} // Volta para a lista de turmas ou alunos
+              turmaId={turmaSelecionadaId}
+              onFechar={() => {
+                setAlunoSelecionadoParaCadernetaId(null);
+                navegar('escolas', 'turmas');
+              }}
               listaPessoas={pessoasVisiveis}
               onDadosAtualizados={obterDados}
               isStudentCadernetaView={true} // Indica que é a visão de caderneta do aluno

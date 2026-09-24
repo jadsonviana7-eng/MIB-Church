@@ -255,7 +255,7 @@ CREATE TABLE IF NOT EXISTS aulas (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
--- Avaliações
+-- Avaliações Gerais / Médias por Disciplina (Compatibilidade)
 CREATE TABLE IF NOT EXISTS avaliacoes (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     turma_disciplina_id UUID REFERENCES turmas_disciplinas(id) ON DELETE CASCADE NOT NULL,
@@ -264,6 +264,28 @@ CREATE TABLE IF NOT EXISTS avaliacoes (
     observacao TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     UNIQUE(turma_disciplina_id, aluno_id)
+);
+
+-- Itens / Provas / Trabalhos individuais dentro de cada Módulo/Disciplina
+CREATE TABLE IF NOT EXISTS avaliacoes_itens (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    turma_disciplina_id UUID REFERENCES turmas_disciplinas(id) ON DELETE CASCADE NOT NULL,
+    nome TEXT NOT NULL,
+    peso NUMERIC(4,2) DEFAULT 1.0,
+    ordem INT DEFAULT 1,
+    data_avaliacao DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- Notas de cada aluno por Item de Avaliação
+CREATE TABLE IF NOT EXISTS alunos_avaliacoes_notas (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    avaliacao_item_id UUID REFERENCES avaliacoes_itens(id) ON DELETE CASCADE NOT NULL,
+    aluno_id UUID REFERENCES alunos(id) ON DELETE CASCADE NOT NULL,
+    nota NUMERIC(4,2) CHECK (nota >= 0 AND nota <= 10),
+    observacao TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+    UNIQUE(avaliacao_item_id, aluno_id)
 );
 
 ```

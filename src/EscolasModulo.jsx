@@ -4,7 +4,9 @@ import { PageHeader, Card, CardHeader, Avatar, StatCard, DoughnutCard, ColumnCha
 import { agrupamentoPor } from './churchUtils';
 import {
   Users, Home, Calendar, Award, Sparkles, AlertCircle, Coins, Activity,
-  CheckCircle, Trophy, BookOpen, Flame, TrendingUp, HelpCircle
+  CheckCircle, Trophy, BookOpen, Flame, TrendingUp, HelpCircle,
+  FileSpreadsheet, Printer, Save, Edit3, MessageSquare, Search, Check,
+  RotateCcw, SlidersHorizontal, Layers, FileText, CheckCircle2
 } from 'lucide-react';
 
 const getIconForCourse = (nome) => {
@@ -32,6 +34,27 @@ const getIconForCourse = (nome) => {
     bg: 'bg-indigo-50 text-indigo-600'
   };
 };
+
+export const isAlunoDesistente = (aluno) => {
+  if (!aluno) return false;
+  const sTurma = String(aluno.status || '').toLowerCase().trim();
+  const sAluno = String(aluno.alunos?.status || '').toLowerCase().trim();
+  const sPessoa = String(aluno.alunos?.pessoas?.status || '').toLowerCase().trim();
+  const sSituacao = String(aluno.situacao || aluno.alunos?.situacao || '').toLowerCase().trim();
+
+  const isValDesistente = (val) =>
+    val === 'desistente' ||
+    val === 'inativo' ||
+    val === 'trancado' ||
+    val === 'desistência' ||
+    val === 'desistencia' ||
+    val === 'evadido' ||
+    val === 'cancelado';
+
+  return isValDesistente(sTurma) || isValDesistente(sAluno) || isValDesistente(sPessoa) || isValDesistente(sSituacao);
+};
+
+export const isAlunoAtivo = (aluno) => !isAlunoDesistente(aluno);
 
 export default function EscolasModulo({
   submenu,
@@ -91,10 +114,13 @@ export default function EscolasModulo({
   const [editTurmaStatus, setEditTurmaStatus] = useState('');
   const [editTurmaDescricao, setEditTurmaDescricao] = useState('');
 
-  // Estados para Gestão de Alunos/Disciplinas/Aulas
+  // Estados para Gestão de Alunos/Disciplinas/Aulas/Avaliações
   const [alunosTurma, setAlunosTurma] = useState([]);
   const [disciplinasTurma, setDisciplinasTurma] = useState([]);
   const [aulasTurma, setAulasTurma] = useState([]);
+  const [avaliacoesTurma, setAvaliacoesTurma] = useState([]);
+  const [avaliacoesItensTurma, setAvaliacoesItensTurma] = useState([]);
+  const [avaliacoesNotasTurma, setAvaliacoesNotasTurma] = useState([]);
   const [isModalAddAlunosAberto, setIsModalAddAlunosAberto] = useState(false);
   const [isModalAddDisciplinaAberto, setIsModalAddDisciplinaAberto] = useState(false);
   const [disciplinaParaEditar, setDisciplinaParaEditar] = useState(null);
@@ -111,6 +137,7 @@ export default function EscolasModulo({
   const [novaAulaAssunto, setNovaAulaAssunto] = useState('');
   const [novaAulaPresencas, setNovaAulaPresencas] = useState({}); // {aluno_id: boolean}
   const [novaAulaDesc, setNovaAulaDesc] = useState('');
+  const [filtroAlunosModalAula, setFiltroAlunosModalAula] = useState('todos'); // 'todos' | 'ativos' | 'desistentes'
 
   const carregarEscolas = async () => {
     setCarregando(true);
@@ -141,42 +168,212 @@ export default function EscolasModulo({
 
   const carregarDadosTurma = async (id) => {
     setCarregando(true);
-    // 1. Alunos
-    const { data: dataAlunos } = await supabase
-      .from('alunos_turmas')
-      .select('*, alunos(id, pessoa_id, pessoas(nome, foto_url))')
-      .eq('turma_id', id);
-    setAlunosTurma(dataAlunos || []);
-    const sortedAlunos = (dataAlunos || []).sort((a, b) =>
-      (a.alunos?.pessoas?.nome || "").localeCompare(b.alunos?.pessoas?.nome || "")
-    );
-    setAlunosTurma(sortedAlunos);
+    try {
+      // 1. Alunos
+      const { data: dataAlunos } = await supabase
+        .from('alunos_turmas')
+        .select('*, alunos(id, pessoa_id, pessoas(nome, foto_url))')
+        .eq('turma_id', id);
+      const sortedAlunos = (dataAlunos || []).sort((a, b) =>
+        (a.alunos?.pessoas?.nome || "").localeCompare(b.alunos?.pessoas?.nome || "")
+      );
+      setAlunosTurma(sortedAlunos);
 
-    // 2. Disciplinas vinculadas
-    const { data: dataDisc } = await supabase
-      .from('turmas_disciplinas')
-      .select('*, disciplinas(id, nome), professores(id, pessoa_id, pessoas(nome))')
-      .eq('turma_id', id);
-    setDisciplinasTurma(dataDisc || []);
+      // 2. Disciplinas vinculadas
+      const { data: dataDisc } = await supabase
+        .from('turmas_disciplinas')
+        .select('*, disciplinas(id, nome), professores(id, pessoa_id, pessoas(nome))')
+        .eq('turma_id', id);
+      setDisciplinasTurma(dataDisc || []);
 
-    // 3. Aulas
-    const { data: dataAulas } = await supabase
-      .from('aulas')
-      .select('*, turmas_disciplinas(disciplinas(nome))')
-      .in('turma_disciplina_id', dataDisc?.map(d => d.id) || [])
-      .order('data_aula', { ascending: false });
-    setAulasTurma(dataAulas || []);
+      const discIds = (dataDisc || []).map(d => d.id);
 
-    setCarregando(false);
+      // 3. Aulas
+      if (discIds.length > 0) {
+        const { data: dataAulas } = await supabase
+          .from('aulas')
+          .select('*, turmas_disciplinas(disciplinas(nome))')
+          .in('turma_disciplina_id', discIds)
+          .order('data_aula', { ascending: false });
+        setAulasTurma(dataAulas || []);
+
+        // 4. Avaliações Itens (Provas/Atividades individuais dentro dos módulos)
+        let itensList = [];
+        try {
+          const { data: dataItens, error: errItens } = await supabase
+            .from('avaliacoes_itens')
+            .select('*')
+            .in('turma_disciplina_id', discIds)
+            .order('ordem', { ascending: true })
+            .order('created_at', { ascending: true });
+          if (!errItens && dataItens) {
+            itensList = dataItens;
+          }
+        } catch (e) {
+          console.warn("Tabela avaliacoes_itens não encontrada ou vazia:", e);
+        }
+        setAvaliacoesItensTurma(itensList);
+
+        // 5. Notas por Item de Avaliação
+        const itemIds = itensList.map(it => it.id);
+        if (itemIds.length > 0) {
+          try {
+            const { data: dataNotasItens, error: errNotasItens } = await supabase
+              .from('alunos_avaliacoes_notas')
+              .select('*')
+              .in('avaliacao_item_id', itemIds);
+            if (!errNotasItens && dataNotasItens) {
+              setAvaliacoesNotasTurma(dataNotasItens);
+            } else {
+              setAvaliacoesNotasTurma([]);
+            }
+          } catch (e) {
+            console.warn("Tabela alunos_avaliacoes_notas não encontrada:", e);
+            setAvaliacoesNotasTurma([]);
+          }
+        } else {
+          setAvaliacoesNotasTurma([]);
+        }
+
+        // 6. Avaliações Gerais (Compatibilidade / Médias consolidadas por disciplina)
+        const { data: dataAval, error: errAval } = await supabase
+          .from('avaliacoes')
+          .select('*')
+          .in('turma_disciplina_id', discIds);
+        if (errAval) console.error("EscolasModulo: Erro ao carregar avaliações:", errAval);
+        setAvaliacoesTurma(dataAval || []);
+      } else {
+        setAulasTurma([]);
+        setAvaliacoesTurma([]);
+        setAvaliacoesItensTurma([]);
+        setAvaliacoesNotasTurma([]);
+      }
+    } catch (err) {
+      console.error("EscolasModulo: Erro ao carregar dados da turma:", err);
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  // Criar nova avaliação vinculada a um módulo/disciplina
+  const handleCriarAvaliacaoItem = async (payload) => {
+    setCarregando(true);
+    try {
+      const { error } = await supabase
+        .from('avaliacoes_itens')
+        .insert([{
+          turma_disciplina_id: payload.turma_disciplina_id,
+          nome: payload.nome,
+          peso: payload.peso || 1.0,
+          ordem: payload.ordem || 1,
+          data_avaliacao: payload.data_avaliacao || null
+        }]);
+      if (error) throw error;
+      await carregarDadosTurma(turmaSelecionadaId);
+      return { success: true };
+    } catch (err) {
+      console.error('Erro ao criar avaliação:', err);
+      alert('Erro ao criar avaliação: ' + (err.message || err));
+      return { success: false, error: err };
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  // Editar avaliação existente
+  const handleEditarAvaliacaoItem = async (id, payload) => {
+    setCarregando(true);
+    try {
+      const { error } = await supabase
+        .from('avaliacoes_itens')
+        .update({
+          nome: payload.nome,
+          peso: payload.peso || 1.0,
+          ordem: payload.ordem || 1,
+          data_avaliacao: payload.data_avaliacao || null
+        })
+        .eq('id', id);
+      if (error) throw error;
+      await carregarDadosTurma(turmaSelecionadaId);
+      return { success: true };
+    } catch (err) {
+      console.error('Erro ao editar avaliação:', err);
+      alert('Erro ao editar avaliação: ' + (err.message || err));
+      return { success: false, error: err };
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  // Excluir avaliação
+  const handleExcluirAvaliacaoItem = async (id) => {
+    if (!(await window.confirmModal('Excluir Avaliação', 'Deseja realmente remover esta avaliação e todas as suas notas lançadas?'))) return;
+    setCarregando(true);
+    try {
+      const { error } = await supabase
+        .from('avaliacoes_itens')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      await carregarDadosTurma(turmaSelecionadaId);
+      return { success: true };
+    } catch (err) {
+      console.error('Erro ao excluir avaliação:', err);
+      alert('Erro ao excluir avaliação: ' + (err.message || err));
+      return { success: false, error: err };
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  // Salvar notas (tanto por itens de avaliação quanto médias consolidadas)
+  const handleSalvarAvaliacoes = async (payload) => {
+    setCarregando(true);
+    try {
+      const registrosGerais = Array.isArray(payload) ? payload : (payload.registrosGerais || []);
+      const registrosItens = Array.isArray(payload) ? [] : (payload.registrosItens || []);
+
+      // 1. Salva notas individuais por item de avaliação
+      if (registrosItens.length > 0) {
+        try {
+          const { error: errItens } = await supabase
+            .from('alunos_avaliacoes_notas')
+            .upsert(registrosItens, { onConflict: 'avaliacao_item_id,aluno_id' });
+          if (errItens) console.warn('Aviso ao salvar alunos_avaliacoes_notas:', errItens);
+        } catch (e) {
+          console.warn('Tabela alunos_avaliacoes_notas ainda não criada no Supabase:', e);
+        }
+      }
+
+      // 2. Salva as médias consolidadas da disciplina/módulo
+      if (registrosGerais.length > 0) {
+        const { error: errGerais } = await supabase
+          .from('avaliacoes')
+          .upsert(registrosGerais, { onConflict: 'turma_disciplina_id,aluno_id' });
+        if (errGerais) throw errGerais;
+      }
+
+      // 3. Recarrega dados atualizados da turma
+      await carregarDadosTurma(turmaSelecionadaId);
+      return { success: true };
+    } catch (err) {
+      console.error('Erro ao salvar avaliações:', err);
+      alert('Erro ao salvar avaliações: ' + (err.message || err));
+      return { success: false, error: err };
+    } finally {
+      setCarregando(false);
+    }
   };
 
   useEffect(() => {
     if (turmaSelecionadaId) carregarDadosTurma(turmaSelecionadaId);
   }, [turmaSelecionadaId]);
 
-  // Limpa a turma selecionada ao navegar entre submenus do módulo
+  // Limpa a turma selecionada ao navegar entre submenus do módulo (preserva se for para ficha-aluno ou avaliações)
   useEffect(() => {
-    setTurmaSelecionadaId(null);
+    if (submenu !== 'ficha-aluno' && submenu !== 'turmas' && submenu !== 'avaliacoes') {
+      setTurmaSelecionadaId(null);
+    }
   }, [submenu]);
 
   const handleAbrirTurma = (id) => {
@@ -425,13 +622,22 @@ export default function EscolasModulo({
     if (!novaAulaDiscId) return window.alert("Selecione a disciplina");
     setCarregando(true);
 
+    // Constrói objeto de presenças garantindo que desistentes NUNCA fiquem com presença true
+    const cleanPresencas = {};
+    alunosTurma.forEach(a => {
+      if (isAlunoDesistente(a)) {
+        cleanPresencas[a.aluno_id] = false;
+      } else {
+        cleanPresencas[a.aluno_id] = !!novaAulaPresencas[a.aluno_id];
+      }
+    });
+
     const payload = {
       turma_disciplina_id: novaAulaDiscId,
       data_aula: novaAulaData,
       conteudo_proposto: novaAulaAssunto,
       observacoes: novaAulaDesc,
-      // Certifique-se de que a coluna 'presencas' na tabela 'aulas' do Supabase é do tipo JSONB.
-      presencas: novaAulaPresencas,
+      presencas: cleanPresencas,
     };
 
     let error;
@@ -475,15 +681,46 @@ export default function EscolasModulo({
     if (typeof p === 'string') {
       try { p = JSON.parse(p); } catch (e) { p = {}; }
     }
-    setNovaAulaPresencas(p);
+    
+    const safePresencas = {};
+    alunosTurma.forEach(a => {
+      if (isAlunoDesistente(a)) {
+        safePresencas[a.aluno_id] = false;
+      } else if (a.aluno_id in p) {
+        safePresencas[a.aluno_id] = !!p[a.aluno_id];
+      } else {
+        safePresencas[a.aluno_id] = true;
+      }
+    });
+
+    setNovaAulaPresencas(safePresencas);
+    setFiltroAlunosModalAula('todos');
     setIsModalAddAulaAberto(true);
   };
 
   const togglePresencaAula = (alunoId) => {
+    const aluno = alunosTurma.find(a => a.aluno_id === alunoId);
+    if (isAlunoDesistente(aluno)) {
+      // Se for desistente, não marca como presente
+      return;
+    }
     setNovaAulaPresencas(prev => {
-      // Se 'prev' for string (causador do erro de índices), limpa para objeto
       const seguro = (typeof prev === 'object' && prev !== null && !Array.isArray(prev)) ? prev : {};
       return { ...seguro, [alunoId]: !seguro[alunoId] };
+    });
+  };
+
+  const handleMarcarTodos = (apenasAtivos = true, statusPresenca = true) => {
+    setNovaAulaPresencas(prev => {
+      const novo = { ...(typeof prev === 'object' && prev !== null && !Array.isArray(prev) ? prev : {}) };
+      alunosTurma.forEach(a => {
+        if (isAlunoDesistente(a)) {
+          novo[a.aluno_id] = false;
+        } else {
+          novo[a.aluno_id] = statusPresenca;
+        }
+      });
+      return novo;
     });
   };
 
@@ -702,6 +939,13 @@ export default function EscolasModulo({
             alunos={alunosTurma}
             disciplinas={disciplinasTurma}
             aulas={aulasTurma}
+            avaliacoes={avaliacoesTurma}
+            avaliacoesItens={avaliacoesItensTurma}
+            avaliacoesNotas={avaliacoesNotasTurma}
+            onSalvarAvaliacoes={handleSalvarAvaliacoes}
+            onCriarAvaliacaoItem={handleCriarAvaliacaoItem}
+            onEditarAvaliacaoItem={handleEditarAvaliacaoItem}
+            onExcluirAvaliacaoItem={handleExcluirAvaliacaoItem}
             pessoas={pessoas}
             onAddAlunos={() => { setSelectedMembrosParaAdicionar([]); setIsModalAddAlunosAberto(true); }} // Limpa a seleção ao abrir o modal
             onAddDisciplina={() => {
@@ -714,13 +958,17 @@ export default function EscolasModulo({
             onAddAula={() => {
               const hoje = new Date().toLocaleDateString('en-CA');
               const initialPresencas = {};
-              alunosTurma.forEach(a => initialPresencas[a.aluno_id] = true);
+              // Apenas alunos ativos iniciam como presentes (true). Desistentes iniciam como ausentes (false)
+              alunosTurma.forEach(a => {
+                initialPresencas[a.aluno_id] = isAlunoAtivo(a);
+              });
               setNovaAulaData(hoje);
               setNovaAulaPresencas(initialPresencas);
               setNovaAulaAssunto('');
               setNovaAulaDesc('');
               setNovaAulaDiscId('');
               setAulaParaEditar(null);
+              setFiltroAlunosModalAula('todos');
               setIsModalAddAulaAberto(true);
             }}
             onEditAula={handleEditAula}
@@ -960,13 +1208,65 @@ export default function EscolasModulo({
       )}
 
       {submenu === 'avaliacoes' && (
-        <Card className="p-6">
-          <div className="hidden md:block"><CardHeader titulo="Registro de Avaliações" /></div>
-          <p className="text-sm text-slate-600">
-            Registre e acompanhe as avaliações e o desempenho dos alunos.
-          </p>
-          {/* Conteúdo específico para Avaliações */}
-        </Card>
+        turmaSelecionadaId && turmaAtiva ? (
+          <DetalhesDaTurma
+            turma={turmaAtiva}
+            abaAtiva={abaAtivaTurma || 'avaliacoes'}
+            setAbaAtiva={setAbaAtivaTurma}
+            onVoltar={() => setTurmaSelecionadaId(null)}
+            alunos={alunosTurma}
+            disciplinas={disciplinasTurma}
+            aulas={aulasTurma}
+            avaliacoes={avaliacoesTurma}
+            avaliacoesItens={avaliacoesItensTurma}
+            avaliacoesNotas={avaliacoesNotasTurma}
+            onSalvarAvaliacoes={handleSalvarAvaliacoes}
+            onCriarAvaliacaoItem={handleCriarAvaliacaoItem}
+            onEditarAvaliacaoItem={handleEditarAvaliacaoItem}
+            onExcluirAvaliacaoItem={handleExcluirAvaliacaoItem}
+            pessoas={pessoas}
+            onAddAlunos={() => { setSelectedMembrosParaAdicionar([]); setIsModalAddAlunosAberto(true); }}
+            onAddDisciplina={() => {
+              setDisciplinaParaEditar(null);
+              setNovaDisciplinaNome('');
+              setNovaDisciplinaProfId('');
+              setIsModalAddDisciplinaAberto(true);
+            }}
+            onEditDisciplina={handleEditDisciplina}
+            onAddAula={() => {
+              const hoje = new Date().toLocaleDateString('en-CA');
+              const initialPresencas = {};
+              alunosTurma.forEach(a => {
+                initialPresencas[a.aluno_id] = isAlunoAtivo(a);
+              });
+              setNovaAulaData(hoje);
+              setNovaAulaPresencas(initialPresencas);
+              setNovaAulaAssunto('');
+              setNovaAulaDesc('');
+              setNovaAulaDiscId('');
+              setAulaParaEditar(null);
+              setFiltroAlunosModalAula('todos');
+              setIsModalAddAulaAberto(true);
+            }}
+            onEditAula={handleEditAula}
+            onExcluirAula={handleExcluirAula}
+            onVerAluno={handleVerCadernetaAluno}
+            onUpdateStatusAluno={handleUpdateStatusAluno}
+          />
+        ) : turmaSelecionadaId ? (
+          <div className="p-10 text-center animate-pulse text-slate-400">Buscando caderneta da turma...</div>
+        ) : (
+          <PainelCentralAvaliacoes
+            turmas={turmas}
+            escolas={escolas}
+            filtroCursoTurmas={filtroCursoTurmas}
+            setFiltroCursoTurmas={setFiltroCursoTurmas}
+            onAbrirCadernetaTurma={(turmaId) => {
+              setTurmaSelecionadaId(turmaId);
+              setAbaAtivaTurma('avaliacoes');
+            }}
+          />
+        )
       )}
 
       {submenu === 'inscricoes' && (
@@ -1208,27 +1508,97 @@ export default function EscolasModulo({
                 <textarea rows="2" value={novaAulaDesc} onChange={e => setNovaAulaDesc(e.target.value)} className="w-full px-3 py-2 border rounded-xl resize-none" placeholder="Relato do professor sobre a aula ministrada..." />
               </div>
 
-              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                <h4 className="text-xs font-black text-slate-400 uppercase mb-3 tracking-widest">Chamada / Presença</h4>
-                <div className="space-y-2">
-                  {alunosTurma.filter(a => a.status === 'ativo').map(a => {
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-150 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider">Chamada / Presença</h4>
+                    <p className="text-[11px] text-slate-400">Controle de presença dos alunos ativos</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 self-start sm:self-auto flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => handleMarcarTodos(true, true)}
+                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                      title="Marcar todos os alunos ativos como presentes"
+                    >
+                      ✓ Todos Presentes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMarcarTodos(false, false)}
+                      className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                      title="Marcar todos como ausentes"
+                    >
+                      ✕ Todos Ausentes
+                    </button>
+                  </div>
+                </div>
+
+                {/* Resumo / Indicadores - Apenas Alunos Ativos */}
+                {(() => {
+                  const alunosAtivosParaChamada = alunosTurma.filter(isAlunoAtivo);
+                  const presentesCount = alunosAtivosParaChamada.filter(a => !!novaAulaPresencas[a.aluno_id]).length;
+                  const ausentesCount = alunosAtivosParaChamada.length - presentesCount;
+
+                  return (
+                    <div className="grid grid-cols-3 gap-2 bg-white p-2.5 rounded-xl border border-slate-150 text-center">
+                      <div>
+                        <span className="block text-[8px] font-bold text-slate-400 uppercase">Alunos Ativos</span>
+                        <span className="text-xs font-black text-slate-700">{alunosAtivosParaChamada.length}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[8px] font-bold text-emerald-600 uppercase">Presentes</span>
+                        <span className="text-xs font-black text-emerald-600">{presentesCount}</span>
+                      </div>
+                      <div>
+                        <span className="block text-[8px] font-bold text-amber-600 uppercase">Ausentes</span>
+                        <span className="text-xs font-black text-amber-600">{ausentesCount}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Lista de alunos - Apenas Alunos Ativos */}
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {alunosTurma.filter(isAlunoAtivo).map(a => {
                     const presente = !!novaAulaPresencas[a.aluno_id];
                     return (
-                      <div key={a.aluno_id} className="flex items-center justify-between p-2.5 rounded-lg bg-white border transition select-none">
-                        <span className="text-xs font-bold text-slate-700">{a.alunos?.pessoas?.nome}</span>
+                      <div
+                        key={a.aluno_id}
+                        className="flex items-center justify-between p-2.5 rounded-xl border bg-white border-slate-150 transition select-none hover:bg-slate-50/50"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 pr-2">
+                          <Avatar pessoa={a.alunos?.pessoas} tamanho="w-7 h-7" />
+                          <div className="truncate">
+                            <span className="text-xs font-bold text-slate-700 block truncate">
+                              {a.alunos?.pessoas?.nome}
+                            </span>
+                          </div>
+                        </div>
                         <button
                           type="button"
                           onClick={() => togglePresencaAula(a.aluno_id)}
-                          className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${presente ? 'bg-emerald-500' : 'bg-rose-400'}`}
-                          title={presente ? 'Presente' : 'Ausente'}
+                          className={`relative inline-flex h-6 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                            presente ? 'bg-emerald-500' : 'bg-rose-400'
+                          }`}
+                          title={presente ? 'Presente (Clique para marcar Ausente)' : 'Ausente (Clique para marcar Presente)'}
                         >
-                          <span className={`pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out text-[9px] font-black ${presente ? 'translate-x-6 text-emerald-600' : 'translate-x-0 text-rose-500'}`}>
+                          <span
+                            className={`pointer-events-none inline-flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out text-[9px] font-black ${
+                              presente ? 'translate-x-6 text-emerald-600' : 'translate-x-0 text-rose-500'
+                            }`}
+                          >
                             {presente ? 'P' : 'A'}
                           </span>
                         </button>
                       </div>
                     );
                   })}
+                  {alunosTurma.filter(isAlunoAtivo).length === 0 && (
+                    <div className="p-6 text-center text-xs text-slate-400 italic">
+                      Nenhum aluno ativo cadastrado nesta turma.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1245,47 +1615,334 @@ export default function EscolasModulo({
 
 /* COMPONENTES AUXILIARES PARA DETALHES */
 
-function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disciplinas, aulas, onAddAlunos, onAddDisciplina, onEditDisciplina, onAddAula, onEditAula, onExcluirAula, onVerAluno, onUpdateStatusAluno }) {
+function DetalhesDaTurma({
+  turma,
+  abaAtiva,
+  setAbaAtiva,
+  onVoltar,
+  alunos = [],
+  disciplinas = [],
+  aulas = [],
+  avaliacoes = [],
+  avaliacoesItens = [],
+  avaliacoesNotas = [],
+  onSalvarAvaliacoes,
+  onCriarAvaliacaoItem,
+  onEditarAvaliacaoItem,
+  onExcluirAvaliacaoItem,
+  onAddAlunos,
+  onAddDisciplina,
+  onEditDisciplina,
+  onAddAula,
+  onEditAula,
+  onExcluirAula,
+  onVerAluno,
+  onUpdateStatusAluno
+}) {
   if (!turma) return null;
 
-  // Estados para a aba de Frequência
+  // ── ESTADOS PARA A ABA DE FREQUÊNCIA ──
   const [mesFrequencia, setMesFrequencia] = useState(new Date().getMonth());
   const [anoFrequencia, setAnoFrequencia] = useState(new Date().getFullYear());
   const [esconderDiasSemRegistro, setEsconderDiasSemRegistro] = useState(true);
   const [relatorioFrequencia, setRelatorioFrequencia] = useState(null);
 
+  // ── ESTADOS PARA A CADERNETA DE NOTAS / AVALIAÇÕES ──
+  const [notasLocais, setNotasLocais] = useState({}); // { [`${target_id}_${aluno_id}`]: string }
+  const [observacoesLocais, setObservacoesLocais] = useState({}); // { [`${target_id}_${aluno_id}`]: string }
+  const [alteracoesPendentes, setAlteracoesPendentes] = useState(false);
+  const [salvandoNotas, setSalvandoNotas] = useState(false);
+  const [msgFeedback, setMsgFeedback] = useState(null); // { tipo: 'sucesso' | 'erro', texto: string }
+  const [filtroBuscaCaderneta, setFiltroBuscaCaderneta] = useState('');
+  const [filtroStatusCaderneta, setFiltroStatusCaderneta] = useState('ativos'); // 'todos' | 'ativos' | 'desistentes'
+
+  // Modais da Caderneta
+  const [isModalNovaAvaliacaoAberto, setIsModalNovaAvaliacaoAberto] = useState(false);
+  const [moduloAlvoNovaAvaliacao, setModuloAlvoNovaAvaliacao] = useState('');
+  const [isModalGerenciarAvaliacoesAberto, setIsModalGerenciarAvaliacoesAberto] = useState(false);
+  const [isModalLoteAberto, setIsModalLoteAberto] = useState(false);
+  const [modalObs, setModalObs] = useState({ aberto: false, alunoId: null, targetId: null, alunoNome: '', titulo: '', obs: '' });
+  const [isModalImprimirAberto, setIsModalImprimirAberto] = useState(false);
+
   const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
+  // Helper para obter itens de avaliação de um módulo/disciplina
+  const getItemsDoModulo = (discId) => {
+    return (avaliacoesItens || []).filter(it => it.turma_disciplina_id === discId);
+  };
+
+  // Sincroniza estado local da grade com as avaliações (itens e legado)
+  useEffect(() => {
+    const nMap = {};
+    const oMap = {};
+
+    // 1. Carrega notas dos itens de avaliação detalhados
+    (avaliacoesNotas || []).forEach(av => {
+      const key = `${av.avaliacao_item_id}_${av.aluno_id}`;
+      nMap[key] = av.nota !== null && av.nota !== undefined ? String(av.nota) : '';
+      oMap[key] = av.observacao || '';
+    });
+
+    // 2. Carrega notas consolidadas / legado (para disciplinas que não têm sub-itens)
+    (avaliacoes || []).forEach(av => {
+      const key = `${av.turma_disciplina_id}_${av.aluno_id}`;
+      // Se não houver nota de item já definida nessa chave, preenche
+      if (nMap[key] === undefined) {
+        nMap[key] = av.nota !== null && av.nota !== undefined ? String(av.nota) : '';
+        oMap[key] = av.observacao || '';
+      }
+    });
+
+    setNotasLocais(nMap);
+    setObservacoesLocais(oMap);
+    setAlteracoesPendentes(false);
+  }, [avaliacoes, avaliacoesNotas, avaliacoesItens]);
+
+  // Alteração de nota inline na tabela
+  const handleNotaChange = (targetId, alunoId, valor) => {
+    const key = `${targetId}_${alunoId}`;
+    setNotasLocais(prev => ({ ...prev, [key]: valor }));
+    setAlteracoesPendentes(true);
+  };
+
+  // Cálculo da Média de um Módulo para um Aluno específico
+  const calcularMediaModuloAluno = (discId, alunoId) => {
+    const items = getItemsDoModulo(discId);
+
+    if (items.length === 0) {
+      // Módulo com avaliação direta única
+      const val = notasLocais[`${discId}_${alunoId}`];
+      if (val === undefined || val === null || val === '') return null;
+      const num = parseFloat(String(val).replace(',', '.'));
+      return isNaN(num) ? null : Math.round(num * 10) / 10;
+    }
+
+    // Módulo com múltiplas avaliações
+    const notasValidas = [];
+    items.forEach(it => {
+      const val = notasLocais[`${it.id}_${alunoId}`];
+      if (val !== undefined && val !== null && val !== '') {
+        const num = parseFloat(String(val).replace(',', '.'));
+        if (!isNaN(num)) {
+          notasValidas.push({
+            nota: num,
+            peso: Number(it.peso) || 1.0
+          });
+        }
+      }
+    });
+
+    if (notasValidas.length === 0) return null;
+    const totalPesos = notasValidas.reduce((acc, curr) => acc + curr.peso, 0);
+    const somaPonderada = notasValidas.reduce((acc, curr) => acc + (curr.nota * curr.peso), 0);
+    if (totalPesos <= 0) return null;
+
+    const media = somaPonderada / totalPesos;
+    return Math.round(media * 10) / 10;
+  };
+
+  // Cálculo da Média Geral do Curso para o Aluno (Média dos Módulos)
+  const calcularMediaAluno = (alunoId) => {
+    const mediasModulos = [];
+    disciplinas.forEach(d => {
+      const mediaMod = calcularMediaModuloAluno(d.id, alunoId);
+      if (mediaMod !== null) {
+        mediasModulos.push(mediaMod);
+      }
+    });
+
+    if (mediasModulos.length === 0) return null;
+    const mediaGeral = mediasModulos.reduce((acc, curr) => acc + curr, 0) / mediasModulos.length;
+    return Math.round(mediaGeral * 10) / 10;
+  };
+
+  // Cálculo de Frequência do Aluno
+  const calcularFrequenciaAluno = (alunoId, alunoPessoaId, matriculaId) => {
+    if (!aulas || aulas.length === 0) return 100;
+    let totalAulas = 0;
+    let presencas = 0;
+
+    aulas.forEach(aula => {
+      totalAulas += 1;
+      let pObj = aula.presencas || {};
+      if (typeof pObj === 'string') {
+        try { pObj = JSON.parse(pObj); } catch (e) { pObj = {}; }
+      }
+      if (pObj[alunoId] === true || pObj[alunoPessoaId] === true || pObj[matriculaId] === true) {
+        presencas += 1;
+      }
+    });
+
+    if (totalAulas === 0) return 100;
+    return Math.round((presencas / totalAulas) * 100);
+  };
+
+  // Média da turma em um item específico de avaliação
+  const calcularMediaItemTurma = (itemId) => {
+    const notas = [];
+    alunos.filter(isAlunoAtivo).forEach(a => {
+      const val = notasLocais[`${itemId}_${a.aluno_id}`];
+      if (val !== undefined && val !== null && val !== '') {
+        const num = parseFloat(String(val).replace(',', '.'));
+        if (!isNaN(num)) notas.push(num);
+      }
+    });
+    if (notas.length === 0) return null;
+    return Math.round((notas.reduce((a, b) => a + b, 0) / notas.length) * 10) / 10;
+  };
+
+  // Média geral da turma em uma disciplina/módulo
+  const calcularMediaDisciplinaTurma = (discId) => {
+    const mediasAlunos = [];
+    alunos.filter(isAlunoAtivo).forEach(a => {
+      const mediaMod = calcularMediaModuloAluno(discId, a.aluno_id);
+      if (mediaMod !== null) mediasAlunos.push(mediaMod);
+    });
+    if (mediasAlunos.length === 0) return null;
+    return Math.round((mediasAlunos.reduce((a, b) => a + b, 0) / mediasAlunos.length) * 10) / 10;
+  };
+
+  // Resumo e Métricas Gerais da Caderneta
+  const metricasCaderneta = useMemo(() => {
+    const alunosAtivos = alunos.filter(isAlunoAtivo);
+    const mediasAtivos = alunosAtivos.map(a => calcularMediaAluno(a.aluno_id)).filter(m => m !== null);
+    const mediaGeral = mediasAtivos.length > 0 ? (mediasAtivos.reduce((a, b) => a + b, 0) / mediasAtivos.length) : null;
+    const aprovados = mediasAtivos.filter(m => m >= 7.0).length;
+    const atencao = mediasAtivos.filter(m => m < 7.0).length;
+
+    // Total de notas possíveis considerando todos os itens de avaliação
+    let totalNotasPossiveis = 0;
+    let totalNotasPreenchidas = 0;
+
+    disciplinas.forEach(d => {
+      const items = (avaliacoesItens || []).filter(it => it.turma_disciplina_id === d.id);
+      if (items.length > 0) {
+        items.forEach(it => {
+          totalNotasPossiveis += alunosAtivos.length;
+          alunosAtivos.forEach(a => {
+            const key = `${it.id}_${a.aluno_id}`;
+            if (notasLocais[key] !== undefined && notasLocais[key] !== '') {
+              totalNotasPreenchidas += 1;
+            }
+          });
+        });
+      } else {
+        totalNotasPossiveis += alunosAtivos.length;
+        alunosAtivos.forEach(a => {
+          const key = `${d.id}_${a.aluno_id}`;
+          if (notasLocais[key] !== undefined && notasLocais[key] !== '') {
+            totalNotasPreenchidas += 1;
+          }
+        });
+      }
+    });
+
+    return {
+      mediaGeral: mediaGeral !== null ? Math.round(mediaGeral * 10) / 10 : null,
+      aprovados,
+      atencao,
+      totalNotasPossiveis,
+      totalNotasPreenchidas,
+      pctPreenchimento: totalNotasPossiveis > 0 ? Math.round((totalNotasPreenchidas / totalNotasPossiveis) * 100) : 0
+    };
+  }, [alunos, disciplinas, avaliacoesItens, notasLocais]);
+
+  // Alunos filtrados para a visualização da caderneta
+  const alunosFiltradosCaderneta = useMemo(() => {
+    return alunos.filter(a => {
+      if (filtroStatusCaderneta === 'ativos' && !isAlunoAtivo(a)) return false;
+      if (filtroStatusCaderneta === 'desistentes' && isAlunoAtivo(a)) return false;
+      if (filtroBuscaCaderneta.trim()) {
+        const termo = filtroBuscaCaderneta.toLowerCase().trim();
+        const nome = (a.alunos?.pessoas?.nome || '').toLowerCase();
+        const mat = (a.alunos?.matricula || '').toLowerCase();
+        return nome.includes(termo) || mat.includes(termo);
+      }
+      return true;
+    });
+  }, [alunos, filtroStatusCaderneta, filtroBuscaCaderneta]);
+
+  // Salva todas as notas e observações pendentes no Supabase
+  const handleSalvarCaderneta = async () => {
+    if (!onSalvarAvaliacoes) return;
+    setSalvandoNotas(true);
+
+    const registrosItens = [];
+    const registrosGerais = [];
+
+    disciplinas.forEach(d => {
+      const items = getItemsDoModulo(d.id);
+
+      alunos.forEach(a => {
+        // Se houver sub-itens no módulo, reúne cada nota individual
+        if (items.length > 0) {
+          items.forEach(it => {
+            const key = `${it.id}_${a.aluno_id}`;
+            const valStr = (notasLocais[key] ?? '').replace(',', '.').trim();
+            const obs = observacoesLocais[key] || '';
+            if (valStr !== '' || obs !== '') {
+              const nVal = valStr !== '' ? Math.min(10, Math.max(0, parseFloat(valStr))) : null;
+              registrosItens.push({
+                avaliacao_item_id: it.id,
+                aluno_id: a.aluno_id,
+                nota: isNaN(nVal) ? null : nVal,
+                observacao: obs.trim() || null
+              });
+            }
+          });
+        }
+
+        // Calcula a média consolidada do módulo para salvar em 'avaliacoes'
+        const mediaMod = calcularMediaModuloAluno(d.id, a.aluno_id);
+        const legacyKey = `${d.id}_${a.aluno_id}`;
+        const obsGeral = observacoesLocais[legacyKey] || '';
+
+        if (mediaMod !== null || obsGeral !== '') {
+          registrosGerais.push({
+            turma_disciplina_id: d.id,
+            aluno_id: a.aluno_id,
+            nota: mediaMod,
+            observacao: obsGeral.trim() || null
+          });
+        }
+      });
+    });
+
+    const res = await onSalvarAvaliacoes({ registrosGerais, registrosItens });
+    setSalvandoNotas(false);
+    if (res?.success) {
+      setAlteracoesPendentes(false);
+      setMsgFeedback({ tipo: 'sucesso', texto: 'Todas as notas e médias foram salvas com sucesso!' });
+      setTimeout(() => setMsgFeedback(null), 3500);
+    } else {
+      setMsgFeedback({ tipo: 'erro', texto: 'Houve um erro ao salvar as avaliações.' });
+      setTimeout(() => setMsgFeedback(null), 4000);
+    }
+  };
+
   const gerarRelatorioFrequencia = () => {
-    // Filtrar aulas da turma que pertencem ao mês e ano selecionados
     const aulasFiltradas = aulas.filter(aula => {
       const data = new Date(aula.data_aula);
-      // Ajuste de timezone para comparação precisa
       const dataAjustada = new Date(data.getTime() + data.getTimezoneOffset() * 60000);
       return dataAjustada.getMonth() === Number(mesFrequencia) && dataAjustada.getFullYear() === Number(anoFrequencia);
     });
 
-    // Mapear dias que possuem registro de aula
     const diasComAula = [...new Set(aulasFiltradas.map(aula => {
       const d = new Date(aula.data_aula);
       const da = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
       return da.getDate();
     }))].sort((a, b) => a - b);
 
-    // Montar matriz de presença para cada aluno
     const dados = alunos.map(aluno => {
       const presencasPorDia = {};
-
       aulasFiltradas.forEach(aula => {
         const d = new Date(aula.data_aula);
         const da = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
         const dia = da.getDate();
 
-        // Processar o JSON de presenças
         let pObj = aula.presencas || {};
         if (typeof pObj === 'string') { try { pObj = JSON.parse(pObj); } catch (e) { pObj = {}; } }
 
-        // Se já houver registro 'P' para o dia, mantém. Se for 'F' e encontrar um 'P', atualiza.
         const statusAnterior = presencasPorDia[dia];
         const statusAtual = pObj[aluno.aluno_id] ? 'P' : 'F';
 
@@ -1296,6 +1953,7 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
 
       return {
         nome: aluno.alunos?.pessoas?.nome,
+        status: aluno.status,
         presencas: presencasPorDia
       };
     });
@@ -1303,15 +1961,57 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
     setRelatorioFrequencia({ diasComAula, dados });
   };
 
+  const [painelLateralOculto, setPainelLateralOculto] = useState(false);
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start animate-in fade-in slide-in-from-bottom-4 duration-300">
+    <div className="space-y-4">
+      {/* BARRA SUPERIOR QUANDO EM MODO EXPANDIDO OU NA CADERNETA */}
+      {(abaAtiva === 'avaliacoes' || painelLateralOculto) && (
+        <div className="bg-white px-3.5 py-2.5 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onVoltar}
+              className="px-2.5 py-1 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center gap-1.5 cursor-pointer"
+              title="Voltar para a Lista de Turmas"
+            >
+              <span>← Turmas</span>
+            </button>
+            <div className="h-4 w-[1px] bg-slate-200 mx-1"></div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{turma.escolas?.nome || 'Escola'}</span>
+            <span className="text-slate-300 font-bold">•</span>
+            <span className="text-xs font-black text-slate-800">{turma.nome}</span>
+            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 ml-1">
+              {alunos.filter(isAlunoAtivo).length} Alunos
+            </span>
+          </div>
 
-      {/* PAINEL LATERAL DE INFORMAÇÕES (oculto no mobile, vira aba "Informações") */}
-      <Card className="hidden sm:block p-4 sm:p-6 border-t-4 border-t-[#202046] lg:sticky lg:top-24">
-        <InfoTurma turma={turma} alunos={alunos} onVoltar={onVoltar} />
-      </Card>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPainelLateralOculto(!painelLateralOculto)}
+              className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition cursor-pointer"
+            >
+              {painelLateralOculto ? "📋 Mostrar Detalhes da Turma" : "↔️ Visualização Expandida (100%)"}
+            </button>
+          </div>
+        </div>
+      )}
 
-      <div className="space-y-6">
+      <div className={`grid gap-4 sm:gap-6 items-start animate-in fade-in slide-in-from-bottom-4 duration-300 ${
+        (abaAtiva === 'avaliacoes' || painelLateralOculto)
+          ? 'grid-cols-1 w-full'
+          : 'grid-cols-1 lg:grid-cols-[270px_1fr]'
+      }`}>
+
+        {/* PAINEL LATERAL DE INFORMAÇÕES */}
+        {!(abaAtiva === 'avaliacoes' || painelLateralOculto) && (
+          <Card className="hidden sm:block p-4 sm:p-5 border-t-4 border-t-[#202046] lg:sticky lg:top-24">
+            <InfoTurma turma={turma} alunos={alunos} onVoltar={onVoltar} />
+          </Card>
+        )}
+
+        <div className="space-y-4 sm:space-y-5 min-w-0 w-full">
         {/* NAVEGAÇÃO DE ABAS E AÇÕES */}
         {(() => {
           const tabConfig = [
@@ -1371,6 +2071,15 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                 </svg>
               ),
             },
+            {
+              id: 'avaliacoes',
+              label: 'Caderneta de Notas',
+              cor: '#7c3aed',
+              badge: metricasCaderneta.totalNotasPreenchidas > 0 ? `${metricasCaderneta.totalNotasPreenchidas}` : null,
+              icon: (
+                <Award className="w-3.5 h-3.5" strokeWidth={1.8} />
+              ),
+            },
           ];
 
           return (
@@ -1410,16 +2119,32 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                 })}
               </div>
 
-              {/* Ações Rápidas - Alinhadas com as Abas */}
-              <div className="pb-2 sm:pb-0 px-1 sm:pr-2 shrink-0">
+              {/* Ações Rápidas */}
+              <div className="pb-2 sm:pb-0 px-1 sm:pr-2 shrink-0 flex items-center gap-2">
                 {abaAtiva === 'alunos' && (
-                  <button onClick={onAddAlunos} className="w-full sm:w-auto px-4 py-1.5 bg-[#202046] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-teal-900/10">+ Adicionar Alunos</button>
+                  <button onClick={onAddAlunos} className="w-full sm:w-auto px-4 py-1.5 bg-[#202046] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">+ Adicionar Alunos</button>
                 )}
                 {abaAtiva === 'disciplinas' && (
-                  <button onClick={onAddDisciplina} className="w-full sm:w-auto px-4 py-1.5 bg-[#6366f1] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-indigo-900/10">+ Incluir Disciplina</button>
+                  <button onClick={onAddDisciplina} className="w-full sm:w-auto px-4 py-1.5 bg-[#6366f1] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">+ Incluir Disciplina</button>
                 )}
                 {abaAtiva === 'aulas' && (
-                  <button onClick={onAddAula} className="w-full sm:w-auto px-4 py-1.5 bg-[#f59e0b] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm shadow-amber-900/10">📅 Lançar Aula / Presença</button>
+                  <button onClick={onAddAula} className="w-full sm:w-auto px-4 py-1.5 bg-[#f59e0b] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">📅 Lançar Aula / Presença</button>
+                )}
+                {abaAtiva === 'avaliacoes' && (
+                  <div className="flex items-center gap-1.5 w-full sm:w-auto flex-wrap">
+                    <button
+                      onClick={() => {
+                        setModuloAlvoNovaAvaliacao(disciplinas[0]?.id || '');
+                        setIsModalNovaAvaliacaoAberto(true);
+                      }}
+                      disabled={disciplinas.length === 0}
+                      className="px-3 py-1.5 bg-[#7c3aed] text-white rounded-xl text-[10px] font-black uppercase hover:bg-[#6d28d9] transition cursor-pointer shadow-sm flex items-center justify-center gap-1 disabled:opacity-50"
+                      title="Adicionar uma nova avaliação/prova à turma"
+                    >
+                      <Sparkles size={13} />
+                      <span>+ Nova Avaliação</span>
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -1444,26 +2169,29 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                       <tr key={a.id} onClick={() => onVerAluno(a.alunos?.pessoa_id)} className="cursor-pointer hover:bg-slate-50 transition">
                         <td><div className="flex items-center gap-2"><Avatar pessoa={a.alunos?.pessoas} tamanho="w-8 h-8" /><span className="text-sm text-slate-700">{a.alunos?.pessoas?.nome}</span></div></td>
                         <td>
-                          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border uppercase ${a.status === 'ativo' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                            a.status === 'desistente' ? 'bg-rose-50 text-rose-600 border-rose-100' :
-                              'bg-slate-100 text-slate-500 border-slate-200'
-                            }`}>
-                            {a.status}
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
+                            isAlunoAtivo(a)
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                              : isAlunoDesistente(a)
+                              ? 'bg-rose-50 text-rose-600 border-rose-100'
+                              : 'bg-slate-100 text-slate-500 border-slate-200'
+                          }`}>
+                            {a.status || 'ativo'}
                           </span>
                         </td>
                         <td className="font-mono text-xs text-slate-400 hidden sm:table-cell">{a.alunos?.matricula || '---'}</td>
                         <td className="text-right pr-2 sm:pr-6">
                           <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
                             <button
-                              onClick={() => onUpdateStatusAluno(a.id, a.status === 'ativo' ? 'desistente' : 'ativo')}
-                              className={`transition p-1.5 rounded-lg cursor-pointer ${a.status === 'ativo'
-                                ? 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
-                                : 'text-slate-400 hover:text-emerald-500 hover:bg-emerald-50'
-                                }`}
-                              title={a.status === 'ativo' ? 'Desativar Aluno' : 'Reativar Aluno'}
+                              onClick={() => onUpdateStatusAluno(a.id, isAlunoAtivo(a) ? 'desistente' : 'ativo')}
+                              className={`transition p-1.5 rounded-lg cursor-pointer ${
+                                isAlunoAtivo(a)
+                                  ? 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
+                                  : 'text-slate-400 hover:text-emerald-500 hover:bg-emerald-50'
+                              }`}
+                              title={isAlunoAtivo(a) ? 'Marcar como Desistente' : 'Reativar Aluno'}
                             >
-
-                              {a.status === 'ativo' ? (
+                              {isAlunoAtivo(a) ? (
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                                 </svg>
@@ -1490,31 +2218,56 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
               <table className="table-mib">
                 <thead>
                   <tr>
-                    <th>Disciplina</th>
+                    <th>Disciplina / Módulo</th>
                     <th>Professor</th>
+                    <th>Avaliações Cadastradas</th>
                     <th className="text-right pr-2 sm:pr-6">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {disciplinas.length === 0 ? (
-                    <tr><td colSpan="3" className="p-10 text-center text-slate-400 italic">Nenhuma disciplina vinculada.</td></tr>
+                    <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhuma disciplina vinculada.</td></tr>
                   ) : (
-                    disciplinas.map(d => (
-                      <tr key={d.id}>
-                        <td><span className="font-bold text-sm text-slate-700">{d.disciplinas?.nome}</span></td>
-                        <td><span className="text-xs font-bold text-[#202046]">{d.professores?.pessoas?.nome}</span></td>
-                        <td className="text-right pr-2 sm:pr-6">
-                          <div className="flex justify-end items-center gap-1.5 sm:gap-3">
-                            <button onClick={() => onEditDisciplina(d)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Disciplina">
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                            </button>
-                            <button className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Remover Disciplina">
-                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                    disciplinas.map(d => {
+                      const items = getItemsDoModulo(d.id);
+                      return (
+                        <tr key={d.id}>
+                          <td><span className="font-bold text-sm text-slate-700">{d.disciplinas?.nome}</span></td>
+                          <td><span className="text-xs font-bold text-[#202046]">{d.professores?.pessoas?.nome || 'Sem professor'}</span></td>
+                          <td>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {items.length === 0 ? (
+                                <span className="text-[10px] text-slate-400 italic">1 avaliação padrão</span>
+                              ) : (
+                                items.map(it => (
+                                  <span key={it.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
+                                    {it.nome} {it.peso && it.peso !== 1 ? `(p:${it.peso})` : ''}
+                                  </span>
+                                ))
+                              )}
+                            </div>
+                          </td>
+                          <td className="text-right pr-2 sm:pr-6">
+                            <div className="flex justify-end items-center gap-1.5 sm:gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setModuloAlvoNovaAvaliacao(d.id);
+                                  setIsModalNovaAvaliacaoAberto(true);
+                                }}
+                                className="text-violet-600 hover:text-violet-800 transition p-1.5 rounded-lg hover:bg-violet-50 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                title="Adicionar Avaliação a esta Disciplina"
+                              >
+                                <span>+ Avaliação</span>
+                              </button>
+                              <button onClick={() => onEditDisciplina(d)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Disciplina">
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -1537,10 +2290,14 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                 <tbody>
                   {aulas.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhuma aula registrada ainda.</td></tr> :
                     aulas.map(aula => {
-                      // Garantia de processamento do JSON de presenças
                       let pObj = aula.presencas || {};
                       if (typeof pObj === 'string') { try { pObj = JSON.parse(pObj); } catch (e) { pObj = {}; } }
-                      const presentesCount = Object.values(pObj).filter(v => v === true).length;
+                      
+                      const alunosAtivos = (alunos || []).filter(isAlunoAtivo);
+                      const presentesCount = alunosAtivos.filter(a => {
+                        return pObj && (pObj[a.aluno_id] === true || pObj[a.alunos?.pessoa_id] === true || pObj[a.id] === true);
+                      }).length;
+                      const totalAtivos = alunosAtivos.length;
 
                       return (
                         <tr key={aula.id}>
@@ -1554,16 +2311,16 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                           </td>
                           <td className="text-xs text-slate-500 hidden sm:table-cell">{aula.conteudo_proposto}</td>
                           <td className="text-center">
-                            <span className="text-[14px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100 uppercase tracking-tighter">
-                              {presentesCount}
+                            <span className="text-[13px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 uppercase tracking-tighter" title={`${presentesCount} presentes de ${totalAtivos} alunos ativos`}>
+                              {presentesCount} <span className="text-[10px] text-slate-400 font-bold">/ {totalAtivos}</span>
                             </span>
                           </td>
                           <td className="text-right pr-2 sm:pr-6">
                             <div className="flex items-center justify-end gap-2 sm:gap-4">
-                              <button onClick={() => onEditAula(aula)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Ver/Editar Chamada">
+                              <button onClick={() => onEditAula(aula)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Aula">
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                               </button>
-                              <button onClick={() => onExcluirAula(aula.id)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Excluir Aula">
+                              <button onClick={() => onExcluirAula(aula.id)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Remover Aula">
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                               </button>
                             </div>
@@ -1621,7 +2378,6 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                     <thead>
                       <tr className="bg-slate-50">
                         <th className="sticky left-0 bg-slate-50 z-10 min-w-[120px] sm:min-w-[160px]">Aluno</th>
-                        {/* Gerar colunas para os dias */}
                         {(esconderDiasSemRegistro ? relatorioFrequencia.diasComAula : Array.from({ length: 31 }, (_, i) => i + 1)).map(dia => (
                           <th key={dia} className="text-center w-7 sm:w-8 min-w-[28px] sm:min-w-[32px] px-0.5 sm:px-1">{dia}</th>
                         ))}
@@ -1630,7 +2386,16 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
                     <tbody>
                       {relatorioFrequencia.dados.map((row, idx) => (
                         <tr key={idx}>
-                          <td className="sticky left-0 bg-white z-10 font-medium text-slate-700 text-xs border-r min-w-[120px] sm:min-w-[160px] truncate">{row.nome}</td>
+                          <td className="sticky left-0 bg-white z-10 font-medium text-slate-700 text-xs border-r min-w-[120px] sm:min-w-[160px] truncate">
+                            <div className="flex items-center justify-between gap-1.5 pr-1">
+                              <span className="truncate">{row.nome}</span>
+                              {row.status === 'desistente' && (
+                                <span className="text-[8px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1 py-0.2 rounded shrink-0">
+                                  Desistente
+                                </span>
+                              )}
+                            </div>
+                          </td>
                           {(esconderDiasSemRegistro ? relatorioFrequencia.diasComAula : Array.from({ length: 31 }, (_, i) => i + 1)).map(dia => {
                             const status = row.presencas[dia];
                             return (
@@ -1657,7 +2422,1465 @@ function DetalhesDaTurma({ turma, abaAtiva, setAbaAtiva, onVoltar, alunos, disci
             )}
           </div>
         )}
+
+        {/* ── ABA: CADERNETA DE NOTAS & RESULTADOS DAS AVALIAÇÕES ── */}
+        {abaAtiva === 'avaliacoes' && (
+          <div className="space-y-3.5 animate-in fade-in duration-200 w-full min-w-0">
+            {/* TOPO: INDICADORES E RESUMO DA CADERNETA */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+              <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600 shrink-0">
+                  <Award size={18} />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block truncate">Média Geral</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-base sm:text-lg font-black text-slate-800">
+                      {metricasCaderneta.mediaGeral !== null ? metricasCaderneta.mediaGeral : '---'}
+                    </span>
+                    {metricasCaderneta.mediaGeral !== null && (
+                      <span className={`text-[8px] font-bold px-1 rounded ${
+                        metricasCaderneta.mediaGeral >= 7 ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                      }`}>
+                        {metricasCaderneta.mediaGeral >= 7 ? 'Bom' : 'Atenção'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                  <CheckCircle2 size={18} />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block truncate">Aprovados (≥ 7.0)</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-base sm:text-lg font-black text-emerald-600">
+                      {metricasCaderneta.aprovados}
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-bold">alunos</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                  <AlertCircle size={18} />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block truncate">Abaixo da Média</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-base sm:text-lg font-black text-amber-600">
+                      {metricasCaderneta.atencao}
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-bold">alunos</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                  <FileSpreadsheet size={18} />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block truncate">Lançamentos</span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-base sm:text-lg font-black text-slate-800">
+                      {metricasCaderneta.totalNotasPreenchidas}
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-bold">/ {metricasCaderneta.totalNotasPossiveis}</span>
+                    <span className="text-[9px] font-bold text-blue-600 ml-0.5">({metricasCaderneta.pctPreenchimento}%)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* FEEDBACK DE NOTIFICAÇÃO */}
+            {msgFeedback && (
+              <div className={`p-2.5 rounded-xl flex items-center justify-between gap-3 text-xs font-bold animate-in fade-in duration-200 ${
+                msgFeedback.tipo === 'sucesso' ? 'bg-emerald-500 text-white shadow-2xs' : 'bg-rose-500 text-white shadow-2xs'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <span>{msgFeedback.tipo === 'sucesso' ? '✓' : '⚠️'}</span>
+                  <span>{msgFeedback.texto}</span>
+                </div>
+                <button onClick={() => setMsgFeedback(null)} className="opacity-80 hover:opacity-100 text-sm cursor-pointer">✕</button>
+              </div>
+            )}
+
+            {/* BARRA DE FERRAMENTAS E CONTROLES DA CADERNETA */}
+            <div className="p-2.5 bg-white border border-slate-200 rounded-xl shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
+              {/* Filtros e Busca */}
+              <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+                <div className="relative flex-1 min-w-[150px]">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Buscar aluno..."
+                    value={filtroBuscaCaderneta}
+                    onChange={e => setFiltroBuscaCaderneta(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-violet-400 focus:bg-white"
+                  />
+                  {filtroBuscaCaderneta && (
+                    <button onClick={() => setFiltroBuscaCaderneta('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">✕</button>
+                  )}
+                </div>
+
+                <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5">
+                  {[
+                    { id: 'ativos', label: 'Ativos' },
+                    { id: 'todos', label: 'Todos' },
+                    { id: 'desistentes', label: 'Desistentes' }
+                  ].map(f => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() => setFiltroStatusCaderneta(f.id)}
+                      className={`px-2.5 py-0.5 text-[10px] font-bold rounded-md transition cursor-pointer ${
+                        filtroStatusCaderneta === f.id
+                          ? 'bg-white text-[#202046] shadow-2xs'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Botões de Ação na Caderneta */}
+              <div className="flex items-center gap-1.5 self-end md:self-auto flex-wrap">
+                {/* Botão para Nova Avaliação */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModuloAlvoNovaAvaliacao(disciplinas[0]?.id || '');
+                    setIsModalNovaAvaliacaoAberto(true);
+                  }}
+                  disabled={disciplinas.length === 0}
+                  className="px-2.5 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
+                  title="Criar nova prova, trabalho ou avaliação para um módulo"
+                >
+                  <Sparkles size={13} />
+                  <span>+ Nova Avaliação</span>
+                </button>
+
+                {/* Botão para Gerenciar / Organizar Avaliações */}
+                <button
+                  type="button"
+                  onClick={() => setIsModalGerenciarAvaliacoesAberto(true)}
+                  disabled={disciplinas.length === 0}
+                  className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  title="Gerenciar, editar pesos ou excluir avaliações da turma"
+                >
+                  <BookOpen size={13} className="text-slate-500" />
+                  <span className="hidden sm:inline">Gerenciar</span>
+                </button>
+
+                {/* Botão de Lançamento em Lote */}
+                <button
+                  type="button"
+                  onClick={() => setIsModalLoteAberto(true)}
+                  disabled={disciplinas.length === 0}
+                  className="px-2.5 py-1 bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  title="Lançamento Rápido em Lote por Módulo/Avaliação"
+                >
+                  <span>⚡ Lançar Notas</span>
+                </button>
+
+                {/* Imprimir Boletim */}
+                <button
+                  type="button"
+                  onClick={() => setIsModalImprimirAberto(true)}
+                  className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                  title="Visualizar e Imprimir Boletim Geral da Turma"
+                >
+                  <Printer size={13} className="text-slate-500" />
+                  <span className="hidden sm:inline">Imprimir</span>
+                </button>
+
+                {/* Salvar Notas */}
+                <button
+                  type="button"
+                  onClick={handleSalvarCaderneta}
+                  disabled={salvandoNotas || !alteracoesPendentes}
+                  className={`px-3 py-1 rounded-lg text-xs font-black uppercase transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                    alteracoesPendentes
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white animate-pulse'
+                      : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Save size={13} />
+                  <span>{salvandoNotas ? 'Salvando...' : alteracoesPendentes ? 'Salvar' : 'Salvo'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* SE NÃO HOUVER DISCIPLINAS CADASTRADAS */}
+            {disciplinas.length === 0 ? (
+              <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white space-y-2">
+                <div className="w-10 h-10 mx-auto rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                  <BookOpen size={20} />
+                </div>
+                <h4 className="text-sm font-bold text-slate-800">Nenhuma disciplina/módulo vinculado a esta turma</h4>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Adicione os módulos da turma para registrar e organizar as avaliações na caderneta.
+                </p>
+                <div className="pt-1">
+                  <button
+                    onClick={onAddDisciplina}
+                    className="px-4 py-1.5 bg-[#6366f1] hover:bg-[#4f46e5] text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                  >
+                    + Incluir Módulo / Disciplina
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* TABELA / MATRIZ DE NOTAS COM SUPORTE A MÚLTIPLAS AVALIAÇÕES POR MÓDULO */
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs w-full">
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      {/* LINHA 1 DO CABEÇALHO: MÓDULOS AGRUPADOS */}
+                      <tr className="bg-slate-50/95 border-b border-slate-200 text-slate-500 font-black uppercase text-[10px]">
+                        {/* Coluna Aluno */}
+                        <th rowSpan={2} className="sticky left-0 bg-slate-50 z-20 w-[170px] sm:w-[200px] min-w-[140px] max-w-[200px] p-2 border-r border-slate-150 align-middle">
+                          Aluno ({alunosFiltradosCaderneta.length})
+                        </th>
+
+                        {/* Agrupamento por Módulo / Disciplina */}
+                        {disciplinas.map(disc => {
+                          const items = getItemsDoModulo(disc.id);
+                          const colSpan = items.length > 0 ? items.length + (items.length > 1 ? 1 : 0) : 1;
+                          const mediaTurmaMod = calcularMediaDisciplinaTurma(disc.id);
+
+                          return (
+                            <th
+                              key={disc.id}
+                              colSpan={colSpan}
+                              className="text-center p-1.5 border-r border-slate-200 bg-slate-50/80"
+                            >
+                              <div className="flex items-center justify-between gap-1 px-1">
+                                <div className="text-left truncate min-w-0 flex-1">
+                                  <span className="font-extrabold text-slate-800 text-[11px] block truncate" title={disc.disciplinas?.nome}>
+                                    {disc.disciplinas?.nome}
+                                  </span>
+                                  {disc.professores?.pessoas?.nome && (
+                                    <span className="text-[8px] font-semibold text-slate-400 block truncate">
+                                      Prof: {disc.professores.pessoas.nome.split(' ')[0]}
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {mediaTurmaMod !== null && (
+                                    <span className="text-[8px] font-black px-1 py-0.2 rounded bg-violet-100 text-violet-800" title={`Média da Turma no Módulo: ${mediaTurmaMod}`}>
+                                      Méd: {mediaTurmaMod}
+                                    </span>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setModuloAlvoNovaAvaliacao(disc.id);
+                                      setIsModalNovaAvaliacaoAberto(true);
+                                    }}
+                                    className="w-4 h-4 rounded-full bg-violet-100 hover:bg-violet-200 text-violet-700 flex items-center justify-center text-[10px] font-black transition cursor-pointer"
+                                    title={`Adicionar nova avaliação para ${disc.disciplinas?.nome}`}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+                            </th>
+                          );
+                        })}
+
+                        <th rowSpan={2} className="text-center w-14 min-w-[50px] p-1.5 bg-slate-100/80 text-slate-800 font-black border-r border-slate-150 align-middle">
+                          Média Final
+                        </th>
+                        <th rowSpan={2} className="text-center w-12 min-w-[45px] p-1.5 text-slate-700 font-black border-r border-slate-100 align-middle">
+                          Freq
+                        </th>
+                        <th rowSpan={2} className="text-center w-20 min-w-[65px] p-1.5 align-middle">
+                          Status
+                        </th>
+                        <th rowSpan={2} className="text-center w-8 min-w-[32px] p-1 pr-2 align-middle">
+                          <FileSpreadsheet size={13} className="mx-auto text-slate-400" />
+                        </th>
+                      </tr>
+
+                      {/* LINHA 2 DO CABEÇALHO: SUBCATEGORIAS DE CADA AVALIAÇÃO */}
+                      <tr className="bg-slate-100/70 border-b border-slate-200 text-[9px] font-extrabold text-slate-600">
+                        {disciplinas.map(disc => {
+                          const items = getItemsDoModulo(disc.id);
+
+                          if (items.length === 0) {
+                            return (
+                              <th key={`single_${disc.id}`} className="text-center py-1 px-1 border-r border-slate-150 w-20 min-w-[68px] max-w-[95px]">
+                                <span className="text-[9px] text-slate-500 font-bold">Nota Única</span>
+                              </th>
+                            );
+                          }
+
+                          return (
+                            <React.Fragment key={`sub_${disc.id}`}>
+                              {items.map((it, idx) => {
+                                const mediaItem = calcularMediaItemTurma(it.id);
+                                return (
+                                  <th
+                                    key={it.id}
+                                    className="text-center py-1 px-1 border-r border-slate-150 min-w-[55px] max-w-[85px] group/itemhead relative"
+                                  >
+                                    <div className="flex flex-col items-center">
+                                      <span className="font-bold text-slate-700 truncate max-w-[75px]" title={`${it.nome} ${it.peso && it.peso !== 1 ? `(Peso ${it.peso})` : ''}`}>
+                                        {it.nome}
+                                      </span>
+                                      {it.peso && it.peso !== 1 && (
+                                        <span className="text-[7px] text-violet-600 font-bold leading-none">
+                                          p:{it.peso}
+                                        </span>
+                                      )}
+                                      {mediaItem !== null && (
+                                        <span className="text-[7px] text-slate-400 font-bold leading-none mt-0.5">
+                                          x̄:{mediaItem}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </th>
+                                );
+                              })}
+                              {items.length > 1 && (
+                                <th className="text-center py-1 px-1 border-r border-slate-200 bg-violet-50/60 text-violet-900 font-black min-w-[48px] max-w-[60px]">
+                                  Méd. Mód
+                                </th>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-slate-100">
+                      {alunosFiltradosCaderneta.length === 0 ? (
+                        <tr>
+                          <td colSpan={50} className="p-8 text-center text-slate-400 italic">
+                            Nenhum aluno encontrado para os filtros selecionados.
+                          </td>
+                        </tr>
+                      ) : (
+                        alunosFiltradosCaderneta.map(a => {
+                          const mediaGeralAluno = calcularMediaAluno(a.aluno_id);
+                          const freq = calcularFrequenciaAluno(a.aluno_id, a.alunos?.pessoa_id, a.id);
+                          const desistente = isAlunoDesistente(a);
+
+                          return (
+                            <tr key={a.id} className="hover:bg-slate-50/80 transition">
+                              {/* Célula do Aluno */}
+                              <td className="sticky left-0 bg-white z-10 border-r border-slate-150 w-[170px] sm:w-[200px] min-w-[140px] max-w-[200px] p-1.5 sm:p-2">
+                                <div className="flex items-center gap-1.5">
+                                  <Avatar pessoa={a.alunos?.pessoas} tamanho="w-6 h-6 shrink-0" />
+                                  <div className="min-w-0 pr-0.5 truncate">
+                                    <span
+                                      onClick={() => onVerAluno(a.alunos?.pessoa_id)}
+                                      className="font-bold text-xs text-slate-800 hover:text-indigo-600 cursor-pointer block truncate"
+                                      title={a.alunos?.pessoas?.nome}
+                                    >
+                                      {a.alunos?.pessoas?.nome}
+                                    </span>
+                                    <div className="flex items-center gap-1 leading-none mt-0.5">
+                                      {desistente ? (
+                                        <span className="text-[7px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-1 py-0.2 rounded shrink-0">
+                                          Desistente
+                                        </span>
+                                      ) : a.alunos?.matricula ? (
+                                        <span className="font-mono text-[8px] text-slate-400 truncate">{a.alunos?.matricula}</span>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* Células de Notas de cada Módulo e suas Avaliações */}
+                              {disciplinas.map(disc => {
+                                const items = getItemsDoModulo(disc.id);
+                                const mediaMod = calcularMediaModuloAluno(disc.id, a.aluno_id);
+
+                                // Se não houver itens cadastrados no módulo, exibe a entrada única
+                                if (items.length === 0) {
+                                  const key = `${disc.id}_${a.aluno_id}`;
+                                  const notaRaw = notasLocais[key] ?? '';
+                                  const obs = observacoesLocais[key] || '';
+                                  const notaNum = notaRaw !== '' ? parseFloat(String(notaRaw).replace(',', '.')) : null;
+
+                                  let estiloNota = 'bg-white border-slate-200 text-slate-700 focus:border-violet-500';
+                                  if (notaNum !== null && !isNaN(notaNum)) {
+                                    if (notaNum >= 7.0) estiloNota = 'bg-emerald-50 border-emerald-300 text-emerald-800 font-extrabold focus:border-emerald-500';
+                                    else if (notaNum >= 5.0) estiloNota = 'bg-amber-50 border-amber-300 text-amber-800 font-extrabold focus:border-amber-500';
+                                    else estiloNota = 'bg-rose-50 border-rose-300 text-rose-800 font-extrabold focus:border-rose-500';
+                                  }
+
+                                  return (
+                                    <td key={disc.id} className="text-center p-1 border-r border-slate-100">
+                                      <div className="relative inline-flex items-center justify-center">
+                                        <input
+                                          type="text"
+                                          inputMode="decimal"
+                                          placeholder="-"
+                                          value={notaRaw}
+                                          onChange={e => handleNotaChange(disc.id, a.aluno_id, e.target.value)}
+                                          onBlur={() => {
+                                            if (notaRaw !== '') {
+                                              const num = parseFloat(String(notaRaw).replace(',', '.'));
+                                              if (!isNaN(num)) {
+                                                const clamped = Math.min(10, Math.max(0, num));
+                                                handleNotaChange(disc.id, a.aluno_id, String(clamped));
+                                              }
+                                            }
+                                          }}
+                                          className={`w-11 sm:w-12 h-7 sm:h-7.5 text-center text-xs font-bold rounded-md border outline-none transition-all shadow-2xs ${estiloNota}`}
+                                          title={`Nota em ${disc.disciplinas?.nome} para ${a.alunos?.pessoas?.nome}`}
+                                        />
+
+                                        {/* Botão de Observação */}
+                                        <button
+                                          type="button"
+                                          onClick={() => setModalObs({
+                                            aberto: true,
+                                            alunoId: a.aluno_id,
+                                            targetId: disc.id,
+                                            alunoNome: a.alunos?.pessoas?.nome || 'Aluno',
+                                            titulo: disc.disciplinas?.nome || 'Disciplina',
+                                            obs: obs
+                                          })}
+                                          className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[7px] transition cursor-pointer ${
+                                            obs ? 'bg-violet-600 text-white shadow-2xs' : 'opacity-0 group-hover:opacity-100 hover:bg-slate-200 text-slate-400'
+                                          }`}
+                                          title={obs ? `Observação: "${obs}"` : 'Adicionar observação'}
+                                        >
+                                          <MessageSquare size={7} />
+                                        </button>
+                                      </div>
+                                    </td>
+                                  );
+                                }
+
+                                // Se houver múltiplos itens de avaliação no módulo
+                                return (
+                                  <React.Fragment key={disc.id}>
+                                    {items.map(it => {
+                                      const key = `${it.id}_${a.aluno_id}`;
+                                      const notaRaw = notasLocais[key] ?? '';
+                                      const obs = observacoesLocais[key] || '';
+                                      const notaNum = notaRaw !== '' ? parseFloat(String(notaRaw).replace(',', '.')) : null;
+
+                                      let estiloNota = 'bg-white border-slate-200 text-slate-700 focus:border-violet-500';
+                                      if (notaNum !== null && !isNaN(notaNum)) {
+                                        if (notaNum >= 7.0) estiloNota = 'bg-emerald-50 border-emerald-300 text-emerald-800 font-extrabold focus:border-emerald-500';
+                                        else if (notaNum >= 5.0) estiloNota = 'bg-amber-50 border-amber-300 text-amber-800 font-extrabold focus:border-amber-500';
+                                        else estiloNota = 'bg-rose-50 border-rose-300 text-rose-800 font-extrabold focus:border-rose-500';
+                                      }
+
+                                      return (
+                                        <td key={it.id} className="text-center p-1 border-r border-slate-100">
+                                          <div className="relative inline-flex items-center justify-center">
+                                            <input
+                                              type="text"
+                                              inputMode="decimal"
+                                              placeholder="-"
+                                              value={notaRaw}
+                                              onChange={e => handleNotaChange(it.id, a.aluno_id, e.target.value)}
+                                              onBlur={() => {
+                                                if (notaRaw !== '') {
+                                                  const num = parseFloat(String(notaRaw).replace(',', '.'));
+                                                  if (!isNaN(num)) {
+                                                    const clamped = Math.min(10, Math.max(0, num));
+                                                    handleNotaChange(it.id, a.aluno_id, String(clamped));
+                                                  }
+                                                }
+                                              }}
+                                              className={`w-11 sm:w-12 h-7 sm:h-7.5 text-center text-xs font-bold rounded-md border outline-none transition-all shadow-2xs ${estiloNota}`}
+                                              title={`${it.nome} (${disc.disciplinas?.nome}) para ${a.alunos?.pessoas?.nome}`}
+                                            />
+
+                                            <button
+                                              type="button"
+                                              onClick={() => setModalObs({
+                                                aberto: true,
+                                                alunoId: a.aluno_id,
+                                                targetId: it.id,
+                                                alunoNome: a.alunos?.pessoas?.nome || 'Aluno',
+                                                titulo: `${disc.disciplinas?.nome} - ${it.nome}`,
+                                                obs: obs
+                                              })}
+                                              className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[7px] transition cursor-pointer ${
+                                                obs ? 'bg-violet-600 text-white shadow-2xs' : 'opacity-0 group-hover:opacity-100 hover:bg-slate-200 text-slate-400'
+                                              }`}
+                                              title={obs ? `Observação: "${obs}"` : 'Adicionar observação'}
+                                            >
+                                              <MessageSquare size={7} />
+                                            </button>
+                                          </div>
+                                        </td>
+                                      );
+                                    })}
+
+                                    {/* Média do Módulo */}
+                                    {items.length > 1 && (
+                                      <td className="text-center bg-violet-50/30 p-1 border-r border-slate-200 font-bold">
+                                        {mediaMod !== null ? (
+                                          <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-black ${
+                                            mediaMod >= 7.0 ? 'bg-emerald-100/90 text-emerald-800' :
+                                            mediaMod >= 5.0 ? 'bg-amber-100/90 text-amber-800' :
+                                            'bg-rose-100/90 text-rose-800'
+                                          }`}>
+                                            {mediaMod.toFixed(1)}
+                                          </span>
+                                        ) : (
+                                          <span className="text-[10px] text-slate-300 font-bold">---</span>
+                                        )}
+                                      </td>
+                                    )}
+                                  </React.Fragment>
+                                );
+                              })}
+
+                              {/* Média Geral Final */}
+                              <td className="text-center bg-slate-50/70 p-1 border-r border-slate-150">
+                                {mediaGeralAluno !== null ? (
+                                  <span className={`inline-block px-1.5 py-0.5 rounded-md text-[11px] font-black ${
+                                    mediaGeralAluno >= 7.0 ? 'bg-emerald-100 text-emerald-800 shadow-2xs' :
+                                    mediaGeralAluno >= 5.0 ? 'bg-amber-100 text-amber-800 shadow-2xs' :
+                                    'bg-rose-100 text-rose-800 shadow-2xs'
+                                  }`}>
+                                    {mediaGeralAluno.toFixed(1)}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] text-slate-300 font-bold">---</span>
+                                )}
+                              </td>
+
+                              {/* Frequência */}
+                              <td className="text-center p-1 border-r border-slate-100">
+                                <span className={`text-[11px] font-black ${
+                                  freq >= 75 ? 'text-emerald-600' : 'text-rose-600'
+                                }`}>
+                                  {freq}%
+                                </span>
+                              </td>
+
+                              {/* Situação */}
+                              <td className="text-center p-1">
+                                {desistente ? (
+                                  <span className="px-1.5 py-0.2 text-[8px] font-bold rounded bg-rose-50 text-rose-600 border border-rose-200">
+                                    Desistente
+                                  </span>
+                                ) : mediaGeralAluno === null ? (
+                                  <span className="px-1.5 py-0.2 text-[8px] font-bold rounded bg-slate-100 text-slate-400">
+                                    Pendente
+                                  </span>
+                                ) : mediaGeralAluno >= 7.0 ? (
+                                  <span className="px-1.5 py-0.2 text-[8px] font-black rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    ✓ Aprovado
+                                  </span>
+                                ) : mediaGeralAluno >= 5.0 ? (
+                                  <span className="px-1.5 py-0.2 text-[8px] font-black rounded bg-amber-50 text-amber-700 border border-amber-200">
+                                    Atenção
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.2 text-[8px] font-black rounded bg-rose-50 text-rose-700 border border-rose-200">
+                                    Reprovado
+                                  </span>
+                                )}
+                              </td>
+
+                              {/* Ação: Ver Ficha Individual */}
+                              <td className="text-center p-1 pr-2">
+                                <button
+                                  type="button"
+                                  onClick={() => onVerAluno(a.alunos?.pessoa_id)}
+                                  className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition cursor-pointer"
+                                  title="Abrir Ficha Individual do Aluno"
+                                >
+                                  <FileSpreadsheet size={14} />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Rodapé da tabela com orientações rápidas */}
+                <div className="px-3 py-2 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-[10px] text-slate-500">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ≥ 7.0 (Aprovado)</span>
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> 5.0 - 6.9 (Atenção)</span>
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> &lt; 5.0 (Reprovado)</span>
+                  </div>
+                  <span className="font-bold text-slate-400">
+                    * Cada avaliação calcula a média do seu módulo ponderada pelo peso e gera a média geral da turma.
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
+      </div>
+
+      {/* ── MODAL DE NOVA AVALIAÇÃO ── */}
+      {isModalNovaAvaliacaoAberto && (
+        <ModalNovaAvaliacao
+          turma={turma}
+          disciplinas={disciplinas}
+          avaliacoesItens={avaliacoesItens}
+          moduloInicialId={moduloAlvoNovaAvaliacao}
+          onCriar={async (dados) => {
+            const res = await onCriarAvaliacaoItem(dados);
+            if (res?.success) {
+              setIsModalNovaAvaliacaoAberto(false);
+              setMsgFeedback({ tipo: 'sucesso', texto: `Avaliação "${dados.nome}" criada com sucesso!` });
+              setTimeout(() => setMsgFeedback(null), 3500);
+            }
+          }}
+          onFechar={() => setIsModalNovaAvaliacaoAberto(false)}
+        />
+      )}
+
+      {/* ── MODAL DE GERENCIAR AVALIAÇÕES ── */}
+      {isModalGerenciarAvaliacoesAberto && (
+        <ModalGerenciarAvaliacoes
+          turma={turma}
+          disciplinas={disciplinas}
+          avaliacoesItens={avaliacoesItens}
+          onSalvarItem={onEditarAvaliacaoItem}
+          onExcluirItem={onExcluirAvaliacaoItem}
+          onAdicionarItem={(discId) => {
+            setModuloAlvoNovaAvaliacao(discId);
+            setIsModalNovaAvaliacaoAberto(true);
+          }}
+          onFechar={() => setIsModalGerenciarAvaliacoesAberto(false)}
+        />
+      )}
+
+      {/* ── MODAL DE LANÇAMENTO EM LOTE POR DISCIPLINA / AVALIAÇÃO ── */}
+      {isModalLoteAberto && (
+        <ModalLancarNotasDisciplina
+          turma={turma}
+          disciplinas={disciplinas}
+          avaliacoesItens={avaliacoesItens}
+          alunos={alunos.filter(isAlunoAtivo)}
+          notasLocais={notasLocais}
+          observacoesLocais={observacoesLocais}
+          onSalvar={async (targetId, notasAtualizadas) => {
+            const newNotasLocais = { ...notasLocais };
+            const newObsLocais = { ...observacoesLocais };
+
+            Object.entries(notasAtualizadas).forEach(([alunoId, data]) => {
+              const key = `${targetId}_${alunoId}`;
+              newNotasLocais[key] = data.nota;
+              newObsLocais[key] = data.obs;
+            });
+
+            setNotasLocais(newNotasLocais);
+            setObservacoesLocais(newObsLocais);
+            setAlteracoesPendentes(true);
+            setIsModalLoteAberto(false);
+            setMsgFeedback({ tipo: 'sucesso', texto: 'Notas lançadas! Clique em "Salvar" para confirmar no banco.' });
+            setTimeout(() => setMsgFeedback(null), 3500);
+          }}
+          onFechar={() => setIsModalLoteAberto(false)}
+        />
+      )}
+
+      {/* ── MODAL DE EDITAR OBSERVAÇÃO DA NOTA ── */}
+      {modalObs.aberto && (
+        <ModalWrapper
+          titulo={`Observação: ${modalObs.titulo}`}
+          onFechar={() => setModalObs({ ...modalObs, aberto: false })}
+        >
+          <div className="p-5 space-y-4">
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Aluno</span>
+              <span className="text-sm font-black text-slate-800">{modalObs.alunoNome}</span>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                Anotações sobre a Avaliação
+              </label>
+              <textarea
+                rows="4"
+                placeholder="Ex: Entregou trabalho complementar; Prova de 2ª chamada realizada em data tal..."
+                value={modalObs.obs}
+                onChange={e => setModalObs({ ...modalObs, obs: e.target.value })}
+                className="w-full px-3 py-2.5 text-xs border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-violet-400 resize-none"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalObs({ ...modalObs, aberto: false })}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const key = `${modalObs.targetId}_${modalObs.alunoId}`;
+                  setObservacoesLocais(prev => ({ ...prev, [key]: modalObs.obs }));
+                  setAlteracoesPendentes(true);
+                  setModalObs({ ...modalObs, aberto: false });
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-[#7c3aed] text-white text-xs font-bold shadow-md shadow-violet-900/10 cursor-pointer"
+              >
+                Salvar Observação
+              </button>
+            </div>
+          </div>
+        </ModalWrapper>
+      )}
+
+      {/* ── MODAL DE IMPRESSÃO / BOLETIM GERAL DA TURMA ── */}
+      {isModalImprimirAberto && (
+        <ModalImprimirCaderneta
+          turma={turma}
+          disciplinas={disciplinas}
+          avaliacoesItens={avaliacoesItens}
+          alunos={alunos.filter(isAlunoAtivo)}
+          notasLocais={notasLocais}
+          calcularMediaModuloAluno={calcularMediaModuloAluno}
+          calcularMediaAluno={calcularMediaAluno}
+          calcularFrequenciaAluno={calcularFrequenciaAluno}
+          onFechar={() => setIsModalImprimirAberto(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* MODAL DE CRIAÇÃO DE NOVA AVALIAÇÃO */
+function ModalNovaAvaliacao({ turma, disciplinas = [], avaliacoesItens = [], moduloInicialId, onCriar, onFechar }) {
+  const [discId, setDiscId] = useState(moduloInicialId || disciplinas[0]?.id || '');
+  const [nome, setNome] = useState('');
+  const [peso, setPeso] = useState('1.0');
+  const [dataAvaliacao, setDataAvaliacao] = useState('');
+  const [salvando, setSalvando] = useState(false);
+
+  // Sugestões rápidas de nomes
+  const discSelecionada = disciplinas.find(d => d.id === discId);
+  const itemsJaExistentes = (avaliacoesItens || []).filter(it => it.turma_disciplina_id === discId);
+  const proximoNumero = itemsJaExistentes.length + 1;
+
+  const sugestoes = [
+    `Avaliação ${proximoNumero}`,
+    `Prova ${proximoNumero}`,
+    `Trabalho ${proximoNumero}`,
+    'Seminário',
+    'Simulado Final'
+  ];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!discId) return alert('Selecione o módulo/disciplina.');
+    if (!nome.trim()) return alert('Informe o nome da avaliação.');
+
+    setSalvando(true);
+    await onCriar({
+      turma_disciplina_id: discId,
+      nome: nome.trim(),
+      peso: parseFloat(String(peso).replace(',', '.')) || 1.0,
+      ordem: proximoNumero,
+      data_avaliacao: dataAvaliacao || null
+    });
+    setSalvando(false);
+  };
+
+  return (
+    <ModalWrapper titulo="Nova Avaliação / Prova" onFechar={onFechar}>
+      <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <div>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            Módulo / Disciplina
+          </label>
+          <select
+            value={discId}
+            onChange={e => setDiscId(e.target.value)}
+            className="w-full px-3 py-2 text-xs font-bold border border-slate-200 rounded-xl bg-white outline-none focus:ring-2 focus:ring-violet-400"
+          >
+            {disciplinas.map(d => {
+              const count = (avaliacoesItens || []).filter(it => it.turma_disciplina_id === d.id).length;
+              return (
+                <option key={d.id} value={d.id}>
+                  {d.disciplinas?.nome} ({count} {count === 1 ? 'avaliação' : 'avaliações'})
+                </option>
+              );
+            })}
+          </select>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Nome da Avaliação
+            </label>
+            <span className="text-[10px] text-slate-400">Sugestões rápidas:</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+            {sugestoes.map((sug, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setNome(sug)}
+                className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 hover:bg-violet-100 hover:text-violet-700 text-slate-600 transition cursor-pointer"
+              >
+                + {sug}
+              </button>
+            ))}
+          </div>
+
+          <input
+            type="text"
+            required
+            placeholder="Ex: Avaliação 1, Prova Teórica, Trabalho em Grupo..."
+            value={nome}
+            onChange={e => setNome(e.target.value)}
+            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-violet-400"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+              Peso na Média (Padrão 1.0)
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="1.0"
+              value={peso}
+              onChange={e => setPeso(e.target.value)}
+              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-violet-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+              Data Prevista (Opcional)
+            </label>
+            <input
+              type="date"
+              value={dataAvaliacao}
+              onChange={e => setDataAvaliacao(e.target.value)}
+              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-violet-400"
+            />
+          </div>
+        </div>
+
+        <div className="p-3 bg-violet-50 rounded-xl border border-violet-100 text-[11px] text-violet-800 flex items-start gap-2">
+          <span className="text-base leading-none">💡</span>
+          <span>
+            Ao adicionar esta avaliação, a caderneta exibirá uma nova coluna sob o módulo <strong>{discSelecionada?.disciplinas?.nome}</strong> e recalculará as médias automaticamente.
+          </span>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onFechar}
+            className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 cursor-pointer"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={salvando}
+            className="flex-1 py-2.5 rounded-xl bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs font-bold shadow-md shadow-violet-900/10 cursor-pointer disabled:opacity-50"
+          >
+            {salvando ? 'Criando...' : 'Adicionar Avaliação'}
+          </button>
+        </div>
+      </form>
+    </ModalWrapper>
+  );
+}
+
+/* MODAL DE GERENCIAMENTO DE AVALIAÇÕES (EDITAR/REMOVER) */
+function ModalGerenciarAvaliacoes({ turma, disciplinas = [], avaliacoesItens = [], onSalvarItem, onExcluirItem, onAdicionarItem, onFechar }) {
+  const [editandoId, setEditandoId] = useState(null);
+  const [editNome, setEditNome] = useState('');
+  const [editPeso, setEditPeso] = useState('1.0');
+
+  const handleIniciarEdicao = (it) => {
+    setEditandoId(it.id);
+    setEditNome(it.nome);
+    setEditPeso(String(it.peso || 1.0));
+  };
+
+  const handleSalvarEdicao = async (id) => {
+    if (!editNome.trim()) return alert('Informe o nome da avaliação.');
+    await onSalvarItem(id, {
+      nome: editNome.trim(),
+      peso: parseFloat(String(editPeso).replace(',', '.')) || 1.0
+    });
+    setEditandoId(null);
+  };
+
+  return (
+    <ModalWrapper titulo={`Avaliações da Turma: ${turma?.nome}`} onFechar={onFechar}>
+      <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+        <p className="text-xs text-slate-500">
+          Gerencie a estrutura de provas e notas de cada módulo. Você pode renomear, alterar pesos ou remover avaliações.
+        </p>
+
+        <div className="space-y-4">
+          {disciplinas.map(d => {
+            const items = (avaliacoesItens || []).filter(it => it.turma_disciplina_id === d.id);
+
+            return (
+              <div key={d.id} className="border border-slate-200 rounded-2xl p-3.5 bg-slate-50/50 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-extrabold text-xs text-slate-800">{d.disciplinas?.nome}</h4>
+                    <span className="text-[10px] text-slate-400">
+                      {items.length} {items.length === 1 ? 'avaliação configurada' : 'avaliações configuradas'}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => onAdicionarItem(d.id)}
+                    className="px-2.5 py-1 bg-violet-100 hover:bg-violet-200 text-violet-800 text-[10px] font-bold rounded-lg transition cursor-pointer"
+                  >
+                    + Nova Avaliação
+                  </button>
+                </div>
+
+                {items.length === 0 ? (
+                  <div className="p-3 bg-white rounded-xl border border-dashed border-slate-200 text-center text-[11px] text-slate-400 italic">
+                    Utilizando avaliação padrão única (1 nota geral).
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {items.map(it => {
+                      const isEditing = editandoId === it.id;
+
+                      if (isEditing) {
+                        return (
+                          <div key={it.id} className="p-2 bg-white rounded-xl border border-violet-300 shadow-2xs flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={editNome}
+                              onChange={e => setEditNome(e.target.value)}
+                              className="flex-1 px-2 py-1 text-xs font-bold border border-slate-200 rounded-lg outline-none"
+                              placeholder="Nome da avaliação"
+                            />
+                            <div className="flex items-center gap-1">
+                              <span className="text-[10px] text-slate-400 font-bold">Peso:</span>
+                              <input
+                                type="text"
+                                inputMode="decimal"
+                                value={editPeso}
+                                onChange={e => setEditPeso(e.target.value)}
+                                className="w-12 px-1 py-1 text-xs text-center font-bold border border-slate-200 rounded-lg outline-none"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleSalvarEdicao(it.id)}
+                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg cursor-pointer"
+                            >
+                              Salvar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditandoId(null)}
+                              className="px-2 py-1 bg-slate-200 text-slate-600 text-[10px] font-bold rounded-lg cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div key={it.id} className="p-2 bg-white rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-2 h-2 rounded-full bg-violet-500 shrink-0"></span>
+                            <span className="text-xs font-bold text-slate-800 truncate">{it.nome}</span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                              Peso: {it.peso || 1.0}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleIniciarEdicao(it)}
+                              className="p-1 text-slate-400 hover:text-slate-700 rounded transition cursor-pointer"
+                              title="Editar nome ou peso"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onExcluirItem(it.id)}
+                              className="p-1 text-slate-400 hover:text-rose-600 rounded transition cursor-pointer"
+                              title="Excluir esta avaliação"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={onFechar}
+            className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+          >
+            Concluir
+          </button>
+        </div>
+      </div>
+    </ModalWrapper>
+  );
+}
+
+/* MODAL DE LANÇAMENTO EM LOTE POR DISCIPLINA / AVALIAÇÃO */
+function ModalLancarNotasDisciplina({ turma, disciplinas = [], avaliacoesItens = [], alunos = [], notasLocais = {}, observacoesLocais = {}, onSalvar, onFechar }) {
+  // Constrói lista de alvos de lançamento: se a disciplina tiver itens específicos, lista os itens; se não tiver, lista a própria disciplina
+  const alvos = useMemo(() => {
+    const list = [];
+    disciplinas.forEach(d => {
+      const items = (avaliacoesItens || []).filter(it => it.turma_disciplina_id === d.id);
+      if (items.length === 0) {
+        list.push({
+          id: d.id,
+          tipo: 'disciplina',
+          nome: `${d.disciplinas?.nome || 'Módulo'} (Nota Única Geral)`
+        });
+      } else {
+        items.forEach(it => {
+          list.push({
+            id: it.id,
+            tipo: 'item',
+            nome: `${d.disciplinas?.nome || 'Módulo'} » ${it.nome} (Peso ${it.peso || 1.0})`
+          });
+        });
+      }
+    });
+    return list;
+  }, [disciplinas, avaliacoesItens]);
+
+  const [targetId, setTargetId] = useState(alvos[0]?.id || disciplinas[0]?.id || '');
+  const [notasTemp, setNotasTemp] = useState({});
+  const [notaPadrao, setNotaPadrao] = useState('');
+
+  // Carrega notas do alvo selecionado
+  useEffect(() => {
+    if (!targetId) return;
+    const map = {};
+    alunos.forEach(a => {
+      const key = `${targetId}_${a.aluno_id}`;
+      map[a.aluno_id] = {
+        nota: notasLocais[key] ?? '',
+        obs: observacoesLocais[key] || ''
+      };
+    });
+    setNotasTemp(map);
+  }, [targetId, alunos, notasLocais, observacoesLocais]);
+
+  const handleAplicarPadrao = () => {
+    if (notaPadrao === '') return;
+    const num = parseFloat(notaPadrao.replace(',', '.'));
+    if (isNaN(num)) return;
+    const clamped = String(Math.min(10, Math.max(0, num)));
+
+    setNotasTemp(prev => {
+      const novo = { ...prev };
+      alunos.forEach(a => {
+        novo[a.aluno_id] = {
+          ...(novo[a.aluno_id] || {}),
+          nota: clamped
+        };
+      });
+      return novo;
+    });
+  };
+
+  const handleSalvar = (e) => {
+    e.preventDefault();
+    onSalvar(targetId, notasTemp);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+          <div>
+            <h3 className="font-black text-slate-800 text-base uppercase tracking-tight flex items-center gap-2">
+              <Sparkles size={16} className="text-violet-600" />
+              <span>Lançamento em Lote por Módulo / Avaliação</span>
+            </h3>
+            <p className="text-xs text-slate-500 font-medium">Turma: {turma?.nome}</p>
+          </div>
+          <button onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border text-slate-400 hover:text-rose-500 transition cursor-pointer">✕</button>
+        </div>
+
+        <form onSubmit={handleSalvar} className="flex flex-col flex-1 overflow-hidden">
+          <div className="p-5 space-y-4 overflow-y-auto flex-1">
+            {/* Seletor de Avaliação / Disciplina */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  Selecione o Módulo / Avaliação
+                </label>
+                <select
+                  value={targetId}
+                  onChange={e => setTargetId(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-bold border border-slate-200 rounded-xl bg-white outline-none focus:ring-2 focus:ring-violet-400"
+                >
+                  {alvos.map(alvo => (
+                    <option key={alvo.id} value={alvo.id}>
+                      {alvo.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Preenchimento Rápido com Nota Padrão */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                  Preencher Nota Padrão para Todos
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Ex: 10.0 ou 8.5"
+                    value={notaPadrao}
+                    onChange={e => setNotaPadrao(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAplicarPadrao}
+                    className="px-3 py-2 bg-violet-100 hover:bg-violet-200 text-violet-800 text-[11px] font-bold rounded-xl whitespace-nowrap cursor-pointer transition"
+                  >
+                    Aplicar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de Alunos da Turma para Lançamento */}
+            <div className="border border-slate-200 rounded-2xl overflow-hidden">
+              <div className="bg-slate-50 p-2.5 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-600">
+                <span>Aluno</span>
+                <div className="flex items-center gap-6 pr-2">
+                  <span className="w-16 text-center">Nota (0-10)</span>
+                  <span className="w-40 sm:w-56 text-left hidden sm:inline">Observação</span>
+                </div>
+              </div>
+
+              <div className="divide-y divide-slate-100 max-h-[45vh] overflow-y-auto p-1">
+                {alunos.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-slate-400 italic">Nenhum aluno ativo nesta turma.</div>
+                ) : (
+                  alunos.map(a => {
+                    const alunoData = notasTemp[a.aluno_id] || { nota: '', obs: '' };
+                    return (
+                      <div key={a.aluno_id} className="p-2 flex items-center justify-between gap-2 hover:bg-slate-50 transition rounded-xl">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <Avatar pessoa={a.alunos?.pessoas} tamanho="w-7 h-7 shrink-0" />
+                          <span className="text-xs font-bold text-slate-800 truncate" title={a.alunos?.pessoas?.nome}>
+                            {a.alunos?.pessoas?.nome}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="-"
+                            value={alunoData.nota}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setNotasTemp(prev => ({
+                                ...prev,
+                                [a.aluno_id]: { ...(prev[a.aluno_id] || {}), nota: val }
+                              }));
+                            }}
+                            className="w-16 h-8 text-center text-xs font-bold border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+                          />
+
+                          <input
+                            type="text"
+                            placeholder="Obs..."
+                            value={alunoData.obs}
+                            onChange={e => {
+                              const obsVal = e.target.value;
+                              setNotasTemp(prev => ({
+                                ...prev,
+                                [a.aluno_id]: { ...(prev[a.aluno_id] || {}), obs: obsVal }
+                              }));
+                            }}
+                            className="w-36 sm:w-56 h-8 px-2 text-xs border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 border-t bg-slate-50 flex gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={onFechar}
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="flex-1 py-2.5 rounded-xl bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs font-bold shadow-md shadow-violet-900/10 cursor-pointer"
+            >
+              Confirmar Lançamento
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* MODAL DE IMPRESSÃO / BOLETIM CONSOLIDADO */
+function ModalImprimirCaderneta({ turma, disciplinas = [], avaliacoesItens = [], alunos = [], notasLocais = {}, calcularMediaModuloAluno, calcularMediaAluno, calcularFrequenciaAluno, onFechar }) {
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-sm">
+      <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+        <div className="p-4 border-b border-slate-150 flex justify-between items-center bg-slate-50 print:hidden">
+          <div>
+            <h3 className="font-black text-slate-800 text-sm uppercase">Caderneta e Boletim da Turma</h3>
+            <p className="text-xs text-slate-500">Visualização de impressão formatada</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePrint}
+              className="px-4 py-2 bg-[#202046] hover:bg-[#191938] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+            >
+              <Printer size={14} />
+              <span>Imprimir / Salvar PDF</span>
+            </button>
+            <button onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border text-slate-400 hover:text-rose-500 transition cursor-pointer">✕</button>
+          </div>
+        </div>
+
+        <div className="p-6 overflow-y-auto flex-1 space-y-6 print:p-0">
+          {/* Cabeçalho do Boletim */}
+          <div className="border-b-2 border-slate-800 pb-4 flex items-start justify-between">
+            <div>
+              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">MIB Church - Educação Cristã</h2>
+              <p className="text-sm font-bold text-slate-700 mt-0.5">{turma?.escolas?.nome || 'Escola Bíblica'}</p>
+              <p className="text-xs text-slate-500">Turma: {turma?.nome} • Ano Letivo: {turma?.ano_letivo || new Date().getFullYear()} • Horário: {turma?.horario || 'Geral'}</p>
+            </div>
+            <div className="text-right text-xs text-slate-400">
+              <span>Data de Emissão:</span>
+              <span className="block font-bold text-slate-700">{new Date().toLocaleDateString('pt-BR')}</span>
+            </div>
+          </div>
+
+          {/* Tabela de Notas e Médias */}
+          <div className="border border-slate-300 rounded-xl overflow-hidden">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-100 border-b border-slate-300 text-slate-800 font-extrabold">
+                  <th className="p-2 border-r border-slate-300">Nº</th>
+                  <th className="p-2 border-r border-slate-300 min-w-[160px]">Aluno</th>
+                  {disciplinas.map(d => (
+                    <th key={d.id} className="p-2 text-center border-r border-slate-300">
+                      {d.disciplinas?.nome}
+                    </th>
+                  ))}
+                  <th className="p-2 text-center border-r border-slate-300 bg-slate-200">Média Final</th>
+                  <th className="p-2 text-center border-r border-slate-300">Freq.</th>
+                  <th className="p-2 text-center">Situação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {alunos.map((a, idx) => {
+                  const media = calcularMediaAluno ? calcularMediaAluno(a.aluno_id) : null;
+                  const freq = calcularFrequenciaAluno ? calcularFrequenciaAluno(a.aluno_id, a.alunos?.pessoa_id, a.id) : 100;
+                  return (
+                    <tr key={a.id} className="hover:bg-slate-50">
+                      <td className="p-2 font-mono text-slate-400 border-r border-slate-200">{idx + 1}</td>
+                      <td className="p-2 font-bold text-slate-800 border-r border-slate-200">{a.alunos?.pessoas?.nome}</td>
+                      {disciplinas.map(d => {
+                        const items = (avaliacoesItens || []).filter(it => it.turma_disciplina_id === d.id);
+                        let notaExibida = '-';
+                        if (items.length > 0 && calcularMediaModuloAluno) {
+                          const medMod = calcularMediaModuloAluno(d.id, a.aluno_id);
+                          notaExibida = medMod !== null ? medMod.toFixed(1) : '-';
+                        } else {
+                          const key = `${d.id}_${a.aluno_id}`;
+                          const notaVal = notasLocais[key] ?? '';
+                          notaExibida = notaVal !== '' ? notaVal : '-';
+                        }
+                        return (
+                          <td key={d.id} className="p-2 text-center border-r border-slate-200 font-mono font-bold">
+                            {notaExibida}
+                          </td>
+                        );
+                      })}
+                      <td className="p-2 text-center font-black border-r border-slate-200 bg-slate-50 text-violet-950">
+                        {media !== null ? media.toFixed(1) : '-'}
+                      </td>
+                      <td className="p-2 text-center font-semibold border-r border-slate-200">{freq}%</td>
+                      <td className="p-2 text-center font-bold">
+                        {media === null ? (
+                          <span className="text-slate-400">Pendente</span>
+                        ) : media >= 7.0 ? (
+                          <span className="text-emerald-700">Aprovado</span>
+                        ) : media >= 5.0 ? (
+                          <span className="text-amber-700">Recuperação</span>
+                        ) : (
+                          <span className="text-rose-700">Reprovado</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Campo de Assinaturas */}
+          <div className="pt-10 grid grid-cols-2 gap-10 text-center text-xs text-slate-600">
+            <div>
+              <div className="border-t border-slate-400 pt-2 font-bold">Coordenação Pedagógica / Direção</div>
+            </div>
+            <div>
+              <div className="border-t border-slate-400 pt-2 font-bold">Professor(es) Responsável(is)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* PAINEL CENTRAL DE AVALIAÇÕES (QUANDO NENHUMA TURMA ESTÁ ABERTA) */
+function PainelCentralAvaliacoes({ turmas = [], escolas = [], filtroCursoTurmas, setFiltroCursoTurmas, onAbrirCadernetaTurma }) {
+  const turmasFiltradas = filtroCursoTurmas ? turmas.filter(t => t.escola_id === filtroCursoTurmas) : turmas;
+
+  return (
+    <div className="space-y-6 animate-in fade-in duration-300">
+      {/* CABEÇALHO DO PAINEL */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-150 shadow-xs">
+        <div>
+          <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
+            <Award className="text-violet-600" size={20} />
+            <span>Central de Avaliações & Cadernetas de Notas</span>
+          </h3>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">
+            Selecione uma turma abaixo para lançar notas de disciplinas ou visualizar o boletim consolidado.
+          </p>
+        </div>
+
+        {/* Filtro de Curso */}
+        {escolas.length > 0 && (
+          <div className="flex items-center gap-2">
+            <select
+              value={filtroCursoTurmas || ''}
+              onChange={e => setFiltroCursoTurmas(e.target.value || null)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+            >
+              <option value="">Todos os Cursos</option>
+              {escolas.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* GRID DE CARDS DAS TURMAS */}
+      {turmasFiltradas.length === 0 ? (
+        <div className="p-12 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-white text-slate-400 italic text-sm">
+          Nenhuma turma cadastrada encontrada.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {turmasFiltradas.map(t => {
+            const iconInfo = getIconForCourse(t.escolas?.nome || '');
+            return (
+              <div
+                key={t.id}
+                className="bg-white rounded-2xl border border-slate-150 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 hover:border-violet-200 group"
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${iconInfo.bg}`}>
+                    {iconInfo.icon}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                      {t.escolas?.nome || 'Curso'}
+                    </span>
+                    <h4 className="font-extrabold text-slate-800 text-sm sm:text-base leading-snug truncate" title={t.nome}>
+                      {t.nome}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                        {t.horario || 'Horário Geral'}
+                      </span>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${
+                        t.status === 'Em andamento' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {t.status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs text-slate-500 font-medium">
+                    Ano: <strong className="text-slate-700">{t.ano_letivo || new Date().getFullYear()}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onAbrirCadernetaTurma(t.id)}
+                    className="px-4 py-2 bg-[#202046] group-hover:bg-[#7c3aed] text-white rounded-xl text-xs font-black uppercase transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-sm shadow-violet-950/10"
+                  >
+                    <span>Abrir Caderneta</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1835,6 +4058,9 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
             try { presMap = JSON.parse(presMap); } catch (e) { presMap = {}; }
           }
           Object.entries(presMap).forEach(([alId, isPresent]) => {
+            const mat = matriculas.find(m => m.aluno_id === alId || m.id === alId);
+            if (mat && isAlunoDesistente(mat)) return; // Ignora alunos desistentes
+
             if (!presencasPorAluno[alId]) {
               presencasPorAluno[alId] = { presencas: 0, faltas: 0, total: 0 };
             }

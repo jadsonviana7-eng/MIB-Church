@@ -176,6 +176,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         .from('escalas')
         .select(`
           status,
+          justificativa,
           created_at,
           eventos_ministeriais (
             titulo,
@@ -195,7 +196,16 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
 
       if (error) throw error;
 
-      const headers = ['Evento', 'Data Evento', 'Local', 'Ministério', 'Função', 'Voluntário', 'Status de Confirmação', 'Data Escalação'];
+      const formatarStatusLegivel = (st) => {
+        const s = (st || '').toLowerCase();
+        if (s === 'confirmado' || s === 'presente') return 'Presente / Confirmado';
+        if (s === 'falta_justificada' || s === 'ausente_justificado') return 'Falta Justificada';
+        if (s === 'falta' || s === 'falta_injustificada' || s === 'ausente') return 'Falta Injustificada (Negativação)';
+        if (s === 'recusado') return 'Recusado';
+        return 'Pendente';
+      };
+
+      const headers = ['Evento', 'Data Evento', 'Local', 'Ministério', 'Função', 'Voluntário', 'Status de Confirmação', 'Justificativa / Motivo', 'Data Escalação'];
       const rows = (escalas || []).map(e => [
         e.eventos_ministeriais?.titulo || '',
         e.eventos_ministeriais ? formatarDataFuso(e.eventos_ministeriais.data_evento) : '',
@@ -203,7 +213,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         e.ministerios?.nome || '',
         e.ministerio_funcoes?.nome || 'Geral',
         e.pessoas?.nome || '',
-        e.status || '',
+        formatarStatusLegivel(e.status),
+        e.justificativa || '',
         new Date(e.created_at).toLocaleDateString('pt-BR')
       ]);
 
@@ -493,6 +504,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         .from('escalas')
         .select(`
           status,
+          justificativa,
           created_at,
           eventos_ministeriais (
             titulo,
@@ -511,6 +523,15 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         `);
 
       if (error) throw error;
+
+      const formatarStatusLegivel = (st) => {
+        const s = (st || '').toLowerCase();
+        if (s === 'confirmado' || s === 'presente') return 'Presente / Confirmado';
+        if (s === 'falta_justificada' || s === 'ausente_justificado') return 'Falta Justificada';
+        if (s === 'falta' || s === 'falta_injustificada' || s === 'ausente') return 'Falta Injustificada (Negativação)';
+        if (s === 'recusado') return 'Recusado';
+        return 'Pendente';
+      };
 
       const agrupados = {};
       (escalas || []).forEach(e => {
@@ -540,7 +561,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         html += `<table>
           <thead>
             <tr>
-              <th colspan="7" class="category-header">Ministério: ${minNome}</th>
+              <th colspan="8" class="category-header">Ministério: ${minNome}</th>
             </tr>
             <tr>
               <th>Evento</th>
@@ -548,7 +569,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
               <th>Local</th>
               <th>Função Escalada</th>
               <th>Voluntário</th>
-              <th>Confirmação</th>
+              <th>Status / Frequência</th>
+              <th>Justificativa / Motivo</th>
               <th>Data Escalação</th>
             </tr>
           </thead>
@@ -561,7 +583,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
             <td>${e.eventos_ministeriais?.local || ''}</td>
             <td>${e.ministerio_funcoes?.nome || 'Geral'}</td>
             <td>${e.pessoas?.nome || ''}</td>
-            <td>${e.status || 'pendente'}</td>
+            <td>${formatarStatusLegivel(e.status)}</td>
+            <td>${e.justificativa || ''}</td>
             <td>${new Date(e.created_at).toLocaleDateString('pt-BR')}</td>
           </tr>`;
         });
@@ -620,6 +643,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         .from('escalas')
         .select(`
           status,
+          justificativa,
           created_at,
           eventos_ministeriais (
             titulo,
@@ -638,6 +662,15 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         `);
 
       if (error) throw error;
+
+      const formatarStatusPDF = (st, just) => {
+        const s = (st || '').toLowerCase();
+        if (s === 'confirmado' || s === 'presente') return 'Presente';
+        if (s === 'falta_justificada' || s === 'ausente_justificado') return `Justif.${just ? ` (${just})` : ''}`;
+        if (s === 'falta' || s === 'falta_injustificada' || s === 'ausente') return 'Falta/Negat.';
+        if (s === 'recusado') return 'Recusado';
+        return 'Pendente';
+      };
 
       const agrupados = {};
       (escalas || []).forEach(e => {
@@ -688,11 +721,11 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         doc.setFontSize(8);
         doc.setTextColor(255, 255, 255);
         doc.text('Evento', margin + 2, y + 5.5);
-        doc.text('Data/Hora', margin + 50, y + 5.5);
-        doc.text('Local', margin + 82, y + 5.5);
-        doc.text('Função', margin + 112, y + 5.5);
-        doc.text('Voluntário', margin + 138, y + 5.5);
-        doc.text('Confirmação', margin + 168, y + 5.5);
+        doc.text('Data/Hora', margin + 48, y + 5.5);
+        doc.text('Local', margin + 80, y + 5.5);
+        doc.text('Função', margin + 108, y + 5.5);
+        doc.text('Voluntário', margin + 134, y + 5.5);
+        doc.text('Status/Frequência', margin + 162, y + 5.5);
         y += 8;
 
         lista.forEach(e => {
@@ -713,11 +746,11 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
             doc.setFontSize(8);
             doc.setTextColor(255, 255, 255);
             doc.text('Evento', margin + 2, y + 5.5);
-            doc.text('Data/Hora', margin + 50, y + 5.5);
-            doc.text('Local', margin + 82, y + 5.5);
-            doc.text('Função', margin + 112, y + 5.5);
-            doc.text('Voluntário', margin + 138, y + 5.5);
-            doc.text('Confirmação', margin + 168, y + 5.5);
+            doc.text('Data/Hora', margin + 48, y + 5.5);
+            doc.text('Local', margin + 80, y + 5.5);
+            doc.text('Função', margin + 108, y + 5.5);
+            doc.text('Voluntário', margin + 134, y + 5.5);
+            doc.text('Status/Frequência', margin + 162, y + 5.5);
             y += 8;
           }
 
@@ -725,19 +758,19 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
           doc.setFontSize(8);
           doc.setTextColor(51, 65, 85);
 
-          const evento = trunc(e.eventos_ministeriais?.titulo || '', 26);
+          const evento = trunc(e.eventos_ministeriais?.titulo || '', 24);
           const dataHora = formatarDataFuso(e.eventos_ministeriais?.data_evento);
-          const local = trunc(e.eventos_ministeriais?.local || '', 16);
-          const funcao = trunc(e.ministerio_funcoes?.nome || 'Geral', 14);
-          const voluntario = trunc(e.pessoas?.nome || '', 18);
-          const status = e.status || 'pendente';
+          const local = trunc(e.eventos_ministeriais?.local || '', 14);
+          const funcao = trunc(e.ministerio_funcoes?.nome || 'Geral', 13);
+          const voluntario = trunc(e.pessoas?.nome || '', 16);
+          const status = formatarStatusPDF(e.status, e.justificativa);
 
           doc.text(evento, margin + 2, y + 5);
-          doc.text(dataHora, margin + 50, y + 5);
-          doc.text(local, margin + 82, y + 5);
-          doc.text(funcao, margin + 112, y + 5);
-          doc.text(voluntario, margin + 138, y + 5);
-          doc.text(status, margin + 168, y + 5);
+          doc.text(dataHora, margin + 48, y + 5);
+          doc.text(local, margin + 80, y + 5);
+          doc.text(funcao, margin + 108, y + 5);
+          doc.text(voluntario, margin + 134, y + 5);
+          doc.text(status, margin + 162, y + 5);
 
           doc.setDrawColor(241, 245, 249);
           doc.line(margin, y + 7, pageWidth - margin, y + 7);
@@ -1016,7 +1049,9 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       return date && date.getFullYear() === anoAtual && date.getMonth() === mesAtual;
     });
 
-    const participacoesMes = escalasMesAtual.filter(e => e.status === 'confirmado').length;
+    const participacoesMes = escalasMesAtual.filter(e => e.status === 'confirmado' || e.status === 'presente').length;
+    const faltasJustificadas = escalas.filter(e => e.status === 'falta_justificada' || e.status === 'ausente_justificado').length;
+    const faltasInjustificadas = escalas.filter(e => e.status === 'falta' || e.status === 'falta_injustificada' || e.status === 'ausente').length;
     const escalasPendentes = escalas.filter(e => e.status === 'pendente' || !e.status).length;
     const escalasRecusadas = escalas.filter(e => e.status === 'recusado').length;
 
@@ -1041,7 +1076,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
 
     // 2. Lista de Serviços do Mês (escalas confirmadas do mês atual)
     const listaServicosMes = escalasMesAtual
-      .filter(e => e.status === 'confirmado')
+      .filter(e => e.status === 'confirmado' || e.status === 'presente')
       .map(e => ({
         id: e.id,
         pessoa_id: e.pessoa_id || e.pessoas?.id,
@@ -1054,10 +1089,48 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
         data_evento: e.eventos_ministeriais?.data_evento,
         local: e.eventos_ministeriais?.local,
-        statusBadge: '🟢 Confirmado'
+        statusBadge: '🟢 Presente / Confirmado'
       }));
 
-    // 3. Lista de Escalas Pendentes
+    // 3. Lista de Faltas Justificadas
+    const listaFaltasJustificadas = escalas
+      .filter(e => e.status === 'falta_justificada' || e.status === 'ausente_justificado')
+      .map(e => ({
+        id: e.id,
+        pessoa_id: e.pessoa_id || e.pessoas?.id,
+        nome: e.pessoas?.nome || 'Voluntário',
+        foto_url: e.pessoas?.foto_url,
+        cargo: e.pessoas?.cargo,
+        telefone: e.pessoas?.telefone,
+        ministerio: e.ministerios?.nome || 'Ministério',
+        funcao: e.ministerio_funcoes?.nome || 'Geral',
+        evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
+        data_evento: e.eventos_ministeriais?.data_evento,
+        local: e.eventos_ministeriais?.local,
+        justificativa: e.justificativa,
+        statusBadge: '🟡 Falta Justificada'
+      }));
+
+    // 4. Lista de Faltas Injustificadas / Negativações
+    const listaFaltasInjustificadas = escalas
+      .filter(e => e.status === 'falta' || e.status === 'falta_injustificada' || e.status === 'ausente')
+      .map(e => ({
+        id: e.id,
+        pessoa_id: e.pessoa_id || e.pessoas?.id,
+        nome: e.pessoas?.nome || 'Voluntário',
+        foto_url: e.pessoas?.foto_url,
+        cargo: e.pessoas?.cargo,
+        telefone: e.pessoas?.telefone,
+        ministerio: e.ministerios?.nome || 'Ministério',
+        funcao: e.ministerio_funcoes?.nome || 'Geral',
+        evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
+        data_evento: e.eventos_ministeriais?.data_evento,
+        local: e.eventos_ministeriais?.local,
+        justificativa: e.justificativa,
+        statusBadge: '⚠️ Falta / Negativação'
+      }));
+
+    // 5. Lista de Escalas Pendentes
     const listaEscalasPendentes = escalas
       .filter(e => e.status === 'pendente' || !e.status)
       .map(e => ({
@@ -1072,10 +1145,10 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
         data_evento: e.eventos_ministeriais?.data_evento,
         local: e.eventos_ministeriais?.local,
-        statusBadge: '🟡 Pendente'
+        statusBadge: '⚪ Pendente'
       }));
 
-    // 4. Lista de Recusas Gerais
+    // 6. Lista de Recusas Gerais
     const listaPessoasRecusadas = escalas
       .filter(e => e.status === 'recusado')
       .map(e => ({
@@ -1093,7 +1166,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         statusBadge: '🔴 Recusado'
       }));
 
-    // 2. Gráfico 1: Membros por Ministério
+    // Gráfico 1: Membros por Ministério
     const membrosPorMin = {};
     membros.forEach(m => {
       membrosPorMin[m.ministerio_id] = (membrosPorMin[m.ministerio_id] || 0) + 1;
@@ -1105,10 +1178,11 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       total: membrosPorMin[min.id] || 0
     })).sort((a, b) => b.total - a.total);
 
-    // 3. Gráfico 2: Participações por Ministério
+    // Gráfico 2: Participações por Ministério
     const participacoesPorMin = {};
     escalas.forEach(e => {
-      if (e.status === 'confirmado') {
+      const st = (e.status || '').toLowerCase();
+      if (st === 'confirmado' || st === 'presente') {
         participacoesPorMin[e.ministerio_id] = (participacoesPorMin[e.ministerio_id] || 0) + 1;
       }
     });
@@ -1119,11 +1193,12 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       total: participacoesPorMin[min.id] || 0
     })).sort((a, b) => b.total - a.total);
 
-    // 4. Gráfico 3: Top 10 Voluntários (confirmados)
+    // Gráfico 3: Top 10 Voluntários (apenas presenças confirmadas)
     const voluntarioCounts = {};
     const voluntarioPessoaIdMap = {};
     escalas.forEach(e => {
-      if (e.status === 'confirmado' && e.pessoas?.nome) {
+      const st = (e.status || '').toLowerCase();
+      if ((st === 'confirmado' || st === 'presente') && e.pessoas?.nome) {
         voluntarioCounts[e.pessoas.nome] = (voluntarioCounts[e.pessoas.nome] || 0) + 1;
         voluntarioPessoaIdMap[e.pessoas.nome] = e.pessoa_id || e.pessoas.id;
       }
@@ -1273,10 +1348,14 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
     return {
       totalVoluntarios,
       participacoesMes,
+      faltasJustificadas,
+      faltasInjustificadas,
       escalasPendentes,
       escalasRecusadas,
       listaVoluntariosAtivos,
       listaServicosMes,
+      listaFaltasJustificadas,
+      listaFaltasInjustificadas,
       listaEscalasPendentes,
       listaPessoasRecusadas,
       graficoMembrosPorMin,
@@ -1313,7 +1392,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-black text-slate-800 tracking-tight">Indicadores e Relatórios</h2>
-          <p className="text-xs text-slate-500">Gestão analítica, auditoria de escalas e dados de participação.</p>
+          <p className="text-xs text-slate-500">Gestão analítica, auditoria de escalas, justificativas e dados de assiduidade.</p>
         </div>
 
         <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 gap-1 self-stretch sm:self-auto">
@@ -1340,106 +1419,150 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
 
       {activeTab === 'dashboard' && stats && (
         <div className="space-y-6">
-          {/* CARDS INDICADORES */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Card 1 */}
+          {/* CARDS INDICADORES (6 CARDS METRICOS) */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            {/* Card 1: Voluntários Ativos */}
             <div 
               onClick={() => {
                 setModalIndicadorAberto('voluntarios');
                 setBuscaIndicador('');
               }}
-              className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-blue-300 transition-all duration-200"
-              title="Clique para ver a lista das pessoas deste indicador"
+              className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-blue-300 transition-all duration-200 flex flex-col justify-between"
+              title="Clique para ver todos os voluntários ativos cadastrados"
             >
               <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 group-hover:w-1.5 transition-all" />
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                    Voluntários Ativos
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-500 text-[9px]">→</span>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-0.5">
+                    Voluntários
                   </p>
-                  <h2 className="text-2xl sm:text-3xl font-black mt-1 text-slate-800 tracking-tight">{stats.totalVoluntarios}</h2>
-                  <p className="text-[9px] text-slate-400 mt-1">Integrados em ministérios</p>
+                  <h2 className="text-xl sm:text-2xl font-black mt-1 text-slate-800 tracking-tight">{stats.totalVoluntarios}</h2>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Users size={18} />
+                <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                  <Users size={14} />
                 </div>
               </div>
+              <p className="text-[9px] text-slate-400 mt-2 font-medium">Equipes ativas</p>
             </div>
 
-            {/* Card 2 */}
+            {/* Card 2: Serviços do Mês */}
             <div 
               onClick={() => {
                 setModalIndicadorAberto('servicos');
                 setBuscaIndicador('');
               }}
-              className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-emerald-300 transition-all duration-200"
-              title="Clique para ver as pessoas com serviços confirmados no mês"
+              className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-emerald-300 transition-all duration-200 flex flex-col justify-between"
+              title="Clique para ver os serviços confirmados e cumpridos"
             >
               <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 group-hover:w-1.5 transition-all" />
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                    Serviços do Mês
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-emerald-500 text-[9px]">→</span>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-0.5">
+                    Serviços Mês
                   </p>
-                  <h2 className="text-2xl sm:text-3xl font-black mt-1 text-slate-800 tracking-tight">{stats.participacoesMes}</h2>
-                  <p className="text-[9px] text-slate-400 mt-1">Escalas confirmadas</p>
+                  <h2 className="text-xl sm:text-2xl font-black mt-1 text-slate-800 tracking-tight">{stats.participacoesMes}</h2>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <CheckCircle size={18} />
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0">
+                  <CheckCircle size={14} />
                 </div>
               </div>
+              <p className="text-[9px] text-emerald-600 mt-2 font-bold">✓ Presenças reais</p>
             </div>
 
-            {/* Card 3 */}
+            {/* Card 3: Faltas Justificadas */}
+            <div 
+              onClick={() => {
+                setModalIndicadorAberto('faltas_justificadas');
+                setBuscaIndicador('');
+              }}
+              className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-amber-300 transition-all duration-200 flex flex-col justify-between"
+              title="Clique para ver os voluntários com faltas justificadas e os motivos"
+            >
+              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 group-hover:w-1.5 transition-all" />
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[9px] font-black text-amber-700 uppercase tracking-widest flex items-center gap-0.5">
+                    Justificadas
+                  </p>
+                  <h2 className="text-xl sm:text-2xl font-black mt-1 text-amber-900 tracking-tight">{stats.faltasJustificadas}</h2>
+                </div>
+                <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                  <span className="text-xs">💬</span>
+                </div>
+              </div>
+              <p className="text-[9px] text-amber-600 mt-2 font-medium">Ausências com motivo</p>
+            </div>
+
+            {/* Card 4: Faltas Injustificadas / Negativações */}
+            <div 
+              onClick={() => {
+                setModalIndicadorAberto('faltas_injustificadas');
+                setBuscaIndicador('');
+              }}
+              className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-rose-300 transition-all duration-200 flex flex-col justify-between"
+              title="Clique para ver as faltas não justificadas e negativações para os rankings"
+            >
+              <div className="absolute top-0 left-0 w-1 h-full bg-rose-600 group-hover:w-1.5 transition-all" />
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[9px] font-black text-rose-700 uppercase tracking-widest flex items-center gap-0.5">
+                    Negativações
+                  </p>
+                  <h2 className="text-xl sm:text-2xl font-black mt-1 text-rose-900 tracking-tight">{stats.faltasInjustificadas}</h2>
+                </div>
+                <div className="w-7 h-7 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                  <AlertCircle size={14} />
+                </div>
+              </div>
+              <p className="text-[9px] text-rose-600 mt-2 font-bold">⚠️ Faltas sem aviso</p>
+            </div>
+
+            {/* Card 5: Escalas Pendentes */}
             <div 
               onClick={() => {
                 setModalIndicadorAberto('pendentes');
                 setBuscaIndicador('');
               }}
-              className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-amber-300 transition-all duration-200"
+              className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-indigo-300 transition-all duration-200 flex flex-col justify-between"
               title="Clique para ver as pessoas com escalas pendentes"
             >
-              <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 group-hover:w-1.5 transition-all" />
-              <div className="flex justify-between items-center">
+              <div className="absolute top-0 left-0 w-1 h-full bg-indigo-400 group-hover:w-1.5 transition-all" />
+              <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                    Escalas Pendentes
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-amber-500 text-[9px]">→</span>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-0.5">
+                    Pendentes
                   </p>
-                  <h2 className="text-2xl sm:text-3xl font-black mt-1 text-slate-800 tracking-tight">{stats.escalasPendentes}</h2>
-                  <p className="text-[9px] text-slate-400 mt-1">Aguardando resposta</p>
+                  <h2 className="text-xl sm:text-2xl font-black mt-1 text-slate-800 tracking-tight">{stats.escalasPendentes}</h2>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <AlertCircle size={18} />
+                <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">
+                  <span className="text-xs">⏳</span>
                 </div>
               </div>
+              <p className="text-[9px] text-slate-400 mt-2 font-medium">Aguardando resposta</p>
             </div>
 
-            {/* Card 4 */}
+            {/* Card 6: Recusas Gerais */}
             <div 
               onClick={() => {
                 setModalIndicadorAberto('recusadas');
                 setBuscaIndicador('');
               }}
-              className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-rose-300 transition-all duration-200"
-              title="Clique para ver apenas as pessoas que recusaram as escalas"
+              className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm relative overflow-hidden group cursor-pointer hover:scale-[1.02] hover:shadow-md hover:border-slate-300 transition-all duration-200 flex flex-col justify-between"
+              title="Clique para ver as recusas notificadas"
             >
-              <div className="absolute top-0 left-0 w-1 h-full bg-rose-500 group-hover:w-1.5 transition-all" />
-              <div className="flex justify-between items-center">
+              <div className="absolute top-0 left-0 w-1 h-full bg-slate-400 group-hover:w-1.5 transition-all" />
+              <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                    Recusas Gerais
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-rose-500 text-[9px]">→</span>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-0.5">
+                    Recusas
                   </p>
-                  <h2 className="text-2xl sm:text-3xl font-black mt-1 text-slate-800 tracking-tight">{stats.escalasRecusadas}</h2>
-                  <p className="text-[9px] text-slate-400 mt-1">Ausências notificadas</p>
+                  <h2 className="text-xl sm:text-2xl font-black mt-1 text-slate-800 tracking-tight">{stats.escalasRecusadas}</h2>
                 </div>
-                <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <XCircle size={18} />
+                <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">
+                  <XCircle size={14} />
                 </div>
               </div>
+              <p className="text-[9px] text-slate-400 mt-2 font-medium">Não disponíveis</p>
             </div>
           </div>
 
@@ -1980,20 +2103,36 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
             corBordaHover: 'hover:border-emerald-200',
             lista: stats.listaServicosMes
           };
+        } else if (modalIndicadorAberto === 'faltas_justificadas') {
+          configModal = {
+            titulo: 'Faltas Justificadas de Voluntários',
+            subtitulo: 'Ausências comunicadas previamente com atestado ou motivo aceito pela liderança.',
+            corBadge: 'bg-amber-50 text-amber-800 border-amber-200',
+            corBordaHover: 'hover:border-amber-200',
+            lista: stats.listaFaltasJustificadas
+          };
+        } else if (modalIndicadorAberto === 'faltas_injustificadas') {
+          configModal = {
+            titulo: 'Faltas Injustificadas & Negativações',
+            subtitulo: 'Escalas onde o voluntário confirmou ou foi escalado e não compareceu sem justificativa.',
+            corBadge: 'bg-rose-100 text-rose-800 border-rose-200',
+            corBordaHover: 'hover:border-rose-200',
+            lista: stats.listaFaltasInjustificadas
+          };
         } else if (modalIndicadorAberto === 'pendentes') {
           configModal = {
             titulo: 'Escalas Pendentes de Resposta',
             subtitulo: 'Voluntários escalados aguardando confirmação ou justificativa.',
-            corBadge: 'bg-amber-50 text-amber-700 border-amber-100',
-            corBordaHover: 'hover:border-amber-200',
+            corBadge: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+            corBordaHover: 'hover:border-indigo-200',
             lista: stats.listaEscalasPendentes
           };
         } else if (modalIndicadorAberto === 'recusadas') {
           configModal = {
             titulo: 'Voluntários que Recusaram Escalas',
             subtitulo: 'Listagem de voluntários que notificaram ausência ou recusaram participações.',
-            corBadge: 'bg-rose-50 text-rose-700 border-rose-100',
-            corBordaHover: 'hover:border-rose-200',
+            corBadge: 'bg-slate-100 text-slate-700 border-slate-200',
+            corBordaHover: 'hover:border-slate-200',
             lista: stats.listaPessoasRecusadas
           };
         }
@@ -2005,7 +2144,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
             item.nome.toLowerCase().includes(b) ||
             (item.ministerio && item.ministerio.toLowerCase().includes(b)) ||
             (item.evento && item.evento.toLowerCase().includes(b)) ||
-            (item.funcao && item.funcao.toLowerCase().includes(b))
+            (item.funcao && item.funcao.toLowerCase().includes(b)) ||
+            (item.justificativa && item.justificativa.toLowerCase().includes(b))
           );
         });
 
@@ -2038,7 +2178,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Filtrar por nome, ministério ou evento..."
+                    placeholder="Filtrar por nome, ministério, evento ou justificativa..."
                     value={buscaIndicador}
                     onChange={(e) => setBuscaIndicador(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-xl outline-none focus:border-blue-400 font-medium text-slate-700"
@@ -2095,6 +2235,12 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                               <span>📅 {item.evento}</span>
                               <span>· ⏰ {dataInfo}</span>
                             </p>
+                          )}
+                          {item.justificativa && (
+                            <div className="mt-1.5 text-[11px] text-amber-900 bg-amber-50/90 border border-amber-200/60 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5">
+                              <span className="text-xs">💬</span>
+                              <span><strong>Justificativa/Motivo:</strong> {item.justificativa}</span>
+                            </div>
                           )}
                         </div>
                       </div>

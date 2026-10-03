@@ -193,17 +193,27 @@ export const ministeriosService = {
       .select('status, pessoa_id, pessoas(nome)');
 
     let confirmadas = 0;
-    let pendentes = 0;
+    let faltasJustificadas = 0;
+    let faltasInjustificadas = 0;
     let recusadas = 0;
+    let pendentes = 0;
     const voluntarioCounts = {};
 
     (escalas || []).forEach(e => {
-      if (e.status === 'confirmado') confirmadas++;
-      else if (e.status === 'recusado') recusadas++;
-      else pendentes++;
-
-      if (e.pessoa_id && e.pessoas) {
-        voluntarioCounts[e.pessoas.nome] = (voluntarioCounts[e.pessoas.nome] || 0) + 1;
+      const st = (e.status || '').toLowerCase();
+      if (st === 'confirmado' || st === 'presente') {
+        confirmadas++;
+        if (e.pessoa_id && e.pessoas) {
+          voluntarioCounts[e.pessoas.nome] = (voluntarioCounts[e.pessoas.nome] || 0) + 1;
+        }
+      } else if (st === 'falta_justificada' || st === 'ausente_justificado') {
+        faltasJustificadas++;
+      } else if (st === 'falta' || st === 'falta_injustificada' || st === 'ausente') {
+        faltasInjustificadas++;
+      } else if (st === 'recusado') {
+        recusadas++;
+      } else {
+        pendentes++;
       }
     });
 
@@ -250,7 +260,14 @@ export const ministeriosService = {
       totalMembros: totalMembros || 0,
       totalFuncoes: totalFuncoes || 0,
       totalLideres: totalLideres || 0,
-      escalasStats: { confirmadas, pendentes, recusadas, total: (escalas || []).length },
+      escalasStats: { 
+        confirmadas, 
+        faltasJustificadas,
+        faltasInjustificadas,
+        recusadas, 
+        pendentes, 
+        total: (escalas || []).length 
+      },
       rankingVoluntarios,
       rankingMinisterios,
       rankingLideres

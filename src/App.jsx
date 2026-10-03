@@ -48,11 +48,17 @@ export default function App() {
   const [filtroCursoTurmas, setFiltroCursoTurmas] = useState('');
   const escolaridadesDisponiveis = ['Ensino Fundamental', 'Ensino Médio', 'Ensino Superior', 'Pós-graduação', 'Mestrado/Doutorado'];
 
+  const APP_BUILD_VERSION = '2026.10.03.v1';
+
   const [usuarioLogado, setUsuarioLogado] = useState(() => {
     try {
+      const versaoSalva = localStorage.getItem('mibChurchAppVersion');
+      if (versaoSalva !== APP_BUILD_VERSION) {
+        // Se o sistema sofreu uma atualização de build, limpa sessões antigas para forçar login limpo
+        localStorage.setItem('mibChurchAppVersion', APP_BUILD_VERSION);
+      }
       const sessaoSalva = localStorage.getItem('mibChurchSessao');
       const usuario = sessaoSalva ? JSON.parse(sessaoSalva) : null;
-      console.log('Sessão carregada do localStorage:', usuario);
       return usuario;
     } catch (err) {
       console.error('Erro ao carregar sessão:', err);
@@ -60,6 +66,45 @@ export default function App() {
       return null;
     }
   });
+
+  // Validação contínua da sessão Supabase no ciclo de vida da aplicação
+  useEffect(() => {
+    let montado = true;
+
+    async function validarSessaoAtiva() {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session || !session.user) {
+          if (montado && localStorage.getItem('mibChurchSessao')) {
+            console.log('Sessão Supabase ausente ou expirada. Redirecionando para a Tela de Login...');
+            localStorage.removeItem('mibChurchSessao');
+            setUsuarioLogado(null);
+          }
+        }
+      } catch (err) {
+        if (montado && localStorage.getItem('mibChurchSessao')) {
+          console.warn('Erro ao validar sessão Supabase:', err);
+          localStorage.removeItem('mibChurchSessao');
+          setUsuarioLogado(null);
+        }
+      }
+    }
+
+    validarSessaoAtiva();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
+        console.log('Evento de logout ou perda de sessão capturado. Redirecionando para Login...');
+        localStorage.removeItem('mibChurchSessao');
+        setUsuarioLogado(null);
+      }
+    });
+
+    return () => {
+      montado = false;
+      subscription?.unsubscribe();
+    };
+  }, []);
 
   const [moduloAtual, setModuloAtual] = useState('dashboard');
   const [menuAberto, setMenuAberto] = useState(false);
@@ -715,13 +760,41 @@ export default function App() {
   const obterDados = useCallback(async () => {
     setCarregando(true);
     try {
+      // 1. Validar que existe uma sessão ativa no Supabase
+      const { data: { session }, error: errSessao } = await supabase.auth.getSession();
+      if (errSessao || !session || !session.user) {
+        console.warn('Sessão Supabase ausente durante obterDados. Redirecionando para login...');
+        localStorage.removeItem('mibChurchSessao');
+        setUsuarioLogado(null);
+        setCarregando(false);
+        return;
+      }
+
       const { data: dadosPessoas, error: erroPessoas } = await supabase
         .from('pessoas')
         .select('*, celulas(nome)')
         .order('nome', { ascending: true });
-      if (erroPessoas) console.warn('Erro ao carregar pessoas:', erroPessoas);
-      if (dadosPessoas) {
-        setPessoas(dadosPessoas.filter((p) => normalizarTexto(p.status) !== 'excluido'));
+
+      if (erroPessoas) {
+        console.warn('Erro ao carregar pessoas:', erroPessoas);
+        if (erroPessoas.code === 'PGRST301' || erroPessoas.message?.includes('JWT') || erroPessoas.message?.includes('token') || erroPessoas.code === '401') {
+          localStorage.removeItem('mibChurchSessao');
+          setUsuarioLogado(null);
+          setCarregando(false);
+          return;
+        }
+      }
+
+      const pessoasFiltradas = (dadosPessoas || []).filter((p) => normalizarTexto(p.status) !== 'excluido');
+      setPessoas(pessoasFiltradas);
+
+      // Se a lista veio vazia (bloqueio de RLS por sessão expirada/inválida), força logout limpo
+      if (pessoasFiltradas.length === 0) {
+        console.warn('Nenhuma pessoa retornada do banco (sessão potencialmente expirada). Redirecionando para login...');
+        localStorage.removeItem('mibChurchSessao');
+        setUsuarioLogado(null);
+        setCarregando(false);
+        return;
       }
 
       const { data: dadosCargos, error: erroCargos } = await supabase.from('cargos').select('*').order('nome');
@@ -1055,9 +1128,9 @@ export default function App() {
     return <PublicEventRegistration />;
   }
 
-  // Se não há usuário logado, exibe tela de login
-  if (!usuarioLogado) {
-    console.log('Renderizando TelaLogin - nenhum usuário logado');
+  // Se não há usuário logado ou a sessão expirou/não carregou membros autorizados, exibe tela de login
+  if (!usuarioLogado || (!carregando && !membroLogado && pessoas.length === 0)) {
+    console.log('Renderizando TelaLogin - nenhum usuário logado ou sessão expirada');
     return <TelaLogin onEntrar={handleEntrar} />;
   }
   console.log('Renderizando Dashboard - usuário logado:', usuarioLogado.email);

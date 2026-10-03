@@ -203,9 +203,12 @@ export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNa
       statusBadge: '🟡 Função Mapeada'
     })).sort((a, b) => b.totalVoluntarios - a.totalVoluntarios);
 
-    // 5. Escalas Confirmadas (Pessoas)
+    // 5. Escalas Confirmadas (Pessoas com presença real)
     const listaConfirmadas = escalas
-      .filter(e => e.status === 'confirmado')
+      .filter(e => {
+        const st = (e.status || '').toLowerCase();
+        return st === 'confirmado' || st === 'presente';
+      })
       .map(e => ({
         tipoItem: 'pessoa',
         id: e.id,
@@ -218,7 +221,51 @@ export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNa
         funcao: e.ministerio_funcoes?.nome || 'Geral',
         evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
         data_evento: e.eventos_ministeriais?.data_evento,
-        statusBadge: '🟢 Escala Confirmada'
+        statusBadge: '🟢 Presença Confirmada'
+      }));
+
+    // 5.1. Faltas Justificadas
+    const listaFaltasJustificadas = escalas
+      .filter(e => {
+        const st = (e.status || '').toLowerCase();
+        return st === 'falta_justificada' || st === 'ausente_justificado';
+      })
+      .map(e => ({
+        tipoItem: 'pessoa',
+        id: e.id,
+        pessoa_id: e.pessoa_id || e.pessoas?.id,
+        nome: e.pessoas?.nome || 'Voluntário',
+        foto_url: e.pessoas?.foto_url,
+        cargo: e.pessoas?.cargo,
+        telefone: e.pessoas?.telefone,
+        ministerio: e.ministerios?.nome || 'Ministério',
+        funcao: e.ministerio_funcoes?.nome || 'Geral',
+        evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
+        data_evento: e.eventos_ministeriais?.data_evento,
+        justificativa: e.justificativa,
+        statusBadge: '🟡 Falta Justificada'
+      }));
+
+    // 5.2. Faltas Injustificadas / Negativações
+    const listaFaltasInjustificadas = escalas
+      .filter(e => {
+        const st = (e.status || '').toLowerCase();
+        return st === 'falta' || st === 'falta_injustificada' || st === 'ausente';
+      })
+      .map(e => ({
+        tipoItem: 'pessoa',
+        id: e.id,
+        pessoa_id: e.pessoa_id || e.pessoas?.id,
+        nome: e.pessoas?.nome || 'Voluntário',
+        foto_url: e.pessoas?.foto_url,
+        cargo: e.pessoas?.cargo,
+        telefone: e.pessoas?.telefone,
+        ministerio: e.ministerios?.nome || 'Ministério',
+        funcao: e.ministerio_funcoes?.nome || 'Geral',
+        evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
+        data_evento: e.eventos_ministeriais?.data_evento,
+        justificativa: e.justificativa,
+        statusBadge: '⚠️ Falta / Negativação'
       }));
 
     // 6. Escalas Pendentes (Pessoas)
@@ -236,7 +283,7 @@ export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNa
         funcao: e.ministerio_funcoes?.nome || 'Geral',
         evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
         data_evento: e.eventos_ministeriais?.data_evento,
-        statusBadge: '🟡 Escala Pendente'
+        statusBadge: '⚪ Escala Pendente'
       }));
 
     // 7. Escalas Recusadas (Pessoas)
@@ -272,7 +319,10 @@ export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNa
         funcao: e.ministerio_funcoes?.nome || 'Geral',
         evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
         data_evento: e.eventos_ministeriais?.data_evento,
-        statusBadge: e.status === 'confirmado' ? '🟢 Confirmado' : e.status === 'recusado' ? '🔴 Recusado' : '🟡 Pendente'
+        statusBadge: e.status === 'confirmado' || e.status === 'presente' ? '🟢 Presente' : 
+          e.status === 'falta_justificada' || e.status === 'ausente_justificado' ? '🟡 Falta Justificada' :
+          e.status === 'falta' || e.status === 'falta_injustificada' || e.status === 'ausente' ? '⚠️ Falta / Negativação' :
+          e.status === 'recusado' ? '🔴 Recusado' : '⚪ Pendente'
       }));
 
     return {
@@ -281,6 +331,8 @@ export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNa
       lideres: Array.from(mapaLideres.values()),
       funcoes: listaFuncoesOnly,
       confirmadas: listaConfirmadas,
+      faltas_justificadas: listaFaltasJustificadas,
+      faltas_injustificadas: listaFaltasInjustificadas,
       pendentes: listaPendentes,
       recusadas: listaRecusadas,
       total_escalados: listaTotalEscalados

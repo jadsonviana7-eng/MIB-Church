@@ -223,11 +223,33 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
         `)
         .eq('ministerio_id', ministerioId);
 
-      const { data: funcoesData } = await supabase
-        .from('ministerio_funcoes')
-        .select('*')
-        .eq('ministerio_id', ministerioId)
-        .order('nome');
+      let funcoesData = [];
+      try {
+        const { data: fData, error: fErr } = await supabase
+          .from('ministerio_funcoes')
+          .select('*')
+          .eq('ministerio_id', ministerioId)
+          .order('ordem', { ascending: true });
+        if (!fErr && fData) {
+          funcoesData = fData.sort((a, b) => {
+            const ordA = a.ordem !== undefined && a.ordem !== null ? Number(a.ordem) : 999999;
+            const ordB = b.ordem !== undefined && b.ordem !== null ? Number(b.ordem) : 999999;
+            if (ordA !== ordB) return ordA - ordB;
+            return (a.nome || '').localeCompare(b.nome || '');
+          });
+        }
+      } catch (_) {
+        const { data: fData2 } = await supabase
+          .from('ministerio_funcoes')
+          .select('*')
+          .eq('ministerio_id', ministerioId);
+        funcoesData = (fData2 || []).sort((a, b) => {
+          const ordA = a.ordem !== undefined && a.ordem !== null ? Number(a.ordem) : 999999;
+          const ordB = b.ordem !== undefined && b.ordem !== null ? Number(b.ordem) : 999999;
+          if (ordA !== ordB) return ordA - ordB;
+          return (a.nome || '').localeCompare(b.nome || '');
+        });
+      }
 
       const { data: pessoasData } = await supabase
         .from('pessoas')

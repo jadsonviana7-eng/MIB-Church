@@ -538,11 +538,38 @@ const ICON_MAP = {
 };
 
 export function MinistryIcon({ icone, className = '', size = 20, style = {} }) {
-  const IconComponent = ICON_MAP[icone];
+  if (!icone) {
+    return (
+      <span 
+        className={className} 
+        style={{ 
+          fontSize: `${size}px`, 
+          lineHeight: 1, 
+          display: 'inline-flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          ...style 
+        }}
+      >
+        🙏
+      </span>
+    );
+  }
+
+  let IconComponent = ICON_MAP[icone];
+  if (!IconComponent && typeof icone === 'string') {
+    const lower = icone.toLowerCase().trim();
+    const foundKey = Object.keys(ICON_MAP).find(k => k.toLowerCase() === lower);
+    if (foundKey) {
+      IconComponent = ICON_MAP[foundKey];
+    }
+  }
+
   if (IconComponent) {
     return <IconComponent className={className} size={size} style={style} />;
   }
-  // Fallback to emoji
+
+  // Fallback to emoji or icon
   return (
     <span 
       className={className} 
@@ -555,7 +582,7 @@ export function MinistryIcon({ icone, className = '', size = 20, style = {} }) {
         ...style 
       }}
     >
-      {icone || '🙏'}
+      {icone}
     </span>
   );
 }

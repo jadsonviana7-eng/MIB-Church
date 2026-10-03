@@ -115,9 +115,13 @@ export const autoEscalaService = {
 
     (historicoEscalas || []).forEach(e => {
       if (!e.pessoa_id) return;
-      participacoesPorPessoa[e.pessoa_id] = (participacoesPorPessoa[e.pessoa_id] || 0) + 1;
-      if (!ultimaParticipacaoPorPessoa[e.pessoa_id]) {
-        ultimaParticipacaoPorPessoa[e.pessoa_id] = new Date(e.created_at).getTime();
+      const st = (e.status || '').toLowerCase();
+      // Apenas escalas confirmadas ou presentes contam como serviços realizados
+      if (st === 'confirmado' || st === 'presente') {
+        participacoesPorPessoa[e.pessoa_id] = (participacoesPorPessoa[e.pessoa_id] || 0) + 1;
+        if (!ultimaParticipacaoPorPessoa[e.pessoa_id]) {
+          ultimaParticipacaoPorPessoa[e.pessoa_id] = new Date(e.created_at).getTime();
+        }
       }
     });
 

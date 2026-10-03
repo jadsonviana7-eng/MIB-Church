@@ -4,6 +4,7 @@ import { escalasService } from './services/escalasService';
 import { autoEscalaService } from './services/autoEscalaService';
 import { supabase } from '../supabaseClient';
 import { toPng } from 'html-to-image';
+import { MinistryIcon } from '../ui';
 
 export default function EscalasMinisteriais({ 
   membroLogado, 
@@ -51,6 +52,30 @@ export default function EscalasMinisteriais({
   const [notificacao, setNotificacao] = useState('');
   const [modalConflito, setModalConflito] = useState(null); // { pessoaNome, ministerioNome, eventoTitulo }
   const [modalAvisoMinisterio, setModalAvisoMinisterio] = useState(false);
+
+  // Estado do Modal de Apontamento de Frequência / Justificativa
+  const [modalApontamento, setModalApontamento] = useState(null); // { escala, evento, grupo }
+  const [statusApontamento, setStatusApontamento] = useState('confirmado');
+  const [justificativaApontamento, setJustificativaApontamento] = useState('');
+  const [salvandoApontamento, setSalvandoApontamento] = useState(false);
+
+  // Suporte ao botão voltar do celular para fechar o modal de apontamento
+  useEffect(() => {
+    if (modalApontamento) {
+      try {
+        window.history.pushState({ modalApontamento: true }, '');
+      } catch (e) {}
+
+      const handlePop = () => {
+        setModalApontamento(null);
+      };
+
+      window.addEventListener('popstate', handlePop, { once: true });
+      return () => {
+        window.removeEventListener('popstate', handlePop);
+      };
+    }
+  }, [modalApontamento]);
 
   // Suporte ao botão voltar do celular para fechar o modal de conflito
   useEffect(() => {
@@ -860,7 +885,13 @@ export default function EscalasMinisteriais({
     }
     try {
       const funcs = await escalasService.listarFuncoes(ministerioId);
-      setListaFuncoes(funcs || []);
+      const funcsOrdenadas = (funcs || []).slice().sort((a, b) => {
+        const ordA = a.ordem !== undefined && a.ordem !== null ? Number(a.ordem) : 999999;
+        const ordB = b.ordem !== undefined && b.ordem !== null ? Number(b.ordem) : 999999;
+        if (ordA !== ordB) return ordA - ordB;
+        return (a.nome || '').localeCompare(b.nome || '');
+      });
+      setListaFuncoes(funcsOrdenadas);
 
       let pms = await escalasService.listarPessoasMinisterio(ministerioId);
       if (!pms || pms.length === 0) {
@@ -1123,15 +1154,158 @@ export default function EscalasMinisteriais({
     setTimeout(() => setNotificacao(''), 4000);
   }
 
-  // Agrupar escalas do evento atual por ministério
+  function abrirModalApontamento(item, grupo) {
+    setModalApontamento({
+      escala: item,
+      evento: eventoSelecionado,
+      grupo: grupo
+    });
+    setStatusApontamento(item.status || 'confirmado');
+    setJustificativaApontamento(item.justificativa || '');
+  }
+
+  function fecharModalApontamento() {
+    setModalApontamento(null);
+    setStatusApontamento('confirmado');
+    setJustificativaApontamento('');
+  }
+
+  async function salvarApontamentoFrequencia() {
+    if (!modalApontamento?.escala?.id) return;
+    setSalvandoApontamento(true);
+    try {
+      await escalasService.atualizarStatusEscala(
+        modalApontamento.escala.id, 
+        statusApontamento, 
+        justificativaApontamento.trim() || null
+      );
+      
+      mostrarToast(
+        statusApontamento === 'confirmado' || statusApontamento === 'presente' 
+          ? '✓ Presença confirmada no evento!' 
+          : statusApontamento === 'falta_justificada'
+          ? '✓ Falta justificada registrada!'
+          : statusApontamento === 'falta'
+          ? '⚠️ Falta injustificada / negativação registrada!'
+          : statusApontamento === 'recusado'
+          ? 'Escala marcada como recusada.'
+          : 'Status atualizado para pendente.'
+      );
+
+      fecharModalApontamento();
+      if (eventoSelecionado) {
+        selecionarEvento(eventoSelecionado);
+      }
+      carregarMinhasEscalas();
+    } catch (error) {
+      console.error('Erro ao salvar apontamento de frequência:', error);
+      mostrarToast('⚠️ Erro ao salvar apontamento: ' + error.message);
+    } finally {
+      setSalvandoApontamento(false);
+    }
+  }
+
+  function renderStatusBadge(item) {
+    const st = (item.status || '').toLowerCase();
+    if (st === 'confirmado' || st === 'presente') {
+      return (
+        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+          Confirmado
+        </span>
+      );
+    }
+    if (st === 'falta_justificada' || st === 'ausente_justificado') {
+      return (
+        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1" title={item.justificativa ? `Justificativa: ${item.justificativa}` : 'Falta Justificada'}>
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
+          Falta Justificada
+        </span>
+      );
+    }
+    if (st === 'falta' || st === 'falta_injustificada' || st === 'ausente') {
+      return (
+        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1" title="Falta Injustificada / Negativação">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-600 inline-block" />
+          Falta / Negativação
+        </span>
+      );
+    }
+    if (st === 'recusado') {
+      return (
+        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+          Recusado
+        </span>
+      );
+    }
+    return (
+      <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+        Pendente
+      </span>
+    );
+  }
+
+  function obterIconeMinisterio(nome, iconeDefinido) {
+    if (iconeDefinido && typeof iconeDefinido === 'string' && iconeDefinido.trim()) return iconeDefinido.trim();
+    const n = (nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    if (n.includes('louvor') || n.includes('musica') || n.includes('coral') || n.includes('banda') || n.includes('vocal')) return 'Music';
+    if (n.includes('midia') || n.includes('som') || n.includes('audio') || n.includes('transmiss') || n.includes('foto') || n.includes('projec')) return 'Clapperboard';
+    if (n.includes('diacon') || n.includes('recep') || n.includes('portaria') || n.includes('acolh') || n.includes('usher')) return 'HelpingHand';
+    if (n.includes('infantil') || n.includes('kid') || n.includes('crianca') || n.includes('junior') || n.includes('maternal') || n.includes('bercar')) return 'Smile';
+    if (n.includes('danca') || n.includes('coreograf') || n.includes('teatro') || n.includes('arte')) return 'Sparkles';
+    if (n.includes('intercess') || n.includes('oracao') || n.includes('sentinela') || n.includes('clamor')) return 'Shield';
+    if (n.includes('ensino') || n.includes('escola') || n.includes('ebd') || n.includes('discipul')) return 'BookOpen';
+    if (n.includes('jovem') || n.includes('juvent') || n.includes('adolesc') || n.includes('teen') || n.includes('conect')) return 'Flame';
+    if (n.includes('mulher') || n.includes('elas') || n.includes('rute') || n.includes('ester') || n.includes('perola')) return 'Heart';
+    if (n.includes('homem') || n.includes('varao') || n.includes('hombrid')) return 'Compass';
+    if (n.includes('casal') || n.includes('familia') || n.includes('matrimon')) return 'Heart';
+    if (n.includes('social') || n.includes('missao') || n.includes('missoes') || n.includes('evangel')) return 'Globe';
+    if (n.includes('culto') || n.includes('preg') || n.includes('pastoral') || n.includes('palavra')) return 'Scroll';
+    return 'Sparkles';
+  }
+
+  function obterCorMinisterio(nome, corDefinida) {
+    if (corDefinida && typeof corDefinida === 'string' && corDefinida.trim() && corDefinida.toLowerCase() !== '#ffffff' && corDefinida.toLowerCase() !== '#fff') {
+      return corDefinida.trim();
+    }
+    const n = (nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    if (n.includes('louvor') || n.includes('musica') || n.includes('coral')) return '#8b5cf6'; // Roxo Vibrante
+    if (n.includes('midia') || n.includes('som') || n.includes('audio') || n.includes('transmiss')) return '#0284c7'; // Azul Oceano
+    if (n.includes('diacon') || n.includes('recep') || n.includes('acolh')) return '#059669'; // Esmeralda
+    if (n.includes('infantil') || n.includes('kid') || n.includes('crianca')) return '#f59e0b'; // Âmbar / Laranja
+    if (n.includes('danca') || n.includes('arte') || n.includes('teatro')) return '#ec4899'; // Rosa
+    if (n.includes('intercess') || n.includes('oracao')) return '#6366f1'; // Índigo
+    if (n.includes('ensino') || n.includes('escola') || n.includes('ebd')) return '#0d9488'; // Teal
+    if (n.includes('jovem') || n.includes('juvent') || n.includes('adolesc')) return '#ea580c'; // Laranja Quente
+    if (n.includes('mulher') || n.includes('elas')) return '#c026d3'; // Fúcsia
+    if (n.includes('homem') || n.includes('varao')) return '#1e40af'; // Azul Real
+    if (n.includes('culto') || n.includes('preg') || n.includes('pastoral')) return '#1e3a8a'; // Azul Marinho
+    return '#4f46e5';
+  }
+
+  // Agrupar escalas do evento atual por ministério com cores e ícones dinâmicos
   const escalasAgrupadas = useMemo(() => {
+    const mapaMinisteriosObj = new Map(listaMinisterios.map(m => [m.id, m]));
+    const mapaMinisteriosNome = new Map(listaMinisterios.map(m => [(m.nome || '').toLowerCase().trim(), m]));
+
     const acc = escalas.reduce((map, item) => {
       const minNome = item.ministerios?.nome || 'Sem Ministério';
+      const minObj = (item.ministerio_id && mapaMinisteriosObj.get(item.ministerio_id)) ||
+                     (mapaMinisteriosNome.get(minNome.toLowerCase().trim())) ||
+                     item.ministerios || {};
+
+      const minCor = obterCorMinisterio(minNome, minObj?.cor_principal || item.ministerios?.cor_principal);
+      const minIcone = obterIconeMinisterio(minNome, minObj?.icone || item.ministerios?.icone);
+
       if (!map[minNome]) {
         map[minNome] = {
-          id: item.ministerio_id,
+          id: item.ministerio_id || minObj?.id,
           nome: minNome,
-          fardamentos: item.ministerios?.fardamentos || [],
+          cor_principal: minCor,
+          icone: minIcone,
+          fardamentos: minObj?.fardamentos || item.ministerios?.fardamentos || [],
           itens: []
         };
       }
@@ -1146,16 +1320,19 @@ export default function EscalasMinisteriais({
       let minCultosEntry = Object.values(acc).find(g => isMinisterioCultos(g.nome));
       if (!minCultosEntry) {
         const minCultosObj = listaMinisterios.find(m => isMinisterioCultos(m.nome));
-        if (minCultosObj) {
-          const nomeMin = minCultosObj.nome;
-          acc[nomeMin] = {
-            id: minCultosObj.id,
-            nome: nomeMin,
-            fardamentos: minCultosObj.fardamentos || [],
-            itens: []
-          };
-          minCultosEntry = acc[nomeMin];
-        }
+        const nomeMin = minCultosObj?.nome || 'Cultos';
+        const corMin = obterCorMinisterio(nomeMin, minCultosObj?.cor_principal || '#1e3a8a');
+        const iconeMin = obterIconeMinisterio(nomeMin, minCultosObj?.icone || '⛪');
+
+        acc[nomeMin] = {
+          id: minCultosObj?.id,
+          nome: nomeMin,
+          cor_principal: corMin,
+          icone: iconeMin,
+          fardamentos: minCultosObj?.fardamentos || [],
+          itens: []
+        };
+        minCultosEntry = acc[nomeMin];
       }
 
       if (minCultosEntry) {
@@ -1185,6 +1362,18 @@ export default function EscalasMinisteriais({
       }
     }
 
+    // Ordena os voluntários dentro de cada ministério pela ordem cadastrada das funções
+    Object.values(acc).forEach(grupo => {
+      grupo.itens.sort((a, b) => {
+        if (a.isPregadorManual) return -1;
+        if (b.isPregadorManual) return 1;
+        const ordA = a.ministerio_funcoes?.ordem !== undefined && a.ministerio_funcoes?.ordem !== null ? Number(a.ministerio_funcoes.ordem) : 999999;
+        const ordB = b.ministerio_funcoes?.ordem !== undefined && b.ministerio_funcoes?.ordem !== null ? Number(b.ministerio_funcoes.ordem) : 999999;
+        if (ordA !== ordB) return ordA - ordB;
+        return (a.ministerio_funcoes?.nome || '').localeCompare(b.ministerio_funcoes?.nome || '');
+      });
+    });
+
     return acc;
   }, [escalas, eventoSelecionado, listaMinisterios]);
 
@@ -1202,6 +1391,25 @@ export default function EscalasMinisteriais({
       return dataInfo.mesIndex === filtroMes && dataInfo.ano === filtroAno;
     });
   }, [eventos, filtroMes, filtroAno]);
+
+  // Lista de meses que possuem eventos cadastrados para navegação inteligente
+  const listaMesesComEventos = useMemo(() => {
+    const mapa = new Map();
+    (eventos || []).forEach(ev => {
+      const dataInfo = obterInfoDataBrasilia(ev.data_evento);
+      const chave = `${dataInfo.ano}-${String(dataInfo.mesIndex).padStart(2, '0')}`;
+      if (!mapa.has(chave)) {
+        mapa.set(chave, {
+          mesIndex: dataInfo.mesIndex,
+          ano: dataInfo.ano,
+          total: 1
+        });
+      } else {
+        mapa.get(chave).total += 1;
+      }
+    });
+    return Array.from(mapa.values()).sort((a, b) => a.ano === b.ano ? a.mesIndex - b.mesIndex : a.ano - b.ano);
+  }, [eventos]);
 
   // Auxiliar para copiar texto e abrir WhatsApp
   async function copiarEAbrirWhatsApp(texto, toastMsg) {
@@ -1556,6 +1764,8 @@ export default function EscalasMinisteriais({
             <>
               <button
                 onClick={() => {
+                  setMesGeracao(filtroMes);
+                  setAnoGeracao(filtroAno);
                   setAbaGerador('config');
                   setModalGerador(true);
                 }}
@@ -1673,7 +1883,56 @@ export default function EscalasMinisteriais({
             })}
 
             {eventosFiltrados.length === 0 && (
-              <p className="text-xs text-slate-400 italic text-center py-8">Nenhum evento neste período.</p>
+              <div className="py-6 px-3 bg-slate-50/80 rounded-xl border border-slate-100 text-center space-y-3 animate-in fade-in">
+                <p className="text-xs text-slate-500 font-medium">
+                  Nenhum evento em <strong>{['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes]} de {filtroAno}</strong>.
+                </p>
+
+                {listaMesesComEventos.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">
+                      Meses com eventos cadastrados:
+                    </span>
+                    <div className="flex flex-wrap justify-center gap-1.5">
+                      {listaMesesComEventos.map(m => (
+                        <button
+                          key={`${m.ano}-${m.mesIndex}`}
+                          type="button"
+                          onClick={() => {
+                            setFiltroMes(m.mesIndex);
+                            setFiltroAno(m.ano);
+                          }}
+                          className="text-[10px] font-bold bg-white hover:bg-blue-50 text-blue-700 hover:text-blue-900 border border-blue-200 px-2.5 py-1 rounded-lg transition shadow-2xs cursor-pointer flex items-center gap-1"
+                        >
+                          <span>📅</span>
+                          {['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][m.mesIndex]} {m.ano}
+                          <span className="bg-blue-100 text-blue-800 text-[9px] px-1 rounded-full font-black">
+                            {m.total}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!isMembroNormal && (
+                  <div className="pt-2 border-t border-slate-200/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMesGeracao(filtroMes);
+                        setAnoGeracao(filtroAno);
+                        setAbaGerador('config');
+                        setModalGerador(true);
+                      }}
+                      className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <Calendar size={13} />
+                      Gerar Grade de {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes]}
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -1757,121 +2016,214 @@ export default function EscalasMinisteriais({
 
                 {/* Escalas Agrupadas */}
                 <div className="space-y-6">
-                  {Object.values(escalasAgrupadas).map((grupo) => (
-                    <div key={grupo.nome} className="border border-slate-100 rounded-2xl p-4 bg-slate-50/30">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-4 pb-3 border-b border-slate-100">
-                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
-                          <h4 className="font-black text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                            <span>🎵</span>
-                            {grupo.nome}
-                          </h4>
+                  {Object.values(escalasAgrupadas).map((grupo) => {
+                    const corMin = grupo.cor_principal || '#3b82f6';
+                    const iconeMin = grupo.icone || '🎵';
+                    const totalItens = grupo.itens.length;
+                    const confirmados = grupo.itens.filter(i => i.status === 'confirmado' || i.status === 'presente').length;
 
-                          {/* Seletor de Fardamento */}
-                          {(() => {
-                            const nomeMinNorm = grupo.nome ? grupo.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
-                            const eIntercessaoOuIntroducao = nomeMinNorm.includes('intercessao') || nomeMinNorm.includes('introducao');
-                            const temFardamentos = grupo.fardamentos && grupo.fardamentos.length > 0;
-                            if (!temFardamentos && !eIntercessaoOuIntroducao) return null;
+                    return (
+                      <div
+                        key={grupo.nome}
+                        className="rounded-2xl border bg-white overflow-hidden shadow-xs hover:shadow-md transition-all duration-300"
+                        style={{
+                          borderColor: `${corMin}30`
+                        }}
+                      >
+                        {/* Faixa Superior de Destaque / Header com Cor do Ministério */}
+                        <div
+                          className="p-3.5 sm:p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                          style={{
+                            background: `linear-gradient(135deg, ${corMin}14 0%, ${corMin}05 100%)`,
+                            borderBottomColor: `${corMin}25`
+                          }}
+                        >
+                          {/* Lado Esquerdo: Ícone Grande, Nome do Ministério e Badges */}
+                          <div className="flex items-center gap-3 min-w-0 flex-wrap">
+                            {/* Badge Ícone com a cor da identidade visual */}
+                            <div
+                              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs border transition-transform duration-200 hover:scale-105"
+                              style={{
+                                backgroundColor: `${corMin}20`,
+                                borderColor: `${corMin}45`,
+                                color: corMin
+                              }}
+                            >
+                              <MinistryIcon icone={iconeMin} size={20} className="shrink-0" style={{ color: corMin }} />
+                            </div>
 
-                            const opcoesFardamento = temFardamentos 
-                              ? grupo.fardamentos 
-                              : ["Farda Oficial", "Camisa Preta", "Camisa Branca", "Camisa Azul", "Social"];
-
-                            return (
-                              <div className="flex items-center gap-1.5 bg-slate-100 py-0.5 px-2 rounded-lg border border-slate-200 shrink-0">
-                                <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">👕 Farda:</span>
-                                <select
-                                  value={eventoSelecionado?.fardamentos?.[grupo.id] || ''}
-                                  onChange={e => handleMudarFardamentoDia(grupo.id, e.target.value)}
-                                  className="bg-transparent text-[10px] font-bold text-slate-700 outline-none cursor-pointer border-none p-0 focus:ring-0"
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4
+                                  className="font-black text-sm uppercase tracking-wider"
+                                  style={{ color: corMin }}
                                 >
-                                  <option value="">Nenhuma</option>
-                                  {opcoesFardamento.map(f => (
-                                    <option key={f} value={f}>{f}</option>
-                                  ))}
-                                </select>
-                              </div>
-                            );
-                          })()}
-                        </div>
+                                  {grupo.nome}
+                                </h4>
 
-                        <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 shrink-0">
-                          {/* Linha superior no mobile: + Escalar e WhatsApp em 50% cada */}
-                          <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:items-center">
-                            <button
-                              type="button"
-                              onClick={() => abrirModalEscala(grupo.id)}
-                              className="text-[10px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1.5 rounded-lg hover:bg-blue-100 transition cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap w-full sm:w-auto"
-                              title="Escalar voluntário neste ministério"
-                            >
-                              <Plus size={11} /> Escalar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => copiarWhatsAppMinisterio(grupo)}
-                              className="text-[10px] font-black uppercase tracking-wider text-emerald-600 hover:text-emerald-800 bg-emerald-50 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 transition cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap w-full sm:w-auto"
-                              title="Copiar escala deste ministério para WhatsApp"
-                            >
-                              <Share2 size={11} />
-                              WhatsApp
-                            </button>
+                                {/* Badge Contadora de Voluntários */}
+                                <span
+                                  className="text-[10px] font-black px-2.5 py-0.5 rounded-full border shadow-2xs flex items-center gap-1"
+                                  style={{
+                                    backgroundColor: `${corMin}18`,
+                                    color: corMin,
+                                    borderColor: `${corMin}35`
+                                  }}
+                                >
+                                  <span>👥</span>
+                                  {totalItens === 1 ? '1 Voluntário' : `${totalItens} Voluntários`}
+                                  {confirmados > 0 && (
+                                    <span className="ml-1 text-[9px] font-extrabold opacity-90">
+                                      ({confirmados} presenças)
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+
+                              {/* Seletor de Fardamento inline */}
+                              {(() => {
+                                const nomeMinNorm = grupo.nome ? grupo.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+                                const eIntercessaoOuIntroducao = nomeMinNorm.includes('intercessao') || nomeMinNorm.includes('introducao');
+                                const temFardamentos = grupo.fardamentos && grupo.fardamentos.length > 0;
+                                if (!temFardamentos && !eIntercessaoOuIntroducao) return null;
+
+                                const opcoesFardamento = temFardamentos 
+                                  ? grupo.fardamentos 
+                                  : ["Farda Oficial", "Camisa Preta", "Camisa Branca", "Camisa Azul", "Social"];
+
+                                return (
+                                  <div className="flex items-center gap-1.5 mt-1.5 bg-white/95 py-0.5 px-2 rounded-lg border border-slate-200/80 shrink-0 w-fit shadow-2xs">
+                                    <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">👕 Farda:</span>
+                                    <select
+                                      value={eventoSelecionado?.fardamentos?.[grupo.id] || ''}
+                                      onChange={e => handleMudarFardamentoDia(grupo.id, e.target.value)}
+                                      className="bg-transparent text-[10px] font-bold text-slate-700 outline-none cursor-pointer border-none p-0 focus:ring-0"
+                                    >
+                                      <option value="">Nenhuma definida</option>
+                                      {opcoesFardamento.map(f => (
+                                        <option key={f} value={f}>{f}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                );
+                              })()}
+                            </div>
                           </div>
 
-                          {/* Linha inferior no mobile: AutoEscala em 100% da largura */}
-                          <button
-                            type="button"
-                            onClick={() => rodarAutoEscala(grupo.id)}
-                            className="w-full sm:w-auto text-[10px] font-black uppercase tracking-wider text-amber-700 hover:text-amber-900 bg-amber-50 px-2.5 py-1.5 rounded-lg hover:bg-amber-100 border border-amber-200/60 transition cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap"
-                            title="Montar escala automaticamente com base no histórico e disponibilidade."
-                          >
-                            ⚡ AutoEscala
-                          </button>
+                          {/* Lado Direito: Ações de Gestão (+ Escalar, WhatsApp, AutoEscala) */}
+                          <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 shrink-0 pt-1 sm:pt-0">
+                            <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto sm:flex sm:items-center">
+                              <button
+                                type="button"
+                                onClick={() => abrirModalEscala(grupo.id)}
+                                className="text-[10px] font-black uppercase tracking-wider text-white px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 shadow-sm active:scale-95"
+                                style={{ backgroundColor: corMin }}
+                                title="Escalar voluntário neste ministério"
+                              >
+                                <Plus size={12} strokeWidth={3} /> Escalar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => copiarWhatsAppMinisterio(grupo)}
+                                className="text-[10px] font-black uppercase tracking-wider text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                                title="Copiar escala deste ministério para WhatsApp"
+                              >
+                                <Share2 size={12} /> WhatsApp
+                              </button>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => rodarAutoEscala(grupo.id)}
+                              className="w-full sm:w-auto text-[10px] font-black uppercase tracking-wider text-amber-800 hover:text-amber-950 bg-amber-50 hover:bg-amber-100 border border-amber-300/80 px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                              title="Montar escala automaticamente com base no histórico e disponibilidade."
+                            >
+                              ⚡ AutoEscala
+                            </button>
+                          </div>
                         </div>
-                      </div>
+
+                        {/* Grade de Voluntários */}
+                        <div className="p-3.5 sm:p-4 bg-slate-50/20">
 
                       <div className="grid sm:grid-cols-2 gap-3">
                         {grupo.itens.map((item) => (
                           <div
                             key={item.id}
-                            className="bg-white rounded-xl border border-slate-100 p-3 flex justify-between items-center group relative hover:border-slate-200 transition"
+                            className="bg-white rounded-xl border border-slate-100 p-3 flex flex-col justify-between group relative hover:border-slate-200 transition gap-2 shadow-2xs"
                           >
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <p className="text-xs font-bold text-slate-800">
-                                  {item.pessoas?.nome}
+                            <div className="flex justify-between items-start gap-2">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <p className="text-xs font-bold text-slate-800 truncate">
+                                    {item.pessoas?.nome}
+                                  </p>
+                                </div>
+                                <p className="text-[10px] text-slate-500 mt-0.5">
+                                  {item.ministerio_funcoes?.nome || 'Geral'}
                                 </p>
-                                {/* Status Badge */}
-                                <span className={`w-2 h-2 rounded-full inline-block ${item.status === 'confirmado' ? 'bg-emerald-500' : item.status === 'recusado' ? 'bg-red-500' : 'bg-amber-400'
-                                  }`} title={`Status: ${item.status}`} />
                               </div>
-                              <p className="text-[10px] text-slate-500 mt-0.5">
-                                {item.ministerio_funcoes?.nome || 'Geral'}
-                              </p>
+
+                              <div className="flex items-center gap-1 shrink-0">
+                                {renderStatusBadge(item)}
+                                {!isMembroNormal && !item.isPregadorManual && (
+                                  <button
+                                    type="button"
+                                    onClick={() => excluirEscala(item.id)}
+                                    className="p-1 text-slate-300 hover:text-red-600 transition cursor-pointer"
+                                    title="Remover da escala"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                )}
+                              </div>
                             </div>
 
-                            <div className="flex items-center gap-1">
-                              <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${item.status === 'confirmado' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
-                                  item.status === 'recusado' ? 'bg-red-50 text-red-700 border border-red-100' :
-                                    'bg-amber-50 text-amber-700 border border-amber-100'
-                                }`}>
-                                {item.status}
-                              </span>
-                              {!isMembroNormal && (
-                                <button
-                                  type="button"
-                                  onClick={() => excluirEscala(item.id)}
-                                  className="p-1 text-slate-300 hover:text-red-600 transition cursor-pointer"
-                                  title="Remover da escala"
-                                >
-                                  <X size={14} />
-                                </button>
-                              )}
-                            </div>
+                            {/* Detalhe de Justificativa / Negativação */}
+                            {((item.status === 'falta_justificada' || item.status === 'ausente_justificado') && item.justificativa) && (
+                              <div className="text-[10px] text-amber-900 bg-amber-50/90 border border-amber-200/70 px-2 py-1 rounded-lg flex items-start gap-1.5 animate-in fade-in">
+                                <span className="shrink-0 text-amber-600">💬</span>
+                                <span className="italic leading-snug">
+                                  <strong>Justificativa:</strong> {item.justificativa}
+                                </span>
+                              </div>
+                            )}
+
+                            {(item.status === 'falta' || item.status === 'falta_injustificada' || item.status === 'ausente') && (
+                              <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2 py-1 rounded-lg flex items-start gap-1.5 animate-in fade-in">
+                                <span className="shrink-0 text-rose-600">⚠️</span>
+                                <span className="leading-snug">
+                                  <strong>Negativação:</strong> {item.justificativa ? item.justificativa : 'Não compareceu ao evento para cumprir a escala.'}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Barra de Ações para Gestores / Líderes */}
+                            {!isMembroNormal && !item.isPregadorManual && (
+                              <div className="flex items-center justify-between pt-1.5 border-t border-slate-50 gap-1.5">
+                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                                  Frequência:
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => abrirModalApontamento(item, grupo)}
+                                    className="text-[9px] font-black uppercase tracking-wider text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/70 px-2 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                                    title="Apontar presença, falta justificada ou negativação"
+                                  >
+                                    <CheckCircle size={10} className="text-indigo-600" />
+                                    Apontar / Justificar
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
                     </div>
-                  ))}
+                  </div>
+                );
+              })}
 
                   {escalas.length === 0 && (
                     <div className="py-20 text-center text-slate-400 italic text-sm border-2 border-dashed border-slate-100 rounded-2xl">
@@ -2968,6 +3320,267 @@ export default function EscalasMinisteriais({
                 className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-100 cursor-pointer"
               >
                 Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal - Apontamento de Frequência / Justificativa / Negativação */}
+      {modalApontamento && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-slate-900 p-5 text-white flex justify-between items-start shrink-0">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-950/60 px-2.5 py-0.5 rounded-full border border-indigo-800/60 inline-block mb-1.5">
+                  Gestão Ministerial · Frequência
+                </span>
+                <h3 className="text-base sm:text-lg font-black tracking-tight flex items-center gap-2 text-white">
+                  <span>📋</span> Apontamento de Presença
+                </h3>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Registre o comparecimento, falta justificada ou negativação do voluntário.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={fecharModalApontamento}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer shrink-0"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Informações da Escala */}
+            <div className="bg-slate-50/90 border-b border-slate-100 p-4 space-y-2 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Voluntário(a)</p>
+                  <h4 className="text-sm font-black text-slate-800 truncate">
+                    {modalApontamento.escala?.pessoas?.nome}
+                  </h4>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Ministério / Função</p>
+                  <p className="text-xs font-bold text-blue-600">
+                    {modalApontamento.grupo?.nome || modalApontamento.escala?.ministerios?.nome} · {modalApontamento.escala?.ministerio_funcoes?.nome || 'Geral'}
+                  </p>
+                </div>
+              </div>
+
+              {modalApontamento.evento && (
+                <div className="text-[11px] text-slate-500 bg-white p-2 rounded-xl border border-slate-200/70 flex items-center justify-between gap-2">
+                  <span className="font-bold text-slate-700 truncate">
+                    📍 {modalApontamento.evento.titulo}
+                  </span>
+                  <span className="shrink-0 text-[10px] text-slate-400 font-bold">
+                    📅 {new Date(modalApontamento.evento.data_evento).toLocaleDateString('pt-BR')} · {obterHoraExibicao(modalApontamento.evento)}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Corpo com Opções de Status */}
+            <div className="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                  Selecione o Apontamento:
+                </label>
+                
+                <div className="space-y-2">
+                  {/* Opção 1: Compareceu / Confirmado */}
+                  <label
+                    onClick={() => setStatusApontamento('confirmado')}
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 transition cursor-pointer select-none ${
+                      statusApontamento === 'confirmado' || statusApontamento === 'presente'
+                        ? 'border-emerald-500 bg-emerald-50/50 shadow-xs'
+                        : 'border-slate-100 hover:border-slate-200 bg-white'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="statusApontamento"
+                      checked={statusApontamento === 'confirmado' || statusApontamento === 'presente'}
+                      onChange={() => setStatusApontamento('confirmado')}
+                      className="mt-1 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">🟢</span>
+                        <strong className="text-xs font-black text-slate-800">Presente / Compareceu</strong>
+                        <span className="text-[9px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md uppercase">
+                          +1 Presença
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                        O voluntário cumpriu a escala com êxito. Pontua positivamente nos rankings de voluntários e engajamento.
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Opção 2: Falta Justificada */}
+                  <label
+                    onClick={() => setStatusApontamento('falta_justificada')}
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 transition cursor-pointer select-none ${
+                      statusApontamento === 'falta_justificada' || statusApontamento === 'ausente_justificado'
+                        ? 'border-amber-500 bg-amber-50/50 shadow-xs'
+                        : 'border-slate-100 hover:border-slate-200 bg-white'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="statusApontamento"
+                      checked={statusApontamento === 'falta_justificada' || statusApontamento === 'ausente_justificado'}
+                      onChange={() => setStatusApontamento('falta_justificada')}
+                      className="mt-1 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">🟡</span>
+                        <strong className="text-xs font-black text-slate-800">Falta Justificada</strong>
+                        <span className="text-[9px] font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md uppercase">
+                          Justificado
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                        O voluntário comunicou previamente ou apresentou atestado/motivo aceito. Não pontua presença, mas fica registrado como justificado.
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Opção 3: Falta Injustificada / Negativação */}
+                  <label
+                    onClick={() => setStatusApontamento('falta')}
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 transition cursor-pointer select-none ${
+                      statusApontamento === 'falta' || statusApontamento === 'falta_injustificada' || statusApontamento === 'ausente'
+                        ? 'border-rose-500 bg-rose-50/50 shadow-xs'
+                        : 'border-slate-100 hover:border-slate-200 bg-white'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="statusApontamento"
+                      checked={statusApontamento === 'falta' || statusApontamento === 'falta_injustificada' || statusApontamento === 'ausente'}
+                      onChange={() => setStatusApontamento('falta')}
+                      className="mt-1 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">⚠️</span>
+                        <strong className="text-xs font-black text-slate-800">Falta Injustificada / Negativação</strong>
+                        <span className="text-[9px] font-black text-rose-800 bg-rose-100 px-2 py-0.5 rounded-md uppercase">
+                          Negativação
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                        Confirmou ou estava escalado e <strong>NÃO compareceu sem justificativa</strong>. Não pontua presença e é contabilizado na auditoria de assiduidade.
+                      </p>
+                    </div>
+                  </label>
+
+                  {/* Opção 4: Pendente */}
+                  <label
+                    onClick={() => setStatusApontamento('pendente')}
+                    className={`flex items-start gap-3 p-3 rounded-2xl border transition cursor-pointer select-none ${
+                      statusApontamento === 'pendente'
+                        ? 'border-blue-400 bg-blue-50/30'
+                        : 'border-slate-100 hover:border-slate-200 bg-white'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="statusApontamento"
+                      checked={statusApontamento === 'pendente'}
+                      onChange={() => setStatusApontamento('pendente')}
+                      className="mt-0.5 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <strong className="text-xs font-bold text-slate-700">⚪ Pendente / Aguardando Resposta</strong>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Campo de Justificativa / Observação */}
+              {(statusApontamento === 'falta_justificada' || statusApontamento === 'falta' || statusApontamento === 'ausente_justificado' || statusApontamento === 'falta_injustificada') && (
+                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-2.5 animate-in fade-in">
+                  <div className="flex justify-between items-center">
+                    <label className="block text-[10px] font-black text-slate-700 uppercase tracking-wider">
+                      {statusApontamento === 'falta_justificada' || statusApontamento === 'ausente_justificado'
+                        ? '📝 Motivo / Justificativa da Falta'
+                        : '⚠️ Observações da Negativação (Opcional)'}
+                    </label>
+                    {justificativaApontamento && (
+                      <button
+                        type="button"
+                        onClick={() => setJustificativaApontamento('')}
+                        className="text-[9px] font-bold text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                      >
+                        Limpar
+                      </button>
+                    )}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={justificativaApontamento}
+                    onChange={(e) => setJustificativaApontamento(e.target.value)}
+                    placeholder={
+                      statusApontamento === 'falta_justificada' || statusApontamento === 'ausente_justificado'
+                        ? 'Ex: Atestado médico, trabalho de plantão, viagem de família...'
+                        : 'Ex: Faltou sem aviso prévio, não atendeu contato da liderança...'
+                    }
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs bg-white outline-none focus:border-blue-500 font-medium text-slate-800 shadow-2xs"
+                  />
+
+                  {/* Sugestões rápidas de preenchimento para falta justificada */}
+                  {(statusApontamento === 'falta_justificada' || statusApontamento === 'ausente_justificado') && (
+                    <div className="space-y-1.5 pt-1">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider block">
+                        Sugestões Rápidas:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          '🏥 Atestado / Saúde',
+                          '💼 Trabalho / Plantão',
+                          '✈️ Viagem',
+                          '👨‍👩‍👧 Assuntos Familiares',
+                          '🚗 Problema de Transporte',
+                          '⚠️ Imprevisto Pessoal'
+                        ].map((sug) => (
+                          <button
+                            key={sug}
+                            type="button"
+                            onClick={() => setJustificativaApontamento(sug)}
+                            className="text-[10px] font-bold bg-white hover:bg-slate-100 text-slate-600 px-2 py-1 rounded-lg border border-slate-200 transition cursor-pointer shadow-2xs"
+                          >
+                            {sug}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Rodapé do Modal */}
+            <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/70 flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={fecharModalApontamento}
+                className="w-full sm:flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 transition cursor-pointer text-center"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={salvarApontamentoFrequencia}
+                disabled={salvandoApontamento}
+                className="w-full sm:flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-100 transition active:scale-95 disabled:opacity-50 cursor-pointer text-center"
+              >
+                {salvandoApontamento ? 'Salvando...' : 'Salvar Apontamento'}
               </button>
             </div>
           </div>

@@ -169,12 +169,60 @@ export default function EscalasMinisteriais({
 
   const [modalGradeMobile, setModalGradeMobile] = useState(false);
 
+  // Auxiliares para extração de horário e formatação (UTC-3 / Brasília)
+  function parseDatabaseDate(str) {
+    if (!str) return null;
+    if (!str.includes('Z') && !str.match(/[+-]\d{2}(:?\d{2})?$/)) {
+      const clean = str.trim().replace(' ', 'T');
+      return new Date(clean + 'Z');
+    }
+    return new Date(str);
+  }
+
+  function obterInfoDataBrasilia(isoString) {
+    if (!isoString) return { diaNum: '01', diaSemanaIndex: 0, mesIndex: 0, ano: 2026 };
+    try {
+      const date = parseDatabaseDate(isoString);
+      const bDate = new Date(date.getTime() - 3 * 3600 * 1000);
+      return {
+        diaNum: String(bDate.getUTCDate()).padStart(2, '0'),
+        diaSemanaIndex: bDate.getUTCDay(),
+        mesIndex: bDate.getUTCMonth(),
+        ano: bDate.getUTCFullYear()
+      };
+    } catch (e) {
+      return { diaNum: '01', diaSemanaIndex: 0, mesIndex: 0, ano: 2026 };
+    }
+  }
+
+  // Encontra o evento mais próximo a partir de hoje (não os que já passaram)
+  function encontrarEventoMaisProximo(listaEventos) {
+    if (!listaEventos || listaEventos.length === 0) return null;
+    
+    // Início do dia de hoje no horário de Brasília (com margem de segurança)
+    const agora = new Date();
+    const hojeInicio = new Date(Date.UTC(agora.getFullYear(), agora.getMonth(), agora.getDate(), 3, 0, 0));
+
+    // 1. Procura primeiro evento futuro ou de hoje
+    const futuros = listaEventos.filter(ev => {
+      const d = parseDatabaseDate(ev.data_evento);
+      return d && d >= hojeInicio;
+    });
+
+    if (futuros.length > 0) {
+      return futuros[0]; // O primeiro mais próximo a partir de hoje
+    }
+
+    // 2. Se todos os eventos já passaram, seleciona o mais recente (último)
+    return listaEventos[listaEventos.length - 1];
+  }
+
   useEffect(() => {
     carregarEventos();
     carregarMinhasEscalas();
   }, [membroLogado]);
 
-  // Selecionar o primeiro evento do mês ao alterar o filtro
+  // Selecionar o evento mais próximo do mês ao alterar o filtro
   useEffect(() => {
     const filtrados = eventos.filter(ev => {
       const dataInfo = obterInfoDataBrasilia(ev.data_evento);
@@ -183,7 +231,8 @@ export default function EscalasMinisteriais({
     if (filtrados.length > 0) {
       const jaSelecionado = filtrados.find(e => e.id === eventoSelecionado?.id);
       if (!jaSelecionado) {
-        selecionarEvento(filtrados[0]);
+        const evMaisProximo = encontrarEventoMaisProximo(filtrados) || filtrados[0];
+        selecionarEvento(evMaisProximo);
       }
     } else {
       setEventoSelecionado(null);
@@ -213,9 +262,21 @@ export default function EscalasMinisteriais({
     try {
       const dados = await escalasService.listarEventos();
       setEventos(dados || []);
-      if (dados && dados.length > 0 && !eventoSelecionado) {
-        selecionarEvento(dados[0]);
+      
+      if (dados && dados.length > 0) {
+        const evMaisProximo = encontrarEventoMaisProximo(dados);
+        if (evMaisProximo) {
+          const dataInfo = obterInfoDataBrasilia(evMaisProximo.data_evento);
+          if (initialFiltroMes === null || initialFiltroMes === undefined) {
+            setFiltroMes(dataInfo.mesIndex);
+            setFiltroAno(dataInfo.ano);
+          }
+          if (!eventoSelecionado) {
+            selecionarEvento(evMaisProximo);
+          }
+        }
       }
+
       const mins = await escalasService.listarMinisterios();
       setListaMinisterios(mins || []);
 
@@ -1523,6 +1584,50 @@ export default function EscalasMinisteriais({
     copiarEAbrirWhatsApp(texto, `✓ Escala do ${grupo.nome} copiada e WhatsApp aberto!`);
   }
 
+  // Copiar link de confirmação individual e abrir WhatsApp do voluntário
+  function copiarWhatsAppVoluntario(item, grupo) {
+    if (!eventoSelecionado || !item) return;
+
+    const dataInfo = obterInfoDataBrasilia(eventoSelecionado.data_evento);
+    const nomesDiasLongos = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+    const nomesMeses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+    const diaSemanaLong = nomesDiasLongos[dataInfo.diaSemanaIndex];
+    const mesNome = nomesMeses[dataInfo.mesIndex];
+
+    const dataFormatada = `${diaSemanaLong}, ${Number(dataInfo.diaNum)} de ${mesNome}`;
+    const horaFormatada = obterHoraExibicao(eventoSelecionado);
+    const pregador = extrairPregador(eventoSelecionado);
+    const fardaSel = eventoSelecionado?.fardamentos?.[grupo?.id || item.ministerio_id];
+
+    const linkConfirmacao = `${window.location.origin}/confirmar-escala?id=${item.id}`;
+
+    let texto = `Olá, *${item.pessoas?.nome || 'irmão(ã)'}*! 🙌\n\n`;
+    texto += `Você foi escalado(a) para servir na *MIB Church*:\n\n`;
+    texto += `📅 *Evento:* ${eventoSelecionado.titulo}\n`;
+    texto += `📆 *Data:* ${dataFormatada} às ${horaFormatada}\n`;
+    texto += `📍 *Local:* ${eventoSelecionado.local || 'Templo Sede'}\n`;
+    if (pregador) texto += `🎙️ *Pregador:* ${pregador}\n`;
+    texto += `👥 *Ministério:* ${grupo?.nome || item.ministerios?.nome || ''}\n`;
+    texto += `🎯 *Função:* ${item.ministerio_funcoes?.nome || 'Voluntário'}\n`;
+    if (fardaSel) texto += `👕 *Farda:* ${fardaSel}\n`;
+    texto += `\n`;
+    texto += `👉 *Por favor, confirme sua presença clicando no link abaixo:*\n`;
+    texto += `${linkConfirmacao}\n`;
+
+    const telLimpo = item.pessoas?.telefone ? String(item.pessoas.telefone).replace(/\D/g, '') : '';
+    if (telLimpo && telLimpo.length >= 10) {
+      const urlWa = `https://wa.me/55${telLimpo}?text=${encodeURIComponent(texto)}`;
+      try {
+        navigator.clipboard?.writeText?.(texto).catch(() => {});
+      } catch (_) {}
+      window.open(urlWa, '_blank');
+      mostrarToast(`✓ Link de confirmação enviado para ${item.pessoas?.nome}!`);
+    } else {
+      copiarEAbrirWhatsApp(texto, `✓ Link de confirmação de ${item.pessoas?.nome} copiado para WhatsApp!`);
+    }
+  }
+
   // Sincroniza dados para a exportação da escala mensal
   useEffect(() => {
     if (!modalExportarMensal || !minExportarId) {
@@ -1824,7 +1929,7 @@ export default function EscalasMinisteriais({
             </button>
           </div>
 
-          <div className="space-y-2 max-h-[450px] overflow-y-auto pr-1 custom-scrollbar">
+          <div className="space-y-2">
             {eventosFiltrados.map((ev) => {
               const dataInfo = obterInfoDataBrasilia(ev.data_evento);
               const diaNum = dataInfo.diaNum;
@@ -2200,19 +2305,28 @@ export default function EscalasMinisteriais({
 
                             {/* Barra de Ações para Gestores / Líderes */}
                             {!isMembroNormal && !item.isPregadorManual && (
-                              <div className="flex items-center justify-between pt-1.5 border-t border-slate-50 gap-1.5">
+                              <div className="flex items-center justify-between pt-1.5 border-t border-slate-50 gap-1.5 flex-wrap">
                                 <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                                  Frequência:
+                                  Ações:
                                 </span>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => copiarWhatsAppVoluntario(item, grupo)}
+                                    className="text-[9px] font-black uppercase tracking-wider text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 px-2 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
+                                    title="Enviar link de confirmação individual via WhatsApp"
+                                  >
+                                    <Share2 size={10} className="text-emerald-600" />
+                                    Avisar / Link
+                                  </button>
                                   <button
                                     type="button"
                                     onClick={() => abrirModalApontamento(item, grupo)}
-                                    className="text-[9px] font-black uppercase tracking-wider text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/70 px-2 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                                    className="text-[9px] font-black uppercase tracking-wider text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/70 px-2 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
                                     title="Apontar presença, falta justificada ou negativação"
                                   >
                                     <CheckCircle size={10} className="text-indigo-600" />
-                                    Apontar / Justificar
+                                    Apontar
                                   </button>
                                 </div>
                               </div>

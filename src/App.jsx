@@ -17,6 +17,7 @@ import PublicEventRegistration from './PublicEventRegistration';
 import DetalhesMembro from './DetalhesMembro';
 import HomePage from './HomePage'; // Novo componente HomePage
 import PublicRegistrationForm from './PublicRegistrationForm'; // Importar o novo componente
+import PublicConfirmarEscala from './PublicConfirmarEscala';
 import { MenuIcons, submenuIconKey } from './icons'; // Importa MenuIcons e submenuIconKey do novo arquivo
 import { Settings, Bell } from 'lucide-react';
 import { normalizarTexto, faixaDaIdade, meses, valorCampoRelatorio } from './churchUtils';
@@ -1126,6 +1127,17 @@ export default function App() {
 
   if (window.location.pathname.startsWith('/inscricao-evento/')) {
     return <PublicEventRegistration />;
+  }
+
+  if (
+    window.location.pathname === '/confirmar-escala' ||
+    window.location.pathname.startsWith('/confirmar-escala/') ||
+    window.location.search.includes('confirmar-escala') ||
+    window.location.search.includes('escala=') ||
+    window.location.search.includes('escala_id=') ||
+    (window.location.hash && (window.location.hash.includes('confirmar-escala') || window.location.hash.includes('escala=')))
+  ) {
+    return <PublicConfirmarEscala />;
   }
 
   // Se não há usuário logado ou a sessão expirou/não carregou membros autorizados, exibe tela de login

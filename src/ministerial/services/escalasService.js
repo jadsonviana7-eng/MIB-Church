@@ -66,7 +66,8 @@ export const escalasService = {
           pessoas:pessoa_id (
             id,
             nome,
-            foto_url
+            foto_url,
+            telefone
           ),
           ministerios:ministerio_id (
             id,
@@ -91,7 +92,9 @@ export const escalasService = {
           .select(`
             *,
             pessoas (
-              nome
+              id,
+              nome,
+              telefone
             ),
             ministerios (
               nome,
@@ -124,7 +127,7 @@ export const escalasService = {
         const funcaoIds = [...new Set(rawEscalas.map(e => e.funcao_id).filter(Boolean))];
 
         const [resPessoas, resMin, resFunc] = await Promise.all([
-          pessoaIds.length > 0 ? supabase.from('pessoas').select('id, nome, foto_url').in('id', pessoaIds) : { data: [] },
+          pessoaIds.length > 0 ? supabase.from('pessoas').select('id, nome, foto_url, telefone').in('id', pessoaIds) : { data: [] },
           ministerioIds.length > 0 ? supabase.from('ministerios').select('id, nome, fardamentos').in('id', ministerioIds) : { data: [] },
           funcaoIds.length > 0 ? supabase.from('ministerio_funcoes').select('id, nome').in('id', funcaoIds) : { data: [] }
         ]);
@@ -140,6 +143,76 @@ export const escalasService = {
           ministerio_funcoes: mapFunc.get(e.funcao_id) || { nome: 'Geral' }
         }));
       }
+    }
+  },
+
+  async obterEscalaPublica(escalaId) {
+    if (!escalaId) return null;
+
+    try {
+      // 1. Tentativa com foreign keys explícitas
+      const { data, error } = await supabase
+        .from('escalas')
+        .select(`
+          *,
+          eventos_ministeriais:evento_id (
+            id,
+            titulo,
+            descricao,
+            local,
+            pregador,
+            data_evento,
+            data_fim,
+            fardamentos
+          ),
+          pessoas:pessoa_id (
+            id,
+            nome,
+            foto_url,
+            telefone
+          ),
+          ministerios:ministerio_id (
+            id,
+            nome,
+            icone,
+            cor_principal,
+            fardamentos
+          ),
+          ministerio_funcoes:funcao_id (
+            id,
+            nome
+          )
+        `)
+        .eq('id', escalaId)
+        .single();
+
+      if (!error && data) return data;
+      if (error) throw error;
+    } catch (err1) {
+      console.warn('Fallback obterEscalaPublica:', err1);
+      // 2. Fallback robusto sem joins diretos
+      const { data: esc, error: errEsc } = await supabase
+        .from('escalas')
+        .select('*')
+        .eq('id', escalaId)
+        .single();
+
+      if (errEsc || !esc) throw (errEsc || new Error('Escala não encontrada'));
+
+      const [resEvento, resPessoa, resMin, resFunc] = await Promise.all([
+        esc.evento_id ? supabase.from('eventos_ministeriais').select('*').eq('id', esc.evento_id).single() : { data: null },
+        esc.pessoa_id ? supabase.from('pessoas').select('id, nome, foto_url, telefone').eq('id', esc.pessoa_id).single() : { data: null },
+        esc.ministerio_id ? supabase.from('ministerios').select('id, nome, icone, cor_principal, fardamentos').eq('id', esc.ministerio_id).single() : { data: null },
+        esc.funcao_id ? supabase.from('ministerio_funcoes').select('id, nome').eq('id', esc.funcao_id).single() : { data: null }
+      ]);
+
+      return {
+        ...esc,
+        eventos_ministeriais: resEvento.data,
+        pessoas: resPessoa.data || { nome: 'Voluntário' },
+        ministerios: resMin.data || { nome: 'Ministério' },
+        ministerio_funcoes: resFunc.data || { nome: 'Função' }
+      };
     }
   },
 

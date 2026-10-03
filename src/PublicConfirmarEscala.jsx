@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { escalasService } from './ministerial/services/escalasService';
 import { MinistryIcon } from './ui';
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
-  CheckCircle2, 
-  XCircle, 
-  User, 
-  Sparkles, 
-  AlertCircle, 
-  Send, 
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  CheckCircle2,
+  XCircle,
+  User,
+  Sparkles,
+  AlertCircle,
+  Send,
   ExternalLink,
   Shirt,
   Mic,
@@ -26,7 +26,7 @@ export default function PublicConfirmarEscala() {
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState(null);
-  
+
   // Feedback e justificação
   const [mostrarJustificativa, setMostrarJustificativa] = useState(false);
   const [justificativa, setJustificativa] = useState('');
@@ -53,7 +53,7 @@ export default function PublicConfirmarEscala() {
       const hashStr = window.location.hash.replace(/^#\/?/, '');
       const hashParams = new URLSearchParams(hashStr.includes('?') ? hashStr.split('?')[1] : '');
       id = hashParams.get('id') || hashParams.get('escala') || hashParams.get('escala_id');
-      
+
       if (!id && hashStr.startsWith('confirmar-escala/')) {
         id = hashStr.split('/')[1];
       }
@@ -74,7 +74,7 @@ export default function PublicConfirmarEscala() {
     try {
       const [resEscala, resIgreja] = await Promise.all([
         escalasService.obterEscalaPublica(id),
-        supabase.from('dados_igreja').select('*').eq('id', 1).maybeSingle()
+        supabase.from('dados_igreja').select('*').limit(1).catch(() => ({ data: [] }))
       ]);
 
       if (!resEscala) {
@@ -85,8 +85,8 @@ export default function PublicConfirmarEscala() {
       if (resEscala.justificativa) {
         setJustificativa(resEscala.justificativa);
       }
-      if (resIgreja?.data) {
-        setDadosIgreja(resIgreja.data);
+      if (resIgreja?.data && resIgreja.data.length > 0) {
+        setDadosIgreja(resIgreja.data[0]);
       }
     } catch (err) {
       console.error('Erro ao carregar escala pública:', err);
@@ -102,7 +102,7 @@ export default function PublicConfirmarEscala() {
     setSucessoMensagem(null);
     try {
       await escalasService.atualizarStatusEscala(escalaId, novoStatus, motivo);
-      
+
       setEscala(prev => ({
         ...prev,
         status: novoStatus,
@@ -179,7 +179,7 @@ export default function PublicConfirmarEscala() {
 
     const dias = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
     const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-    
+
     const diaSemana = dias[bDate.getUTCDay()];
     const dia = String(bDate.getUTCDate()).padStart(2, '0');
     const mes = meses[bDate.getUTCMonth()];
@@ -218,7 +218,7 @@ export default function PublicConfirmarEscala() {
 
   const corMin = min?.cor_principal || '#1e3a8a';
   const iconeMin = min?.icone || 'Scroll';
-  
+
   // Obter fardamento configurado para o evento neste ministério
   const fardaDefinida = ev?.fardamentos?.[escala?.ministerio_id] || null;
 
@@ -226,7 +226,7 @@ export default function PublicConfirmarEscala() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-blue-500 selection:text-white font-sans">
       {/* Background Glow Decorations */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div 
+        <div
           className="absolute -top-[20%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full opacity-20 blur-[130px]"
           style={{ backgroundColor: corMin }}
         />
@@ -235,13 +235,13 @@ export default function PublicConfirmarEscala() {
 
       {/* Conteúdo Central */}
       <main className="relative z-10 w-full max-w-xl mx-auto px-4 py-8 sm:py-12 flex-1 flex flex-col justify-center">
-        
+
         {/* Cabeçalho da Igreja */}
         <header className="text-center mb-6 animate-in fade-in slide-from-top-4 duration-500">
           {dadosIgreja?.logo_url ? (
-            <img 
-              src={dadosIgreja.logo_url} 
-              alt={dadosIgreja.nome || 'Logo Igreja'} 
+            <img
+              src={dadosIgreja.logo_url}
+              alt={dadosIgreja.nome || 'Logo Igreja'}
               className="h-16 w-auto max-w-[180px] mx-auto object-contain mb-3 drop-shadow-md"
             />
           ) : (
@@ -253,7 +253,7 @@ export default function PublicConfirmarEscala() {
             {dadosIgreja?.nome || 'Gestão Ministerial'}
           </h1>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Confirmação de Escala de Voluntários
+            Confirmação de Escala de Servos
           </p>
         </header>
 
@@ -284,16 +284,16 @@ export default function PublicConfirmarEscala() {
           </div>
         ) : escala ? (
           <div className="bg-slate-900/90 border border-slate-800/90 rounded-[28px] overflow-hidden backdrop-blur-2xl shadow-2xl shadow-black/60 animate-in zoom-in-95 duration-400">
-            
+
             {/* Faixa Superior com Identidade do Ministério */}
-            <div 
+            <div
               className="p-5 sm:p-6 border-b border-slate-800/80 relative overflow-hidden flex items-center justify-between gap-4"
               style={{
                 background: `linear-gradient(135deg, ${corMin}30 0%, ${corMin}10 100%)`
               }}
             >
               <div className="flex items-center gap-3.5 min-w-0">
-                <div 
+                <div
                   className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border shadow-md transition-transform hover:scale-105"
                   style={{
                     backgroundColor: `${corMin}30`,
@@ -336,7 +336,7 @@ export default function PublicConfirmarEscala() {
 
             {/* Corpo do Card */}
             <div className="p-5 sm:p-7 space-y-6">
-              
+
               {/* Mensagem de Saudação Personalizada */}
               <div className="bg-slate-800/50 border border-slate-800 rounded-2xl p-4 flex items-center gap-3.5">
                 <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0 font-black text-sm">
@@ -347,7 +347,7 @@ export default function PublicConfirmarEscala() {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-slate-400">Voluntário(a) Escalado(a):</p>
+                  <p className="text-xs text-slate-400">Servo(a) Escalado(a):</p>
                   <h3 className="text-sm font-black text-white truncate">
                     {pessoa?.nome || 'Irmão(ã) em Cristo'}
                   </h3>
@@ -372,7 +372,7 @@ export default function PublicConfirmarEscala() {
                     <Calendar size={16} className="text-blue-400 shrink-0" />
                     <span>{dataInfo.dataStr}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2.5 text-slate-300">
                     <Clock size={16} className="text-blue-400 shrink-0" />
                     <span>Horário: <strong className="text-white font-black">{dataInfo.horaStr}</strong></span>

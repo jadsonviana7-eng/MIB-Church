@@ -150,69 +150,53 @@ export const escalasService = {
     if (!escalaId) return null;
 
     try {
-      // 1. Tentativa com foreign keys explícitas
-      const { data, error } = await supabase
-        .from('escalas')
-        .select(`
-          *,
-          eventos_ministeriais:evento_id (
-            id,
-            titulo,
-            descricao,
-            local,
-            pregador,
-            data_evento,
-            data_fim,
-            fardamentos
-          ),
-          pessoas:pessoa_id (
-            id,
-            nome,
-            foto_url,
-            telefone
-          ),
-          ministerios:ministerio_id (
-            id,
-            nome,
-            icone,
-            cor_principal,
-            fardamentos
-          ),
-          ministerio_funcoes:funcao_id (
-            id,
-            nome
-          )
-        `)
-        .eq('id', escalaId)
-        .single();
-
-      if (!error && data) return data;
-      if (error) throw error;
-    } catch (err1) {
-      console.warn('Fallback obterEscalaPublica:', err1);
-      // 2. Fallback robusto sem joins diretos
-      const { data: esc, error: errEsc } = await supabase
+      // 1. Busca direta na tabela escalas
+      const { data: escalasData, error: errEscalas } = await supabase
         .from('escalas')
         .select('*')
         .eq('id', escalaId)
-        .single();
+        .limit(1);
 
-      if (errEsc || !esc) throw (errEsc || new Error('Escala não encontrada'));
+      if (errEscalas) {
+        console.warn('Erro ao consultar tabela escalas:', errEscalas);
+      }
 
+      const esc = (escalasData && escalasData.length > 0) ? escalasData[0] : null;
+      if (!esc) {
+        throw new Error('Escala não encontrada no sistema ou link expirado.');
+      }
+
+      // 2. Carregar entidades relacionadas de forma segura e paralela sem .single()
       const [resEvento, resPessoa, resMin, resFunc] = await Promise.all([
-        esc.evento_id ? supabase.from('eventos_ministeriais').select('*').eq('id', esc.evento_id).single() : { data: null },
-        esc.pessoa_id ? supabase.from('pessoas').select('id, nome, foto_url, telefone').eq('id', esc.pessoa_id).single() : { data: null },
-        esc.ministerio_id ? supabase.from('ministerios').select('id, nome, icone, cor_principal, fardamentos').eq('id', esc.ministerio_id).single() : { data: null },
-        esc.funcao_id ? supabase.from('ministerio_funcoes').select('id, nome').eq('id', esc.funcao_id).single() : { data: null }
+        esc.evento_id 
+          ? supabase.from('eventos_ministeriais').select('*').eq('id', esc.evento_id).limit(1)
+          : Promise.resolve({ data: [] }),
+        esc.pessoa_id 
+          ? supabase.from('pessoas').select('id, nome, foto_url, telefone').eq('id', esc.pessoa_id).limit(1)
+          : Promise.resolve({ data: [] }),
+        esc.ministerio_id 
+          ? supabase.from('ministerios').select('id, nome, icone, cor_principal, fardamentos').eq('id', esc.ministerio_id).limit(1)
+          : Promise.resolve({ data: [] }),
+        esc.funcao_id 
+          ? supabase.from('ministerio_funcoes').select('id, nome').eq('id', esc.funcao_id).limit(1)
+          : Promise.resolve({ data: [] })
       ]);
+
+      const evento = (resEvento.data && resEvento.data.length > 0) ? resEvento.data[0] : null;
+      const pessoa = (resPessoa.data && resPessoa.data.length > 0) ? resPessoa.data[0] : { nome: 'Voluntário' };
+      const ministerio = (resMin.data && resMin.data.length > 0) ? resMin.data[0] : { nome: 'Ministério' };
+      const funcao = (resFunc.data && resFunc.data.length > 0) ? resFunc.data[0] : { nome: 'Função' };
 
       return {
         ...esc,
-        eventos_ministeriais: resEvento.data,
-        pessoas: resPessoa.data || { nome: 'Voluntário' },
-        ministerios: resMin.data || { nome: 'Ministério' },
-        ministerio_funcoes: resFunc.data || { nome: 'Função' }
+        eventos_ministeriais: evento,
+        pessoas: pessoa,
+        ministerios: ministerio,
+        ministerio_funcoes: funcao
       };
+    } catch (error) {
+      console.error('Erro em obterEscalaPublica:', error);
+      throw error;
     }
   },
 
@@ -356,10 +340,9 @@ export const escalasService = {
         .from('escalas')
         .update(payload)
         .eq('id', id)
-        .select()
-        .single();
+        .select();
 
-      if (!error) return data;
+      if (!error) return (data && data[0]) ? data[0] : { id, ...payload };
 
       // Fallback se a coluna justificativa não existir no Postgres
       if (error && (error.code === 'PGRST204' || error.message?.includes('justificativa') || error.code === '42703')) {
@@ -367,10 +350,9 @@ export const escalasService = {
           .from('escalas')
           .update({ status })
           .eq('id', id)
-          .select()
-          .single();
+          .select();
         if (errFallback) throw errFallback;
-        return dataFallback;
+        return (dataFallback && dataFallback[0]) ? dataFallback[0] : { id, status };
       }
       throw error;
     } catch (err) {
@@ -379,10 +361,9 @@ export const escalasService = {
           .from('escalas')
           .update({ status })
           .eq('id', id)
-          .select()
-          .single();
+          .select();
         if (errFallback) throw errFallback;
-        return dataFallback;
+        return (dataFallback && dataFallback[0]) ? dataFallback[0] : { id, status };
       }
       throw err;
     }

@@ -72,21 +72,24 @@ export default function PublicConfirmarEscala() {
     setCarregando(true);
     setErro(null);
     try {
-      const [resEscala, resIgreja] = await Promise.all([
-        escalasService.obterEscalaPublica(id),
-        supabase.from('dados_igreja').select('*').limit(1).catch(() => ({ data: [] }))
-      ]);
+      const resEscala = await escalasService.obterEscalaPublica(id);
 
       if (!resEscala) {
-        throw new Error('Escala não encontrada no sistema.');
+        throw new Error('Escala não encontrada no sistema ou link expirado.');
       }
 
       setEscala(resEscala);
       if (resEscala.justificativa) {
         setJustificativa(resEscala.justificativa);
       }
-      if (resIgreja?.data && resIgreja.data.length > 0) {
-        setDadosIgreja(resIgreja.data[0]);
+
+      try {
+        const { data: igrData } = await supabase.from('dados_igreja').select('*').limit(1);
+        if (igrData && igrData.length > 0) {
+          setDadosIgreja(igrData[0]);
+        }
+      } catch (igrErr) {
+        console.warn('Não foi possível carregar dados da igreja:', igrErr);
       }
     } catch (err) {
       console.error('Erro ao carregar escala pública:', err);
@@ -238,19 +241,13 @@ export default function PublicConfirmarEscala() {
 
         {/* Cabeçalho da Igreja */}
         <header className="text-center mb-6 animate-in fade-in slide-from-top-4 duration-500">
-          {dadosIgreja?.logo_url ? (
-            <img
-              src={dadosIgreja.logo_url}
-              alt={dadosIgreja.nome || 'Logo Igreja'}
-              className="h-16 w-auto max-w-[180px] mx-auto object-contain mb-3 drop-shadow-md"
-            />
-          ) : (
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-700 to-indigo-600 text-white font-black text-xl shadow-lg shadow-blue-500/20 mb-3">
-              ⛪
-            </div>
-          )}
+          <img
+            src="/logo-betesda-mundau.png"
+            alt={dadosIgreja?.nome || 'MIB Church'}
+            className="h-16 sm:h-20 w-auto max-w-[220px] mx-auto object-contain mb-3 drop-shadow-md"
+          />
           <h1 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">
-            {dadosIgreja?.nome || 'Gestão Ministerial'}
+            {dadosIgreja?.nome || 'MIB Church'}
           </h1>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
             Confirmação de Escala de Servos

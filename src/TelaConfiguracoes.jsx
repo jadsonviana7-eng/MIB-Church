@@ -11,7 +11,7 @@ import {
   Building2, MapPin, Briefcase, CreditCard, Search, X, Check, Trash2, Edit2, Palette, Sun, Moon, Globe, Activity, Bell, Smartphone
 } from 'lucide-react';
 import { aplicarTema } from './themeUtils';
-import { isBadgingSupported, getBadgePermissionStatus, requestBadgePermission, setAppBadge, clearAppBadge, isStandalone } from './badgeUtils';
+import { isBadgingSupported, getBadgePermissionStatus, requestBadgePermission, setAppBadge, clearAppBadge, isStandalone, syncAndroidNotificationBadge } from './badgeUtils';
 
 // Dicionário de Tradução de Exemplo para a tela de configurações (Proof of Concept i18n)
 const t = {
@@ -193,12 +193,13 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
   const handleTestarBadge = async (numero) => {
     const perm = await requestBadgePermission();
     setBadgeStatus(getBadgePermissionStatus());
-    const ok = await setAppBadge(numero);
-    if (ok) {
-      setBadgeTestMsg(`Badge definido para ${numero}! Verifique o ícone do app na tela inicial do celular.`);
-    } else {
-      setBadgeTestMsg('Não foi possível definir o badge. Verifique se o PWA está instalado e com permissão.');
-    }
+    await syncAndroidNotificationBadge(numero, {
+      title: 'MIB Church - Alerta de Teste',
+      body: `Você possui ${numero} alertas pendentes. O selo foi sincronizado com o ícone.`,
+      renotify: true,
+      silent: false
+    });
+    setBadgeTestMsg(`Badge definido para ${numero}! Uma notificação foi enviada e o selo ativado no ícone do aplicativo.`);
     setTimeout(() => setBadgeTestMsg(''), 6000);
   };
 

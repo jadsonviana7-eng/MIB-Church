@@ -62,17 +62,69 @@ export async function setAppBadge(count) {
 }
 
 /**
- * Remove o badge do ícone do aplicativo.
+ * Emite uma notificação nativa no sistema através do Service Worker para forçar o launcher do Android a exibir o badge/ponto no ícone da tela inicial.
  */
-export async function clearAppBadge() {
-  if (!isBadgingSupported()) return false;
+export async function syncAndroidNotificationBadge(count, options = {}) {
+  // 1. Atualiza o Badging API nativo (Windows / Mac / iOS / Chrome)
+  await setAppBadge(count);
+
+  // 2. No Android, o launcher exige uma notificação ativa na bandeja para acender o selo no ícone
+  if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') {
+    return;
+  }
+
+  if (!('serviceWorker' in navigator)) return;
 
   try {
-    await navigator.clearAppBadge();
-    return true;
-  } catch (error) {
-    console.debug('Badge API não pôde ser limpo:', error?.message || error);
-    return false;
+    const registration = await navigator.serviceWorker.ready;
+    if (!registration) return;
+
+    const num = Number(count);
+    if (num > 0) {
+      const title = options.title || 'MIB Church';
+      const body = options.body || `Você tem ${num} pendência(s) / notificação(ões) no sistema.`;
+
+      await registration.showNotification(title, {
+        body,
+        icon: '/logo-betesda-inicio.png',
+        badge: '/favicon.svg',
+        tag: 'mib-church-badge-alert', // Substitui a notificação anterior em vez de duplicar
+        renotify: options.renotify || false,
+        silent: options.silent !== undefined ? options.silent : true,
+        data: { url: '/' }
+      });
+    } else {
+      // Limpa as notificações de alerta para remover o ponto do ícone no Android
+      const notifs = await registration.getNotifications({ tag: 'mib-church-badge-alert' });
+      notifs.forEach(n => n.close());
+    }
+  } catch (err) {
+    console.debug('Erro ao sincronizar notificação do Android:', err);
   }
 }
+
+/**
+ * Remove o badge e fecha notificações ativas associadas.
+ */
+export async function clearAppBadge() {
+  if (isBadgingSupported()) {
+    try {
+      await navigator.clearAppBadge();
+    } catch (error) {
+      console.debug('Badge API não pôde ser limpo:', error?.message || error);
+    }
+  }
+
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      if (registration) {
+        const notifs = await registration.getNotifications({ tag: 'mib-church-badge-alert' });
+        notifs.forEach(n => n.close());
+      }
+    } catch (e) {}
+  }
+  return true;
+}
+
 

@@ -21,7 +21,7 @@ import PublicConfirmarEscala from './PublicConfirmarEscala';
 import { MenuIcons, submenuIconKey } from './icons'; // Importa MenuIcons e submenuIconKey do novo arquivo
 import { Settings, Bell } from 'lucide-react';
 import { normalizarTexto, faixaDaIdade, meses, valorCampoRelatorio } from './churchUtils';
-import { setAppBadge, clearAppBadge, requestBadgePermission } from './badgeUtils';
+import { setAppBadge, clearAppBadge, requestBadgePermission, syncAndroidNotificationBadge } from './badgeUtils';
 
 const filtrosIniciais = {
   busca: '', genero: '', estadoCivil: '', faixaEtaria: '', zona: '', cargo: '',
@@ -459,10 +459,15 @@ export default function App() {
     return notificacoes.filter(n => !notificacoesLidas.includes(String(n.id)));
   }, [notificacoes, notificacoesLidas]);
 
-  // Sincroniza o contador no ícone do aplicativo PWA (App Badging API)
+  // Sincroniza o contador no ícone do aplicativo PWA (App Badging API & Android Launcher Badge)
   useEffect(() => {
     if (membroLogado) {
-      setAppBadge(notificacoesAtivas.length);
+      syncAndroidNotificationBadge(notificacoesAtivas.length, {
+        title: 'MIB Church',
+        body: notificacoesAtivas.length === 1
+          ? notificacoesAtivas[0].titulo
+          : `Você tem ${notificacoesAtivas.length} notificações pendentes.`
+      });
     } else {
       clearAppBadge();
     }

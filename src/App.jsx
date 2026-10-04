@@ -2066,6 +2066,30 @@ export default function App() {
                   </button>
                 )}
               </div>
+
+              {/* Banner para Ativar Badges no Celular se não concedido */}
+              {typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && (
+                <div className="mx-4 mt-3 p-3 bg-blue-50/90 border border-blue-200 rounded-xl flex items-center justify-between gap-3 text-xs text-blue-900 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">📱</span>
+                    <div>
+                      <p className="font-bold leading-tight text-slate-800">Ativar selo no ícone do celular</p>
+                      <p className="text-[10px] text-slate-500 leading-tight mt-0.5">Permita notificações para exibir o contador numérico no app instalado.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const ok = await requestBadgePermission();
+                      if (ok) setAppBadge(notificacoesAtivas.length);
+                    }}
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-lg text-xs shrink-0 cursor-pointer shadow-xs transition"
+                  >
+                    Ativar
+                  </button>
+                </div>
+              )}
+
               <div className="p-4 overflow-y-auto space-y-3 flex-1 max-h-[60vh]">
                 {notificacoesAtivas.length === 0 ? (
                   <div className="text-center py-12 px-4 space-y-3 animate-fade-in">

@@ -8,9 +8,10 @@ import {
   desmascararCNPJ
 } from './mascaras';
 import {
-  Building2, MapPin, Briefcase, CreditCard, Search, X, Check, Trash2, Edit2, Palette, Sun, Moon, Globe, Activity
+  Building2, MapPin, Briefcase, CreditCard, Search, X, Check, Trash2, Edit2, Palette, Sun, Moon, Globe, Activity, Bell, Smartphone
 } from 'lucide-react';
 import { aplicarTema } from './themeUtils';
+import { isBadgingSupported, getBadgePermissionStatus, requestBadgePermission, setAppBadge, clearAppBadge, isStandalone } from './badgeUtils';
 
 // Dicionário de Tradução de Exemplo para a tela de configurações (Proof of Concept i18n)
 const t = {
@@ -186,6 +187,26 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
   const [temaModo, setTemaModo] = useState('claro');
   const [temaAcento, setTemaAcento] = useState('azul');
   const [idioma, setIdioma] = useState('pt');
+  const [badgeStatus, setBadgeStatus] = useState(() => getBadgePermissionStatus());
+  const [badgeTestMsg, setBadgeTestMsg] = useState('');
+
+  const handleTestarBadge = async (numero) => {
+    const perm = await requestBadgePermission();
+    setBadgeStatus(getBadgePermissionStatus());
+    const ok = await setAppBadge(numero);
+    if (ok) {
+      setBadgeTestMsg(`Badge definido para ${numero}! Verifique o ícone do app na tela inicial do celular.`);
+    } else {
+      setBadgeTestMsg('Não foi possível definir o badge. Verifique se o PWA está instalado e com permissão.');
+    }
+    setTimeout(() => setBadgeTestMsg(''), 6000);
+  };
+
+  const handleLimparBadge = async () => {
+    await clearAppBadge();
+    setBadgeTestMsg('Badge removido do ícone.');
+    setTimeout(() => setBadgeTestMsg(''), 4000);
+  };
 
   // Estados do Sistema de Logs
   const [logsAuditoria, setLogsAuditoria] = useState([]);
@@ -1322,6 +1343,58 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                       <option value="en">🇺🇸 English (United States)</option>
                       <option value="es">🇪🇸 Español (España)</option>
                     </select>
+                  </div>
+                </div>
+
+                {/* NOTIFICAÇÕES E BADGES NO ÍCONE DO CELULAR (PWA) */}
+                <div className="space-y-3 border-t border-slate-100 pt-5">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
+                      <Bell size={15} className="text-blue-600" />
+                      Badges e Notificações no Ícone do Celular
+                    </h4>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      badgeStatus === 'granted' 
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                        : badgeStatus === 'denied'
+                        ? 'bg-rose-50 border-rose-200 text-rose-700'
+                        : 'bg-amber-50 border-amber-200 text-amber-700'
+                    }`}>
+                      {badgeStatus === 'granted' ? '✓ Notificações Permitidas' : badgeStatus === 'denied' ? '✗ Notificações Bloqueadas' : '⚠️ Permissão Pendente'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Exibe a contagem numérica de alertas (escalas pendentes, inscrições, avisos) diretamente sobre o ícone do aplicativo na tela inicial do celular.
+                  </p>
+
+                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-150 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleTestarBadge(3)}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold rounded-lg text-xs cursor-pointer shadow-xs transition"
+                      >
+                        🔔 Testar Badge no Ícone (Exibir 3)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleLimparBadge}
+                        className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 active:scale-95 text-slate-700 font-bold rounded-lg text-xs cursor-pointer transition"
+                      >
+                        ✕ Limpar Badge
+                      </button>
+                    </div>
+
+                    {badgeTestMsg && (
+                      <p className="text-xs font-bold text-blue-700 animate-fade-in pt-1">
+                        {badgeTestMsg}
+                      </p>
+                    )}
+
+                    <div className="text-[10px] text-slate-400 space-y-1 pt-2 border-t border-slate-200/60">
+                      <p>• <strong>iPhone (iOS 16.4+):</strong> Requer que o app esteja adicionado à Tela de Início e que as notificações estejam permitidas em <em>Ajustes &gt; MIB Church &gt; Avisos nos Ícones</em>.</p>
+                      <p>• <strong>Android:</strong> Depende do inicializador (Launcher). Certifique-se de que "Selos de Notificação" está ativado nas configurações do celular.</p>
+                    </div>
                   </div>
                 </div>
 

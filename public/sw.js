@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'mib-church-v2.2';
+const CACHE_VERSION = 'mib-church-v2.3';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -63,3 +63,50 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
+// Suporte a Push Notifications e App Badging em segundo plano
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = { title: 'MIB Church', body: event.data ? event.data.text() : 'Nova notificação' };
+  }
+
+  const title = data.title || 'MIB Church';
+  const options = {
+    body: data.body || '',
+    icon: data.icon || '/logo-betesda-inicio.png',
+    badge: data.badge || '/favicon.svg',
+    data: data.data || {},
+    vibrate: [100, 50, 100]
+  };
+
+  if (typeof navigator !== 'undefined' && 'setAppBadge' in navigator && data.badgeCount !== undefined) {
+    navigator.setAppBadge(data.badgeCount).catch(() => {});
+  }
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  if (typeof navigator !== 'undefined' && 'clearAppBadge' in navigator) {
+    navigator.clearAppBadge().catch(() => {});
+  }
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
+    })
+  );
+});
+

@@ -60,8 +60,9 @@ export default function PublicConfirmarEscala() {
     }
 
     if (id) {
-      setEscalaId(id);
-      carregarDados(id);
+      const cleanId = String(id).trim().replace(/\/$/, '');
+      setEscalaId(cleanId);
+      carregarDados(cleanId);
     } else {
       setCarregando(false);
       setErro('Link de confirmação inválido ou incompleto. Verifique a mensagem recebida no WhatsApp.');

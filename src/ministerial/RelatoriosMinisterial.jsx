@@ -74,9 +74,22 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
     setLoading(true);
     try {
       const res = await ministeriosService.obterRelatoriosConsolidados();
-      setRawDados(res);
+      setRawDados(res || {
+        ministerios: [],
+        membros: [],
+        escalas: [],
+        historicos: [],
+        funcoes: []
+      });
     } catch (e) {
       console.error('Erro ao carregar dados consolidados para relatórios:', e);
+      setRawDados({
+        ministerios: [],
+        membros: [],
+        escalas: [],
+        historicos: [],
+        funcoes: []
+      });
     } finally {
       setLoading(false);
     }
@@ -102,28 +115,11 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
   async function exportarVoluntarios() {
     setLoading(true);
     try {
-      const { data: membros, error } = await supabase
-        .from('ministerio_membros')
-        .select(`
-          id,
-          funcao,
-          lider,
-          ativo,
-          pessoas (
-            nome,
-            email,
-            telefone,
-            cargo
-          ),
-          ministerios (
-            nome
-          )
-        `);
-
-      if (error) throw error;
+      const dados = rawDados || await ministeriosService.obterRelatoriosConsolidados();
+      const membros = dados?.membros || [];
 
       const headers = ['Nome Voluntário', 'Cargo Igreja', 'E-mail', 'Telefone', 'Ministério', 'Função Ministerial', 'Líder', 'Vínculo Ativo'];
-      const rows = (membros || []).map(m => [
+      const rows = membros.map(m => [
         m.pessoas?.nome || '',
         m.pessoas?.cargo || '',
         m.pessoas?.email || '',
@@ -131,7 +127,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         m.ministerios?.nome || '',
         m.funcao || '',
         m.lider ? 'Sim' : 'Não',
-        m.ativo ? 'Sim' : 'Não'
+        m.ativo !== false ? 'Sim' : 'Não'
       ]);
 
       downloadCSV(headers, rows, `Voluntarios_MIB_Church_${new Date().getFullYear()}.csv`);
@@ -172,29 +168,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         }
       };
 
-      const { data: escalas, error } = await supabase
-        .from('escalas')
-        .select(`
-          status,
-          justificativa,
-          created_at,
-          eventos_ministeriais (
-            titulo,
-            data_evento,
-            local
-          ),
-          pessoas (
-            nome
-          ),
-          ministerios (
-            nome
-          ),
-          ministerio_funcoes (
-            nome
-          )
-        `);
-
-      if (error) throw error;
+      const dados = rawDados || await ministeriosService.obterRelatoriosConsolidados();
+      const escalas = dados?.escalas || [];
 
       const formatarStatusLegivel = (st) => {
         const s = (st || '').toLowerCase();
@@ -206,7 +181,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       };
 
       const headers = ['Evento', 'Data Evento', 'Local', 'Ministério', 'Função', 'Voluntário', 'Status de Confirmação', 'Justificativa / Motivo', 'Data Escalação'];
-      const rows = (escalas || []).map(e => [
+      const rows = escalas.map(e => [
         e.eventos_ministeriais?.titulo || '',
         e.eventos_ministeriais ? formatarDataFuso(e.eventos_ministeriais.data_evento) : '',
         e.eventos_ministeriais?.local || '',
@@ -215,7 +190,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         e.pessoas?.nome || '',
         formatarStatusLegivel(e.status),
         e.justificativa || '',
-        new Date(e.created_at).toLocaleDateString('pt-BR')
+        e.created_at ? new Date(e.created_at).toLocaleDateString('pt-BR') : ''
       ]);
 
       downloadCSV(headers, rows, `Relatorio_Escalas_Ministeriais.csv`);
@@ -231,28 +206,11 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
   async function exportarVoluntariosExcel() {
     setLoading(true);
     try {
-      const { data: membros, error } = await supabase
-        .from('ministerio_membros')
-        .select(`
-          id,
-          funcao,
-          lider,
-          ativo,
-          pessoas (
-            nome,
-            email,
-            telefone,
-            cargo
-          ),
-          ministerios (
-            nome
-          )
-        `);
-
-      if (error) throw error;
+      const dados = rawDados || await ministeriosService.obterRelatoriosConsolidados();
+      const membros = dados?.membros || [];
 
       const agrupados = {};
-      (membros || []).forEach(m => {
+      membros.forEach(m => {
         const minNome = m.ministerios?.nome || 'Sem Ministério';
         if (!agrupados[minNome]) agrupados[minNome] = [];
         agrupados[minNome].push(m);
@@ -301,7 +259,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
             <td>${m.pessoas?.telefone || ''}</td>
             <td>${m.funcao || ''}</td>
             <td>${m.lider ? 'Sim' : 'Não'}</td>
-            <td>${m.ativo ? 'Sim' : 'Não'}</td>
+            <td>${m.ativo !== false ? 'Sim' : 'Não'}</td>
           </tr>`;
         });
 
@@ -330,28 +288,11 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
   async function exportarVoluntariosPDF() {
     setLoading(true);
     try {
-      const { data: membros, error } = await supabase
-        .from('ministerio_membros')
-        .select(`
-          id,
-          funcao,
-          lider,
-          ativo,
-          pessoas (
-            nome,
-            email,
-            telefone,
-            cargo
-          ),
-          ministerios (
-            nome
-          )
-        `);
-
-      if (error) throw error;
+      const dados = rawDados || await ministeriosService.obterRelatoriosConsolidados();
+      const membros = dados?.membros || [];
 
       const agrupados = {};
-      (membros || []).forEach(m => {
+      membros.forEach(m => {
         const minNome = m.ministerios?.nome || 'Sem Ministério';
         if (!agrupados[minNome]) agrupados[minNome] = [];
         agrupados[minNome].push(m);
@@ -443,7 +384,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
           const funcao = trunc(m.funcao || '', 20);
           const lider = m.lider ? 'Sim' : 'Não';
           const tel = trunc(m.pessoas?.telefone || '', 14);
-          const ativo = m.ativo ? 'Sim' : 'Não';
+          const ativo = m.ativo !== false ? 'Sim' : 'Não';
           const email = trunc(m.pessoas?.email || '', 20);
 
           doc.text(nome, margin + 2, y + 5);
@@ -500,29 +441,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         }
       };
 
-      const { data: escalas, error } = await supabase
-        .from('escalas')
-        .select(`
-          status,
-          justificativa,
-          created_at,
-          eventos_ministeriais (
-            titulo,
-            data_evento,
-            local
-          ),
-          pessoas (
-            nome
-          ),
-          ministerios (
-            nome
-          ),
-          ministerio_funcoes (
-            nome
-          )
-        `);
-
-      if (error) throw error;
+      const dados = rawDados || await ministeriosService.obterRelatoriosConsolidados();
+      const escalas = dados?.escalas || [];
 
       const formatarStatusLegivel = (st) => {
         const s = (st || '').toLowerCase();
@@ -534,7 +454,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       };
 
       const agrupados = {};
-      (escalas || []).forEach(e => {
+      escalas.forEach(e => {
         const minNome = e.ministerios?.nome || 'Sem Ministério';
         if (!agrupados[minNome]) agrupados[minNome] = [];
         agrupados[minNome].push(e);
@@ -585,7 +505,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
             <td>${e.pessoas?.nome || ''}</td>
             <td>${formatarStatusLegivel(e.status)}</td>
             <td>${e.justificativa || ''}</td>
-            <td>${new Date(e.created_at).toLocaleDateString('pt-BR')}</td>
+            <td>${e.created_at ? new Date(e.created_at).toLocaleDateString('pt-BR') : ''}</td>
           </tr>`;
         });
 
@@ -639,29 +559,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         }
       };
 
-      const { data: escalas, error } = await supabase
-        .from('escalas')
-        .select(`
-          status,
-          justificativa,
-          created_at,
-          eventos_ministeriais (
-            titulo,
-            data_evento,
-            local
-          ),
-          pessoas (
-            nome
-          ),
-          ministerios (
-            nome
-          ),
-          ministerio_funcoes (
-            nome
-          )
-        `);
-
-      if (error) throw error;
+      const dados = rawDados || await ministeriosService.obterRelatoriosConsolidados();
+      const escalas = dados?.escalas || [];
 
       const formatarStatusPDF = (st, just) => {
         const s = (st || '').toLowerCase();
@@ -673,7 +572,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       };
 
       const agrupados = {};
-      (escalas || []).forEach(e => {
+      escalas.forEach(e => {
         const minNome = e.ministerios?.nome || 'Sem Ministério';
         if (!agrupados[minNome]) agrupados[minNome] = [];
         agrupados[minNome].push(e);
@@ -793,31 +692,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
   async function exportarProgramacaoMensalPDF(mes, ano) {
     setLoading(true);
     try {
-      const { data: escalas, error } = await supabase
-        .from('escalas')
-        .select(`
-          status,
-          created_at,
-          eventos_ministeriais (
-            id,
-            titulo,
-            data_evento,
-            local,
-            fardamentos
-          ),
-          pessoas (
-            nome
-          ),
-          ministerios (
-            id,
-            nome
-          ),
-          ministerio_funcoes (
-            nome
-          )
-        `);
-
-      if (error) throw error;
+      const dados = rawDados || await ministeriosService.obterRelatoriosConsolidados();
+      const escalas = dados?.escalas || [];
 
       const parseDatabaseDate = (str) => {
         if (!str) return null;
@@ -828,7 +704,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         return new Date(str);
       };
 
-      const escalasFiltradas = (escalas || []).filter(e => {
+      const escalasFiltradas = escalas.filter(e => {
         if (!e.eventos_ministeriais?.data_evento) return false;
         const date = parseDatabaseDate(e.eventos_ministeriais.data_evento);
         const bDate = new Date(date.getTime() - 3 * 3600 * 1000);
@@ -843,7 +719,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
 
       const escalasPorEvento = {};
       escalasFiltradas.forEach(e => {
-        const evId = e.eventos_ministeriais.id;
+        const evId = e.eventos_ministeriais?.id || e.evento_id;
         if (!escalasPorEvento[evId]) {
           escalasPorEvento[evId] = {
             evento: e.eventos_ministeriais,
@@ -854,7 +730,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       });
 
       const eventosOrdenados = Object.values(escalasPorEvento).sort((a, b) => {
-        return new Date(a.evento.data_evento) - new Date(b.evento.data_evento);
+        return new Date(a.evento?.data_evento || 0) - new Date(b.evento?.data_evento || 0);
       });
 
       const doc = new jsPDF();
@@ -1163,6 +1039,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
         data_evento: e.eventos_ministeriais?.data_evento,
         local: e.eventos_ministeriais?.local,
+        justificativa: e.justificativa,
         statusBadge: '🔴 Recusado'
       }));
 
@@ -1222,7 +1099,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       const leaderName = liderNamesMap[lPessoaId];
       // Quais ministérios ele coordena?
       const ledMinistryIds = membros
-        .filter(m => m.pessoa_id === Number(lPessoaId) && m.lider === true)
+        .filter(m => String(m.pessoa_id) === String(lPessoaId) && m.lider === true)
         .map(m => m.ministerio_id);
 
       // Quantos membros únicos servem nesses ministérios?
@@ -1291,7 +1168,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       const ultimaData = ultimaEscalaPorVoluntario[pessoaId];
       if (!ultimaData) {
         voluntarioSemEscala.push({
-          pessoa_id: Number(pessoaId),
+          pessoa_id: pessoaId,
           nome: pessoa.nome,
           foto_url: pessoa.foto_url,
           detalhe: 'Nunca foi escalado',
@@ -1307,7 +1184,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         const dataFormatada = `${DD}/${MM}/${YYYY}`;
         
         voluntarioSemEscala.push({
-          pessoa_id: Number(pessoaId),
+          pessoa_id: pessoaId,
           nome: pessoa.nome,
           foto_url: pessoa.foto_url,
           detalhe: `Sem escalas há ${diffDays} dias (${dataFormatada})`,

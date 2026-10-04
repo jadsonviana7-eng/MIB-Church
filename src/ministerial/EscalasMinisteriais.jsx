@@ -1294,7 +1294,7 @@ export default function EscalasMinisteriais({
     }
     if (st === 'recusado') {
       return (
-        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200 flex items-center gap-1">
+        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200 flex items-center gap-1" title={item.justificativa ? `Motivo da Recusa: ${item.justificativa}` : 'Recusado pelo voluntário'}>
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
           Recusado
         </span>
@@ -2284,7 +2284,16 @@ export default function EscalasMinisteriais({
                               </div>
                             </div>
 
-                            {/* Detalhe de Justificativa / Negativação */}
+                            {/* Detalhe de Justificativa / Recusa / Negativação */}
+                            {item.status === 'recusado' && (
+                              <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2 py-1 rounded-lg flex items-start gap-1.5 animate-in fade-in">
+                                <span className="shrink-0 text-rose-600">🚫</span>
+                                <span className="leading-snug">
+                                  <strong>Motivo da Recusa:</strong> {item.justificativa ? item.justificativa : 'Voluntário informou que não poderá comparecer.'}
+                                </span>
+                              </div>
+                            )}
+
                             {((item.status === 'falta_justificada' || item.status === 'ausente_justificado') && item.justificativa) && (
                               <div className="text-[10px] text-amber-900 bg-amber-50/90 border border-amber-200/70 px-2 py-1 rounded-lg flex items-start gap-1.5 animate-in fade-in">
                                 <span className="shrink-0 text-amber-600">💬</span>

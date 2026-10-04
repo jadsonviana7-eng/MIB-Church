@@ -21,6 +21,7 @@ import PublicConfirmarEscala from './PublicConfirmarEscala';
 import { MenuIcons, submenuIconKey } from './icons'; // Importa MenuIcons e submenuIconKey do novo arquivo
 import { Settings, Bell } from 'lucide-react';
 import { normalizarTexto, faixaDaIdade, meses, valorCampoRelatorio } from './churchUtils';
+import { setAppBadge, clearAppBadge, requestBadgePermission } from './badgeUtils';
 
 const filtrosIniciais = {
   busca: '', genero: '', estadoCivil: '', faixaEtaria: '', zona: '', cargo: '',
@@ -457,6 +458,15 @@ export default function App() {
   const notificacoesAtivas = useMemo(() => {
     return notificacoes.filter(n => !notificacoesLidas.includes(String(n.id)));
   }, [notificacoes, notificacoesLidas]);
+
+  // Sincroniza o contador no ícone do aplicativo PWA (App Badging API)
+  useEffect(() => {
+    if (membroLogado) {
+      setAppBadge(notificacoesAtivas.length);
+    } else {
+      clearAppBadge();
+    }
+  }, [membroLogado, notificacoesAtivas.length]);
 
   // Indica se o membro logado possui alguma atuação/ministério vinculado
   // (usado para liberar o acesso a "Escalas Ministeriais" mesmo para membros comuns)
@@ -943,6 +953,7 @@ export default function App() {
     }
 
     try { await supabase.auth.signOut(); } catch { /* ignora erro de rede */ }
+    clearAppBadge();
     localStorage.removeItem('mibChurchSessao');
     setUsuarioLogado(null);
     setModuloAtual('dashboard');
@@ -1251,7 +1262,10 @@ export default function App() {
           {/* Central de Notificações */}
           <button
             type="button"
-            onClick={() => setNotificacoesAberto(true)}
+            onClick={() => {
+              setNotificacoesAberto(true);
+              requestBadgePermission();
+            }}
             className="p-1.5 rounded-xl transition cursor-pointer flex items-center justify-center border border-transparent text-slate-400 hover:text-white hover:bg-slate-800 relative"
             title="Alertas e Notificações"
           >
@@ -1422,7 +1436,10 @@ export default function App() {
         <div className="flex items-center gap-1.5">
           {/* 🔔 Sino de Notificações no Mobile */}
           <button
-            onClick={() => setNotificacoesAberto(true)}
+            onClick={() => {
+              setNotificacoesAberto(true);
+              requestBadgePermission();
+            }}
             className="p-1.5 active:scale-95 transition-transform relative text-white cursor-pointer"
             title="Alertas e Notificações"
           >

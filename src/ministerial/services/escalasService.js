@@ -530,24 +530,99 @@ export const escalasService = {
   },
 
   async listarEscalasMes(eventoIds, ministerioId) {
-    const { data, error } = await supabase
-      .from('escalas')
-      .select(`
-        *,
-        pessoas (
-          nome
-        ),
-        ministerios (
-          nome
-        ),
-        ministerio_funcoes (
-          nome
-        )
-      `)
-      .in('evento_id', eventoIds)
-      .eq('ministerio_id', ministerioId);
+    if (!eventoIds || eventoIds.length === 0 || !ministerioId) return [];
 
-    if (error) throw error;
-    return data;
+    try {
+      // 1. Tentativa com foreign keys explícitas
+      const { data, error } = await supabase
+        .from('escalas')
+        .select(`
+          *,
+          pessoas:pessoa_id (
+            id,
+            nome,
+            foto_url,
+            telefone
+          ),
+          ministerios:ministerio_id (
+            id,
+            nome,
+            fardamentos
+          ),
+          ministerio_funcoes:funcao_id (
+            id,
+            nome
+          )
+        `)
+        .in('evento_id', eventoIds)
+        .eq('ministerio_id', ministerioId);
+
+      if (!error && data) return data;
+      if (error) throw error;
+    } catch (err1) {
+      console.warn('Tentando fallback 1 para listarEscalasMes:', err1?.message || err1);
+      try {
+        // 2. Tentativa com relações padrão
+        const { data: data2, error: err2 } = await supabase
+          .from('escalas')
+          .select(`
+            *,
+            pessoas (
+              id,
+              nome,
+              telefone
+            ),
+            ministerios (
+              id,
+              nome,
+              fardamentos
+            ),
+            ministerio_funcoes (
+              id,
+              nome
+            )
+          `)
+          .in('evento_id', eventoIds)
+          .eq('ministerio_id', ministerioId);
+
+        if (!err2 && data2) return data2;
+        if (err2) throw err2;
+      } catch (err2) {
+        console.warn('Tentando fallback 2 (hidratação manual) para listarEscalasMes:', err2?.message || err2);
+        // 3. Fallback infalível: busca pura na tabela escalas com hidratação manual
+        const { data: rawEscalas, error: err3 } = await supabase
+          .from('escalas')
+          .select('*')
+          .in('evento_id', eventoIds)
+          .eq('ministerio_id', ministerioId);
+
+        if (err3) {
+          console.error('Erro final ao buscar escalas do mês:', err3);
+          throw err3;
+        }
+        if (!rawEscalas || rawEscalas.length === 0) return [];
+
+        const pessoaIds = [...new Set(rawEscalas.map(e => e.pessoa_id).filter(Boolean))];
+        const ministerioIds = [...new Set(rawEscalas.map(e => e.ministerio_id).filter(Boolean))];
+        const funcaoIds = [...new Set(rawEscalas.map(e => e.funcao_id).filter(Boolean))];
+
+        const [resPessoas, resMin, resFunc] = await Promise.all([
+          pessoaIds.length > 0 ? supabase.from('pessoas').select('id, nome, foto_url, telefone').in('id', pessoaIds) : { data: [] },
+          ministerioIds.length > 0 ? supabase.from('ministerios').select('id, nome, fardamentos').in('id', ministerioIds) : { data: [] },
+          funcaoIds.length > 0 ? supabase.from('ministerio_funcoes').select('id, nome').in('id', funcaoIds) : { data: [] }
+        ]);
+
+        const mapPessoas = new Map((resPessoas.data || []).map(p => [String(p.id), p]));
+        const mapMin = new Map((resMin.data || []).map(m => [String(m.id), m]));
+        const mapFunc = new Map((resFunc.data || []).map(f => [String(f.id), f]));
+
+        return rawEscalas.map(e => ({
+          ...e,
+          pessoas: mapPessoas.get(String(e.pessoa_id)) || { nome: 'Voluntário' },
+          ministerios: mapMin.get(String(e.ministerio_id)) || { nome: 'Ministério' },
+          ministerio_funcoes: mapFunc.get(String(e.funcao_id)) || { nome: 'Geral' }
+        }));
+      }
+    }
   }
 }

@@ -1658,17 +1658,29 @@ export default function EscalasMinisteriais({
           setFuncoesExportar([]);
           return;
         }
-        const dados = await escalasService.listarEscalasMes(eventIds, minExportarId);
+        const [dados, funcs] = await Promise.all([
+          escalasService.listarEscalasMes(eventIds, minExportarId),
+          escalasService.listarFuncoes(minExportarId)
+        ]);
+
         setDadosMensaisExportar(dados || []);
 
-        // Fetch and sort functions of the ministry to ensure fixed order/position
-        const funcs = await escalasService.listarFuncoes(minExportarId);
-        let funcsOrdenadas = (funcs || []).sort((a, b) => a.nome.localeCompare(b.nome));
+        let funcsOrdenadas = (funcs || []).slice().sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+
+        // Se houver funções encontradas nas próprias escalas que não estejam na lista de funções, adicioná-las
+        (dados || []).forEach(d => {
+          if (d.funcao_id && !funcsOrdenadas.some(f => String(f.id) === String(d.funcao_id))) {
+            funcsOrdenadas.push({
+              id: d.funcao_id,
+              nome: d.ministerio_funcoes?.nome || 'Função'
+            });
+          }
+        });
 
         // Se for ministério Cultos e não tiver função de Pregação, inclui na lista para exibição
-        const minSel = listaMinisterios.find(m => m.id === minExportarId);
+        const minSel = listaMinisterios.find(m => String(m.id) === String(minExportarId));
         if (minSel && isMinisterioCultos(minSel.nome)) {
-          const temPregacao = funcsOrdenadas.some(f => f.nome.toLowerCase().includes('prega') || f.nome.toLowerCase().includes('palavra'));
+          const temPregacao = funcsOrdenadas.some(f => f.nome?.toLowerCase().includes('prega') || f.nome?.toLowerCase().includes('palavra'));
           if (!temPregacao) {
             funcsOrdenadas = [{ id: '_pregacao_cultos', nome: 'Pregação' }, ...funcsOrdenadas];
           }
@@ -1687,7 +1699,7 @@ export default function EscalasMinisteriais({
   // Exportar PNG da escala mensal
   async function handleExportarMensalPNG(isDownloadOnly = false) {
     if (!minExportarId) return;
-    const ministerio = listaMinisterios.find(m => m.id === minExportarId);
+    const ministerio = listaMinisterios.find(m => String(m.id) === String(minExportarId));
     if (!ministerio) return;
 
     setCarregandoExportar(true);
@@ -1699,41 +1711,133 @@ export default function EscalasMinisteriais({
       const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
       const nomesDias = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
 
+      // Obter dados frescos e confiáveis diretamente do serviço
+      const eventIds = eventosFiltrados.map(e => e.id);
+      let dados = dadosMensaisExportar;
+      let funcs = funcoesExportar;
+
+      try {
+        const [dadosFresh, funcsFresh] = await Promise.all([
+          escalasService.listarEscalasMes(eventIds, minExportarId),
+          escalasService.listarFuncoes(minExportarId)
+        ]);
+        if (dadosFresh) dados = dadosFresh;
+        if (funcsFresh && funcsFresh.length > 0) {
+          funcs = funcsFresh.slice().sort((a, b) => (a.nome || '').localeCompare(b.nome || ''));
+        }
+      } catch (errFresh) {
+        console.warn('Usando fallback do estado local para exportação:', errFresh);
+      }
+
+      // Garantir que todas as funções usadas nas escalas estejam presentes
+      let funcoesLista = (funcs || []).slice();
+      (dados || []).forEach(d => {
+        if (d.funcao_id && !funcoesLista.some(f => String(f.id) === String(d.funcao_id))) {
+          funcoesLista.push({
+            id: d.funcao_id,
+            nome: d.ministerio_funcoes?.nome || 'Função'
+          });
+        }
+      });
+
+      if (isMinisterioCultos(ministerio.nome)) {
+        const temPregacao = funcoesLista.some(f => f.nome?.toLowerCase().includes('prega') || f.nome?.toLowerCase().includes('palavra'));
+        if (!temPregacao) {
+          funcoesLista = [{ id: '_pregacao_cultos', nome: 'Pregação' }, ...funcoesLista];
+        }
+      }
+
+      const minCor = obterCorMinisterio(ministerio.nome, ministerio.cor_principal) || '#3b82f6';
+
       const cardsHTML = eventosFiltrados.map((ev) => {
         const dataInfo = obterInfoDataBrasilia(ev.data_evento);
         const diaSemanaStr = nomesDias[dataInfo.diaSemanaIndex];
 
-        // Find volunteers for this event and this ministry
-        const atribuicoes = dadosMensaisExportar.filter(item => item.evento_id === ev.id);
+        // Filtra voluntários deste evento e ministério usando String() para comparação segura
+        const atribuicoes = (dados || []).filter(item => String(item.evento_id) === String(ev.id));
         const pregadorEv = extrairPregador(ev);
         const hasVolunteers = atribuicoes.length > 0 || (pregadorEv && isMinisterioCultos(ministerio.nome));
 
-        const assignmentsHTML = hasVolunteers ? funcoesExportar.map((func) => {
-          const item = atribuicoes.find(att => att.funcao_id === func.id);
-          const isFuncPregacao = func.nome.toLowerCase().includes('prega') || func.nome.toLowerCase().includes('palavra') || func.id === '_pregacao_cultos';
-          const nomePessoa = item?.pessoas?.nome || (isFuncPregacao && pregadorEv ? pregadorEv : '— —');
-          const statusIcon = item 
-            ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') 
-            : (isFuncPregacao && pregadorEv ? '🟢' : '');
+        let assignmentsHTML = '';
 
-          return `
-            <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
-              <div style="font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:#2563eb; opacity:0.85;">
-                ${func.nome}
-              </div>
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:24px; font-weight:800; color:${nomePessoa !== '— —' ? '#0f172a' : '#94a3b8'}; font-style:${nomePessoa !== '— —' ? 'normal' : 'italic'};">${nomePessoa}</span>
-                ${statusIcon ? `<span style="font-size:12px;">${statusIcon}</span>` : ''}
-              </div>
-            </div>
-          `;
-        }).join('') : '<div style="font-size:20px; color:#94a3b8; font-style:italic; grid-column:span 2;">Sem voluntários escalados</div>';
+        if (hasVolunteers) {
+          if (funcoesLista.length > 0) {
+            // Mapeia pelas funções registradas
+            const renderedFuncaoIds = new Set();
+            const listItems = funcoesLista.map((func) => {
+              renderedFuncaoIds.add(String(func.id));
+              const item = atribuicoes.find(att => String(att.funcao_id) === String(func.id));
+              const isFuncPregacao = func.nome?.toLowerCase().includes('prega') || func.nome?.toLowerCase().includes('palavra') || func.id === '_pregacao_cultos';
+              const nomePessoa = item?.pessoas?.nome || (isFuncPregacao && pregadorEv ? pregadorEv : '— —');
+              const statusIcon = item 
+                ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') 
+                : (isFuncPregacao && pregadorEv ? '🟢' : '');
+
+              return `
+                <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
+                  <div style="font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:${minCor}; opacity:0.9;">
+                    ${func.nome}
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:24px; font-weight:800; color:${nomePessoa !== '— —' ? '#0f172a' : '#94a3b8'}; font-style:${nomePessoa !== '— —' ? 'normal' : 'italic'};">${nomePessoa}</span>
+                    ${statusIcon ? `<span style="font-size:12px;">${statusIcon}</span>` : ''}
+                  </div>
+                </div>
+              `;
+            });
+
+            // Se houver atribuições que não casaram com nenhuma função acima
+            atribuicoes.forEach(att => {
+              if (!att.funcao_id || !renderedFuncaoIds.has(String(att.funcao_id))) {
+                const nomeFunc = att.ministerio_funcoes?.nome || 'Voluntário';
+                const nomePessoa = att.pessoas?.nome || 'Voluntário';
+                const statusIcon = att.status === 'confirmado' ? '🟢' : att.status === 'recusado' ? '🔴' : '🟡';
+                listItems.push(`
+                  <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
+                    <div style="font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:${minCor}; opacity:0.9;">
+                      ${nomeFunc}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-size:24px; font-weight:800; color:#0f172a;">${nomePessoa}</span>
+                      <span style="font-size:12px;">${statusIcon}</span>
+                    </div>
+                  </div>
+                `);
+              }
+            });
+
+            assignmentsHTML = listItems.join('');
+          } else {
+            // Se não houver funções cadastradas, lista direto as atribuições existentes
+            assignmentsHTML = atribuicoes.map(att => {
+              const nomePessoa = att.pessoas?.nome || 'Voluntário';
+              const nomeFunc = att.ministerio_funcoes?.nome || 'Voluntário';
+              const statusIcon = att.status === 'confirmado' ? '🟢' : att.status === 'recusado' ? '🔴' : '🟡';
+              return `
+                <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
+                  <div style="font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:0.1em; color:${minCor}; opacity:0.9;">
+                    ${nomeFunc}
+                  </div>
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:24px; font-weight:800; color:#0f172a;">${nomePessoa}</span>
+                    <span style="font-size:12px;">${statusIcon}</span>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          }
+        } else {
+          assignmentsHTML = '<div style="font-size:20px; color:#94a3b8; font-style:italic; grid-column:span 2;">Sem voluntários escalados</div>';
+        }
 
         const fardaSel = ev.fardamentos?.[minExportarId];
+        const nomeMinNorm = ministerio.nome ? ministerio.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+        const eIntercessaoOuIntroducao = nomeMinNorm.includes('intercessao') || nomeMinNorm.includes('introducao');
 
         const uniformHTML = fardaSel
-          ? `<div style="display:flex; align-items:center; gap:6px; margin-top:2px; padding-top:6px; border-top:1px dashed rgba(15, 23, 42, 0.1); font-size:14px; font-weight:800; color:#475569; grid-column: span 2;">
-              👕 Farda: ${fardaSel}
+          ? `<div style="display:flex; align-items:center; gap:10px; margin-top:6px; padding:10px 18px; background:${eIntercessaoOuIntroducao ? 'rgba(30, 41, 59, 0.06)' : 'rgba(15, 23, 42, 0.03)'}; border-radius:14px; border:${eIntercessaoOuIntroducao ? '2px solid rgba(30, 41, 59, 0.18)' : '1px dashed rgba(15, 23, 42, 0.12)'}; font-size:${eIntercessaoOuIntroducao ? '22px' : '18px'}; font-weight:900; color:${eIntercessaoOuIntroducao ? '#0f172a' : '#334155'}; grid-column: span 2; text-transform: uppercase; letter-spacing: 0.03em;">
+              <span style="font-size:${eIntercessaoOuIntroducao ? '26px' : '22px'};">👕</span>
+              <span>FARDA: <span style="color:${minCor};">${fardaSel}</span></span>
              </div>`
           : '';
 
@@ -1760,7 +1864,7 @@ export default function EscalasMinisteriais({
       container.innerHTML = `
         <div style="box-sizing:border-box; width:1080px; min-height:1920px; height:auto; padding:56px 48px; font-family:'Montserrat',Arial,sans-serif; display:flex; flex-direction:column; gap:32px; position:relative; overflow:hidden; background:linear-gradient(150deg,#0f172a 0%,#1e1b4b 55%,#311042 100%);">
           <div style="border-radius:40px; padding:48px; display:flex; flex-direction:column; align-items:flex-start; gap:24px; border:1px solid rgba(255,255,255,0.12); box-shadow:0 20px 50px rgba(0,0,0,0.25); background:linear-gradient(135deg,rgba(255,255,255,0.08) 0%,rgba(255,255,255,0.03) 100%); z-index:2; width:100%; box-sizing:border-box;">
-            <div style="font-size:16px; font-weight:900; text-transform:uppercase; letter-spacing:0.2em; padding:10px 24px; border-radius:999px; display:inline-flex; align-items:center; gap:8px; background:#3b82f6; color:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.15);">${ministerio.nome}</div>
+            <div style="font-size:16px; font-weight:900; text-transform:uppercase; letter-spacing:0.2em; padding:10px 24px; border-radius:999px; display:inline-flex; align-items:center; gap:8px; background:${minCor}; color:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.15);">${ministerio.nome}</div>
             <div style="font-size:96px; font-weight:900; line-height:0.85; letter-spacing:-2px; text-transform:uppercase; margin-top:6px; color:#ffffff; text-shadow:0 4px 16px rgba(0,0,0,0.2);">${MESES[filtroMes].toUpperCase()} ${filtroAno}</div>
           </div>
           <div style="flex:1; border-radius:40px; padding:36px 24px; display:flex; flex-direction:column; gap:24px; border:1px solid rgba(255, 255, 255, 0.12); box-shadow:0 20px 50px rgba(0, 0, 0, 0.2); z-index:2; background:linear-gradient(135deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0.02) 100%); width:100%; box-sizing:border-box;">
@@ -1774,11 +1878,16 @@ export default function EscalasMinisteriais({
         </div>
       `;
 
-      // Delay to ensure rendering is complete
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Delay para garantir que todas as fontes e imagens estejam renderizadas
+      await new Promise(resolve => setTimeout(resolve, 350));
 
       const computedHeight = container.firstElementChild.scrollHeight;
-      const imgData = await toPng(container.firstElementChild, { width: 1080, height: computedHeight });
+      const imgData = await toPng(container.firstElementChild, { 
+        width: 1080, 
+        height: computedHeight,
+        cacheBust: true,
+        pixelRatio: 2
+      });
 
       const link = document.createElement('a');
       link.download = `Escala_Mensal_${ministerio.nome}_${MESES[filtroMes]}_${filtroAno}.png`;
@@ -3280,34 +3389,98 @@ export default function EscalasMinisteriais({
                         .mensal-export-assignment-name-row { display: flex; align-items: center; gap: 8px; }
                         .mensal-export-assignment-name { font-size: 24px; font-weight: 800; color: #0f172a; }
                         .mensal-export-assignment-name-empty { font-size: 24px; font-weight: 500; color: #94a3b8; font-style: italic; }
-                        .mensal-export-uniform-badge { display: flex; align-items: center; gap: 6px; margin-top: 4px; padding-top: 8px; border-top: 1px dashed rgba(15, 23, 42, 0.1); font-size: 14px; font-weight: 800; color: #475569; grid-column: span 2; }
+                        .mensal-export-uniform-badge { display: flex; align-items: center; gap: 10px; margin-top: 6px; padding: 10px 18px; background: rgba(30, 41, 59, 0.06); border-radius: 14px; border: 2px solid rgba(30, 41, 59, 0.18); font-size: 22px; font-weight: 900; color: #0f172a; grid-column: span 2; text-transform: uppercase; letter-spacing: 0.03em; }
                         .mensal-export-footer { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 0 12px; flex-shrink: 0; gap: 10px; z-index: 2; width: 100%; }
                         .mensal-export-footer-logo { height: 90px; object-fit: contain; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.15)); }
                         .mensal-export-footer-tagline { font-size: 16px; font-weight: 900; letter-spacing: 0.25em; text-transform: uppercase; opacity: 0.6; color: #fff; margin-top: 4px; }
                       `}</style>
 
-                      <div className="mensal-export-page">
-                        <div className="mensal-export-header">
-                          <div className="mensal-export-header-badge">
-                            {listaMinisterios.find(m => m.id === minExportarId)?.nome || ''}
-                          </div>
-                          <div className="mensal-export-title">
-                            {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes].toUpperCase()} {filtroAno}
-                          </div>
-                        </div>
+                      {(() => {
+                        const minObjSel = listaMinisterios.find(m => String(m.id) === String(minExportarId));
+                        const minCorSel = minObjSel ? (obterCorMinisterio(minObjSel.nome, minObjSel.cor_principal) || '#2563eb') : '#2563eb';
 
-                        <div className="mensal-export-list">
-                          <div className="mensal-export-list-title">Escala Mensal de Voluntários</div>
+                        return (
+                          <div className="mensal-export-page">
+                            <div className="mensal-export-header">
+                              <div className="mensal-export-header-badge" style={{ background: minCorSel }}>
+                                {minObjSel?.nome || ''}
+                              </div>
+                              <div className="mensal-export-title">
+                                {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes].toUpperCase()} {filtroAno}
+                              </div>
+                            </div>
 
-                          {eventosFiltrados.map((ev) => {
-                            const dataInfo = obterInfoDataBrasilia(ev.data_evento);
-                            const diaSemanaStr = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'][dataInfo.diaSemanaIndex];
+                            <div className="mensal-export-list">
+                              <div className="mensal-export-list-title">Escala Mensal de Voluntários</div>
 
-                            const atribuicoes = dadosMensaisExportar.filter(item => item.evento_id === ev.id);
-                            const pregadorEv = extrairPregador(ev);
-                            const fardaSel = ev.fardamentos?.[minExportarId];
-                            const minObjSel = listaMinisterios.find(m => m.id === minExportarId);
-                            const hasVolunteers = atribuicoes.length > 0 || (pregadorEv && isMinisterioCultos(minObjSel?.nome));
+                              {eventosFiltrados.map((ev) => {
+                                const dataInfo = obterInfoDataBrasilia(ev.data_evento);
+                                const diaSemanaStr = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'][dataInfo.diaSemanaIndex];
+
+                                const atribuicoes = (dadosMensaisExportar || []).filter(item => String(item.evento_id) === String(ev.id));
+                                const pregadorEv = extrairPregador(ev);
+                                const fardaSel = ev.fardamentos?.[minExportarId];
+                                const hasVolunteers = atribuicoes.length > 0 || (pregadorEv && isMinisterioCultos(minObjSel?.nome));
+
+                            let previewItems = [];
+                            if (hasVolunteers) {
+                              if (funcoesExportar.length > 0) {
+                                const renderedIds = new Set();
+                                funcoesExportar.forEach((func) => {
+                                  renderedIds.add(String(func.id));
+                                  const item = atribuicoes.find(att => String(att.funcao_id) === String(func.id));
+                                  const isFuncPregacao = func.nome?.toLowerCase().includes('prega') || func.nome?.toLowerCase().includes('palavra') || func.id === '_pregacao_cultos';
+                                  const nomePessoa = item?.pessoas?.nome || (isFuncPregacao && pregadorEv ? pregadorEv : '— —');
+                                  const statusIcon = item 
+                                    ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') 
+                                    : (isFuncPregacao && pregadorEv ? '🟢' : '');
+
+                                  previewItems.push(
+                                    <div key={func.id} className="mensal-export-assignment-cell">
+                                      <div className="mensal-export-assignment-role" style={{ color: minCorSel }}>{func.nome}</div>
+                                      <div className="mensal-export-assignment-name-row">
+                                        <span className={nomePessoa !== '— —' ? "mensal-export-assignment-name" : "mensal-export-assignment-name-empty"}>
+                                          {nomePessoa}
+                                        </span>
+                                        {statusIcon && <span style={{ fontSize: '12px' }}>{statusIcon}</span>}
+                                      </div>
+                                    </div>
+                                  );
+                                });
+
+                                atribuicoes.forEach(att => {
+                                  if (!att.funcao_id || !renderedIds.has(String(att.funcao_id))) {
+                                    const nomePessoa = att.pessoas?.nome || 'Voluntário';
+                                    const nomeFunc = att.ministerio_funcoes?.nome || 'Voluntário';
+                                    const statusIcon = att.status === 'confirmado' ? '🟢' : att.status === 'recusado' ? '🔴' : '🟡';
+                                    previewItems.push(
+                                      <div key={att.id} className="mensal-export-assignment-cell">
+                                        <div className="mensal-export-assignment-role" style={{ color: minCorSel }}>{nomeFunc}</div>
+                                        <div className="mensal-export-assignment-name-row">
+                                          <span className="mensal-export-assignment-name">{nomePessoa}</span>
+                                          <span style={{ fontSize: '12px' }}>{statusIcon}</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                });
+                              } else {
+                                atribuicoes.forEach(att => {
+                                  const nomePessoa = att.pessoas?.nome || 'Voluntário';
+                                  const nomeFunc = att.ministerio_funcoes?.nome || 'Voluntário';
+                                  const statusIcon = att.status === 'confirmado' ? '🟢' : att.status === 'recusado' ? '🔴' : '🟡';
+                                  previewItems.push(
+                                    <div key={att.id} className="mensal-export-assignment-cell">
+                                      <div className="mensal-export-assignment-role" style={{ color: minCorSel }}>{nomeFunc}</div>
+                                      <div className="mensal-export-assignment-name-row">
+                                        <span className="mensal-export-assignment-name">{nomePessoa}</span>
+                                        <span style={{ fontSize: '12px' }}>{statusIcon}</span>
+                                      </div>
+                                    </div>
+                                  );
+                                });
+                              }
+                            }
 
                             return (
                               <div key={ev.id} className="mensal-export-card">
@@ -3321,33 +3494,17 @@ export default function EscalasMinisteriais({
                                     <span style={{ fontSize: '11px', opacity: 0.6 }}>⏰ {obterHoraExibicao(ev)}</span>
                                   </div>
                                   <div className="mensal-export-assignments-grid">
-                                    {hasVolunteers ? funcoesExportar.map((func) => {
-                                      const item = atribuicoes.find(att => att.funcao_id === func.id);
-                                      const isFuncPregacao = func.nome.toLowerCase().includes('prega') || func.nome.toLowerCase().includes('palavra') || func.id === '_pregacao_cultos';
-                                      const nomePessoa = item?.pessoas?.nome || (isFuncPregacao && pregadorEv ? pregadorEv : '— —');
-                                      const statusIcon = item 
-                                        ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') 
-                                        : (isFuncPregacao && pregadorEv ? '🟢' : '');
-
-                                      return (
-                                        <div key={func.id} className="mensal-export-assignment-cell">
-                                          <div className="mensal-export-assignment-role" style={{ color: '#2563eb' }}>{func.nome}</div>
-                                          <div className="mensal-export-assignment-name-row">
-                                            <span className={nomePessoa !== '— —' ? "mensal-export-assignment-name" : "mensal-export-assignment-name-empty"}>
-                                              {nomePessoa}
-                                            </span>
-                                            {statusIcon && <span style={{ fontSize: '12px' }}>{statusIcon}</span>}
-                                          </div>
-                                        </div>
-                                      );
-                                    }) : (
+                                    {hasVolunteers && previewItems.length > 0 ? (
+                                      previewItems
+                                    ) : (
                                       <div className="mensal-export-assignment-name-empty" style={{ gridColumn: 'span 2' }}>
                                         Sem voluntários escalados
                                       </div>
                                     )}
                                     {fardaSel && (
                                       <div className="mensal-export-uniform-badge">
-                                        👕 Farda: {fardaSel}
+                                        <span style={{ fontSize: '24px' }}>👕</span>
+                                        <span>FARDA: <span style={{ color: minCorSel }}>{fardaSel}</span></span>
                                       </div>
                                     )}
                                   </div>
@@ -3362,9 +3519,11 @@ export default function EscalasMinisteriais({
                           <div className="mensal-export-footer-tagline">MIB CHURCH · DEPARTAMENTO DE COMUNICAÇÃO</div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-                )}
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
               </div>
             </div>
 

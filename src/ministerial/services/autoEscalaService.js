@@ -1,4 +1,5 @@
 import { supabase } from '../../supabaseClient';
+import { isMinisterioManutencao } from './escalasService';
 
 export const autoEscalaService = {
   /**
@@ -18,6 +19,14 @@ export const autoEscalaService = {
     const diaSemanaIndex = dataEvento.getDay();
     const colunasDias = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
     const diaColuna = colunasDias[diaSemanaIndex];
+
+    // 1.1 Verificar se o ministério destino é Manutenção
+    const { data: minAtual } = await supabase
+      .from('ministerios')
+      .select('nome')
+      .eq('id', ministerioId)
+      .single();
+    const isDestinoManutencao = isMinisterioManutencao(minAtual?.nome);
 
     // 2. Obter as funções registradas para este ministério
     const { data: funcoes, error: errFuncoes } = await supabase
@@ -94,13 +103,33 @@ export const autoEscalaService = {
     // 5. Obter escalas já existentes para este evento
     const { data: escalasEvento, error: errEscalasEv } = await supabase
       .from('escalas')
-      .select('pessoa_id')
+      .select(`
+        pessoa_id,
+        ministerio_id,
+        ministerios:ministerio_id (
+          nome
+        )
+      `)
       .eq('evento_id', eventoId);
 
     if (errEscalasEv) throw errEscalasEv;
-    const pessoasJaEscaladasNoEvento = new Set(
-      (escalasEvento || []).map(e => e.pessoa_id).filter(Boolean)
-    );
+    const pessoasJaEscaladasNoEvento = new Set();
+    (escalasEvento || []).forEach(e => {
+      if (!e.pessoa_id) return;
+      const isMinEscalaManutencao = isMinisterioManutencao(e.ministerios?.nome);
+
+      if (isDestinoManutencao) {
+        // Se estamos gerando para Manutenção, só bloqueia quem já está escalado em Manutenção neste evento
+        if (isMinEscalaManutencao) {
+          pessoasJaEscaladasNoEvento.add(e.pessoa_id);
+        }
+      } else {
+        // Se estamos gerando para outro ministério (ex: Louvor), bloqueia quem estiver em outros ministérios (ignorando quem só está em Manutenção)
+        if (!isMinEscalaManutencao) {
+          pessoasJaEscaladasNoEvento.add(e.pessoa_id);
+        }
+      }
+    });
 
     // 6. Obter histórico
     const { data: historicoEscalas, error: errHist } = await supabase

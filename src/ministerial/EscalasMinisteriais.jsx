@@ -1030,6 +1030,17 @@ export default function EscalasMinisteriais({
                 status: 'pendente'
               });
             } else if (String(itemExistente.pessoa_id) !== String(novaPessoaId)) {
+              const conflito = await escalasService.verificarConflitoEscala({
+                eventoId: eventoSelecionado.id,
+                pessoaId: novaPessoaId,
+                ministerioId: minId,
+                escalaIdIgnorar: itemExistente.id
+              });
+              if (conflito && conflito.temConflito) {
+                const err = new Error(`ESTA_PESSOA_JA_ESCALADA::${conflito.pessoaNome}::${conflito.ministerioNome}::${conflito.eventoTitulo}`);
+                err.conflito = conflito;
+                throw err;
+              }
               await supabase
                 .from('escalas')
                 .update({ pessoa_id: novaPessoaId })
@@ -1311,6 +1322,7 @@ export default function EscalasMinisteriais({
   function obterIconeMinisterio(nome, iconeDefinido) {
     if (iconeDefinido && typeof iconeDefinido === 'string' && iconeDefinido.trim()) return iconeDefinido.trim();
     const n = (nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    if (n.includes('manuten') || n.includes('obras') || n.includes('patrimon')) return 'Wrench';
     if (n.includes('louvor') || n.includes('musica') || n.includes('coral') || n.includes('banda') || n.includes('vocal')) return 'Music';
     if (n.includes('midia') || n.includes('som') || n.includes('audio') || n.includes('transmiss') || n.includes('foto') || n.includes('projec')) return 'Clapperboard';
     if (n.includes('diacon') || n.includes('recep') || n.includes('portaria') || n.includes('acolh') || n.includes('usher')) return 'HelpingHand';
@@ -1332,6 +1344,7 @@ export default function EscalasMinisteriais({
       return corDefinida.trim();
     }
     const n = (nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    if (n.includes('manuten') || n.includes('obras') || n.includes('patrimon')) return '#0f766e'; // Teal / Esmeralda Escuro
     if (n.includes('louvor') || n.includes('musica') || n.includes('coral')) return '#8b5cf6'; // Roxo Vibrante
     if (n.includes('midia') || n.includes('som') || n.includes('audio') || n.includes('transmiss')) return '#0284c7'; // Azul Oceano
     if (n.includes('diacon') || n.includes('recep') || n.includes('acolh')) return '#059669'; // Esmeralda

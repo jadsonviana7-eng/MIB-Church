@@ -1,5 +1,11 @@
 import { supabase } from '../../supabaseClient';
 
+export const isMinisterioManutencao = (nome) => {
+  if (!nome) return false;
+  const n = String(nome).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  return n.includes('manutencao') || n.includes('manutenc') || n.includes('obras') || n.includes('patrimonio');
+};
+
 export const escalasService = {
 
   async listarEventos() {
@@ -200,10 +206,24 @@ export const escalasService = {
     }
   },
 
-  async verificarConflitoEscala({ eventoId, pessoaId }) {
+  async verificarConflitoEscala({ eventoId, pessoaId, ministerioId, escalaIdIgnorar }) {
     if (!eventoId || !pessoaId) return { temConflito: false };
 
     try {
+      // 1. Se o ministério de destino for Manutenção, não gera conflito com nada
+      if (ministerioId) {
+        const { data: minDestino } = await supabase
+          .from('ministerios')
+          .select('nome')
+          .eq('id', ministerioId)
+          .single();
+
+        if (minDestino && isMinisterioManutencao(minDestino.nome)) {
+          return { temConflito: false };
+        }
+      }
+
+      // 2. Busca as escalas existentes da pessoa neste evento
       const { data, error } = await supabase
         .from('escalas')
         .select(`
@@ -221,17 +241,27 @@ export const escalasService = {
           )
         `)
         .eq('evento_id', eventoId)
-        .eq('pessoa_id', pessoaId)
-        .limit(1);
+        .eq('pessoa_id', pessoaId);
 
       if (!error && data && data.length > 0) {
-        const e = data[0];
-        return {
-          temConflito: true,
-          pessoaNome: e.pessoas?.nome || 'Esta pessoa',
-          ministerioNome: e.ministerios?.nome || 'outro ministério',
-          eventoTitulo: e.eventos_ministeriais?.titulo || 'este evento'
-        };
+        // Filtra para remover:
+        // - A própria escala atual (ao editar)
+        // - Escalas do ministério de Manutenção (pois ocorrem fora do horário dos cultos/eventos)
+        const conflitosReais = data.filter(e => {
+          if (escalaIdIgnorar && String(e.id) === String(escalaIdIgnorar)) return false;
+          if (isMinisterioManutencao(e.ministerios?.nome)) return false;
+          return true;
+        });
+
+        if (conflitosReais.length > 0) {
+          const e = conflitosReais[0];
+          return {
+            temConflito: true,
+            pessoaNome: e.pessoas?.nome || 'Esta pessoa',
+            ministerioNome: e.ministerios?.nome || 'outro ministério',
+            eventoTitulo: e.eventos_ministeriais?.titulo || 'este evento'
+          };
+        }
       }
       return { temConflito: false };
     } catch (error) {
@@ -244,7 +274,8 @@ export const escalasService = {
     if (payload.evento_id && payload.pessoa_id) {
       const conflito = await this.verificarConflitoEscala({
         eventoId: payload.evento_id,
-        pessoaId: payload.pessoa_id
+        pessoaId: payload.pessoa_id,
+        ministerioId: payload.ministerio_id
       });
       if (conflito && conflito.temConflito) {
         const err = new Error(`ESTA_PESSOA_JA_ESCALADA::${conflito.pessoaNome}::${conflito.ministerioNome}::${conflito.eventoTitulo}`);

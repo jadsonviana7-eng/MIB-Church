@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 import { 
   Music, Heart, Sparkles, Shield, Home, Flame, BookOpen, Users, 
   Compass, Clapperboard, Award, Mic, MessageSquare, Calendar, 
-  HelpingHand, Scroll, Smile, Globe, Video, Tv
+  HelpingHand, Scroll, Smile, Globe, Video, Tv, Wrench, Hammer, Settings
 } from 'lucide-react';
 import { 
   PieChart, 
@@ -534,7 +534,10 @@ const ICON_MAP = {
   Smile,
   Globe,
   Video,
-  Tv
+  Tv,
+  Wrench,
+  Hammer,
+  Settings
 };
 
 export function MinistryIcon({ icone, className = '', size = 20, style = {} }) {

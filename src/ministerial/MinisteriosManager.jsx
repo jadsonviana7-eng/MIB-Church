@@ -3,7 +3,7 @@ import {
   Plus, Pencil, Trash2, X, ChevronRight, Eye, Info,
   Music, Heart, Sparkles, Shield, Home, Flame, BookOpen, Users, 
   Compass, Clapperboard, Award, Mic, MessageSquare, Calendar, 
-  HelpingHand, Scroll, Smile, Globe, Video, Tv
+  HelpingHand, Scroll, Smile, Globe, Video, Tv, Wrench, Hammer
 } from 'lucide-react';
 import { ministeriosService } from './services/ministeriosService';
 import MinistryDetails from './MinistryDetails';
@@ -15,6 +15,8 @@ const DISPONIVEIS_ICONES = [
   { id: 'Heart', label: 'Amor/Acolhimento', icon: Heart },
   { id: 'Smile', label: 'Comunhão', icon: Smile },
   { id: 'HelpingHand', label: 'Apoio/Social', icon: HelpingHand },
+  { id: 'Wrench', label: 'Manutenção/Obras', icon: Wrench },
+  { id: 'Hammer', label: 'Construção/Reparos', icon: Hammer },
   { id: 'Sparkles', label: 'Kids/Especial', icon: Sparkles },
   { id: 'Flame', label: 'Jovens/Avivamento', icon: Flame },
   { id: 'BookOpen', label: 'Ensino/Discipulado', icon: BookOpen },

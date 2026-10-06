@@ -15,30 +15,36 @@ import {
   ExternalLink,
   Shirt,
   Mic,
-  ArrowRight,
-  RotateCcw
+  RotateCcw,
+  CheckCheck
 } from 'lucide-react';
 
 export default function PublicConfirmarEscala() {
-  const [escalaId, setEscalaId] = useState(null);
-  const [escala, setEscala] = useState(null);
+  const [parametrosBusca, setParametrosBusca] = useState(null);
+  const [dadosMes, setDadosMes] = useState(null); // { pessoa, mesInfo, escalas }
   const [dadosIgreja, setDadosIgreja] = useState(null);
   const [carregando, setCarregando] = useState(true);
-  const [salvando, setSalvando] = useState(false);
+  const [salvandoId, setSalvandoId] = useState(null); // 'all' ou ID de escala
   const [erro, setErro] = useState(null);
 
-  // Feedback e justificação
-  const [mostrarJustificativa, setMostrarJustificativa] = useState(false);
-  const [justificativa, setJustificativa] = useState('');
+  // Controle de justificativa por escala
+  const [justificativaAbertaId, setJustificativaAbertaId] = useState(null); // 'all' ou escalaId
+  const [justificativasPorEscala, setJustificativasPorEscala] = useState({});
   const [sucessoMensagem, setSucessoMensagem] = useState(null);
 
-  // 1. Extrair ID da escala a partir da URL
+  // 1. Extrair parâmetros da URL
   useEffect(() => {
     let id = null;
+    let pessoaId = null;
+    let mes = null;
+    let ano = null;
 
-    // A. Query Params (?id=xxx ou ?escala=xxx ou ?escala_id=xxx)
+    // A. Query Params (?id=xxx&pessoa=yyy&mes=z&ano=w)
     const urlParams = new URLSearchParams(window.location.search);
     id = urlParams.get('id') || urlParams.get('escala') || urlParams.get('escala_id');
+    pessoaId = urlParams.get('pessoa') || urlParams.get('pessoa_id');
+    mes = urlParams.get('mes');
+    ano = urlParams.get('ano');
 
     // B. Pathname (/confirmar-escala/xxx)
     if (!id) {
@@ -48,41 +54,56 @@ export default function PublicConfirmarEscala() {
       }
     }
 
-    // C. Hash (#/confirmar-escala?id=xxx ou #/confirmar-escala/xxx)
-    if (!id && window.location.hash) {
+    // C. Hash (#/confirmar-escala?id=xxx...)
+    if ((!id && !pessoaId) && window.location.hash) {
       const hashStr = window.location.hash.replace(/^#\/?/, '');
       const hashParams = new URLSearchParams(hashStr.includes('?') ? hashStr.split('?')[1] : '');
       id = hashParams.get('id') || hashParams.get('escala') || hashParams.get('escala_id');
+      pessoaId = hashParams.get('pessoa') || hashParams.get('pessoa_id');
+      mes = hashParams.get('mes');
+      ano = hashParams.get('ano');
 
       if (!id && hashStr.startsWith('confirmar-escala/')) {
         id = hashStr.split('/')[1];
       }
     }
 
-    if (id) {
-      const cleanId = String(id).trim().replace(/\/$/, '');
-      setEscalaId(cleanId);
-      carregarDados(cleanId);
+    const cleanId = id ? String(id).trim().replace(/\/$/, '') : null;
+    const cleanPessoaId = pessoaId ? String(pessoaId).trim() : null;
+
+    if (cleanId || cleanPessoaId) {
+      const params = {
+        escalaId: cleanId,
+        pessoaId: cleanPessoaId,
+        mes,
+        ano
+      };
+      setParametrosBusca(params);
+      carregarDados(params);
     } else {
       setCarregando(false);
       setErro('Link de confirmação inválido ou incompleto. Verifique a mensagem recebida no WhatsApp.');
     }
   }, []);
 
-  async function carregarDados(id) {
+  async function carregarDados(params) {
     setCarregando(true);
     setErro(null);
     try {
-      const resEscala = await escalasService.obterEscalaPublica(id);
+      const res = await escalasService.obterEscalasPublicasDoMes(params);
 
-      if (!resEscala) {
-        throw new Error('Escala não encontrada no sistema ou link expirado.');
+      if (!res || !res.escalas || res.escalas.length === 0) {
+        throw new Error('Nenhuma escala encontrada para este voluntário no período selecionado.');
       }
 
-      setEscala(resEscala);
-      if (resEscala.justificativa) {
-        setJustificativa(resEscala.justificativa);
-      }
+      setDadosMes(res);
+
+      // Preencher justificativas existentes
+      const justMap = {};
+      res.escalas.forEach(e => {
+        if (e.justificativa) justMap[e.id] = e.justificativa;
+      });
+      setJustificativasPorEscala(justMap);
 
       try {
         const { data: igrData } = await supabase.from('dados_igreja').select('*').limit(1);
@@ -93,38 +114,102 @@ export default function PublicConfirmarEscala() {
         console.warn('Não foi possível carregar dados da igreja:', igrErr);
       }
     } catch (err) {
-      console.error('Erro ao carregar escala pública:', err);
-      setErro(err.message || 'Não foi possível carregar os detalhes desta escala.');
+      console.error('Erro ao carregar escalas públicas:', err);
+      setErro(err.message || 'Não foi possível carregar as escalas.');
     } finally {
       setCarregando(false);
     }
   }
 
-  async function handleResponder(novoStatus, motivo = null) {
+  // Responder a uma escala individual
+  async function handleResponderIndividual(escalaId, novoStatus, motivo = null) {
     if (!escalaId) return;
-    setSalvando(true);
+    setSalvandoId(escalaId);
     setSucessoMensagem(null);
     try {
       await escalasService.atualizarStatusEscala(escalaId, novoStatus, motivo);
 
-      setEscala(prev => ({
-        ...prev,
-        status: novoStatus,
-        justificativa: motivo
-      }));
+      setDadosMes(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          escalas: prev.escalas.map(e => {
+            if (e.id === escalaId) {
+              return { ...e, status: novoStatus, justificativa: motivo };
+            }
+            return e;
+          })
+        };
+      });
 
       if (novoStatus === 'confirmado') {
-        setSucessoMensagem('Sua presença foi confirmada com sucesso! Deus abençoe!');
-        setMostrarJustificativa(false);
+        setSucessoMensagem('Presença nesta escala confirmada com sucesso! Deus abençoe!');
       } else if (novoStatus === 'recusado') {
-        setSucessoMensagem('Agradecemos pelo aviso. O líder ministerial já foi notificado.');
-        setMostrarJustificativa(false);
+        setSucessoMensagem('Agradecemos pelo aviso. A liderança ministerial foi notificada.');
       }
+      setJustificativaAbertaId(null);
     } catch (err) {
       console.error('Erro ao atualizar status:', err);
       alert('Erro ao enviar sua resposta. Tente novamente: ' + err.message);
     } finally {
-      setSalvando(false);
+      setSalvandoId(null);
+    }
+  }
+
+  // Confirmar todas as escalas pendentes de uma só vez
+  async function handleConfirmarTodas() {
+    if (!dadosMes?.escalas) return;
+    const escalasParaConfirmar = dadosMes.escalas.filter(e => e.status !== 'confirmado');
+    if (escalasParaConfirmar.length === 0) return;
+
+    setSalvandoId('all');
+    setSucessoMensagem(null);
+    try {
+      const ids = escalasParaConfirmar.map(e => e.id);
+      await escalasService.atualizarStatusMultiplasEscalas(ids, 'confirmado');
+
+      setDadosMes(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          escalas: prev.escalas.map(e => ({ ...e, status: 'confirmado' }))
+        };
+      });
+
+      setSucessoMensagem(`Todas as suas ${dadosMes.escalas.length} presenças foram confirmadas com sucesso! 🎉`);
+      setJustificativaAbertaId(null);
+    } catch (err) {
+      console.error('Erro ao confirmar todas as escalas:', err);
+      alert('Erro ao confirmar escalas: ' + err.message);
+    } finally {
+      setSalvandoId(null);
+    }
+  }
+
+  // Recusar todas as escalas do mês
+  async function handleRecusarTodas(motivo = null) {
+    if (!dadosMes?.escalas) return;
+    setSalvandoId('all');
+    setSucessoMensagem(null);
+    try {
+      const ids = dadosMes.escalas.map(e => e.id);
+      await escalasService.atualizarStatusMultiplasEscalas(ids, 'recusado', motivo);
+
+      setDadosMes(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          escalas: prev.escalas.map(e => ({ ...e, status: 'recusado', justificativa: motivo }))
+        };
+      });
+
+      setSucessoMensagem('Aviso de ausência registrado para todas as escalas do mês. Obrigado por nos avisar!');
+      setJustificativaAbertaId(null);
+    } catch (err) {
+      console.error('Erro ao recusar escalas:', err);
+      alert('Erro ao enviar justificativa: ' + err.message);
+    } finally {
+      setSalvandoId(null);
     }
   }
 
@@ -190,23 +275,25 @@ export default function PublicConfirmarEscala() {
     const ano = bDate.getUTCFullYear();
 
     return {
-      dataStr: `${diaSemana}, ${dia} de ${mes} de ${ano}`,
+      dataStr: `${diaSemana}, ${dia} de ${mes}`,
+      anoStr: String(ano),
       horaStr: obterHoraExibicao(evento),
       diaNum: dia,
+      diaSemanaCurto: dias[bDate.getUTCDay()].slice(0, 3).toUpperCase(),
       mesAbrev: meses[bDate.getUTCMonth()].slice(0, 3).toUpperCase()
     };
   }
 
-  function gerarLinkGoogleAgenda() {
-    if (!escala?.eventos_ministeriais?.data_evento) return '#';
-    const ev = escala.eventos_ministeriais;
+  function gerarLinkGoogleAgenda(escalaItem) {
+    if (!escalaItem?.eventos_ministeriais?.data_evento) return '#';
+    const ev = escalaItem.eventos_ministeriais;
     const dataInicio = parseDatabaseDate(ev.data_evento);
     const dataFim = extrairHoraFim(ev) || new Date(dataInicio.getTime() + 2 * 60 * 60 * 1000);
 
     const formatGDate = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, '');
-    const title = encodeURIComponent(`Escala: ${escala.ministerios?.nome || 'Ministério'} - ${ev.titulo}`);
+    const title = encodeURIComponent(`Escala: ${escalaItem.ministerios?.nome || 'Ministério'} - ${ev.titulo}`);
     const details = encodeURIComponent(
-      `Escala de Serviço na ${dadosIgreja?.nome || 'Igreja'}\n\nFunção: ${escala.ministerio_funcoes?.nome || 'Voluntário'}\nMinistério: ${escala.ministerios?.nome || ''}\nLocal: ${ev.local || 'Templo Sede'}`
+      `Escala de Serviço na ${dadosIgreja?.nome || 'Igreja'}\n\nFunção: ${escalaItem.ministerio_funcoes?.nome || 'Voluntário'}\nMinistério: ${escalaItem.ministerios?.nome || ''}\nLocal: ${ev.local || 'Templo Sede'}`
     );
     const location = encodeURIComponent(ev.local || dadosIgreja?.endereco || 'Templo Sede');
     const dates = `${formatGDate(dataInicio)}/${formatGDate(dataFim)}`;
@@ -214,327 +301,194 @@ export default function PublicConfirmarEscala() {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dates}&details=${details}&location=${location}`;
   }
 
-  const ev = escala?.eventos_ministeriais;
-  const min = escala?.ministerios;
-  const func = escala?.ministerio_funcoes;
-  const pessoa = escala?.pessoas;
-  const dataInfo = formatarDataCompleta(ev);
+  const pessoa = dadosMes?.pessoa;
+  const mesInfo = dadosMes?.mesInfo;
+  const escalas = dadosMes?.escalas || [];
 
-  const corMin = min?.cor_principal || '#1e3a8a';
-  const iconeMin = min?.icone || 'Scroll';
+  const totalEscalas = escalas.length;
+  const totalConfirmadas = escalas.filter(e => e.status === 'confirmado' || e.status === 'presente').length;
+  const totalPendentes = escalas.filter(e => e.status !== 'confirmado' && e.status !== 'presente' && e.status !== 'recusado' && e.status !== 'falta' && e.status !== 'falta_justificada').length;
+  const totalRecusadas = escalas.filter(e => e.status === 'recusado' || e.status === 'falta' || e.status === 'falta_justificada').length;
 
-  // Obter fardamento configurado para o evento neste ministério
-  const fardaDefinida = ev?.fardamentos?.[escala?.ministerio_id] || null;
+  const todasConfirmadas = totalEscalas > 0 && totalConfirmadas === totalEscalas;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-blue-500 selection:text-white font-sans">
       {/* Background Glow Decorations */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div
-          className="absolute -top-[20%] left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full opacity-20 blur-[130px]"
-          style={{ backgroundColor: corMin }}
-        />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full bg-blue-600 opacity-10 blur-[120px]" />
+        <div className="absolute -top-[20%] left-1/2 -translate-x-1/2 w-[700px] h-[700px] rounded-full bg-blue-600/15 blur-[140px]" />
+        <div className="absolute bottom-0 right-0 w-[450px] h-[450px] rounded-full bg-indigo-600/10 blur-[130px]" />
       </div>
 
       {/* Conteúdo Central */}
-      <main className="relative z-10 w-full max-w-xl mx-auto px-4 py-8 sm:py-12 flex-1 flex flex-col justify-center">
+      <main className="relative z-10 w-full max-w-2xl mx-auto px-4 py-8 sm:py-12 flex-1 flex flex-col justify-center">
 
         {/* Cabeçalho da Igreja */}
         <header className="text-center mb-6 animate-in fade-in slide-from-top-4 duration-500">
           <img
             src="/logo-betesda-mundau.png"
             alt={dadosIgreja?.nome || 'MIB Church'}
-            className="h-16 sm:h-20 w-auto max-w-[220px] mx-auto object-contain mb-3 drop-shadow-md"
+            className="h-14 sm:h-18 w-auto max-w-[200px] mx-auto object-contain mb-3 drop-shadow-md"
           />
-          <h1 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">
+          <h1 className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-slate-400">
             {dadosIgreja?.nome || 'MIB Church'}
           </h1>
           <p className="text-xs text-slate-500 font-medium mt-0.5">
-            Confirmação de Escala de Servos
+            Confirmação de Escala Ministerial
           </p>
         </header>
 
-        {/* Card Principal */}
+        {/* Estado de Carregamento */}
         {carregando ? (
           <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-8 backdrop-blur-xl shadow-2xl text-center space-y-4 animate-pulse">
             <div className="w-12 h-12 rounded-2xl bg-slate-800 mx-auto" />
             <div className="h-5 bg-slate-800 rounded-lg w-3/4 mx-auto" />
             <div className="h-4 bg-slate-800/60 rounded-lg w-1/2 mx-auto" />
-            <p className="text-xs font-bold text-slate-400 pt-2">Carregando dados da sua escala...</p>
+            <p className="text-xs font-bold text-slate-400 pt-2">Carregando suas escalas do mês...</p>
           </div>
         ) : erro ? (
           <div className="bg-slate-900/90 border border-rose-500/30 rounded-3xl p-8 backdrop-blur-xl shadow-2xl text-center space-y-4 animate-in zoom-in-95 duration-300">
             <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 flex items-center justify-center text-2xl mx-auto shadow-inner">
               ⚠️
             </div>
-            <h2 className="text-lg font-black text-white">Não foi possível carregar a escala</h2>
+            <h2 className="text-lg font-black text-white">Não foi possível carregar as escalas</h2>
             <p className="text-sm text-slate-400">{erro}</p>
             <div className="pt-2">
               <button
                 type="button"
-                onClick={() => escalaId && carregarDados(escalaId)}
+                onClick={() => parametrosBusca && carregarDados(parametrosBusca)}
                 className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
               >
                 Tentar Novamente
               </button>
             </div>
           </div>
-        ) : escala ? (
-          <div className="bg-slate-900/90 border border-slate-800/90 rounded-[28px] overflow-hidden backdrop-blur-2xl shadow-2xl shadow-black/60 animate-in zoom-in-95 duration-400">
+        ) : dadosMes ? (
+          <div className="space-y-5 animate-in zoom-in-95 duration-400">
 
-            {/* Faixa Superior com Identidade do Ministério */}
-            <div
-              className="p-5 sm:p-6 border-b border-slate-800/80 relative overflow-hidden flex items-center justify-between gap-4"
-              style={{
-                background: `linear-gradient(135deg, ${corMin}30 0%, ${corMin}10 100%)`
-              }}
-            >
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border shadow-md transition-transform hover:scale-105"
-                  style={{
-                    backgroundColor: `${corMin}30`,
-                    borderColor: `${corMin}60`,
-                    color: corMin
-                  }}
-                >
-                  <MinistryIcon icone={iconeMin} size={24} style={{ color: corMin }} />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/10 text-slate-300 border border-white/10 inline-block mb-1">
-                    {min?.nome || 'Ministério'}
-                  </span>
-                  <h2 className="text-lg font-black text-white truncate tracking-tight">
-                    {func?.nome || 'Função Ministerial'}
-                  </h2>
-                </div>
-              </div>
-
-              {/* Status Atual */}
-              <div className="shrink-0 text-right">
-                {escala.status === 'confirmado' || escala.status === 'presente' ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-black uppercase tracking-wider shadow-sm">
-                    <CheckCircle2 size={14} className="text-emerald-400" />
-                    Confirmado
-                  </span>
-                ) : escala.status === 'recusado' || escala.status === 'falta' || escala.status === 'falta_justificada' ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-black uppercase tracking-wider shadow-sm">
-                    <XCircle size={14} className="text-rose-400" />
-                    Não Comparece
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-black uppercase tracking-wider shadow-sm animate-pulse">
-                    <Sparkles size={14} className="text-amber-400" />
-                    Pendente
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Corpo do Card */}
-            <div className="p-5 sm:p-7 space-y-6">
-
-              {/* Mensagem de Saudação Personalizada */}
-              <div className="bg-slate-800/50 border border-slate-800 rounded-2xl p-4 flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0 font-black text-sm">
-                  {pessoa?.foto_url ? (
-                    <img src={pessoa.foto_url} alt={pessoa.nome} className="w-full h-full rounded-xl object-cover" />
-                  ) : (
-                    <User size={18} />
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-slate-400">Servo(a) Escalado(a):</p>
-                  <h3 className="text-sm font-black text-white truncate">
-                    {pessoa?.nome || 'Irmão(ã) em Cristo'}
-                  </h3>
-                </div>
-              </div>
-
-              {/* Informações do Culto / Evento */}
-              <div className="space-y-3.5 bg-slate-950/60 border border-slate-800/80 rounded-2xl p-4 sm:p-5">
-                <div className="flex items-start justify-between gap-2 border-b border-slate-800/70 pb-3">
+            {/* Card do Voluntário & Resumo do Mês */}
+            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 backdrop-blur-xl shadow-xl shadow-black/40">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600/30 to-indigo-600/30 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0 font-black shadow-inner overflow-hidden">
+                    {pessoa?.foto_url ? (
+                      <img src={pessoa.foto_url} alt={pessoa.nome} className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={22} />
+                    )}
+                  </div>
                   <div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-400 block mb-0.5">
-                      Culto / Evento
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                      Servo(a) Escalado(a)
                     </span>
-                    <h4 className="text-base font-black text-white">
-                      {ev?.titulo || 'Culto de Celebração'}
-                    </h4>
+                    <h2 className="text-base sm:text-lg font-black text-white truncate">
+                      {pessoa?.nome || 'Voluntário'}
+                    </h2>
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-3 pt-1 text-xs">
-                  <div className="flex items-center gap-2.5 text-slate-300">
-                    <Calendar size={16} className="text-blue-400 shrink-0" />
-                    <span>{dataInfo.dataStr}</span>
+                {/* Badge do Mês e Contadores */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-wider">
+                    📅 {mesInfo?.mesNome} / {mesInfo?.ano}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                    {totalConfirmadas > 0 && (
+                      <span className="px-2 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300">
+                        ✓ {totalConfirmadas}
+                      </span>
+                    )}
+                    {totalPendentes > 0 && (
+                      <span className="px-2 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 animate-pulse">
+                        ⏳ {totalPendentes}
+                      </span>
+                    )}
+                    {totalRecusadas > 0 && (
+                      <span className="px-2 py-1 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300">
+                        ✕ {totalRecusadas}
+                      </span>
+                    )}
                   </div>
-
-                  <div className="flex items-center gap-2.5 text-slate-300">
-                    <Clock size={16} className="text-blue-400 shrink-0" />
-                    <span>Horário: <strong className="text-white font-black">{dataInfo.horaStr}</strong></span>
-                  </div>
-
-                  <div className="flex items-center gap-2.5 text-slate-300">
-                    <MapPin size={16} className="text-blue-400 shrink-0" />
-                    <span className="truncate">{ev?.local || 'Templo Sede'}</span>
-                  </div>
-
-                  {ev?.pregador && (
-                    <div className="flex items-center gap-2.5 text-slate-300">
-                      <Mic size={16} className="text-amber-400 shrink-0" />
-                      <span className="truncate">Palavra: <strong className="text-white font-bold">{ev.pregador}</strong></span>
-                    </div>
-                  )}
-
-                  {fardaDefinida && (
-                    <div className="flex items-center gap-2.5 text-slate-300 sm:col-span-2 bg-slate-900/90 py-1.5 px-3 rounded-xl border border-slate-800">
-                      <Shirt size={16} className="text-indigo-400 shrink-0" />
-                      <span>Farda / Traje: <strong className="text-indigo-300 font-black">{fardaDefinida}</strong></span>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* Banner de Feedback / Notificação */}
+              {/* Banner de Sucesso / Feedback Geral */}
               {sucessoMensagem && (
-                <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-200 text-xs font-bold flex items-center gap-3 animate-in fade-in duration-300 shadow-md">
+                <div className="mt-4 p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-200 text-xs font-bold flex items-center gap-3 animate-in fade-in duration-300 shadow-md">
                   <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
                   <span>{sucessoMensagem}</span>
                 </div>
               )}
 
-              {/* Bloco de Ações e Confirmação */}
-              {escala.status === 'confirmado' || escala.status === 'presente' ? (
-                <div className="space-y-3 pt-2">
-                  <div className="text-center p-4 bg-emerald-950/40 border border-emerald-800/40 rounded-2xl">
-                    <span className="text-3xl block mb-1">🎉</span>
-                    <h4 className="text-sm font-black text-emerald-300 uppercase tracking-wider">
-                      Presença Confirmada!
-                    </h4>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Sua escala está confirmada. Contamos com sua pontualidade e dedicação!
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
-                    <a
-                      href={gerarLinkGoogleAgenda()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 active:scale-95"
-                    >
-                      <ExternalLink size={14} />
-                      Adicionar ao Google Agenda
-                    </a>
-
-                    <button
-                      type="button"
-                      onClick={() => setMostrarJustificativa(true)}
-                      className="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <RotateCcw size={13} />
-                      Alterar Resposta
-                    </button>
-                  </div>
-                </div>
-              ) : escala.status === 'recusado' && !mostrarJustificativa ? (
-                <div className="space-y-3 pt-2">
-                  <div className="text-center p-4 bg-rose-950/30 border border-rose-900/40 rounded-2xl">
-                    <span className="text-2xl block mb-1">🤝</span>
-                    <h4 className="text-sm font-black text-rose-300 uppercase tracking-wider">
-                      Você informou que não poderá comparecer
-                    </h4>
-                    {escala.justificativa && (
-                      <p className="text-xs text-slate-400 mt-1 italic">
-                        Motivo: "{escala.justificativa}"
-                      </p>
-                    )}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => handleResponder('confirmado')}
-                    disabled={salvando}
-                    className="w-full py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 active:scale-95 cursor-pointer disabled:opacity-50"
-                  >
-                    <CheckCircle2 size={16} />
-                    Mudei de ideia: Confirmar Minha Presença
-                  </button>
-                </div>
-              ) : !mostrarJustificativa ? (
-                /* Botões de Ação Principal (Status Pendente) */
-                <div className="space-y-3 pt-2">
-                  <p className="text-xs text-center text-slate-400 font-medium">
-                    Por favor, informe abaixo se você poderá servir nesta data:
+              {/* Botão de Ação Rápida em Lote (Confirmar Todas) */}
+              {totalPendentes > 0 ? (
+                <div className="mt-5 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <p className="text-xs text-slate-400 text-center sm:text-left">
+                    Você tem <strong>{totalPendentes}</strong> escala(s) aguardando confirmação neste mês.
                   </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
-                      onClick={() => handleResponder('confirmado')}
-                      disabled={salvando}
-                      className="w-full py-4 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider shadow-lg shadow-emerald-600/30 hover:shadow-emerald-500/40 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                      onClick={handleConfirmarTodas}
+                      disabled={salvandoId !== null}
+                      className="flex-1 sm:flex-none px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-600/30 transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                      <CheckCircle2 size={18} strokeWidth={2.5} />
-                      {salvando ? 'Salvando...' : 'Confirmar Presença'}
+                      <CheckCheck size={16} />
+                      {salvandoId === 'all' ? 'Confirmando...' : `Confirmar Todas (${totalEscalas})`}
                     </button>
-
                     <button
                       type="button"
-                      onClick={() => setMostrarJustificativa(true)}
-                      disabled={salvando}
-                      className="w-full py-4 px-4 bg-slate-800 hover:bg-rose-900/30 hover:border-rose-500/50 text-slate-300 hover:text-rose-200 border border-slate-700/80 rounded-2xl text-xs sm:text-sm font-black uppercase tracking-wider transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                      onClick={() => setJustificativaAbertaId('all')}
+                      disabled={salvandoId !== null}
+                      className="px-3.5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-rose-300 border border-slate-700 rounded-xl text-xs font-bold transition cursor-pointer"
+                      title="Informar ausência para todas as escalas do mês"
                     >
-                      <XCircle size={18} strokeWidth={2.5} />
-                      Não Poderei Ir
+                      Recusar Todas
                     </button>
                   </div>
+                </div>
+              ) : todasConfirmadas ? (
+                <div className="mt-4 pt-4 border-t border-slate-800/80 text-center text-xs font-bold text-emerald-400 flex items-center justify-center gap-2">
+                  <CheckCircle2 size={16} />
+                  <span>Todas as suas presenças para este mês estão confirmadas! Deus abençoe!</span>
                 </div>
               ) : null}
 
-              {/* Formulário de Justificativa / Recusa */}
-              {mostrarJustificativa && (
-                <div className="space-y-3.5 pt-2 p-4 bg-slate-950/80 border border-rose-500/30 rounded-2xl animate-in fade-in duration-300">
+              {/* Modal / Justificativa para Recusar Todas */}
+              {justificativaAbertaId === 'all' && (
+                <div className="mt-4 p-4 bg-slate-950 border border-rose-500/30 rounded-2xl space-y-3 animate-in fade-in duration-200">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-rose-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <AlertCircle size={14} /> Informar Impossibilidade de Comparecimento
+                      <AlertCircle size={14} /> Informar Impossibilidade em Todas as Escalas
                     </span>
                     <button
                       type="button"
-                      onClick={() => setMostrarJustificativa(false)}
+                      onClick={() => setJustificativaAbertaId(null)}
                       className="text-xs text-slate-400 hover:text-white cursor-pointer"
                     >
                       Cancelar
                     </button>
                   </div>
-
-                  <p className="text-[11px] text-slate-400">
-                    Se desejar, informe o motivo para que a liderança possa providenciar sua substituição a tempo:
-                  </p>
-
                   <textarea
                     rows={2}
-                    value={justificativa}
-                    onChange={(e) => setJustificativa(e.target.value)}
-                    placeholder="Ex: Estarei em viagem de trabalho, consulta médica, etc. (Opcional)"
+                    value={justificativasPorEscala['all'] || ''}
+                    onChange={(e) => setJustificativasPorEscala(prev => ({ ...prev, all: e.target.value }))}
+                    placeholder="Informe o motivo para que a liderança possa organizar substitutos a tempo (Opcional)"
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-rose-500 transition resize-none"
                   />
-
                   <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={() => handleResponder('recusado', justificativa.trim() || null)}
-                      disabled={salvando}
+                      onClick={() => handleRecusarTodas(justificativasPorEscala['all']?.trim() || null)}
+                      disabled={salvandoId !== null}
                       className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition shadow-md shadow-rose-600/30 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                     >
                       <Send size={13} />
-                      {salvando ? 'Enviando...' : 'Enviar Recusa'}
+                      {salvandoId === 'all' ? 'Enviando...' : 'Confirmar Ausência em Todas'}
                     </button>
                     <button
                       type="button"
-                      onClick={() => setMostrarJustificativa(false)}
+                      onClick={() => setJustificativaAbertaId(null)}
                       className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
                     >
                       Voltar
@@ -542,16 +496,264 @@ export default function PublicConfirmarEscala() {
                   </div>
                 </div>
               )}
-
             </div>
+
+            {/* Lista de Escalas do Mês */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                  Suas Escalas ({totalEscalas})
+                </h3>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  Confirme ou ajuste cada data individualmente abaixo
+                </span>
+              </div>
+
+              {escalas.map((item, index) => {
+                const ev = item.eventos_ministeriais;
+                const min = item.ministerios;
+                const func = item.ministerio_funcoes;
+                const dataInfo = formatarDataCompleta(ev);
+
+                const corMin = min?.cor_principal || '#1e3a8a';
+                const iconeMin = min?.icone || 'Scroll';
+                const fardaDefinida = ev?.fardamentos?.[item.ministerio_id] || null;
+
+                const isConfirmado = item.status === 'confirmado' || item.status === 'presente';
+                const isRecusado = item.status === 'recusado' || item.status === 'falta' || item.status === 'falta_justificada';
+                const isPendente = !isConfirmado && !isRecusado;
+
+                const justAberta = justificativaAbertaId === item.id;
+                const salvandoEste = salvandoId === item.id;
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`bg-slate-900/90 border rounded-3xl overflow-hidden backdrop-blur-xl shadow-lg transition-all ${
+                      isConfirmado 
+                        ? 'border-emerald-500/30 shadow-emerald-950/20' 
+                        : isRecusado 
+                        ? 'border-rose-500/30 opacity-90' 
+                        : 'border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    {/* Faixa do Ministério com Status */}
+                    <div
+                      className="p-4 sm:p-5 border-b border-slate-800/80 flex items-center justify-between gap-3"
+                      style={{
+                        background: `linear-gradient(135deg, ${corMin}25 0%, ${corMin}08 100%)`
+                      }}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border shadow-sm"
+                          style={{
+                            backgroundColor: `${corMin}30`,
+                            borderColor: `${corMin}60`,
+                            color: corMin
+                          }}
+                        >
+                          <MinistryIcon icone={iconeMin} size={20} style={{ color: corMin }} />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/10 text-slate-300 border border-white/10 inline-block mb-0.5">
+                            {min?.nome || 'Ministério'}
+                          </span>
+                          <h4 className="text-sm sm:text-base font-black text-white truncate">
+                            {func?.nome || 'Função'}
+                          </h4>
+                        </div>
+                      </div>
+
+                      {/* Status */}
+                      <div className="shrink-0">
+                        {isConfirmado ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase tracking-wider">
+                            <CheckCircle2 size={12} className="text-emerald-400" />
+                            Confirmado
+                          </span>
+                        ) : isRecusado ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black uppercase tracking-wider">
+                            <XCircle size={12} className="text-rose-400" />
+                            Não Comparece
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black uppercase tracking-wider animate-pulse">
+                            <Sparkles size={12} className="text-amber-400" />
+                            Pendente
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Detalhes do Evento */}
+                    <div className="p-4 sm:p-5 space-y-3.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-blue-400 block mb-0.5">
+                            Culto / Evento
+                          </span>
+                          <h5 className="text-sm font-black text-white">
+                            {ev?.titulo || 'Culto de Celebração'}
+                          </h5>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md shrink-0">
+                          Escala #{index + 1}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 text-xs text-slate-300">
+                        <div className="flex items-center gap-2">
+                          <Calendar size={14} className="text-blue-400 shrink-0" />
+                          <span><strong className="text-white">{dataInfo.dataStr}</strong></span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Clock size={14} className="text-blue-400 shrink-0" />
+                          <span>Horário: <strong className="text-white font-bold">{dataInfo.horaStr}</strong></span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <MapPin size={14} className="text-blue-400 shrink-0" />
+                          <span className="truncate">{ev?.local || 'Templo Sede'}</span>
+                        </div>
+
+                        {ev?.pregador && (
+                          <div className="flex items-center gap-2">
+                            <Mic size={14} className="text-amber-400 shrink-0" />
+                            <span className="truncate">Palavra: <strong className="text-white font-medium">{ev.pregador}</strong></span>
+                          </div>
+                        )}
+
+                        {fardaDefinida && (
+                          <div className="flex items-center gap-2 sm:col-span-2 bg-slate-950/60 py-1.5 px-2.5 rounded-xl border border-slate-800 text-[11px]">
+                            <Shirt size={13} className="text-indigo-400 shrink-0" />
+                            <span>Farda / Traje: <strong className="text-indigo-300">{fardaDefinida}</strong></span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Ações da Escala Individual */}
+                      <div className="pt-2 border-t border-slate-800/60">
+                        {isConfirmado ? (
+                          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                            <a
+                              href={gerarLinkGoogleAgenda(item)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full sm:w-auto px-3.5 py-2 bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white border border-blue-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+                            >
+                              <ExternalLink size={12} />
+                              Adicionar ao Google Agenda
+                            </a>
+
+                            <button
+                              type="button"
+                              onClick={() => setJustificativaAbertaId(item.id)}
+                              className="w-full sm:w-auto px-3 py-1.5 text-xs text-slate-400 hover:text-white transition flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <RotateCcw size={11} />
+                              Alterar Resposta
+                            </button>
+                          </div>
+                        ) : isRecusado && !justAberta ? (
+                          <div className="space-y-2">
+                            {item.justificativa && (
+                              <p className="text-xs text-slate-400 italic bg-slate-950/40 p-2 rounded-lg border border-slate-800">
+                                Motivo: "{item.justificativa}"
+                              </p>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleResponderIndividual(item.id, 'confirmado')}
+                              disabled={salvandoEste}
+                              className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
+                            >
+                              <CheckCircle2 size={14} />
+                              {salvandoEste ? 'Salvando...' : 'Mudei de ideia: Confirmar Presença'}
+                            </button>
+                          </div>
+                        ) : !justAberta ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleResponderIndividual(item.id, 'confirmado')}
+                              disabled={salvandoEste}
+                              className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-600/20 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                            >
+                              <CheckCircle2 size={15} />
+                              {salvandoEste ? 'Salvando...' : 'Confirmar Presença'}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setJustificativaAbertaId(item.id)}
+                              disabled={salvandoEste}
+                              className="py-2.5 px-3 bg-slate-800 hover:bg-rose-950/40 hover:border-rose-500/40 text-slate-300 hover:text-rose-200 border border-slate-700/80 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5"
+                            >
+                              <XCircle size={15} />
+                              Não Poderei Ir
+                            </button>
+                          </div>
+                        ) : null}
+
+                        {/* Formulário Inline de Justificativa */}
+                        {justAberta && (
+                          <div className="mt-2.5 p-3.5 bg-slate-950 border border-rose-500/30 rounded-2xl space-y-2.5 animate-in fade-in duration-200">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[11px] font-black text-rose-300 uppercase tracking-wider flex items-center gap-1">
+                                <AlertCircle size={12} /> Motivo da Ausência (Opcional)
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setJustificativaAbertaId(null)}
+                                className="text-xs text-slate-400 hover:text-white cursor-pointer"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                            <textarea
+                              rows={2}
+                              value={justificativasPorEscala[item.id] || ''}
+                              onChange={(e) => setJustificativasPorEscala(prev => ({ ...prev, [item.id]: e.target.value }))}
+                              placeholder="Ex: Viagem, compromisso de trabalho, etc."
+                              className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-rose-500 transition resize-none"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleResponderIndividual(item.id, 'recusado', justificativasPorEscala[item.id]?.trim() || null)}
+                                disabled={salvandoEste}
+                                className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition shadow-sm cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50"
+                              >
+                                <Send size={12} />
+                                {salvandoEste ? 'Enviando...' : 'Enviar Recusa'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setJustificativaAbertaId(null)}
+                                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                              >
+                                Voltar
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
           </div>
         ) : null}
 
       </main>
 
-      {/* Rodapé Simples */}
+      {/* Rodapé */}
       <footer className="relative z-10 py-6 text-center text-[11px] text-slate-600 font-medium">
-        © {new Date().getFullYear()} {dadosIgreja?.nome || 'Igreja'} · Todos os direitos reservados.
+        © {new Date().getFullYear()} {dadosIgreja?.nome || 'Igreja'} · Módulo de Gestão Ministerial
       </footer>
     </div>
   );

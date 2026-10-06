@@ -1597,47 +1597,113 @@ export default function EscalasMinisteriais({
     copiarEAbrirWhatsApp(texto, `✓ Escala do ${grupo.nome} copiada e WhatsApp aberto!`);
   }
 
-  // Copiar link de confirmação individual e abrir WhatsApp do voluntário
-  function copiarWhatsAppVoluntario(item, grupo) {
-    if (!eventoSelecionado || !item) return;
+  // Copiar link de confirmação com todas as escalas do voluntário no mês e abrir WhatsApp
+  async function copiarWhatsAppVoluntario(item, grupo) {
+    if (!item) return;
 
-    const dataInfo = obterInfoDataBrasilia(eventoSelecionado.data_evento);
     const nomesDiasLongos = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
     const nomesMeses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    const nomePessoa = item.pessoas?.nome || 'irmão(ã)';
 
-    const diaSemanaLong = nomesDiasLongos[dataInfo.diaSemanaIndex];
-    const mesNome = nomesMeses[dataInfo.mesIndex];
+    try {
+      // 1. Obter todos os eventos do mês filtrado
+      const evsMes = eventosFiltrados && eventosFiltrados.length > 0 
+        ? eventosFiltrados 
+        : (eventoSelecionado ? [eventoSelecionado] : []);
+      const eventIds = evsMes.map(e => e.id).filter(Boolean);
 
-    const dataFormatada = `${diaSemanaLong}, ${Number(dataInfo.diaNum)} de ${mesNome}`;
-    const horaFormatada = obterHoraExibicao(eventoSelecionado);
-    const pregador = extrairPregador(eventoSelecionado);
-    const fardaSel = eventoSelecionado?.fardamentos?.[grupo?.id || item.ministerio_id];
+      // 2. Buscar todas as escalas da pessoa no mês
+      let escalasPessoaMes = [];
+      if (item.pessoa_id && eventIds.length > 0) {
+        const { data: escData } = await supabase
+          .from('escalas')
+          .select(`
+            id,
+            evento_id,
+            ministerio_id,
+            funcao_id,
+            status,
+            ministerios (id, nome),
+            ministerio_funcoes (id, nome),
+            eventos_ministeriais (id, titulo, data_evento, data_fim, local, pregador, fardamentos)
+          `)
+          .eq('pessoa_id', item.pessoa_id)
+          .in('evento_id', eventIds);
 
-    const linkConfirmacao = `${window.location.origin}/confirmar-escala?id=${item.id}`;
+        if (escData && escData.length > 0) {
+          escalasPessoaMes = escData;
+        }
+      }
 
-    let texto = `Olá, *${item.pessoas?.nome || 'irmão(ã)'}*! 🙌\n\n`;
-    texto += `Você foi escalado(a) para servir na *MIB Church*:\n\n`;
-    texto += `📅 *Evento:* ${eventoSelecionado.titulo}\n`;
-    texto += `📆 *Data:* ${dataFormatada} às ${horaFormatada}\n`;
-    texto += `📍 *Local:* ${eventoSelecionado.local || 'Templo Sede'}\n`;
-    if (pregador) texto += `🎙️ *Pregador:* ${pregador}\n`;
-    texto += `👥 *Ministério:* ${grupo?.nome || item.ministerios?.nome || ''}\n`;
-    texto += `🎯 *Função:* ${item.ministerio_funcoes?.nome || 'Voluntário'}\n`;
-    if (fardaSel) texto += `👕 *Farda:* ${fardaSel}\n`;
-    texto += `\n`;
-    texto += `👉 *Por favor, confirme sua presença clicando no link abaixo:*\n`;
-    texto += `${linkConfirmacao}\n`;
+      // Se não encontrou outras escalas ou não retornou dados, usa a escala atual
+      if (escalasPessoaMes.length === 0) {
+        escalasPessoaMes = [{
+          ...item,
+          ministerios: grupo || item.ministerios,
+          eventos_ministeriais: eventoSelecionado
+        }];
+      }
 
-    const telLimpo = item.pessoas?.telefone ? String(item.pessoas.telefone).replace(/\D/g, '') : '';
-    if (telLimpo && telLimpo.length >= 10) {
-      const urlWa = `https://wa.me/55${telLimpo}?text=${encodeURIComponent(texto)}`;
-      try {
-        navigator.clipboard?.writeText?.(texto).catch(() => {});
-      } catch (_) {}
-      window.open(urlWa, '_blank');
-      mostrarToast(`✓ Link de confirmação enviado para ${item.pessoas?.nome}!`);
-    } else {
-      copiarEAbrirWhatsApp(texto, `✓ Link de confirmação de ${item.pessoas?.nome} copiado para WhatsApp!`);
+      // Ordenar cronologicamente
+      escalasPessoaMes.sort((a, b) => {
+        const tA = a.eventos_ministeriais?.data_evento ? new Date(a.eventos_ministeriais.data_evento).getTime() : 0;
+        const tB = b.eventos_ministeriais?.data_evento ? new Date(b.eventos_ministeriais.data_evento).getTime() : 0;
+        return tA - tB;
+      });
+
+      const mesNomeCapitalizado = nomesMeses[filtroMes] 
+        ? (nomesMeses[filtroMes].charAt(0).toUpperCase() + nomesMeses[filtroMes].slice(1)) 
+        : 'Mês';
+
+      const linkConfirmacao = `${window.location.origin}/confirmar-escala?id=${item.id}&pessoa=${item.pessoa_id || ''}&mes=${filtroMes}&ano=${filtroAno}`;
+
+      let texto = `Olá, *${nomePessoa}*! 🙌\n\n`;
+      if (escalasPessoaMes.length > 1) {
+        texto += `Você foi escalado(a) para servir na *MIB Church* no mês de *${mesNomeCapitalizado}/${filtroAno}* (${escalasPessoaMes.length} escalas):\n\n`;
+      } else {
+        texto += `Você foi escalado(a) para servir na *MIB Church* em *${mesNomeCapitalizado}/${filtroAno}*:\n\n`;
+      }
+
+      escalasPessoaMes.forEach((esc, idx) => {
+        const ev = esc.eventos_ministeriais || eventoSelecionado;
+        const dataInfo = obterInfoDataBrasilia(ev?.data_evento);
+        const diaSemanaLong = nomesDiasLongos[dataInfo.diaSemanaIndex];
+        const mesNome = nomesMeses[dataInfo.mesIndex];
+        const horaStr = obterHoraExibicao(ev);
+        const minNome = esc.ministerios?.nome || grupo?.nome || '';
+        const funcNome = esc.ministerio_funcoes?.nome || 'Voluntário';
+        const fardaSel = ev?.fardamentos?.[esc.ministerio_id || grupo?.id];
+
+        const statusIcon = esc.status === 'confirmado' ? '✅' : esc.status === 'recusado' ? '❌' : '⏳';
+
+        texto += `🗓️ *${idx + 1}. ${diaSemanaLong ? diaSemanaLong.toUpperCase() : ''}, ${Number(dataInfo.diaNum)} de ${mesNome} (${horaStr})* ${statusIcon}\n`;
+        texto += ` • Evento: ${ev?.titulo || 'Culto'}\n`;
+        if (minNome) texto += ` • Ministério: ${minNome}\n`;
+        texto += ` • Função: ${funcNome}\n`;
+        if (fardaSel) texto += ` • Farda: ${fardaSel}\n`;
+        if (ev?.local) texto += ` • Local: ${ev.local}\n`;
+        texto += `\n`;
+      });
+
+      texto += `👉 *Por favor, confirme todas as suas escalas clicando no link abaixo:*\n`;
+      texto += `${linkConfirmacao}\n`;
+
+      const telLimpo = item.pessoas?.telefone ? String(item.pessoas.telefone).replace(/\D/g, '') : '';
+      if (telLimpo && telLimpo.length >= 10) {
+        const urlWa = `https://wa.me/55${telLimpo}?text=${encodeURIComponent(texto)}`;
+        try {
+          navigator.clipboard?.writeText?.(texto).catch(() => {});
+        } catch (_) {}
+        window.open(urlWa, '_blank');
+        mostrarToast(`✓ Mensagem com ${escalasPessoaMes.length} escala(s) de ${nomePessoa} aberta no WhatsApp!`);
+      } else {
+        copiarEAbrirWhatsApp(texto, `✓ Link com ${escalasPessoaMes.length} escala(s) de ${nomePessoa} copiado para WhatsApp!`);
+      }
+    } catch (err) {
+      console.error('Erro ao gerar mensagem de escalas do mês:', err);
+      // Fallback para link simples
+      const linkSimples = `${window.location.origin}/confirmar-escala?id=${item.id}`;
+      copiarEAbrirWhatsApp(`Olá, *${nomePessoa}*! Por favor, confirme sua escala na MIB Church no link: ${linkSimples}`, `✓ Link copiado!`);
     }
   }
 

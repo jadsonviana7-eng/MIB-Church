@@ -1121,51 +1121,6 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
             </div>
           </div>
 
-          {!transacaoParaEditar && (
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-bold text-slate-500 mb-1">Tipo de Lançamento</label>
-                  <select value={tipoLancamento} onChange={e => setTipoLancamento(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none">
-                    <option value="unico">Lançamento Único</option>
-                    <option value="repetido">Repetido / Fixo</option>
-                  </select>
-                </div>
-
-                {tipoLancamento === 'repetido' && (
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <label className="block text-sm font-bold text-slate-500 mb-1">Dia Venc.</label>
-                      <select
-                        value={diaVencimento}
-                        onChange={e => setDiaVencimento(parseInt(e.target.value))}
-                        className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
-                      >
-                        {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
-                          <option key={d} value={d}>{d}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-500 mb-1">Frequência</label>
-                      <select value={frequencia} onChange={e => setFrequencia(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none">
-                        <option value="semanal">Semanal</option>
-                        <option value="mensal">Mensal</option>
-                        <option value="anual">Anual</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-slate-500 mb-1">Repetições</label>
-                      <select value={repeticoes} onChange={e => setRepeticoes(parseInt(e.target.value))} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none">
-                        {Array.from({ length: 35 }, (_, i) => i + 2).map(n => <option key={n} value={n}>{n}x</option>)}
-                      </select>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
             <div className="sm:col-span-4">
               <label className="block text-sm font-bold text-slate-500 mb-1">{tipo === 'despesa' ? 'Pago à' : 'Membro'}</label>
@@ -1249,16 +1204,75 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-bold text-slate-500 mb-1">Anotações Internas</label>
-            <textarea
-              rows="1"
-              value={anotacoes}
-              onChange={e => setAnotacoes(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#2563eb]/20 outline-none resize-none"
-              placeholder="Detalhes adicionais sobre este lançamento..."
-            />
+          {/* Anotações Internas e Tipo de Lançamento */}
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <div className={!transacaoParaEditar ? "sm:col-span-7" : "sm:col-span-12"}>
+              <label className="block text-sm font-bold text-slate-500 mb-1">Anotações Internas</label>
+              <textarea
+                rows="1"
+                value={anotacoes}
+                onChange={e => setAnotacoes(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#2563eb]/20 outline-none resize-none"
+                placeholder="Detalhes adicionais sobre este lançamento..."
+              />
+            </div>
+            {!transacaoParaEditar && (
+              <div className="sm:col-span-5">
+                <label className="block text-sm font-bold text-slate-500 mb-1">Tipo de Lançamento</label>
+                <select
+                  value={tipoLancamento}
+                  onChange={e => setTipoLancamento(e.target.value)}
+                  className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm font-normal bg-white focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
+                >
+                  <option value="unico">Lançamento Único</option>
+                  <option value="repetido">Repetido / Fixo</option>
+                </select>
+              </div>
+            )}
           </div>
+
+          {!transacaoParaEditar && tipoLancamento === 'repetido' && (
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3 animate-in fade-in duration-200">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div>
+                  <label className="block text-xs sm:text-sm font-bold text-slate-500 mb-1">Dia Venc.</label>
+                  <select
+                    value={diaVencimento}
+                    onChange={e => setDiaVencimento(parseInt(e.target.value))}
+                    className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                  >
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-bold text-slate-500 mb-1">Frequência</label>
+                  <select
+                    value={frequencia}
+                    onChange={e => setFrequencia(e.target.value)}
+                    className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                  >
+                    <option value="semanal">Semanal</option>
+                    <option value="mensal">Mensal</option>
+                    <option value="anual">Anual</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs sm:text-sm font-bold text-slate-500 mb-1">Repetições</label>
+                  <select
+                    value={repeticoes}
+                    onChange={e => setRepeticoes(parseInt(e.target.value))}
+                    className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                  >
+                    {Array.from({ length: 35 }, (_, i) => i + 2).map(n => (
+                      <option key={n} value={n}>{n}x</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="pt-1 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-end gap-3">
             {transacaoParaEditar && (

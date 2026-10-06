@@ -34,9 +34,11 @@ export default function CalculadoraTributos() {
     const gratidao = Math.ceil(v * 0.0010);
     const semeadura = Math.ceil(v * 0.0040);
     const israel = Math.ceil(v * 0.01);
+    const somaPrimiciaDizimo = primicia + dizimo;
+    const somaOfertas = socorro + israel + semeadura + gratidao;
     const total = primicia + dizimo + socorro + gratidao + semeadura + israel;
 
-    return { primicia, dizimo, socorro, gratidao, semeadura, israel, total };
+    return { primicia, dizimo, socorro, gratidao, semeadura, israel, somaPrimiciaDizimo, somaOfertas, total };
   }, [valorInput]);
 
   const formatBRL = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -91,7 +93,7 @@ export default function CalculadoraTributos() {
 
         {/* Coluna Direita: Detalhamento de Tributos e Versículo */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white border border-slate-100 rounded-[32px] p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="bg-white border border-slate-100 rounded-[32px] p-6 sm:p-8 shadow-sm space-y-5">
             <div>
               <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">
                 Divisão Detalhada dos Tributos
@@ -150,6 +152,33 @@ export default function CalculadoraTributos() {
                 icon={<Sparkles className="text-amber-500" size={18} />} 
                 bgColor="bg-amber-50 border-amber-100/50"
               />
+            </div>
+
+            {/* Linhas Minimalistas de Subtotais */}
+            <div className="pt-4 border-t border-slate-100 space-y-2.5">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                  <span className="font-semibold text-slate-500">
+                    Soma Primícia e Dízimo
+                  </span>
+                </div>
+                <span className="font-extrabold text-slate-800 text-sm tracking-tight">
+                  {formatBRL(resultados?.somaPrimiciaDizimo || 0)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                  <span className="font-semibold text-slate-500">
+                    Soma das Ofertas <span className="text-[11px] text-slate-400 font-normal">(Socorro, Israel, Semeadura, Gratidão)</span>
+                  </span>
+                </div>
+                <span className="font-extrabold text-slate-800 text-sm tracking-tight">
+                  {formatBRL(resultados?.somaOfertas || 0)}
+                </span>
+              </div>
             </div>
           </div>
 

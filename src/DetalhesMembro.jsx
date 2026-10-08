@@ -18,6 +18,12 @@ import {
   desmascararTelefone,
   desmascararCEP,
 } from './mascaras';
+import {
+  verificarDuplicidadeLocal,
+  buscarDuplicidadeBanco,
+  interpretarErroDuplicidadeBanco,
+} from './duplicateUtils';
+
 
 const MOTIVOS_EXCLUSAO = [
   'Transferência para outra igreja',
@@ -1126,6 +1132,43 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
       permissoes_json: permissoesJson,
     };
 
+    // 1. Verificação prévia de duplicidade contra outros membros
+    const duplicadoLocal = verificarDuplicidadeLocal(atualizacoes, listaPessoas, pessoaId);
+    if (duplicadoLocal) {
+      if (window.modalDuplicidade) {
+        await window.modalDuplicidade({
+          titulo: 'Conflito de Informações',
+          subtitulo: 'As novas informações informadas já pertencem a outro cadastro.',
+          mensagem: duplicadoLocal.motivo,
+          campo: duplicadoLocal.campo,
+          valorConflito: duplicadoLocal.valorConflito,
+          pessoaExistente: duplicadoLocal.pessoaExistente,
+        });
+      } else {
+        window.alert(duplicadoLocal.motivo);
+      }
+      setSalvando(false);
+      return;
+    }
+
+    const duplicadoBanco = await buscarDuplicidadeBanco(atualizacoes, pessoaId);
+    if (duplicadoBanco) {
+      if (window.modalDuplicidade) {
+        await window.modalDuplicidade({
+          titulo: 'Conflito de Informações',
+          subtitulo: 'As novas informações informadas já pertencem a outro cadastro no banco de dados.',
+          mensagem: duplicadoBanco.motivo,
+          campo: duplicadoBanco.campo,
+          valorConflito: duplicadoBanco.valorConflito,
+          pessoaExistente: duplicadoBanco.pessoaExistente,
+        });
+      } else {
+        window.alert(duplicadoBanco.motivo);
+      }
+      setSalvando(false);
+      return;
+    }
+
     const { error } = await supabase.from('pessoas').update(atualizacoes).eq('id', pessoaId);
     if (!error) {
       // 1. Atualizar relações onde esta pessoa é Pai/Mãe (Filhos)
@@ -1164,13 +1207,19 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
       if (atualizado) preencherFormulario(atualizado);
       onDadosAtualizados();
     } else {
-      const msg = error.message?.includes('column')
-        ? `${error.message}\n\nExecute o SQL em supabase/schema-ficha-membro.sql no Supabase e recarregue o schema cache (Settings → API).`
-        : error.message;
-      window.alert('Erro ao atualizar: ' + msg);
+      const erroDup = interpretarErroDuplicidadeBanco(error, atualizacoes, listaPessoas);
+      if (erroDup && window.modalDuplicidade) {
+        await window.modalDuplicidade(erroDup);
+      } else {
+        const msg = error.message?.includes('column')
+          ? `${error.message}\n\nExecute o SQL em supabase/schema-ficha-membro.sql no Supabase e recarregue o schema cache (Settings → API).`
+          : error.message;
+        window.alert('Erro ao atualizar: ' + msg);
+      }
     }
     setSalvando(false);
   }
+
 
   async function handleCriarAcessoSistema() {
     if (!email.trim()) {

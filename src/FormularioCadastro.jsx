@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import { supabase } from './supabaseClient';
-import { uploadImagemCelula } from './ui'; // Importar a função de upload
+import { uploadImagemCelula, ModalDuplicidadeCadastro } from './ui'; // Importar a função de upload e modal de duplicidade
 import { Eye, EyeOff } from 'lucide-react';
 import {
   mascaraCPF,
@@ -13,9 +13,21 @@ import {
   desmascararTelefone,
   desmascararCEP,
 } from './mascaras';
+import {
+  verificarDuplicidadeLocal,
+  buscarDuplicidadeBanco,
+  interpretarErroDuplicidadeBanco,
+} from './duplicateUtils';
 
-function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], cargosLista = [], atuacoesLista = [] }) {
+function FormularioCadastro({
+  onPessoaCadastrada,
+  listaPessoasExistentes = [],
+  cargosLista = [],
+  atuacoesLista = [],
+  onSelecionarPessoa,
+}) {
   const [secaoAtual, setSecaoAtual] = useState('pessoal');
+  const [modalDuplicidade, setModalDuplicidade] = useState(null);
 
   // Dados Pessoais
   const [nome, setNome] = useState('');
@@ -188,10 +200,31 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
       permissao: permissaoAcesso || 'membro',
     };
 
+    // 1. Verificação prévia local de duplicidade
+    const duplicadoLocal = verificarDuplicidadeLocal(payload, listaPessoasExistentes);
+    if (duplicadoLocal) {
+      setEnviando(false);
+      setModalDuplicidade(duplicadoLocal);
+      return;
+    }
+
+    // 2. Verificação prévia no banco de dados
+    const duplicadoBanco = await buscarDuplicidadeBanco(payload);
+    if (duplicadoBanco) {
+      setEnviando(false);
+      setModalDuplicidade(duplicadoBanco);
+      return;
+    }
+
     const { data: novaPessoa, error } = await supabase.from('pessoas').insert([payload]).select();
 
     if (error) {
-      setMensagem('❌ Erro de salvamento: ' + error.message);
+      const erroDuplicado = interpretarErroDuplicidadeBanco(error, payload, listaPessoasExistentes);
+      if (erroDuplicado) {
+        setModalDuplicidade(erroDuplicado);
+      } else {
+        setMensagem('❌ Erro de salvamento: ' + error.message);
+      }
     } else {
       const pessoaCriada = novaPessoa?.[0];
       if (novaPessoa && novaPessoa.length > 0 && filhosSelecionados.length > 0) {
@@ -621,6 +654,24 @@ function FormularioCadastro({ onPessoaCadastrada, listaPessoasExistentes = [], c
         <div className="mt-4 p-3 bg-slate-900 text-white text-xs font-bold text-center rounded-xl shadow-xs animate-pulse">
           {mensagem}
         </div>
+      )}
+
+      {modalDuplicidade && (
+        <ModalDuplicidadeCadastro
+          aberto={true}
+          titulo={modalDuplicidade.titulo || 'Cadastro Já Existente'}
+          mensagem={modalDuplicidade.motivo || modalDuplicidade.mensagem}
+          campo={modalDuplicidade.campo}
+          valorConflito={modalDuplicidade.valorConflito}
+          pessoaExistente={modalDuplicidade.pessoaExistente}
+          onFechar={() => setModalDuplicidade(null)}
+          onVisualizarExistente={(id) => {
+            setModalDuplicidade(null);
+            if (onSelecionarPessoa) {
+              onSelecionarPessoa(typeof id === 'object' ? id.id : id);
+            }
+          }}
+        />
       )}
     </div>
   );

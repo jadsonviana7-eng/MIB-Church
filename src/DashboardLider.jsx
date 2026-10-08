@@ -8,6 +8,8 @@ import {
   ShieldAlert, Users, MessageSquare, Plus, UserPlus, BookOpen, ExternalLink
 } from 'lucide-react';
 import { normalizarTexto } from './churchUtils';
+import { buscarDuplicidadeBanco, interpretarErroDuplicidadeBanco } from './duplicateUtils';
+
 
 export default function DashboardLider({
   membroLogado,
@@ -283,6 +285,25 @@ export default function DashboardLider({
           status: 'ativo',
           tipo_membro: 'membro'
         };
+
+        const duplicado = await buscarDuplicidadeBanco(payload);
+        if (duplicado) {
+          if (window.modalDuplicidade) {
+            await window.modalDuplicidade({
+              titulo: 'Cadastro Já Existente',
+              subtitulo: 'Esta pessoa ou contato já consta no banco de dados.',
+              mensagem: duplicado.motivo,
+              campo: duplicado.campo,
+              valorConflito: duplicado.valorConflito,
+              pessoaExistente: duplicado.pessoaExistente,
+            });
+          } else {
+            window.alert(duplicado.motivo);
+          }
+          setSalvandoParticipante(false);
+          return;
+        }
+
         const { error } = await supabase.from('pessoas').insert([payload]);
         if (error) throw error;
       }
@@ -292,11 +313,17 @@ export default function DashboardLider({
       setIsModalParticipanteAberto(false);
       obterDados(); // recarrega pessoas visiveis
     } catch (err) {
-      window.alert('Erro ao incluir participante: ' + err.message);
+      const erroDup = interpretarErroDuplicidadeBanco(err, formParticipante, pessoas);
+      if (erroDup && window.modalDuplicidade) {
+        await window.modalDuplicidade(erroDup);
+      } else {
+        window.alert('Erro ao incluir participante: ' + err.message);
+      }
     } finally {
       setSalvandoParticipante(false);
     }
   }
+
 
   const formatarDataLocal = (isoString) => {
     if (!isoString) return '';

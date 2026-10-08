@@ -589,3 +589,5 @@ export function MinistryIcon({ icone, className = '', size = 20, style = {} }) {
     </span>
   );
 }
+
+export { default as ModalDuplicidadeCadastro } from './ModalDuplicidadeCadastro';

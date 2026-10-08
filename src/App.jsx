@@ -10,7 +10,7 @@ import PessoasModulo from './PessoasModulo';
 import ModuloFinanceiro from './ModuloFinanceiro';
 import ModuloUtilitarios from './ModuloUtilitarios';
 import EscolasModulo from './EscolasModulo';
-import { ConfirmModal, ModalWrapper } from './ui';
+import { ConfirmModal, ModalWrapper, ModalDuplicidadeCadastro } from './ui';
 import GestaoMinisterial from './GestaoMinisterial';
 import AgendaModulo from './AgendaModulo';
 import PublicEventRegistration from './PublicEventRegistration';
@@ -31,11 +31,21 @@ const filtrosIniciais = {
 
 export default function App() {
   const [confirmDialog, setConfirmDialog] = useState(null);
+  const [duplicidadeDialog, setDuplicidadeDialog] = useState(null);
 
   useEffect(() => {
     window.confirmModal = (titulo, mensagem) => {
       return new Promise((resolve) => {
         setConfirmDialog({ titulo, mensagem, resolve });
+      });
+    };
+
+    window.modalDuplicidade = (opcoes) => {
+      return new Promise((resolve) => {
+        setDuplicidadeDialog({
+          ...opcoes,
+          resolve,
+        });
       });
     };
   }, []);
@@ -2048,6 +2058,31 @@ export default function App() {
             }}
           />
         )}
+        {duplicidadeDialog && (
+          <ModalDuplicidadeCadastro
+            aberto={true}
+            titulo={duplicidadeDialog.titulo}
+            subtitulo={duplicidadeDialog.subtitulo}
+            mensagem={duplicidadeDialog.mensagem}
+            campo={duplicidadeDialog.campo}
+            valorConflito={duplicidadeDialog.valorConflito}
+            pessoaExistente={duplicidadeDialog.pessoaExistente}
+            onFechar={() => {
+              duplicidadeDialog.resolve?.(false);
+              setDuplicidadeDialog(null);
+            }}
+            onVisualizarExistente={(pessoaOuId) => {
+              duplicidadeDialog.resolve?.(true);
+              setDuplicidadeDialog(null);
+              const id = typeof pessoaOuId === 'object' ? pessoaOuId.id : pessoaOuId;
+              if (id) {
+                setMembroSelecionadoId(id);
+                navegar('pessoas', 'todos');
+              }
+            }}
+          />
+        )}
+
 
         {notificacoesAberto && (
           <ModalWrapper

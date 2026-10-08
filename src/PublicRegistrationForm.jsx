@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import { supabase } from './supabaseClient';
-import { uploadImagemCelula } from './ui'; // Reutiliza a função de upload
+import { uploadImagemCelula, ModalDuplicidadeCadastro } from './ui'; // Reutiliza a função de upload e modal
 import {
   mascaraCPF,
   mascaraCNPJ,
@@ -13,12 +13,17 @@ import {
   desmascararTelefone,
   desmascararCEP,
 } from './mascaras';
+import {
+  buscarDuplicidadeBanco,
+  interpretarErroDuplicidadeBanco,
+} from './duplicateUtils';
 
 // Componente para o formulário de cadastro público
 export default function PublicRegistrationForm() {
   // Dados da Igreja para o cabeçalho
   const [dadosIgreja, setDadosIgreja] = useState(null);
   const [carregandoDadosIgreja, setCarregandoDadosIgreja] = useState(true);
+  const [modalDuplicidade, setModalDuplicidade] = useState(null);
 
   // Dados Pessoais
   const [nome, setNome] = useState('');
@@ -209,11 +214,31 @@ export default function PublicRegistrationForm() {
     };
 
     try {
+      // 1. Verificação prévia no banco de dados
+      const duplicado = await buscarDuplicidadeBanco(payload);
+      if (duplicado) {
+        setEnviando(false);
+        setModalDuplicidade({
+          ...duplicado,
+          subtitulo: 'Identificamos que estes dados já constam no cadastro de membros da igreja.',
+          motivo: duplicado.motivo || 'Já existe um cadastro com estas informações. Por favor, entre em contato com a liderança ou secretaria da igreja.',
+        });
+        return;
+      }
+
       const { error } = await supabase.from('pessoas').insert([payload]);
 
       if (error) {
         console.error('Erro ao salvar cadastro:', error);
-        setMensagem('❌ Erro ao enviar seu cadastro: ' + error.message);
+        const erroDuplicado = interpretarErroDuplicidadeBanco(error, payload);
+        if (erroDuplicado) {
+          setModalDuplicidade({
+            ...erroDuplicado,
+            subtitulo: 'Identificamos que estes dados já constam no cadastro de membros da igreja.',
+          });
+        } else {
+          setMensagem('❌ Erro ao enviar seu cadastro: ' + error.message);
+        }
       } else {
         setMensagem('🎉 Seu cadastro foi enviado com sucesso! Agradecemos seu interesse.');
         setSucesso(true);
@@ -228,11 +253,17 @@ export default function PublicRegistrationForm() {
       }
     } catch (err) {
       console.error('Erro inesperado:', err);
-      setMensagem('❌ Ocorreu um erro inesperado. Tente novamente.');
+      const erroDuplicado = interpretarErroDuplicidadeBanco(err, payload);
+      if (erroDuplicado) {
+        setModalDuplicidade(erroDuplicado);
+      } else {
+        setMensagem('❌ Ocorreu um erro inesperado. Tente novamente.');
+      }
     } finally {
       setEnviando(false);
     }
   }
+
 
   if (carregandoDadosIgreja) {
     return (
@@ -518,6 +549,19 @@ export default function PublicRegistrationForm() {
           </button>
         </form>
       </div>
+
+      {modalDuplicidade && (
+        <ModalDuplicidadeCadastro
+          aberto={true}
+          titulo={modalDuplicidade.titulo || 'Cadastro Já Existente'}
+          subtitulo={modalDuplicidade.subtitulo || 'Identificamos que estes dados já constam no banco de dados da igreja.'}
+          mensagem={modalDuplicidade.motivo || modalDuplicidade.mensagem}
+          campo={modalDuplicidade.campo}
+          valorConflito={modalDuplicidade.valorConflito}
+          pessoaExistente={modalDuplicidade.pessoaExistente}
+          onFechar={() => setModalDuplicidade(null)}
+        />
+      )}
     </div>
   );
-}
+}

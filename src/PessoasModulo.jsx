@@ -5,6 +5,7 @@ import DetalhesMembro from './DetalhesMembro';
 import FormularioCadastro from './FormularioCadastro';
 import { meses, agrupamentoPor, valorCampoRelatorio, faixasEtarias } from './churchUtils';
 import PainelAtuacoes from './PainelAtuacoes';
+import { verificarDuplicidadeLocal, interpretarErroDuplicidadeBanco } from './duplicateUtils';
 
 export default function PessoasModulo(props) {
   const {
@@ -60,7 +61,9 @@ export default function PessoasModulo(props) {
           listaPessoasExistentes={pessoas}
           cargosLista={cargosDisponiveis}
           atuacoesLista={atuacoesDisponiveis}
+          onSelecionarPessoa={setMembroSelecionadoId}
         />
+
       </div>
     );
   }
@@ -769,6 +772,22 @@ function AbaContribuintes({ pessoas, obterDados }) {
 
     setEnviando(true);
     try {
+      if (!editandoId) {
+        const duplicado = verificarDuplicidadeLocal({ nome, telefone }, pessoas);
+        if (duplicado && window.modalDuplicidade) {
+          await window.modalDuplicidade({
+            titulo: 'Contribuinte Já Cadastrado',
+            subtitulo: 'Identificamos que já existe um registro correspondente no sistema.',
+            mensagem: duplicado.motivo,
+            campo: duplicado.campo,
+            valorConflito: duplicado.valorConflito,
+            pessoaExistente: duplicado.pessoaExistente,
+          });
+          setEnviando(false);
+          return;
+        }
+      }
+
       if (editandoId) {
         const { error } = await supabase
           .from('pessoas')
@@ -784,11 +803,17 @@ function AbaContribuintes({ pessoas, obterDados }) {
       handleCancelar();
       obterDados();
     } catch (err) {
-      alert('Erro ao salvar contribuinte: ' + err.message);
+      const erroDup = interpretarErroDuplicidadeBanco(err, { nome, telefone }, pessoas);
+      if (erroDup && window.modalDuplicidade) {
+        await window.modalDuplicidade(erroDup);
+      } else {
+        alert('Erro ao salvar contribuinte: ' + err.message);
+      }
     } finally {
       setEnviando(false);
     }
   }
+
 
   async function handleExcluir(p) {
     if (!(await window.confirmModal("Excluir Contribuinte", `Deseja excluir o contribuinte "${p.nome}"? O histórico de contribuições será mantido, mas ele deixará de aparecer nesta lista e no seletor de membros do módulo financeiro.`))) return;

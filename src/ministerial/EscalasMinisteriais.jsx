@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Calendar, Plus, X, Search, Check, AlertCircle, Share2, Printer, CheckCircle, XCircle, Trash2, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { Calendar, Plus, X, Search, Check, AlertCircle, Share2, Printer, CheckCircle, XCircle, Trash2, ChevronLeft, ChevronRight, Pencil, Sparkles, Zap } from 'lucide-react';
 import { escalasService } from './services/escalasService';
 import { autoEscalaService } from './services/autoEscalaService';
 import { supabase } from '../supabaseClient';
@@ -1979,11 +1979,11 @@ export default function EscalasMinisteriais({
     <div className="space-y-6 relative">
       {/* Banner de Filtro Ativo do Dashboard V3 */}
       {(filtroMinisterioId || filtroStatus) && (
-        <div className="bg-blue-50/90 border border-blue-200 rounded-2xl p-4 flex items-center justify-between shadow-xs">
-          <div className="flex items-center gap-2 text-xs text-blue-900 font-bold">
-            <span className="bg-blue-600 text-white p-1.5 rounded-lg text-[10px]">📌</span>
+        <div className="bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-blue-500/5 border border-blue-200/80 rounded-2xl p-4 flex items-center justify-between shadow-xs backdrop-blur-xs">
+          <div className="flex items-center gap-2.5 text-xs text-blue-950 font-bold">
+            <span className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white p-2 rounded-xl text-xs shadow-md shadow-blue-500/20">📌</span>
             <span>
-              Filtro ativo do Dashboard V3: {filtroMinisterioId && `Ministério ID #${filtroMinisterioId}`} {filtroStatus && `Status: ${filtroStatus}`}
+              Filtro ativo do Dashboard: {filtroMinisterioId && `Ministério #${filtroMinisterioId}`} {filtroStatus && `• Status: ${filtroStatus}`}
             </span>
           </div>
           <button
@@ -1991,25 +1991,27 @@ export default function EscalasMinisteriais({
               setFiltroMinisterioId(null);
               setFiltroStatus(null);
             }}
-            className="text-xs font-black text-blue-600 hover:text-blue-800 bg-white px-3 py-1.5 rounded-xl border border-blue-200 cursor-pointer shadow-xs"
+            className="text-xs font-black text-rose-600 hover:text-rose-700 bg-white hover:bg-rose-50 px-3.5 py-1.5 rounded-xl border border-rose-200/80 hover:border-rose-300 transition-all active:scale-95 shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
-            ❌ Limpar Filtros
+            <X size={13} strokeWidth={2.5} />
+            <span>Limpar Filtros</span>
           </button>
         </div>
       )}
 
       {/* Notificação flutuante */}
       {notificacao && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-800 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-in slide-in-from-bottom-2 duration-300">
-          <span className="text-sm font-bold">{notificacao}</span>
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 backdrop-blur-md text-white px-4.5 py-3 rounded-2xl shadow-2xl border border-slate-800 flex items-center gap-2.5 animate-in slide-in-from-bottom-2 duration-300">
+          <Sparkles size={16} className="text-blue-400" />
+          <span className="text-xs sm:text-sm font-bold">{notificacao}</span>
         </div>
       )}
 
       {/* Seção Minhas Escalas (Exclusiva do Voluntário Logado) */}
       {membroLogado?.id && minhasEscalas.length > 0 && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 shadow-xs">
-          <h3 className="text-sm font-black text-blue-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-            🔔 Minhas Escalas Pendentes
+        <div className="bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-blue-200/70 rounded-2xl p-5 shadow-xs">
+          <h3 className="text-sm font-black text-blue-950 uppercase tracking-wider mb-3.5 flex items-center gap-2">
+            <span className="p-1 rounded-lg bg-blue-600 text-white shadow-xs">🔔</span> Minhas Escalas Pendentes
           </h3>
           <div className="grid sm:grid-cols-2 gap-4">
             {minhasEscalas.map(esc => {
@@ -2017,7 +2019,7 @@ export default function EscalasMinisteriais({
               const dataInfo = obterInfoDataBrasilia(esc.eventos_ministeriais?.data_evento);
               const dataStr = `${dataInfo.diaNum}/${String(dataInfo.mesIndex + 1).padStart(2, '0')} · ${obterHoraExibicao(esc.eventos_ministeriais)}`;
               return (
-                <div key={esc.id} className="bg-white rounded-xl border border-blue-100 p-4 flex flex-col justify-between shadow-xs">
+                <div key={esc.id} className="bg-white rounded-2xl border border-blue-100 p-4.5 flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
                   <div>
                     <h4 className="font-bold text-slate-800 text-sm">
                       {esc.eventos_ministeriais?.titulo}
@@ -2029,18 +2031,20 @@ export default function EscalasMinisteriais({
                       📅 {dataStr} · 📍 {esc.eventos_ministeriais?.local || 'Templo Sede'}
                     </p>
                   </div>
-                  <div className="flex gap-2 mt-4 pt-3 border-t border-slate-50">
+                  <div className="flex gap-2.5 mt-4 pt-3 border-t border-slate-100">
                     <button
                       onClick={() => responderEscala(esc.id, 'confirmado')}
-                      className="flex-1 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1"
+                      className="flex-1 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 border border-emerald-400/30"
                     >
-                      <Check size={12} strokeWidth={3} /> Confirmar
+                      <Check size={14} strokeWidth={3} />
+                      <span>Confirmar</span>
                     </button>
                     <button
                       onClick={() => responderEscala(esc.id, 'recusado')}
-                      className="flex-1 py-1.5 border border-red-200 hover:bg-red-50 text-red-600 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1"
+                      className="flex-1 py-2 bg-white hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-rose-200/80 hover:border-rose-300 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs"
                     >
-                      Recusar
+                      <X size={14} strokeWidth={2.5} />
+                      <span>Recusar</span>
                     </button>
                   </div>
                 </div>
@@ -2050,9 +2054,9 @@ export default function EscalasMinisteriais({
         </div>
       )}
 
-      {/* Grid Principal */}
+      {/* Grid Principal / Ações Superiores */}
       <div className="flex justify-between items-center">
-        <div className="grid grid-cols-3 gap-2 w-full sm:flex sm:items-center sm:gap-2.5 sm:w-auto">
+        <div className="grid grid-cols-3 gap-2 w-full sm:flex sm:items-center sm:gap-3 sm:w-auto">
           {!isMembroNormal && (
             <>
               <button
@@ -2062,26 +2066,35 @@ export default function EscalasMinisteriais({
                   setAbaGerador('config');
                   setModalGerador(true);
                 }}
-                className="flex flex-col sm:flex-row items-center justify-center py-2.5 px-1.5 sm:px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl sm:rounded-xl text-[9px] sm:text-xs font-black uppercase tracking-wider shadow-md shadow-indigo-200/80 transition active:scale-95 cursor-pointer text-center sm:text-left gap-0.5 sm:gap-2"
+                className="group relative overflow-hidden flex flex-col sm:flex-row items-center justify-center py-2.5 px-2 sm:px-4 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 hover:from-indigo-500 hover:via-indigo-600 hover:to-purple-600 text-white rounded-2xl sm:rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40 border border-indigo-400/30 transition-all duration-200 active:scale-95 cursor-pointer text-center sm:text-left gap-1 sm:gap-2"
               >
-                <Calendar className="w-5 h-5 sm:w-4 sm:h-4 mb-1 sm:mb-0 shrink-0 text-indigo-100 sm:text-current" strokeWidth={2.5} />
-                <span>Gerador Mensal</span>
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className="w-6 h-6 sm:w-5 sm:h-5 rounded-lg bg-white/15 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                  <Calendar className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+                </div>
+                <span className="relative z-10 font-black">Gerador Mensal</span>
               </button>
 
               <button
                 onClick={() => setModalEvento(true)}
-                className="flex flex-col sm:flex-row items-center justify-center py-2.5 px-1.5 sm:px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl sm:rounded-xl text-[9px] sm:text-xs font-black uppercase tracking-wider shadow-md shadow-blue-200/80 transition active:scale-95 cursor-pointer text-center sm:text-left gap-0.5 sm:gap-2"
+                className="group relative overflow-hidden flex flex-col sm:flex-row items-center justify-center py-2.5 px-2 sm:px-4 bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 hover:from-blue-500 hover:via-blue-600 hover:to-cyan-500 text-white rounded-2xl sm:rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40 border border-blue-400/30 transition-all duration-200 active:scale-95 cursor-pointer text-center sm:text-left gap-1 sm:gap-2"
               >
-                <Plus className="w-5 h-5 sm:w-4 sm:h-4 mb-1 sm:mb-0 shrink-0 text-blue-100 sm:text-current" strokeWidth={3} />
-                <span>Novo Evento</span>
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className="w-6 h-6 sm:w-5 sm:h-5 rounded-lg bg-white/15 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                  <Plus className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                </div>
+                <span className="relative z-10 font-black">Novo Evento</span>
               </button>
 
               <button
                 onClick={() => setModalExportarMensal(true)}
-                className="flex flex-col sm:flex-row items-center justify-center py-2.5 px-1.5 sm:px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl sm:rounded-xl text-[9px] sm:text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-200/80 transition active:scale-95 cursor-pointer text-center sm:text-left gap-0.5 sm:gap-2"
+                className="group relative overflow-hidden flex flex-col sm:flex-row items-center justify-center py-2.5 px-2 sm:px-4 bg-gradient-to-r from-emerald-600 via-emerald-700 to-teal-700 hover:from-emerald-500 hover:via-emerald-600 hover:to-teal-600 text-white rounded-2xl sm:rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-600/25 hover:shadow-emerald-600/40 border border-emerald-400/30 transition-all duration-200 active:scale-95 cursor-pointer text-center sm:text-left gap-1 sm:gap-2"
               >
-                <Share2 className="w-5 h-5 sm:w-4 sm:h-4 mb-1 sm:mb-0 shrink-0 text-emerald-100 sm:text-current" strokeWidth={2.5} />
-                <span>Exportar Mensal</span>
+                <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                <div className="w-6 h-6 sm:w-5 sm:h-5 rounded-lg bg-white/15 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                  <Share2 className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+                </div>
+                <span className="relative z-10 font-black">Exportar Mensal</span>
               </button>
             </>
           )}
@@ -2093,25 +2106,29 @@ export default function EscalasMinisteriais({
         <div className="col-span-12 lg:col-span-4 bg-white rounded-2xl border border-slate-100/80 p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between text-slate-800 pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2">
-              <Calendar className="text-blue-600" size={18} />
+              <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-2xs">
+                <Calendar size={15} strokeWidth={2.5} />
+              </div>
               <h3 className="font-black text-sm uppercase tracking-wider">Eventos</h3>
             </div>
           </div>
 
           {/* Filtro de Período */}
-          <div className="flex items-center justify-between bg-slate-50/80 border border-slate-100 rounded-xl p-2">
+          <div className="flex items-center justify-between bg-slate-50/90 border border-slate-200/80 rounded-2xl p-1.5 shadow-2xs backdrop-blur-xs">
             <button
               onClick={retrocederMes}
-              className="p-1 hover:bg-slate-200/65 rounded-lg text-slate-600 transition active:scale-95 cursor-pointer"
+              className="p-1.5 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200/80 hover:border-blue-300 rounded-xl transition-all active:scale-90 shadow-2xs cursor-pointer"
+              title="Mês anterior"
             >
               <ChevronLeft size={16} strokeWidth={2.5} />
             </button>
-            <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">
+            <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest px-2">
               {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes]} {filtroAno}
             </span>
             <button
               onClick={avancarMes}
-              className="p-1 hover:bg-slate-200/65 rounded-lg text-slate-600 transition active:scale-95 cursor-pointer"
+              className="p-1.5 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200/80 hover:border-blue-300 rounded-xl transition-all active:scale-90 shadow-2xs cursor-pointer"
+              title="Próximo mês"
             >
               <ChevronRight size={16} strokeWidth={2.5} />
             </button>
@@ -2129,14 +2146,14 @@ export default function EscalasMinisteriais({
                 <button
                   key={ev.id}
                   onClick={() => selecionarEvento(ev, true)}
-                  className={`w-full text-left p-2.5 rounded-xl border transition-all duration-200 flex items-center justify-between cursor-pointer group ${eventoSelecionado?.id === ev.id
-                      ? 'bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100'
-                      : 'bg-white border-slate-100 hover:border-slate-200 hover:shadow-xs text-slate-700'
+                  className={`w-full text-left p-2.5 rounded-2xl border transition-all duration-200 flex items-center justify-between cursor-pointer group relative overflow-hidden ${eventoSelecionado?.id === ev.id
+                      ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 border-blue-500 text-white shadow-lg shadow-blue-500/25 ring-2 ring-blue-400/40'
+                      : 'bg-white border-slate-150 hover:border-blue-200 hover:bg-gradient-to-r hover:from-white hover:to-blue-50/30 hover:shadow-sm text-slate-700'
                     }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {/* Calendar Badge */}
-                    <div className={`w-11 h-12 rounded-lg border flex flex-col overflow-hidden shrink-0 shadow-xs transition bg-white ${eventoSelecionado?.id === ev.id ? 'border-white/20' : cores.border
+                    <div className={`w-11 h-12 rounded-xl border flex flex-col overflow-hidden shrink-0 shadow-xs transition bg-white ${eventoSelecionado?.id === ev.id ? 'border-white/30 shadow-md' : cores.border
                       }`}>
                       <div className={`text-[8px] font-black py-0.5 text-center tracking-wider uppercase ${eventoSelecionado?.id === ev.id ? 'bg-white/20 text-white' : `${cores.bgHeader} ${cores.textHeader}`
                         }`}>
@@ -2153,12 +2170,12 @@ export default function EscalasMinisteriais({
                         }`}>
                         {ev.titulo}
                       </h4>
-                      <p className={`text-[10px] mt-0.5 truncate flex items-center gap-1 ${eventoSelecionado?.id === ev.id ? 'text-white/70' : 'text-slate-400'
+                      <p className={`text-[10px] mt-0.5 truncate flex items-center gap-1 ${eventoSelecionado?.id === ev.id ? 'text-white/80' : 'text-slate-400'
                         }`}>
                         📍 {ev.local || 'Templo Sede'}
                       </p>
                       {extrairPregador(ev) && (
-                        <p className={`text-[9px] font-black mt-0.5 truncate flex items-center gap-1 ${eventoSelecionado?.id === ev.id ? 'text-white/90' : 'text-blue-700'}`}>
+                        <p className={`text-[9px] font-black mt-0.5 truncate flex items-center gap-1 ${eventoSelecionado?.id === ev.id ? 'text-cyan-200' : 'text-blue-700'}`}>
                           <span>🎙️</span> {extrairPregador(ev)}
                         </p>
                       )}
@@ -2166,7 +2183,7 @@ export default function EscalasMinisteriais({
                   </div>
 
                   <div className="text-right shrink-0">
-                    <span className={`text-[10px] font-black block ${eventoSelecionado?.id === ev.id ? 'text-white' : 'text-slate-700'
+                    <span className={`text-[10px] font-black block ${eventoSelecionado?.id === ev.id ? 'text-white/95' : 'text-slate-700'
                       }`}>
                       {obterHoraExibicao(ev)}
                     </span>
@@ -2176,7 +2193,7 @@ export default function EscalasMinisteriais({
             })}
 
             {eventosFiltrados.length === 0 && (
-              <div className="py-6 px-3 bg-slate-50/80 rounded-xl border border-slate-100 text-center space-y-3 animate-in fade-in">
+              <div className="py-6 px-3 bg-slate-50/80 rounded-2xl border border-slate-100 text-center space-y-3 animate-in fade-in">
                 <p className="text-xs text-slate-500 font-medium">
                   Nenhum evento em <strong>{['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes]} de {filtroAno}</strong>.
                 </p>
@@ -2195,11 +2212,11 @@ export default function EscalasMinisteriais({
                             setFiltroMes(m.mesIndex);
                             setFiltroAno(m.ano);
                           }}
-                          className="text-[10px] font-bold bg-white hover:bg-blue-50 text-blue-700 hover:text-blue-900 border border-blue-200 px-2.5 py-1 rounded-lg transition shadow-2xs cursor-pointer flex items-center gap-1"
+                          className="text-[10px] font-bold bg-white hover:bg-blue-50 text-blue-700 hover:text-blue-900 border border-blue-200 px-2.5 py-1 rounded-xl transition shadow-2xs cursor-pointer flex items-center gap-1 active:scale-95"
                         >
                           <span>📅</span>
                           {['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][m.mesIndex]} {m.ano}
-                          <span className="bg-blue-100 text-blue-800 text-[9px] px-1 rounded-full font-black">
+                          <span className="bg-blue-100 text-blue-800 text-[9px] px-1.5 rounded-full font-black">
                             {m.total}
                           </span>
                         </button>
@@ -2218,10 +2235,10 @@ export default function EscalasMinisteriais({
                         setAbaGerador('config');
                         setModalGerador(true);
                       }}
-                      className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
+                      className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer flex items-center justify-center gap-2 border border-indigo-400/30"
                     >
-                      <Calendar size={13} />
-                      Gerar Grade de {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes]}
+                      <Calendar size={14} strokeWidth={2.5} />
+                      <span>Gerar Grade de {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes]}</span>
                     </button>
                   </div>
                 )}
@@ -2241,9 +2258,9 @@ export default function EscalasMinisteriais({
                 <button
                   type="button"
                   onClick={() => setModalGradeMobile(false)}
-                  className="text-slate-600 hover:text-slate-900 cursor-pointer bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full transition flex items-center gap-1 text-xs font-bold"
+                  className="text-slate-600 hover:text-slate-900 cursor-pointer bg-slate-100 hover:bg-slate-200 px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 text-xs font-bold active:scale-95"
                 >
-                  <X size={16} /> Fechar
+                  <X size={15} /> Fechar
                 </button>
               </div>
             )}
@@ -2255,8 +2272,8 @@ export default function EscalasMinisteriais({
                     <h3 className="text-xl font-black text-slate-800 tracking-tight">
                       {eventoSelecionado.titulo}
                     </h3>
-                    <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1">
-                      <span>📅 {new Date(eventoSelecionado.data_evento).toLocaleDateString('pt-BR')}</span>
+                    <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5">
+                      <span className="font-bold text-slate-600">📅 {new Date(eventoSelecionado.data_evento).toLocaleDateString('pt-BR')}</span>
                       <span>· ⏰ {obterHoraExibicao(eventoSelecionado)}</span>
                       <span>· 📍 {eventoSelecionado.local || 'Templo Sede'}</span>
                     </p>
@@ -2268,40 +2285,40 @@ export default function EscalasMinisteriais({
                         <button
                           type="button"
                           onClick={() => abrirModalEditar(eventoSelecionado)}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-50 to-indigo-50/60 hover:from-blue-100 hover:to-indigo-100 text-blue-700 border border-blue-200/80 hover:border-blue-300 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
                           title="Editar este Evento"
                         >
-                          <Pencil size={13} />
-                          Editar
+                          <Pencil size={13} strokeWidth={2.5} />
+                          <span>Editar</span>
                         </button>
                         <button
                           type="button"
                           onClick={excluirEventoAtual}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-rose-50 to-red-50/60 hover:from-rose-100 hover:to-red-100 text-rose-600 hover:text-rose-700 border border-rose-200/80 hover:border-rose-300 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
                           title="Excluir este Evento"
                         >
-                          <Trash2 size={13} />
-                          Excluir
+                          <Trash2 size={13} strokeWidth={2.5} />
+                          <span>Excluir</span>
                         </button>
                       </>
                     )}
                     <button
                       type="button"
                       onClick={copiarWhatsApp}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black uppercase tracking-wider transition cursor-pointer"
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-50 to-teal-50/60 hover:from-emerald-100 hover:to-teal-100 text-emerald-700 border border-emerald-200/80 hover:border-emerald-300 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
                       title="Copiar texto formatado para WhatsApp"
                     >
-                      <Share2 size={13} />
-                      WhatsApp
+                      <Share2 size={13} strokeWidth={2.5} />
+                      <span>WhatsApp</span>
                     </button>
                     {!isMembroNormal && (
                       <button
                         type="button"
                         onClick={() => abrirModalEscala()}
-                        className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer"
+                        className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white px-4.5 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 border border-blue-400/30 transition-all duration-200 active:scale-95 cursor-pointer"
                       >
-                        <Plus size={13} strokeWidth={3} />
-                        Escalar
+                        <Plus size={14} strokeWidth={3} />
+                        <span>Escalar</span>
                       </button>
                     )}
                   </div>
@@ -2325,116 +2342,129 @@ export default function EscalasMinisteriais({
                       >
                         {/* Faixa Superior de Destaque / Header com Cor do Ministério */}
                         <div
-                          className="p-3.5 sm:p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                          className="px-3 py-2 sm:px-4 sm:py-2.5 border-b flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-2.5"
                           style={{
                             background: `linear-gradient(135deg, ${corMin}14 0%, ${corMin}05 100%)`,
                             borderBottomColor: `${corMin}25`
                           }}
                         >
-                          {/* Lado Esquerdo: Ícone Grande, Nome do Ministério e Badges */}
-                          <div className="flex items-center gap-3 min-w-0 flex-wrap">
-                            {/* Badge Ícone com a cor da identidade visual */}
+                          {/* Lado Esquerdo: Ícone + Nome do Ministério + Badge de Voluntários */}
+                          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 w-full md:w-auto">
+                            {/* Badge Ícone compacto */}
                             <div
-                              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs border transition-transform duration-200 hover:scale-105"
+                              className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 shadow-2xs border transition-transform duration-200 hover:scale-105"
                               style={{
                                 backgroundColor: `${corMin}20`,
                                 borderColor: `${corMin}45`,
                                 color: corMin
                               }}
                             >
-                              <MinistryIcon icone={iconeMin} size={20} className="shrink-0" style={{ color: corMin }} />
+                              <MinistryIcon icone={iconeMin} size={16} className="shrink-0" style={{ color: corMin }} />
                             </div>
 
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h4
-                                  className="font-black text-sm uppercase tracking-wider"
-                                  style={{ color: corMin }}
-                                >
-                                  {grupo.nome}
-                                </h4>
+                            {/* Nome do Ministério */}
+                            <h4
+                              className="font-black text-xs sm:text-sm uppercase tracking-wider truncate flex-1 md:flex-initial min-w-0"
+                              style={{ color: corMin }}
+                              title={grupo.nome}
+                            >
+                              {grupo.nome}
+                            </h4>
 
-                                {/* Badge Contadora de Voluntários */}
-                                <span
-                                  className="text-[10px] font-black px-2.5 py-0.5 rounded-full border shadow-2xs flex items-center gap-1"
-                                  style={{
-                                    backgroundColor: `${corMin}18`,
-                                    color: corMin,
-                                    borderColor: `${corMin}35`
-                                  }}
-                                >
-                                  <span>👥</span>
-                                  {totalItens === 1 ? '1 Voluntário' : `${totalItens} Voluntários`}
-                                  {confirmados > 0 && (
-                                    <span className="ml-1 text-[9px] font-extrabold opacity-90">
-                                      ({confirmados} presenças)
-                                    </span>
-                                  )}
+                            {/* Badge Contadora de Voluntários */}
+                            <span
+                              className="text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 sm:px-2 rounded-full border shadow-2xs flex items-center gap-1 shrink-0"
+                              style={{
+                                backgroundColor: `${corMin}18`,
+                                color: corMin,
+                                borderColor: `${corMin}35`
+                              }}
+                            >
+                              <span>👥</span>
+                              <span>{totalItens}</span>
+                              {confirmados > 0 && (
+                                <span className="font-extrabold opacity-90 hidden xs:inline">
+                                  ({confirmados})
                                 </span>
-                              </div>
-
-                              {/* Seletor de Fardamento inline */}
-                              {(() => {
-                                const nomeMinNorm = grupo.nome ? grupo.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
-                                const eIntercessaoOuIntroducao = nomeMinNorm.includes('intercessao') || nomeMinNorm.includes('introducao');
-                                const temFardamentos = grupo.fardamentos && grupo.fardamentos.length > 0;
-                                if (!temFardamentos && !eIntercessaoOuIntroducao) return null;
-
-                                const opcoesFardamento = temFardamentos 
-                                  ? grupo.fardamentos 
-                                  : ["Farda Oficial", "Camisa Preta", "Camisa Branca", "Camisa Azul", "Social"];
-
-                                return (
-                                  <div className="flex items-center gap-1.5 mt-1.5 bg-white/95 py-0.5 px-2 rounded-lg border border-slate-200/80 shrink-0 w-fit shadow-2xs">
-                                    <span className="text-[9px] font-black uppercase text-slate-500 tracking-wider">👕 Farda:</span>
-                                    <select
-                                      value={eventoSelecionado?.fardamentos?.[grupo.id] || ''}
-                                      onChange={e => handleMudarFardamentoDia(grupo.id, e.target.value)}
-                                      className="bg-transparent text-[10px] font-bold text-slate-700 outline-none cursor-pointer border-none p-0 focus:ring-0"
-                                    >
-                                      <option value="">Nenhuma definida</option>
-                                      {opcoesFardamento.map(f => (
-                                        <option key={f} value={f}>{f}</option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                );
-                              })()}
-                            </div>
+                              )}
+                            </span>
                           </div>
 
-                          {/* Lado Direito: Ações de Gestão (+ Escalar, WhatsApp, AutoEscala) */}
-                          <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 shrink-0 pt-1 sm:pt-0">
-                            <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto sm:flex sm:items-center">
-                              <button
-                                type="button"
-                                onClick={() => abrirModalEscala(grupo.id)}
-                                className="text-[10px] font-black uppercase tracking-wider text-white px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 shadow-sm active:scale-95"
-                                style={{ backgroundColor: corMin }}
-                                title="Escalar voluntário neste ministério"
-                              >
-                                <Plus size={12} strokeWidth={3} /> Escalar
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => copiarWhatsAppMinisterio(grupo)}
-                                className="text-[10px] font-black uppercase tracking-wider text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
-                                title="Copiar escala deste ministério para WhatsApp"
-                              >
-                                <Share2 size={12} /> WhatsApp
-                              </button>
-                            </div>
+                          {/* Lado Direito: Ações de Gestão (Escalar, WhatsApp, AutoEscala) - 100% responsivo para mobile */}
+                          <div className="grid grid-cols-3 gap-1 w-full md:flex md:w-auto md:items-center md:gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => abrirModalEscala(grupo.id)}
+                              className="text-[7px] xs:text-[7.5px] sm:text-[10px] font-bold uppercase tracking-tight sm:tracking-wider text-white px-1 py-1 sm:px-3 sm:py-1.5 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-0.5 sm:gap-1 shadow-xs active:scale-95 hover:brightness-110 border border-white/25 w-full md:w-auto min-w-0"
+                              style={{ backgroundColor: corMin }}
+                              title="Escalar voluntário neste ministério"
+                            >
+                              <Plus size={9} strokeWidth={3} className="shrink-0 sm:w-[11px] sm:h-[11px]" />
+                              <span className="truncate">Escalar</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => copiarWhatsAppMinisterio(grupo)}
+                              className="text-[7px] xs:text-[7.5px] sm:text-[10px] font-bold uppercase tracking-tight sm:tracking-wider text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 border border-emerald-400/40 shadow-xs shadow-emerald-600/20 hover:shadow-emerald-600/35 px-1 py-1 sm:px-3 sm:py-1.5 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-0.5 sm:gap-1 active:scale-95 w-full md:w-auto min-w-0"
+                              title="Copiar escala deste ministério para WhatsApp"
+                            >
+                              <Share2 size={9} strokeWidth={2.5} className="shrink-0 sm:w-[11px] sm:h-[11px]" />
+                              <span className="truncate">WhatsApp</span>
+                            </button>
 
                             <button
                               type="button"
                               onClick={() => rodarAutoEscala(grupo.id)}
-                              className="w-full sm:w-auto text-[10px] font-black uppercase tracking-wider text-amber-800 hover:text-amber-950 bg-amber-50 hover:bg-amber-100 border border-amber-300/80 px-3 py-1.5 rounded-xl transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs active:scale-95"
+                              className="text-[7px] xs:text-[7.5px] sm:text-[10px] font-bold uppercase tracking-tight sm:tracking-wider text-white bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:via-orange-400 hover:to-amber-500 border border-amber-300/40 shadow-xs shadow-amber-500/20 hover:shadow-amber-500/35 px-1 py-1 sm:px-3 sm:py-1.5 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-0.5 sm:gap-1 active:scale-95 relative overflow-hidden group w-full md:w-auto min-w-0"
                               title="Montar escala automaticamente com base no histórico e disponibilidade."
                             >
-                              ⚡ AutoEscala
+                              <Sparkles size={9} className="text-amber-100 group-hover:rotate-12 transition-transform shrink-0 sm:w-[11px] sm:h-[11px]" />
+                              <span className="truncate">AutoEscala</span>
                             </button>
                           </div>
                         </div>
+
+                        {/* Sub-faixa de Fardamento (Linha de Baixo) */}
+                        {(() => {
+                          const nomeMinNorm = grupo.nome ? grupo.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+                          const eIntercessaoOuIntroducao = nomeMinNorm.includes('intercessao') || nomeMinNorm.includes('introducao');
+                          const temFardamentos = grupo.fardamentos && grupo.fardamentos.length > 0;
+                          if (!temFardamentos && !eIntercessaoOuIntroducao) return null;
+
+                          const opcoesFardamento = temFardamentos 
+                            ? grupo.fardamentos 
+                            : ["Farda Oficial", "Camisa Preta", "Camisa Branca", "Camisa Azul", "Social"];
+
+                          return (
+                            <div 
+                              className="px-3 py-1.5 sm:px-4 border-b flex items-center justify-between gap-2 text-xs transition-colors min-w-0"
+                              style={{
+                                backgroundColor: `${corMin}08`,
+                                borderBottomColor: `${corMin}18`
+                              }}
+                            >
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="text-xs">👕</span>
+                                <span className="text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider" style={{ color: corMin }}>
+                                  Fardamento:
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1 bg-white/95 py-0.5 px-2 sm:px-2.5 rounded-lg border border-slate-200/80 shadow-2xs min-w-0 flex-1 md:flex-initial max-w-[200px] sm:max-w-xs">
+                                <select
+                                  value={eventoSelecionado?.fardamentos?.[grupo.id] || ''}
+                                  onChange={e => handleMudarFardamentoDia(grupo.id, e.target.value)}
+                                  className="bg-transparent text-[10px] sm:text-[11px] font-bold text-slate-700 outline-none cursor-pointer border-none p-0 focus:ring-0 w-full min-w-0 truncate"
+                                >
+                                  <option value="">Farda: Nenhuma</option>
+                                  {opcoesFardamento.map(f => (
+                                    <option key={f} value={f}>{f}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         {/* Grade de Voluntários */}
                         <div className="p-3.5 sm:p-4 bg-slate-50/20">
@@ -2443,87 +2473,100 @@ export default function EscalasMinisteriais({
                         {grupo.itens.map((item) => (
                           <div
                             key={item.id}
-                            className="bg-white rounded-xl border border-slate-100 p-3 flex flex-col justify-between group relative hover:border-slate-200 transition gap-2 shadow-2xs"
+                            className="bg-white rounded-2xl border border-slate-200/70 overflow-hidden flex flex-col justify-between group relative hover:border-slate-300/90 hover:shadow-md transition-all duration-300 shadow-2xs"
                           >
-                            <div className="flex justify-between items-start gap-2">
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <p className="text-xs font-bold text-slate-800 truncate">
-                                    {item.pessoas?.nome}
+                            {/* Corpo do Card: Destaque do Voluntário e Status */}
+                            <div className="p-3.5 flex-1 flex flex-col justify-between gap-2.5">
+                              <div className="flex justify-between items-start gap-2">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <p className="text-sm font-black text-slate-900 tracking-tight truncate" title={item.pessoas?.nome}>
+                                      {item.pessoas?.nome}
+                                    </p>
+                                  </div>
+                                  <p className="text-[10px] sm:text-[11px] text-slate-500 font-semibold mt-0.5">
+                                    {item.ministerio_funcoes?.nome || 'Geral'}
                                   </p>
                                 </div>
-                                <p className="text-[10px] text-slate-500 mt-0.5">
-                                  {item.ministerio_funcoes?.nome || 'Geral'}
-                                </p>
+
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {renderStatusBadge(item)}
+                                  {!isMembroNormal && !item.isPregadorManual && (
+                                    <button
+                                      type="button"
+                                      onClick={() => excluirEscala(item.id)}
+                                      className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all active:scale-90 cursor-pointer"
+                                      title="Remover da escala"
+                                    >
+                                      <X size={14} strokeWidth={2.5} />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
 
-                              <div className="flex items-center gap-1 shrink-0">
-                                {renderStatusBadge(item)}
-                                {!isMembroNormal && !item.isPregadorManual && (
-                                  <button
-                                    type="button"
-                                    onClick={() => excluirEscala(item.id)}
-                                    className="p-1 text-slate-300 hover:text-red-600 transition cursor-pointer"
-                                    title="Remover da escala"
-                                  >
-                                    <X size={14} />
-                                  </button>
-                                )}
-                              </div>
+                              {/* Detalhe de Justificativa / Recusa / Negativação */}
+                              {item.status === 'recusado' && (
+                                <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
+                                  <span className="shrink-0 text-rose-600">🚫</span>
+                                  <span className="leading-snug">
+                                    <strong>Motivo da Recusa:</strong> {item.justificativa ? item.justificativa : 'Voluntário informou que não poderá comparecer.'}
+                                  </span>
+                                </div>
+                              )}
+
+                              {((item.status === 'falta_justificada' || item.status === 'ausente_justificado') && item.justificativa) && (
+                                <div className="text-[10px] text-amber-900 bg-amber-50/90 border border-amber-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
+                                  <span className="shrink-0 text-amber-600">💬</span>
+                                  <span className="italic leading-snug">
+                                    <strong>Justificativa:</strong> {item.justificativa}
+                                  </span>
+                                </div>
+                              )}
+
+                              {(item.status === 'falta' || item.status === 'falta_injustificada' || item.status === 'ausente') && (
+                                <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
+                                  <span className="shrink-0 text-rose-600">⚠️</span>
+                                  <span className="leading-snug">
+                                    <strong>Negativação:</strong> {item.justificativa ? item.justificativa : 'Não compareceu ao evento para cumprir a escala.'}
+                                  </span>
+                                </div>
+                              )}
                             </div>
 
-                            {/* Detalhe de Justificativa / Recusa / Negativação */}
-                            {item.status === 'recusado' && (
-                              <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2 py-1 rounded-lg flex items-start gap-1.5 animate-in fade-in">
-                                <span className="shrink-0 text-rose-600">🚫</span>
-                                <span className="leading-snug">
-                                  <strong>Motivo da Recusa:</strong> {item.justificativa ? item.justificativa : 'Voluntário informou que não poderá comparecer.'}
-                                </span>
-                              </div>
-                            )}
-
-                            {((item.status === 'falta_justificada' || item.status === 'ausente_justificado') && item.justificativa) && (
-                              <div className="text-[10px] text-amber-900 bg-amber-50/90 border border-amber-200/70 px-2 py-1 rounded-lg flex items-start gap-1.5 animate-in fade-in">
-                                <span className="shrink-0 text-amber-600">💬</span>
-                                <span className="italic leading-snug">
-                                  <strong>Justificativa:</strong> {item.justificativa}
-                                </span>
-                              </div>
-                            )}
-
-                            {(item.status === 'falta' || item.status === 'falta_injustificada' || item.status === 'ausente') && (
-                              <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2 py-1 rounded-lg flex items-start gap-1.5 animate-in fade-in">
-                                <span className="shrink-0 text-rose-600">⚠️</span>
-                                <span className="leading-snug">
-                                  <strong>Negativação:</strong> {item.justificativa ? item.justificativa : 'Não compareceu ao evento para cumprir a escala.'}
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Barra de Ações para Gestores / Líderes */}
+                            {/* Rodapé Gradiente com Botões de Ações */}
                             {!isMembroNormal && !item.isPregadorManual && (
-                              <div className="flex items-center justify-between pt-1.5 border-t border-slate-50 gap-1.5 flex-wrap">
-                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                                  Ações:
+                              <div
+                                className="px-3 py-2 border-t flex items-center justify-between gap-1.5 transition-colors"
+                                style={{
+                                  background: `linear-gradient(135deg, ${corMin}24 0%, ${corMin}10 100%)`,
+                                  borderTopColor: `${corMin}30`
+                                }}
+                              >
+                                <span
+                                  className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider flex items-center gap-1"
+                                  style={{ color: corMin }}
+                                >
+                                  <span>⚡</span>
+                                  <span>Ações</span>
                                 </span>
-                                <div className="flex items-center gap-1.5 flex-wrap">
+                                <div className="flex items-center gap-1.5">
                                   <button
                                     type="button"
                                     onClick={() => copiarWhatsAppVoluntario(item, grupo)}
-                                    className="text-[9px] font-black uppercase tracking-wider text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 px-2 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
-                                    title="Enviar link de confirmação individual via WhatsApp"
+                                    className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-emerald-800 hover:text-emerald-950 bg-white hover:bg-emerald-50 border border-emerald-300 shadow-2xs hover:shadow-xs px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer flex items-center gap-1 active:scale-95"
+                                    title="Enviar mensagem de aviso individual via WhatsApp"
                                   >
                                     <Share2 size={10} className="text-emerald-600" />
-                                    Avisar / Link
+                                    <span>Avisar</span>
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => abrirModalApontamento(item, grupo)}
-                                    className="text-[9px] font-black uppercase tracking-wider text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/70 px-2 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 shadow-2xs active:scale-95"
+                                    className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-indigo-800 hover:text-indigo-950 bg-white hover:bg-indigo-50 border border-indigo-300 shadow-2xs hover:shadow-xs px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer flex items-center gap-1 active:scale-95"
                                     title="Apontar presença, falta justificada ou negativação"
                                   >
                                     <CheckCircle size={10} className="text-indigo-600" />
-                                    Apontar
+                                    <span>Apontar</span>
                                   </button>
                                 </div>
                               </div>
@@ -2635,10 +2678,10 @@ export default function EscalasMinisteriais({
             </div>
 
             <div className="p-4 sm:p-6 border-t border-slate-100 bg-white/95 backdrop-blur-xs shrink-0 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] z-10">
-              <button type="button" onClick={() => setModalEvento(false)} className="w-full sm:flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-center">
+              <button type="button" onClick={() => setModalEvento(false)} className="w-full sm:flex-1 py-2.5 border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all active:scale-95 cursor-pointer text-center">
                 Cancelar
               </button>
-              <button type="button" onClick={salvarEvento} disabled={salvando} className="w-full sm:flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer text-center">
+              <button type="button" onClick={salvarEvento} disabled={salvando} className="w-full sm:flex-1 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 border border-blue-400/30 transition-all duration-200 active:scale-95 cursor-pointer text-center disabled:opacity-50">
                 {salvando ? 'Salvando...' : 'Salvar Evento'}
               </button>
             </div>
@@ -2798,10 +2841,11 @@ export default function EscalasMinisteriais({
                       type="button"
                       onClick={() => preencherAutoEscalaModal()}
                       disabled={salvandoEscalasMultiplas}
-                      className="text-[10px] font-black uppercase tracking-wider text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1 active:scale-95 disabled:opacity-50"
+                      className="text-[10px] font-black uppercase tracking-wider text-white bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:via-orange-400 hover:to-amber-500 border border-amber-300/40 shadow-sm shadow-amber-500/20 px-3 py-1.5 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
                       title="Preencher automaticamente as funções usando histórico e disponibilidade"
                     >
-                      ⚡ Sugerir com AutoEscala
+                      <Sparkles size={12} className="text-amber-100" />
+                      <span>Sugerir com AutoEscala</span>
                     </button>
                   </div>
 
@@ -2865,7 +2909,7 @@ export default function EscalasMinisteriais({
               <button
                 type="button"
                 onClick={fecharModalEscala}
-                className="w-full sm:flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer text-center"
+                className="w-full sm:flex-1 py-2.5 border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all active:scale-95 cursor-pointer text-center"
               >
                 Cancelar
               </button>
@@ -2873,7 +2917,7 @@ export default function EscalasMinisteriais({
                 type="button"
                 onClick={salvarEscalasMultiplas}
                 disabled={salvandoEscalasMultiplas || (!novaEscala.ministerio_id && pregadorModal.trim() === extrairPregador(eventoSelecionado).trim())}
-                className="w-full sm:flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer text-center disabled:opacity-50"
+                className="w-full sm:flex-1 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 border border-blue-400/30 transition-all duration-200 active:scale-95 cursor-pointer text-center disabled:opacity-50"
               >
                 {salvandoEscalasMultiplas 
                   ? 'Salvando...' 
@@ -2948,13 +2992,13 @@ export default function EscalasMinisteriais({
               </div>
 
               {/* Botões de Abas */}
-              <div className="grid grid-cols-2 gap-1 sm:flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/50 w-full md:w-auto">
+              <div className="grid grid-cols-2 gap-1 sm:flex bg-slate-100 p-1 rounded-2xl border border-slate-200/60 w-full md:w-auto">
                 <button
                   type="button"
                   onClick={() => setAbaGerador('config')}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition text-center ${abaGerador === 'config'
-                      ? 'bg-[#1e3a8a] text-white shadow-xs'
-                      : 'text-slate-500 hover:text-slate-700'
+                  className={`px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 text-center cursor-pointer ${abaGerador === 'config'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
                     }`}
                 >
                   ⚙️ Regras
@@ -2962,9 +3006,9 @@ export default function EscalasMinisteriais({
                 <button
                   type="button"
                   onClick={calcularPreviaEventos}
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition text-center ${abaGerador === 'previa'
-                      ? 'bg-[#1e3a8a] text-white shadow-xs'
-                      : 'text-slate-500 hover:text-slate-700'
+                  className={`px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 text-center cursor-pointer ${abaGerador === 'previa'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
+                      : 'text-slate-500 hover:text-slate-800'
                     }`}
                 >
                   📋 Prévia
@@ -3002,7 +3046,7 @@ export default function EscalasMinisteriais({
                             <button
                               type="button"
                               onClick={() => removerCultoPadrao(c.id)}
-                              className="p-1.5 text-slate-350 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                              className="p-1.5 text-slate-350 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all active:scale-90 cursor-pointer"
                               title="Remover Culto Padrão"
                             >
                               <X size={14} />
@@ -3062,7 +3106,7 @@ export default function EscalasMinisteriais({
                           <button
                             type="button"
                             onClick={adicionarCultoPadrao}
-                            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition active:scale-95 cursor-pointer shrink-0 text-center"
+                            className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer shrink-0 text-center"
                           >
                             Adicionar
                           </button>
@@ -3097,7 +3141,7 @@ export default function EscalasMinisteriais({
                             <button
                               type="button"
                               onClick={() => removerEventoCustomizado(e.id)}
-                              className="p-1.5 text-slate-350 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                              className="p-1.5 text-slate-350 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all active:scale-90 cursor-pointer"
                               title="Remover Evento Especial"
                             >
                               <X size={14} />
@@ -3177,7 +3221,7 @@ export default function EscalasMinisteriais({
                         <button
                           type="button"
                           onClick={adicionarEventoCustomizado}
-                          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition active:scale-95 cursor-pointer text-center"
+                          className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shadow-sm transition-all active:scale-95 cursor-pointer text-center"
                         >
                           Adicionar Evento Especial
                         </button>
@@ -3254,7 +3298,7 @@ export default function EscalasMinisteriais({
               <button
                 type="button"
                 onClick={() => setModalGerador(false)}
-                className="w-full sm:w-auto px-5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 transition cursor-pointer text-center"
+                className="w-full sm:w-auto px-5 py-2.5 border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 transition-all active:scale-95 cursor-pointer text-center"
               >
                 Cancelar
               </button>
@@ -3264,7 +3308,7 @@ export default function EscalasMinisteriais({
                   <button
                     type="button"
                     onClick={calcularPreviaEventos}
-                    className="w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-md transition active:scale-95 cursor-pointer text-center"
+                    className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-slate-800 to-slate-950 hover:from-slate-700 hover:to-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95 cursor-pointer text-center"
                   >
                     Gerar e Ver Prévia
                   </button>
@@ -3273,7 +3317,7 @@ export default function EscalasMinisteriais({
                     <button
                       type="button"
                       onClick={() => setAbaGerador('config')}
-                      className="w-full sm:w-auto px-5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 transition cursor-pointer text-center"
+                      className="w-full sm:w-auto px-5 py-2.5 border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 transition-all active:scale-95 cursor-pointer text-center"
                     >
                       Voltar e Ajustar
                     </button>
@@ -3281,7 +3325,7 @@ export default function EscalasMinisteriais({
                       type="button"
                       onClick={salvarEventosLote}
                       disabled={salvando}
-                      className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-blue-100 transition active:scale-95 cursor-pointer text-center"
+                      className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 border border-blue-400/30 transition-all active:scale-95 cursor-pointer text-center"
                     >
                       {salvando ? 'Salvando...' : 'Salvar Eventos'}
                     </button>
@@ -3376,10 +3420,10 @@ export default function EscalasMinisteriais({
             </div>
 
             <div className="p-6 border-t border-slate-100 bg-white/95 backdrop-blur-xs shrink-0 flex gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] z-10">
-              <button type="button" onClick={() => setModalEditar(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+              <button type="button" onClick={() => setModalEditar(false)} className="flex-1 py-2.5 border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all active:scale-95 cursor-pointer">
                 Cancelar
               </button>
-              <button type="button" onClick={salvarEdicaoEvento} disabled={salvando} className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition cursor-pointer">
+              <button type="button" onClick={salvarEdicaoEvento} disabled={salvando} className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 border border-blue-400/30 transition-all duration-200 active:scale-95 cursor-pointer">
                 {salvando ? 'Salvando...' : 'Salvar Alterações'}
               </button>
             </div>
@@ -3514,7 +3558,7 @@ export default function EscalasMinisteriais({
                                   );
                                 });
 
-                                atribuicoes.forEach(att => {
+                                atriibuicoes: atribuicoes.forEach(att => {
                                   if (!att.funcao_id || !renderedIds.has(String(att.funcao_id))) {
                                     const nomePessoa = att.pessoas?.nome || 'Voluntário';
                                     const nomeFunc = att.ministerio_funcoes?.nome || 'Voluntário';
@@ -3598,7 +3642,7 @@ export default function EscalasMinisteriais({
               <button
                 type="button"
                 onClick={() => setModalExportarMensal(false)}
-                className="w-full sm:w-auto px-5 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 transition cursor-pointer text-center"
+                className="w-full sm:w-auto px-5 py-2.5 border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 transition-all active:scale-95 cursor-pointer text-center"
               >
                 Fechar
               </button>
@@ -3608,16 +3652,16 @@ export default function EscalasMinisteriais({
                   type="button"
                   onClick={() => handleExportarMensalPNG(false)}
                   disabled={carregandoExportar || !minExportarId || eventosFiltrados.length === 0}
-                  className="w-full sm:w-auto px-3.5 sm:px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer text-center"
+                  className="w-full sm:w-auto px-3.5 sm:px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-500/20 border border-emerald-400/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer text-center"
                 >
-                  <Share2 size={13} />
+                  <Share2 size={13} strokeWidth={2.5} />
                   <span>Compartilhar</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleExportarMensalPNG(true)}
                   disabled={carregandoExportar || !minExportarId || eventosFiltrados.length === 0}
-                  className="w-full sm:w-auto px-3.5 sm:px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer text-center"
+                  className="w-full sm:w-auto px-3.5 sm:px-5 py-2.5 bg-gradient-to-r from-slate-800 to-slate-950 hover:from-slate-700 hover:to-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md border border-slate-700 transition-all active:scale-95 disabled:opacity-50 cursor-pointer text-center"
                 >
                   Baixar PNG
                 </button>
@@ -3648,7 +3692,7 @@ export default function EscalasMinisteriais({
               <button
                 type="button"
                 onClick={() => setModalConflito(null)}
-                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
+                className="w-full py-2.5 bg-gradient-to-r from-slate-800 to-slate-950 hover:from-slate-700 hover:to-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 shadow-sm active:scale-95 cursor-pointer"
               >
                 Entendido
               </button>
@@ -3678,7 +3722,7 @@ export default function EscalasMinisteriais({
               <button
                 type="button"
                 onClick={() => setModalAvisoMinisterio(false)}
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-100 cursor-pointer"
+                className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 shadow-md shadow-blue-500/25 border border-blue-400/30 active:scale-95 cursor-pointer"
               >
                 Entendido
               </button>
@@ -3914,7 +3958,7 @@ export default function EscalasMinisteriais({
                             key={sug}
                             type="button"
                             onClick={() => setJustificativaApontamento(sug)}
-                            className="text-[10px] font-bold bg-white hover:bg-slate-100 text-slate-600 px-2 py-1 rounded-lg border border-slate-200 transition cursor-pointer shadow-2xs"
+                            className="text-[10px] font-bold bg-white hover:bg-slate-100 text-slate-600 px-2 py-1 rounded-lg border border-slate-200 transition cursor-pointer shadow-2xs active:scale-95"
                           >
                             {sug}
                           </button>
@@ -3931,7 +3975,7 @@ export default function EscalasMinisteriais({
               <button
                 type="button"
                 onClick={fecharModalApontamento}
-                className="w-full sm:flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 transition cursor-pointer text-center"
+                className="w-full sm:flex-1 py-2.5 border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 transition-all active:scale-95 cursor-pointer text-center"
               >
                 Cancelar
               </button>
@@ -3939,7 +3983,7 @@ export default function EscalasMinisteriais({
                 type="button"
                 onClick={salvarApontamentoFrequencia}
                 disabled={salvandoApontamento}
-                className="w-full sm:flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-100 transition active:scale-95 disabled:opacity-50 cursor-pointer text-center"
+                className="w-full sm:flex-1 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 border border-blue-400/30 transition-all duration-200 active:scale-95 disabled:opacity-50 cursor-pointer text-center"
               >
                 {salvandoApontamento ? 'Salvando...' : 'Salvar Apontamento'}
               </button>

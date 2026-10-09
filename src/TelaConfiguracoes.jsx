@@ -8,10 +8,17 @@ import {
   desmascararCNPJ
 } from './mascaras';
 import {
-  Building2, MapPin, Briefcase, CreditCard, Search, X, Check, Trash2, Edit2, Palette, Sun, Moon, Globe, Activity, Bell, Smartphone
+  Building2, MapPin, Briefcase, CreditCard, Search, X, Check, Trash2, Edit2, Palette, Sun, Moon, Globe, Activity, Bell, Smartphone,
+  ArrowRight, User, Clock, FileText, Database, ShieldCheck, Filter, LayoutGrid, List
 } from 'lucide-react';
 import { aplicarTema } from './themeUtils';
 import { isBadgingSupported, getBadgePermissionStatus, requestBadgePermission, setAppBadge, clearAppBadge, isStandalone, syncAndroidNotificationBadge } from './badgeUtils';
+import { 
+  formatarDataHoraAuditoria, 
+  extrairAlteracoesLog, 
+  gerarDescricaoResumoLog, 
+  formatarNomeTabela 
+} from './services/auditLogger';
 
 // Dicionário de Tradução de Exemplo para a tela de configurações (Proof of Concept i18n)
 const t = {
@@ -217,6 +224,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
   const [filtroAcaoAudit, setFiltroAcaoAudit] = useState('');
   const [filtroUsuarioAudit, setFiltroUsuarioAudit] = useState('');
   const [filtroTabelaAudit, setFiltroTabelaAudit] = useState('');
+  const [modoVisualizacaoAudit, setModoVisualizacaoAudit] = useState('cards'); // 'cards' | 'tabela'
   const [logDetalhesExpandidoId, setLogDetalhesExpandidoId] = useState(null);
 
   const eAdminOuPastor = membroLogado?.permissao?.toLowerCase() === 'admin' || membroLogado?.permissao?.toLowerCase() === 'pastor';
@@ -1440,130 +1448,308 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
               {/* CONTEÚDO SUB-ABA: AUDITORIA */}
               {subAbaLogs === 'auditoria' && (
                 <div className="p-5 space-y-4">
-                  {/* Filtros */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-450 uppercase">Usuário</label>
-                      <input
-                        type="text"
-                        placeholder="Nome ou e-mail..."
-                        value={filtroUsuarioAudit}
-                        onChange={e => setFiltroUsuarioAudit(e.target.value)}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
-                      />
+                  {/* Barra de Filtros e Alternância de Visualização */}
+                  <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 flex-1">
+                      <div className="relative">
+                        <User className="absolute left-2.5 top-2.5 text-slate-400" size={13} />
+                        <input
+                          type="text"
+                          placeholder="Buscar usuário/autor..."
+                          value={filtroUsuarioAudit}
+                          onChange={e => setFiltroUsuarioAudit(e.target.value)}
+                          className="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 font-medium"
+                        />
+                      </div>
+                      <div>
+                        <select
+                          value={filtroAcaoAudit}
+                          onChange={e => setFiltroAcaoAudit(e.target.value)}
+                          className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 font-medium cursor-pointer"
+                        >
+                          <option value="">Todas as Ações</option>
+                          <option value="INSERT">Inclusão (INSERT)</option>
+                          <option value="UPDATE">Alteração (UPDATE)</option>
+                          <option value="DELETE">Exclusão (DELETE)</option>
+                          <option value="LOGIN">Acesso (LOGIN)</option>
+                          <option value="LOGOUT">Saída (LOGOUT)</option>
+                        </select>
+                      </div>
+                      <div className="relative">
+                        <Database className="absolute left-2.5 top-2.5 text-slate-400" size={13} />
+                        <input
+                          type="text"
+                          placeholder="Tabela (ex: pessoas, escalas)..."
+                          value={filtroTabelaAudit}
+                          onChange={e => setFiltroTabelaAudit(e.target.value)}
+                          className="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 font-medium"
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-450 uppercase">Ação</label>
-                      <select
-                        value={filtroAcaoAudit}
-                        onChange={e => setFiltroAcaoAudit(e.target.value)}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+
+                    {/* Alternador Cards / Tabela */}
+                    <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200/80 shrink-0 self-end md:self-auto">
+                      <button
+                        type="button"
+                        onClick={() => setModoVisualizacaoAudit('cards')}
+                        className={`p-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                          modoVisualizacaoAudit === 'cards'
+                            ? 'bg-slate-900 text-white shadow-xs'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                        title="Visualização em Cards Detalhados"
                       >
-                        <option value="">Todas as Ações</option>
-                        <option value="INSERT">Inclusão (INSERT)</option>
-                        <option value="UPDATE">Alteração (UPDATE)</option>
-                        <option value="DELETE">Exclusão (DELETE)</option>
-                        <option value="LOGIN">Acesso (LOGIN)</option>
-                        <option value="LOGOUT">Saída (LOGOUT)</option>
-                      </select>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-slate-450 uppercase">Tabela</label>
-                      <input
-                        type="text"
-                        placeholder="Ex: pessoas, celulas..."
-                        value={filtroTabelaAudit}
-                        onChange={e => setFiltroTabelaAudit(e.target.value)}
-                        className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
-                      />
+                        <LayoutGrid size={14} />
+                        <span className="hidden sm:inline text-[11px]">Cards</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModoVisualizacaoAudit('tabela')}
+                        className={`p-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                          modoVisualizacaoAudit === 'tabela'
+                            ? 'bg-slate-900 text-white shadow-xs'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                        title="Visualização em Tabela"
+                      >
+                        <List size={14} />
+                        <span className="hidden sm:inline text-[11px]">Tabela</span>
+                      </button>
                     </div>
                   </div>
 
-                  {/* Listagem/Tabela */}
+                  {/* Listagem de Logs */}
                   {carregandoLogs ? (
-                    <div className="py-12 flex justify-center items-center text-xs text-slate-400 italic">
-                      Carregando logs de auditoria...
+                    <div className="py-16 flex flex-col justify-center items-center text-xs text-slate-400 gap-2">
+                      <div className="w-6 h-6 border-2 border-slate-300 border-t-slate-800 rounded-full animate-spin" />
+                      <span>Carregando registros de auditoria...</span>
                     </div>
                   ) : (
-                    <div className="border border-slate-100 rounded-2xl overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs text-left border-collapse">
-                          <thead>
-                            <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
-                              <th className="p-3">Data/Hora</th>
-                              <th className="p-3">Usuário</th>
-                              <th className="p-3">Ação</th>
-                              <th className="p-3">Tabela</th>
-                              <th className="p-3">Detalhes</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 bg-white">
-                            {(() => {
-                              const filtrados = logsAuditoria.filter(log => {
-                                const matchUser = !filtroUsuarioAudit || 
-                                  log.usuario_nome?.toLowerCase().includes(filtroUsuarioAudit.toLowerCase()) ||
-                                  log.usuario_email?.toLowerCase().includes(filtroUsuarioAudit.toLowerCase());
-                                const matchAcao = !filtroAcaoAudit || log.acao === filtroAcaoAudit;
-                                const matchTab = !filtroTabelaAudit || log.tabela?.toLowerCase().includes(filtroTabelaAudit.toLowerCase());
-                                return matchUser && matchAcao && matchTab;
-                              });
+                    (() => {
+                      const filtrados = logsAuditoria.filter(log => {
+                        const matchUser = !filtroUsuarioAudit || 
+                          log.usuario_nome?.toLowerCase().includes(filtroUsuarioAudit.toLowerCase()) ||
+                          log.usuario_email?.toLowerCase().includes(filtroUsuarioAudit.toLowerCase());
+                        const matchAcao = !filtroAcaoAudit || log.acao === filtroAcaoAudit;
+                        const matchTab = !filtroTabelaAudit || log.tabela?.toLowerCase().includes(filtroTabelaAudit.toLowerCase());
+                        return matchUser && matchAcao && matchTab;
+                      });
 
-                              if (filtrados.length === 0) {
-                                return (
-                                  <tr>
-                                    <td colSpan="5" className="p-6 text-center text-slate-400 italic">
-                                      Nenhum registro de auditoria encontrado.
-                                    </td>
-                                  </tr>
-                                );
-                              }
+                      if (filtrados.length === 0) {
+                        return (
+                          <div className="py-16 text-center text-slate-400 italic text-xs bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                            Nenhum registro de auditoria encontrado para os filtros selecionados.
+                          </div>
+                        );
+                      }
 
-                              return filtrados.map(log => {
-                                const isExpandido = logDetalhesExpandidoId === log.id;
-                                let badgeColor = 'bg-slate-100 text-slate-650';
-                                if (log.acao === 'INSERT') badgeColor = 'bg-emerald-50 text-emerald-700 border border-emerald-100';
-                                if (log.acao === 'UPDATE') badgeColor = 'bg-blue-50 text-blue-700 border border-blue-100';
-                                if (log.acao === 'DELETE') badgeColor = 'bg-rose-50 text-rose-700 border border-rose-100';
-                                if (log.acao === 'LOGIN') badgeColor = 'bg-purple-50 text-purple-700 border border-purple-100';
-                                if (log.acao === 'LOGOUT') badgeColor = 'bg-amber-50 text-amber-700 border border-amber-100';
+                      // MODO 1: CARDS DETALHADOS (PADRÃO RECOMENDADO)
+                      if (modoVisualizacaoAudit === 'cards') {
+                        return (
+                          <div className="space-y-3">
+                            {filtrados.map(log => {
+                              const isExpandido = logDetalhesExpandidoId === log.id;
+                              const diffs = extrairAlteracoesLog(log);
+                              const descricaoResumo = gerarDescricaoResumoLog(log);
+                              const dataFormatada = formatarDataHoraAuditoria(log.created_at);
 
-                                return (
-                                  <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
-                                    <td className="p-3 text-slate-500 whitespace-nowrap">{formatarDataHora(log.created_at)}</td>
-                                    <td className="p-3">
-                                      <div className="font-bold text-slate-800">{log.usuario_nome}</div>
-                                      <div className="text-[10px] text-slate-400">{log.usuario_email}</div>
-                                    </td>
-                                    <td className="p-3">
-                                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${badgeColor}`}>
-                                        {log.acao}
+                              let badgeAcao = {
+                                label: log.acao,
+                                bg: 'bg-slate-100 text-slate-700 border-slate-200'
+                              };
+                              if (log.acao === 'INSERT') badgeAcao = { label: 'Inclusão / Cadastro', bg: 'bg-emerald-50 text-emerald-800 border-emerald-200/80' };
+                              if (log.acao === 'UPDATE') badgeAcao = { label: 'Alteração', bg: 'bg-blue-50 text-blue-800 border-blue-200/80' };
+                              if (log.acao === 'DELETE') badgeAcao = { label: 'Exclusão', bg: 'bg-rose-50 text-rose-800 border-rose-200/80' };
+                              if (log.acao === 'LOGIN') badgeAcao = { label: 'Acesso / Login', bg: 'bg-purple-50 text-purple-800 border-purple-200/80' };
+                              if (log.acao === 'LOGOUT') badgeAcao = { label: 'Saída / Logout', bg: 'bg-amber-50 text-amber-800 border-amber-200/80' };
+
+                              return (
+                                <div
+                                  key={log.id}
+                                  className="bg-white rounded-2xl border border-slate-200/90 hover:border-slate-300 hover:shadow-md transition-all p-4 flex flex-col gap-3 shadow-2xs"
+                                >
+                                  {/* Cabeçalho do Card: Quem alterou + Data/Hora + Ação */}
+                                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <div className="w-8 h-8 rounded-xl bg-slate-900 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                                        {(log.usuario_nome || log.usuario_email || 'U').charAt(0).toUpperCase()}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="font-extrabold text-xs text-slate-900">
+                                            {log.usuario_nome || 'Usuário do Sistema'}
+                                          </span>
+                                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${badgeAcao.bg}`}>
+                                            {badgeAcao.label}
+                                          </span>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 truncate">
+                                          {log.usuario_email || 'E-mail não identificado'}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Data e Hora */}
+                                    <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200/70 shrink-0">
+                                      <Clock size={12} className="text-slate-400" />
+                                      <span>{dataFormatada}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* O que alterou: Descrição em Linguagem Clara */}
+                                  <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100 flex items-start gap-2">
+                                    <FileText size={14} className="text-blue-600 shrink-0 mt-0.5" />
+                                    <p className="text-xs font-bold text-slate-800 leading-snug">
+                                      {descricaoResumo}
+                                    </p>
+                                  </div>
+
+                                  {/* Registro Anterior → Registro Novo (Comparativo Visual) */}
+                                  {diffs.length > 0 && (
+                                    <div className="space-y-1.5">
+                                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                        <span>🔄</span> Alterações Detectadas (Antes → Depois):
                                       </span>
-                                    </td>
-                                    <td className="p-3 font-semibold text-slate-600 whitespace-nowrap">{log.tabela || '---'}</td>
-                                    <td className="p-3">
-                                      <div className="space-y-1">
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                        {diffs.map(d => (
+                                          <div
+                                            key={d.campoRaw}
+                                            className="bg-slate-50/90 border border-slate-200/80 rounded-xl p-2.5 flex flex-col gap-1 shadow-2xs"
+                                          >
+                                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-tight">
+                                              {d.campo}
+                                            </span>
+                                            <div className="flex items-center gap-1.5 text-[11px] font-bold flex-wrap">
+                                              <span className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200/80 line-through opacity-85 truncate max-w-[140px]" title={d.de}>
+                                                {d.de}
+                                              </span>
+                                              <ArrowRight size={11} className="text-slate-400 shrink-0" />
+                                              <span className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/90 font-extrabold truncate max-w-[140px]" title={d.para}>
+                                                {d.para}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Rodapé do Card: Tabela e Opção de Inspecionar JSON */}
+                                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] text-slate-500">
+                                    <span className="font-semibold flex items-center gap-1">
+                                      <Database size={11} className="text-slate-400" />
+                                      Tabela: <strong className="text-slate-700">{formatarNomeTabela(log.tabela)}</strong>
+                                      {log.registro_id && <span className="text-slate-400 text-[9px]">({log.registro_id})</span>}
+                                    </span>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => setLogDetalhesExpandidoId(isExpandido ? null : log.id)}
+                                      className="text-blue-600 hover:text-blue-800 font-bold hover:underline cursor-pointer"
+                                    >
+                                      {isExpandido ? 'Ocultar JSON' : 'Inspecionar Dados Brutos'}
+                                    </button>
+                                  </div>
+
+                                  {/* Bloco JSON Expandido */}
+                                  {isExpandido && log.detalhes && (
+                                    <pre className="p-3 bg-slate-900 text-slate-200 text-[10px] rounded-xl overflow-x-auto font-mono leading-relaxed shadow-inner">
+                                      {JSON.stringify(log.detalhes, null, 2)}
+                                    </pre>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      }
+
+                      // MODO 2: TABELA SINTÉTICA
+                      return (
+                        <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-xs text-left border-collapse">
+                              <thead>
+                                <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200/80">
+                                  <th className="p-3">Data/Hora</th>
+                                  <th className="p-3">Quem alterou</th>
+                                  <th className="p-3">Ação</th>
+                                  <th className="p-3">O que alterou</th>
+                                  <th className="p-3">Registro Anterior → Novo</th>
+                                  <th className="p-3 text-right">Ação</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 bg-white">
+                                {filtrados.map(log => {
+                                  const isExpandido = logDetalhesExpandidoId === log.id;
+                                  const diffs = extrairAlteracoesLog(log);
+                                  const dataFormatada = formatarDataHoraAuditoria(log.created_at);
+                                  const descricaoResumo = gerarDescricaoResumoLog(log);
+
+                                  let badgeColor = 'bg-slate-100 text-slate-750';
+                                  if (log.acao === 'INSERT') badgeColor = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+                                  if (log.acao === 'UPDATE') badgeColor = 'bg-blue-50 text-blue-700 border border-blue-200';
+                                  if (log.acao === 'DELETE') badgeColor = 'bg-rose-50 text-rose-700 border border-rose-200';
+                                  if (log.acao === 'LOGIN') badgeColor = 'bg-purple-50 text-purple-700 border border-purple-200';
+                                  if (log.acao === 'LOGOUT') badgeColor = 'bg-amber-50 text-amber-700 border border-amber-200';
+
+                                  return (
+                                    <tr key={log.id} className="hover:bg-slate-50/60 transition-colors">
+                                      <td className="p-3 text-slate-600 whitespace-nowrap font-medium">{dataFormatada}</td>
+                                      <td className="p-3">
+                                        <div className="font-extrabold text-slate-800">{log.usuario_nome || 'Sistema'}</div>
+                                        <div className="text-[10px] text-slate-400">{log.usuario_email}</div>
+                                      </td>
+                                      <td className="p-3">
+                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${badgeColor}`}>
+                                          {log.acao}
+                                        </span>
+                                      </td>
+                                      <td className="p-3 font-medium text-slate-700 max-w-xs">{descricaoResumo}</td>
+                                      <td className="p-3">
+                                        {diffs.length > 0 ? (
+                                          <div className="space-y-1 max-w-xs">
+                                            {diffs.slice(0, 2).map(d => (
+                                              <div key={d.campoRaw} className="text-[10px] flex items-center gap-1 font-semibold">
+                                                <span className="text-slate-500">{d.campo}:</span>
+                                                <span className="text-rose-600 line-through">{d.de}</span>
+                                                <span className="text-slate-400">→</span>
+                                                <span className="text-emerald-700 font-bold">{d.para}</span>
+                                              </div>
+                                            ))}
+                                            {diffs.length > 2 && (
+                                              <span className="text-[9px] text-slate-400 font-bold">
+                                                +{diffs.length - 2} outras alterações
+                                              </span>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <span className="text-slate-400 italic text-[11px]">Sem campos de comparação</span>
+                                        )}
+                                      </td>
+                                      <td className="p-3 text-right">
                                         <button
                                           type="button"
                                           onClick={() => setLogDetalhesExpandidoId(isExpandido ? null : log.id)}
                                           className="text-blue-600 hover:text-blue-800 font-bold hover:underline"
                                         >
-                                          {isExpandido ? 'Ocultar' : 'Ver Detalhes'}
+                                          {isExpandido ? 'Fechar' : 'Ver'}
                                         </button>
                                         {isExpandido && log.detalhes && (
-                                          <pre className="mt-2 p-3 bg-slate-900 text-slate-200 text-[10px] rounded-xl overflow-x-auto font-mono max-w-lg leading-relaxed shadow-inner">
+                                          <pre className="mt-2 p-3 bg-slate-900 text-slate-200 text-[10px] rounded-xl overflow-x-auto font-mono max-w-lg text-left leading-relaxed shadow-inner">
                                             {JSON.stringify(log.detalhes, null, 2)}
                                           </pre>
                                         )}
-                                      </div>
-                                    </td>
-                                  </tr>
-                                );
-                              });
-                            })()}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    })()
                   )}
                 </div>
               )}

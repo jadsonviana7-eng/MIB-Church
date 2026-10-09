@@ -1,13 +1,23 @@
+-- =========================================================================
+-- SISTEMA DE LOGS E AUDITORIA - MIB CHURCH
+-- Registra:
+-- 1. Quem alterou (Usuário, E-mail, ID)
+-- 2. O que alterou (Ação, Tabela, Registro, Descrição)
+-- 3. Data e Hora
+-- 4. Registro anterior (valores_antigos)
+-- 5. Registro novo (valores_novos)
+-- =========================================================================
+
 -- 1. CRIAÇÃO DAS TABELAS DE LOGS E SESSÕES
 CREATE TABLE IF NOT EXISTS public.logs_sistema (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     usuario_id UUID REFERENCES public.pessoas(id) ON DELETE SET NULL,
     usuario_email TEXT,
     usuario_nome TEXT,
-    acao TEXT NOT NULL,          -- 'INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT'
+    acao TEXT NOT NULL,          -- 'INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'AJUSTE'
     tabela TEXT,                -- Nome da tabela afetada
     registro_id TEXT,           -- ID do registro afetado
-    detalhes JSONB,             -- Objeto com dados alterados
+    detalhes JSONB,             -- Objeto com valores_antigos, valores_novos, alteracoes, etc.
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
@@ -31,6 +41,7 @@ DECLARE
     v_usuario_nome TEXT;
     v_detalhes JSONB;
     v_reg_id TEXT;
+    v_item_nome TEXT;
 BEGIN
     -- Obtém o email das claims do JWT do Supabase
     BEGIN
@@ -52,7 +63,9 @@ BEGIN
     -- Constrói os detalhes da alteração e ID do registro
     if (TG_OP = 'DELETE') then
         v_reg_id := TG_TABLE_NAME || '_' || OLD.id::text;
-        v_detalhes := jsonb_build_object('valores_antigos', to_jsonb(OLD));
+        v_detalhes := jsonb_build_object(
+            'valores_antigos', to_jsonb(OLD)
+        );
     elsif (TG_OP = 'UPDATE') then
         v_reg_id := TG_TABLE_NAME || '_' || NEW.id::text;
         v_detalhes := jsonb_build_object(
@@ -61,7 +74,9 @@ BEGIN
         );
     else -- INSERT
         v_reg_id := TG_TABLE_NAME || '_' || NEW.id::text;
-        v_detalhes := jsonb_build_object('valores_novos', to_jsonb(NEW));
+        v_detalhes := jsonb_build_object(
+            'valores_novos', to_jsonb(NEW)
+        );
     end if;
 
     -- Insere o log na tabela
@@ -76,7 +91,7 @@ BEGIN
     ) values (
         v_usuario_id,
         v_usuario_email,
-        v_usuario_nome,
+        coalesce(v_usuario_nome, v_usuario_email, 'Sistema'),
         TG_OP,
         TG_TABLE_NAME,
         v_reg_id,
@@ -116,6 +131,38 @@ DROP TRIGGER IF EXISTS trg_audit_escalas ON public.escalas;
 CREATE TRIGGER trg_audit_escalas
 AFTER INSERT OR UPDATE OR DELETE ON public.escalas
 FOR EACH ROW EXECUTE FUNCTION public.processar_audit_log();
+
+-- Tabelas adicionais (caso existam no banco)
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'eventos_ministeriais') THEN
+        DROP TRIGGER IF EXISTS trg_audit_eventos_ministeriais ON public.eventos_ministeriais;
+        CREATE TRIGGER trg_audit_eventos_ministeriais
+        AFTER INSERT OR UPDATE OR DELETE ON public.eventos_ministeriais
+        FOR EACH ROW EXECUTE FUNCTION public.processar_audit_log();
+    END IF;
+
+    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'ministerios') THEN
+        DROP TRIGGER IF EXISTS trg_audit_ministerios ON public.ministerios;
+        CREATE TRIGGER trg_audit_ministerios
+        AFTER INSERT OR UPDATE OR DELETE ON public.ministerios
+        FOR EACH ROW EXECUTE FUNCTION public.processar_audit_log();
+    END IF;
+
+    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'alunos_avaliacoes') THEN
+        DROP TRIGGER IF EXISTS trg_audit_alunos_avaliacoes ON public.alunos_avaliacoes;
+        CREATE TRIGGER trg_audit_alunos_avaliacoes
+        AFTER INSERT OR UPDATE OR DELETE ON public.alunos_avaliacoes
+        FOR EACH ROW EXECUTE FUNCTION public.processar_audit_log();
+    END IF;
+
+    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'turmas_avaliacoes') THEN
+        DROP TRIGGER IF EXISTS trg_audit_turmas_avaliacoes ON public.turmas_avaliacoes;
+        CREATE TRIGGER trg_audit_turmas_avaliacoes
+        AFTER INSERT OR UPDATE OR DELETE ON public.turmas_avaliacoes
+        FOR EACH ROW EXECUTE FUNCTION public.processar_audit_log();
+    END IF;
+END $$;
 
 -- 4. POLÍTICAS DE SEGURANÇA RLS
 ALTER TABLE public.logs_sistema ENABLE ROW LEVEL SECURITY;
@@ -161,4 +208,3 @@ BEGIN
     WHERE id = sessao_uuid;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-

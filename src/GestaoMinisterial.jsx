@@ -35,15 +35,15 @@ export default function GestaoMinisterial(props) {
   return (
     <div className="space-y-6">
 
-      <div className="flex bg-white p-1 rounded-2xl shadow-sm border border-slate-100 overflow-x-auto scrollbar-hide gap-1">
+      <div className="flex bg-white/90 backdrop-blur-md p-1.5 rounded-2xl shadow-xs border border-slate-200/80 overflow-x-auto scrollbar-hide gap-1.5">
         {abas.map((a) => (
           <button
             key={a.id}
             onClick={() => handleNavegarTab(a.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 whitespace-nowrap cursor-pointer active:scale-95 ${
               aba === a.id 
-                ? 'bg-[#1e3a8a] text-white shadow-lg shadow-blue-100' 
-                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'
+                ? 'bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white shadow-lg shadow-blue-700/25 border border-blue-400/30 ring-1 ring-blue-400/20' 
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50/80'
             }`}
           >
             {a.icon}

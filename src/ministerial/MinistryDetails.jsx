@@ -477,32 +477,32 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="bg-white rounded-xl shadow p-6">
-        <div className="flex items-center gap-4">
+      <div className="bg-white rounded-xl shadow p-4 sm:p-6">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
           {onVoltar && (
             <button
               onClick={onVoltar}
-              className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer shrink-0"
+              className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer shrink-0 active:scale-95"
               title="Voltar para Ministérios"
             >
-              <ChevronLeft size={20} strokeWidth={3} />
+              <ChevronLeft size={18} strokeWidth={3} />
             </button>
           )}
 
           <div
-            className="w-16 h-16 rounded-xl flex items-center justify-center text-white shadow-md shadow-slate-200 shrink-0"
+            className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-white shadow-md shadow-slate-200 shrink-0"
             style={{
               backgroundColor: ministerio.cor_principal || '#2563eb'
             }}
           >
-            <MinistryIcon icone={ministerio.icone} size={28} style={{ color: '#ffffff' }} />
+            <MinistryIcon icone={ministerio.icone} size={26} style={{ color: '#ffffff' }} />
           </div>
 
-          <div>
-            <h1 className="text-2xl font-bold">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg sm:text-2xl font-bold text-slate-900 truncate">
               {ministerio.nome}
             </h1>
-            <p className="text-gray-500">
+            <p className="text-xs sm:text-sm text-gray-500 truncate">
               {ministerio.descricao || 'Sem descrição.'}
             </p>
           </div>
@@ -543,50 +543,67 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
       </div>
 
       {/* ABAS */}
-      <div className="flex gap-2">
+      <div className="grid grid-cols-4 gap-1.5 sm:flex sm:items-center sm:gap-2">
         <button
+          type="button"
           onClick={() => setAba('equipe')}
-          className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 sm:py-2.5 px-1 sm:px-4 rounded-xl transition cursor-pointer active:scale-95 text-center ${
             aba === 'equipe'
-              ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-100'
-              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-900/20'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
-          Equipe
+          <Users size={22} strokeWidth={2.2} className="shrink-0 sm:w-4 sm:h-4" />
+          <span className="text-[9px] sm:text-xs font-bold sm:font-black uppercase tracking-tight sm:tracking-wider leading-none truncate max-w-full">
+            Equipe
+          </span>
         </button>
 
         <button
+          type="button"
           onClick={() => setAba('funcoes')}
-          className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 sm:py-2.5 px-1 sm:px-4 rounded-xl transition cursor-pointer active:scale-95 text-center ${
             aba === 'funcoes'
-              ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-100'
-              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-900/20'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
-          Funções
+          <Settings size={22} strokeWidth={2.2} className="shrink-0 sm:w-4 sm:h-4" />
+          <span className="text-[9px] sm:text-xs font-bold sm:font-black uppercase tracking-tight sm:tracking-wider leading-none truncate max-w-full">
+            Funções
+          </span>
         </button>
 
         <button
+          type="button"
           onClick={() => setAba('fardamentos')}
-          className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 sm:py-2.5 px-1 sm:px-4 rounded-xl transition cursor-pointer active:scale-95 text-center ${
             aba === 'fardamentos'
-              ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-100'
-              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+              ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-900/20'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
-          Fardamentos
+          <span className="text-xl sm:text-sm leading-none">👕</span>
+          <span className="text-[9px] sm:text-xs font-bold sm:font-black uppercase tracking-tight sm:tracking-wider leading-none truncate max-w-full">
+            <span className="sm:hidden">Fardas</span>
+            <span className="hidden sm:inline">Fardamentos</span>
+          </span>
         </button>
 
         <button
+          type="button"
           onClick={() => setAba('escala_mensal')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 sm:py-2.5 px-1 sm:px-4 rounded-xl transition cursor-pointer active:scale-95 text-center ${
             aba === 'escala_mensal'
               ? 'bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white shadow-md shadow-blue-500/25 border border-blue-400/30'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
-          <Calendar size={14} />
-          <span>Escala Mensal & Avisos</span>
+          <Calendar size={22} strokeWidth={2.2} className="shrink-0 sm:w-4 sm:h-4" />
+          <span className="text-[9px] sm:text-xs font-bold sm:font-black uppercase tracking-tight sm:tracking-wider leading-none truncate max-w-full">
+            <span className="sm:hidden">Escala</span>
+            <span className="hidden sm:inline">Escala Mensal & Avisos</span>
+          </span>
         </button>
       </div>
 
@@ -686,26 +703,26 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
 
       {/* FARDAMENTO */}
       {aba === 'fardamentos' && (
-        <div className="bg-white rounded-xl shadow p-6 space-y-6">
+        <div className="bg-white rounded-xl shadow p-4 sm:p-6 space-y-6">
           <div className="pb-2 border-b border-slate-50">
             <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Configuração de Fardamentos</h3>
             <p className="text-xs text-slate-400 mt-1">Configure os tipos de fardamento que este ministério utiliza.</p>
           </div>
 
-          <form onSubmit={handleAdicionarFardamento} className="flex gap-2">
+          <form onSubmit={handleAdicionarFardamento} className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               placeholder="Digite o nome do fardamento (Ex: Camisa Preta, Farda Oficial)..."
               value={novoFardamento}
               onChange={e => setNovoFardamento(e.target.value)}
-              className="flex-1 px-4 py-2 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-xs font-medium"
+              className="w-full sm:flex-1 min-w-0 px-4 py-2.5 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none text-xs font-medium bg-slate-50/40 focus:bg-white transition"
             />
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
             >
               <Plus size={14} strokeWidth={3} />
-              Adicionar
+              <span>Adicionar</span>
             </button>
           </form>
 

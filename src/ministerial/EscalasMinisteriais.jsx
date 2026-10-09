@@ -6,8 +6,8 @@ import { supabase } from '../supabaseClient';
 import { toPng } from 'html-to-image';
 import { MinistryIcon } from '../ui';
 
-export default function EscalasMinisteriais({ 
-  membroLogado, 
+export default function EscalasMinisteriais({
+  membroLogado,
   isLiderMinisterio,
   initialFiltroMinisterioId = null,
   initialStatus = null,
@@ -47,6 +47,7 @@ export default function EscalasMinisteriais({
   const [buscaVoluntario, setBuscaVoluntario] = useState('');
   const [voluntarioSelecionado, setVoluntarioSelecionado] = useState(null);
   const [atribuicoesModal, setAtribuicoesModal] = useState({}); // { [funcao_id]: pessoa_id }
+  const [mapaOutrasEscalas, setMapaOutrasEscalas] = useState({}); // { [pessoa_id]: Array<EscalaItem> }
   const [salvandoEscalasMultiplas, setSalvandoEscalasMultiplas] = useState(false);
 
   const [notificacao, setNotificacao] = useState('');
@@ -64,7 +65,7 @@ export default function EscalasMinisteriais({
     if (modalApontamento) {
       try {
         window.history.pushState({ modalApontamento: true }, '');
-      } catch (e) {}
+      } catch (e) { }
 
       const handlePop = () => {
         setModalApontamento(null);
@@ -82,7 +83,7 @@ export default function EscalasMinisteriais({
     if (modalConflito) {
       try {
         window.history.pushState({ modalConflito: true }, '');
-      } catch (e) {}
+      } catch (e) { }
 
       const handlePop = () => {
         setModalConflito(null);
@@ -198,7 +199,7 @@ export default function EscalasMinisteriais({
   // Encontra o evento mais próximo a partir de hoje (não os que já passaram)
   function encontrarEventoMaisProximo(listaEventos) {
     if (!listaEventos || listaEventos.length === 0) return null;
-    
+
     // Início do dia de hoje no horário de Brasília (com margem de segurança)
     const agora = new Date();
     const hojeInicio = new Date(Date.UTC(agora.getFullYear(), agora.getMonth(), agora.getDate(), 3, 0, 0));
@@ -262,7 +263,7 @@ export default function EscalasMinisteriais({
     try {
       const dados = await escalasService.listarEventos();
       setEventos(dados || []);
-      
+
       if (dados && dados.length > 0) {
         const evMaisProximo = encontrarEventoMaisProximo(dados);
         if (evMaisProximo) {
@@ -395,7 +396,7 @@ export default function EscalasMinisteriais({
   async function salvarPregadorEvento(eventoId, nomePregador) {
     if (!eventoId) return null;
     const pregadorLimpo = (nomePregador || '').trim();
-    
+
     // Obter dados do evento atual para manter fardamentos e horário de término intactos
     const evBase = eventos.find(e => e.id === eventoId) || eventoSelecionado || {};
     const fardamentosAtuais = evBase.fardamentos || {};
@@ -911,15 +912,144 @@ export default function EscalasMinisteriais({
     }
   }
 
+  // Carregar todas as escalas do mês para mapear outras escalas e conflitos por pessoa
+  async function carregarEscalasDoMesParaMapa(listaEventosMes, evAtual) {
+    try {
+      const evs = (listaEventosMes && listaEventosMes.length > 0) ? listaEventosMes : (eventos || []);
+      const evIds = evs.map(e => e.id).filter(Boolean);
+      if (evIds.length === 0) {
+        setMapaOutrasEscalas({});
+        return;
+      }
+
+      const { data: rawEscalas, error } = await supabase
+        .from('escalas')
+        .select(`
+          id,
+          evento_id,
+          ministerio_id,
+          funcao_id,
+          pessoa_id,
+          status,
+          justificativa
+        `)
+        .in('evento_id', evIds);
+
+      if (error) throw error;
+      if (!rawEscalas || rawEscalas.length === 0) {
+        setMapaOutrasEscalas({});
+        return;
+      }
+
+      const mapaEventos = new Map(evs.map(ev => [ev.id, ev]));
+      const minIds = [...new Set(rawEscalas.map(e => e.ministerio_id).filter(Boolean))];
+      const funcIds = [...new Set(rawEscalas.map(e => e.funcao_id).filter(Boolean))];
+
+      const [resMin, resFunc] = await Promise.all([
+        minIds.length > 0 ? supabase.from('ministerios').select('id, nome').in('id', minIds) : { data: [] },
+        funcIds.length > 0 ? supabase.from('ministerio_funcoes').select('id, nome').in('id', funcIds) : { data: [] }
+      ]);
+
+      const mapMin = new Map((resMin.data || []).map(m => [m.id, m.nome]));
+      const mapFunc = new Map((resFunc.data || []).map(f => [f.id, f.nome]));
+      const nomesDias = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+      const mapaPorPessoa = {};
+
+      rawEscalas.forEach(esc => {
+        const pId = String(esc.pessoa_id || '');
+        if (!pId) return;
+
+        const st = (esc.status || '').toLowerCase();
+        if (st === 'recusado' || st === 'cancelado') return;
+
+        const ev = mapaEventos.get(esc.evento_id) || {};
+        const dataInfo = obterInfoDataBrasilia(ev.data_evento);
+        const diaSemanaStr = nomesDias[dataInfo.diaSemanaIndex] || '';
+
+        const formatarHora = (dStr) => {
+          if (!dStr) return '';
+          try {
+            const d = parseDatabaseDate(dStr);
+            if (!d) return '';
+            const bDate = new Date(d.getTime() - 3 * 3600 * 1000);
+            const hh = String(bDate.getUTCHours()).padStart(2, '0');
+            const mm = String(bDate.getUTCMinutes()).padStart(2, '0');
+            return `${hh}:${mm}`;
+          } catch (e) {
+            return '';
+          }
+        };
+
+        const horaStr = formatarHora(ev.data_evento);
+        const dataFormatada = ev.data_evento
+          ? `${diaSemanaStr}, ${dataInfo.diaNum}/${String(dataInfo.mesIndex + 1).padStart(2, '0')}${horaStr ? ` às ${horaStr}` : ''}`
+          : 'Data a definir';
+
+        const itemInfo = {
+          id: esc.id,
+          evento_id: esc.evento_id,
+          evento_titulo: ev.titulo || 'Culto',
+          data_evento: ev.data_evento,
+          data_formatada: dataFormatada,
+          dia_mes: `${dataInfo.diaNum}/${String(dataInfo.mesIndex + 1).padStart(2, '0')}`,
+          dia_semana: diaSemanaStr,
+          hora: horaStr,
+          ministerio_id: esc.ministerio_id,
+          ministerio_nome: mapMin.get(esc.ministerio_id) || 'Ministério',
+          funcao_id: esc.funcao_id,
+          funcao_nome: mapFunc.get(esc.funcao_id) || 'Função',
+          is_mesmo_evento: Boolean(evAtual && String(esc.evento_id) === String(evAtual.id)),
+          status: esc.status
+        };
+
+        if (!mapaPorPessoa[pId]) {
+          mapaPorPessoa[pId] = [];
+        }
+        mapaPorPessoa[pId].push(itemInfo);
+      });
+
+      // Ordenar cronologicamente as escalas de cada pessoa
+      Object.keys(mapaPorPessoa).forEach(pId => {
+        mapaPorPessoa[pId].sort((a, b) => {
+          const tA = a.data_evento ? new Date(a.data_evento).getTime() : 0;
+          const tB = b.data_evento ? new Date(b.data_evento).getTime() : 0;
+          return tA - tB;
+        });
+      });
+
+      setMapaOutrasEscalas(mapaPorPessoa);
+    } catch (err) {
+      console.warn('Erro ao carregar mapa de outras escalas:', err);
+    }
+  }
+
   // Carregar dados auxiliares ao abrir modal de escalar
   async function abrirModalEscala(param = null) {
-    if (!eventoSelecionado) return;
+    let ev = eventoSelecionado;
+    if (!ev) {
+      if (eventosFiltrados && eventosFiltrados.length > 0) {
+        ev = eventosFiltrados[0];
+        await selecionarEvento(ev);
+      } else if (eventos && eventos.length > 0) {
+        ev = eventos[0];
+        await selecionarEvento(ev);
+      } else {
+        alert('Selecione ou crie um evento na grade antes de escalar voluntários.');
+        return;
+      }
+    }
     const ministerioId = (typeof param === 'string' || typeof param === 'number') ? String(param) : null;
     try {
       const mins = await escalasService.listarMinisterios();
       setListaMinisterios(mins || []);
-      setPregadorModal(extrairPregador(eventoSelecionado));
+      setPregadorModal(extrairPregador(ev));
       setModalEscala(true);
+
+      // Carregar mapa de escalas do mês para verificação de outras escalas
+      const listaEvsMes = (eventosFiltrados && eventosFiltrados.length > 0) ? eventosFiltrados : eventos;
+      carregarEscalasDoMesParaMapa(listaEvsMes, ev);
+
       if (ministerioId) {
         handleSelecionarMinisterio(ministerioId);
       } else {
@@ -944,6 +1074,10 @@ export default function EscalasMinisteriais({
       setListaPessoas([]);
       return;
     }
+
+    // Atualiza o mapa de outras escalas
+    const listaEvsMes = (eventosFiltrados && eventosFiltrados.length > 0) ? eventosFiltrados : eventos;
+    carregarEscalasDoMesParaMapa(listaEvsMes, eventoSelecionado);
     try {
       const funcs = await escalasService.listarFuncoes(ministerioId);
       const funcsOrdenadas = (funcs || []).slice().sort((a, b) => {
@@ -956,20 +1090,119 @@ export default function EscalasMinisteriais({
 
       let pms = await escalasService.listarPessoasMinisterio(ministerioId);
       if (!pms || pms.length === 0) {
-        const { data: todasp } = await supabase.from('pessoas').select('id, nome').order('nome');
-        pms = (todasp || []).map(p => ({ pessoa_id: p.id, pessoas: p }));
+        const { data: todasp } = await supabase
+          .from('pessoas')
+          .select('id, nome, status, foto_url')
+          .neq('status', 'inativo')
+          .order('nome');
+        pms = (todasp || []).map(p => ({ pessoa_id: p.id, pessoas: p, ativo: true }));
       }
-      setListaPessoas(pms || []);
 
       // Pré-carregar atribuições já existentes no evento para este ministério
       const jaEscalados = escalas.filter(e => String(e.ministerio_id) === String(ministerioId));
       const mapaInicial = {};
+      const jaEscaladosIds = new Set();
       jaEscalados.forEach(e => {
         if (e.funcao_id && e.pessoa_id) {
           mapaInicial[e.funcao_id] = String(e.pessoa_id);
+          jaEscaladosIds.add(String(e.pessoa_id));
         }
       });
       setAtribuicoesModal(mapaInicial);
+
+      // FILTRAR INDISPONIBILIDADE: Ocultar pessoas indisponíveis por qualquer razão
+      let pmsDisponiveis = pms || [];
+      if (eventoSelecionado?.data_evento && pmsDisponiveis.length > 0) {
+        const pessoaIds = pmsDisponiveis.map(m => m.pessoas?.id || m.pessoa_id || m.id).filter(Boolean);
+
+        // 1. Obter dia da semana do evento no fuso de Brasília
+        const dataInfo = obterInfoDataBrasilia(eventoSelecionado.data_evento);
+        const diasSemanaColunas = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+        const diaColuna = diasSemanaColunas[dataInfo.diaSemanaIndex];
+
+        // 2. Consultar disponibilidade semanal declarada (disponibilidade_ministerial)
+        const indisponiveisSemana = new Set();
+        try {
+          const { data: disponibilidades, error: errDisp } = await supabase
+            .from('disponibilidade_ministerial')
+            .select('*')
+            .in('pessoa_id', pessoaIds);
+
+          if (!errDisp && disponibilidades) {
+            disponibilidades.forEach(d => {
+              if (d[diaColuna] === false) {
+                indisponiveisSemana.add(String(d.pessoa_id));
+              }
+            });
+          }
+        } catch (eDisp) {
+          console.warn('Erro ao consultar disponibilidade_ministerial:', eDisp);
+        }
+
+        // 3. Consultar períodos de bloqueio/férias (bloqueios_escala)
+        const bloqueadosData = new Set();
+        try {
+          const { data: bloqueios, error: errBlq } = await supabase
+            .from('bloqueios_escala')
+            .select('*')
+            .in('pessoa_id', pessoaIds);
+
+          if (!errBlq && bloqueios && bloqueios.length > 0) {
+            const dataEventoObj = parseDatabaseDate(eventoSelecionado.data_evento) || new Date(eventoSelecionado.data_evento);
+            bloqueios.forEach(b => {
+              const inicio = parseDatabaseDate(b.data_inicio) || new Date(b.data_inicio);
+              const fim = parseDatabaseDate(b.data_fim) || new Date(b.data_fim);
+              if (dataEventoObj >= inicio && dataEventoObj <= fim) {
+                bloqueadosData.add(String(b.pessoa_id));
+              }
+            });
+          }
+        } catch (eBlq) {
+          console.warn('Erro ao consultar bloqueios_escala:', eBlq);
+        }
+
+        // 4. Consultar recusas ou ausências prévias registradas para este evento
+        const recusadosNoEvento = new Set();
+        (escalas || []).forEach(e => {
+          const st = (e.status || '').toLowerCase();
+          if (st === 'recusado' || st === 'ausente' || st === 'falta' || st === 'falta_justificada' || st === 'falta_injustificada' || st === 'indisponivel') {
+            if (e.pessoa_id) recusadosNoEvento.add(String(e.pessoa_id));
+          }
+        });
+
+        // 5. Filtrar voluntários: remover qualquer um que esteja indisponível
+        pmsDisponiveis = pmsDisponiveis.filter(p => {
+          const pId = String(p.pessoas?.id || p.pessoa_id || p.id || '');
+          if (!pId) return false;
+
+          // Se a pessoa já estiver escalada neste evento para este ministério, mantém para visualização da escala
+          if (jaEscaladosIds.has(pId)) return true;
+
+          // Ocultar se o cadastro da pessoa estiver inativo
+          if (p.ativo === false) return false;
+          if (p.pessoas?.status && p.pessoas.status.toLowerCase() !== 'ativo') return false;
+
+          // Ocultar se declarou indisponibilidade para o dia da semana do evento
+          if (indisponiveisSemana.has(pId)) return false;
+
+          // Ocultar se estiver em período de bloqueio/férias
+          if (bloqueadosData.has(pId)) return false;
+
+          // Ocultar se recusou este evento
+          if (recusadosNoEvento.has(pId)) return false;
+
+          return true;
+        });
+      }
+
+      // Ordenar alfabeticamente
+      pmsDisponiveis.sort((a, b) => {
+        const nomeA = (a.pessoas?.nome || a.nome || '').toLowerCase();
+        const nomeB = (b.pessoas?.nome || b.nome || '').toLowerCase();
+        return nomeA.localeCompare(nomeB);
+      });
+
+      setListaPessoas(pmsDisponiveis);
     } catch (error) {
       console.error('Erro ao carregar dados do ministério:', error);
     }
@@ -1247,21 +1480,21 @@ export default function EscalasMinisteriais({
     setSalvandoApontamento(true);
     try {
       await escalasService.atualizarStatusEscala(
-        modalApontamento.escala.id, 
-        statusApontamento, 
+        modalApontamento.escala.id,
+        statusApontamento,
         justificativaApontamento.trim() || null
       );
-      
+
       mostrarToast(
-        statusApontamento === 'confirmado' || statusApontamento === 'presente' 
-          ? '✓ Presença confirmada no evento!' 
+        statusApontamento === 'confirmado' || statusApontamento === 'presente'
+          ? '✓ Presença confirmada no evento!'
           : statusApontamento === 'falta_justificada'
-          ? '✓ Falta justificada registrada!'
-          : statusApontamento === 'falta'
-          ? '⚠️ Falta injustificada / negativação registrada!'
-          : statusApontamento === 'recusado'
-          ? 'Escala marcada como recusada.'
-          : 'Status atualizado para pendente.'
+            ? '✓ Falta justificada registrada!'
+            : statusApontamento === 'falta'
+              ? '⚠️ Falta injustificada / negativação registrada!'
+              : statusApontamento === 'recusado'
+                ? 'Escala marcada como recusada.'
+                : 'Status atualizado para pendente.'
       );
 
       fecharModalApontamento();
@@ -1367,8 +1600,8 @@ export default function EscalasMinisteriais({
     const acc = escalas.reduce((map, item) => {
       const minNome = item.ministerios?.nome || 'Sem Ministério';
       const minObj = (item.ministerio_id && mapaMinisteriosObj.get(item.ministerio_id)) ||
-                     (mapaMinisteriosNome.get(minNome.toLowerCase().trim())) ||
-                     item.ministerios || {};
+        (mapaMinisteriosNome.get(minNome.toLowerCase().trim())) ||
+        item.ministerios || {};
 
       const minCor = obterCorMinisterio(minNome, minObj?.cor_principal || item.ministerios?.cor_principal);
       const minIcone = obterIconeMinisterio(minNome, minObj?.icone || item.ministerios?.icone);
@@ -1410,7 +1643,7 @@ export default function EscalasMinisteriais({
       }
 
       if (minCultosEntry) {
-        const jaTemFuncPregacao = minCultosEntry.itens.some(i => 
+        const jaTemFuncPregacao = minCultosEntry.itens.some(i =>
           (i.ministerio_funcoes?.nome || '').toLowerCase().includes('prega') ||
           (i.ministerio_funcoes?.nome || '').toLowerCase().includes('palavra')
         );
@@ -1509,13 +1742,13 @@ export default function EscalasMinisteriais({
         document.execCommand('copy');
         document.body.removeChild(textarea);
         copiou = true;
-      } catch (_) {}
+      } catch (_) { }
     }
 
     try {
       const urlWa = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
       window.open(urlWa, '_blank');
-    } catch (_) {}
+    } catch (_) { }
 
     mostrarToast(toastMsg);
   }
@@ -1607,8 +1840,8 @@ export default function EscalasMinisteriais({
 
     try {
       // 1. Obter todos os eventos do mês filtrado
-      const evsMes = eventosFiltrados && eventosFiltrados.length > 0 
-        ? eventosFiltrados 
+      const evsMes = eventosFiltrados && eventosFiltrados.length > 0
+        ? eventosFiltrados
         : (eventoSelecionado ? [eventoSelecionado] : []);
       const eventIds = evsMes.map(e => e.id).filter(Boolean);
 
@@ -1651,8 +1884,8 @@ export default function EscalasMinisteriais({
         return tA - tB;
       });
 
-      const mesNomeCapitalizado = nomesMeses[filtroMes] 
-        ? (nomesMeses[filtroMes].charAt(0).toUpperCase() + nomesMeses[filtroMes].slice(1)) 
+      const mesNomeCapitalizado = nomesMeses[filtroMes]
+        ? (nomesMeses[filtroMes].charAt(0).toUpperCase() + nomesMeses[filtroMes].slice(1))
         : 'Mês';
 
       const linkConfirmacao = `${window.location.origin}/confirmar-escala?id=${item.id}&pessoa=${item.pessoa_id || ''}&mes=${filtroMes}&ano=${filtroAno}`;
@@ -1692,8 +1925,8 @@ export default function EscalasMinisteriais({
       if (telLimpo && telLimpo.length >= 10) {
         const urlWa = `https://wa.me/55${telLimpo}?text=${encodeURIComponent(texto)}`;
         try {
-          navigator.clipboard?.writeText?.(texto).catch(() => {});
-        } catch (_) {}
+          navigator.clipboard?.writeText?.(texto).catch(() => { });
+        } catch (_) { }
         window.open(urlWa, '_blank');
         mostrarToast(`✓ Mensagem com ${escalasPessoaMes.length} escala(s) de ${nomePessoa} aberta no WhatsApp!`);
       } else {
@@ -1835,8 +2068,8 @@ export default function EscalasMinisteriais({
               const item = atribuicoes.find(att => String(att.funcao_id) === String(func.id));
               const isFuncPregacao = func.nome?.toLowerCase().includes('prega') || func.nome?.toLowerCase().includes('palavra') || func.id === '_pregacao_cultos';
               const nomePessoa = item?.pessoas?.nome || (isFuncPregacao && pregadorEv ? pregadorEv : '— —');
-              const statusIcon = item 
-                ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') 
+              const statusIcon = item
+                ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡')
                 : (isFuncPregacao && pregadorEv ? '🟢' : '');
 
               return `
@@ -1948,8 +2181,8 @@ export default function EscalasMinisteriais({
       await new Promise(resolve => setTimeout(resolve, 350));
 
       const computedHeight = container.firstElementChild.scrollHeight;
-      const imgData = await toPng(container.firstElementChild, { 
-        width: 1080, 
+      const imgData = await toPng(container.firstElementChild, {
+        width: 1080,
         height: computedHeight,
         cacheBust: true,
         pixelRatio: 2
@@ -2147,8 +2380,8 @@ export default function EscalasMinisteriais({
                   key={ev.id}
                   onClick={() => selecionarEvento(ev, true)}
                   className={`w-full text-left p-2.5 rounded-2xl border transition-all duration-200 flex items-center justify-between cursor-pointer group relative overflow-hidden ${eventoSelecionado?.id === ev.id
-                      ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 border-blue-500 text-white shadow-lg shadow-blue-500/25 ring-2 ring-blue-400/40'
-                      : 'bg-white border-slate-150 hover:border-blue-200 hover:bg-gradient-to-r hover:from-white hover:to-blue-50/30 hover:shadow-sm text-slate-700'
+                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 border-blue-500 text-white shadow-lg shadow-blue-500/25 ring-2 ring-blue-400/40'
+                    : 'bg-white border-slate-150 hover:border-blue-200 hover:bg-gradient-to-r hover:from-white hover:to-blue-50/30 hover:shadow-sm text-slate-700'
                     }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -2432,12 +2665,12 @@ export default function EscalasMinisteriais({
                           const temFardamentos = grupo.fardamentos && grupo.fardamentos.length > 0;
                           if (!temFardamentos && !eIntercessaoOuIntroducao) return null;
 
-                          const opcoesFardamento = temFardamentos 
-                            ? grupo.fardamentos 
+                          const opcoesFardamento = temFardamentos
+                            ? grupo.fardamentos
                             : ["Farda Oficial", "Camisa Preta", "Camisa Branca", "Camisa Azul", "Social"];
 
                           return (
-                            <div 
+                            <div
                               className="px-3 py-1.5 sm:px-4 border-b flex items-center justify-between gap-2 text-xs transition-colors min-w-0"
                               style={{
                                 backgroundColor: `${corMin}08`,
@@ -2469,115 +2702,115 @@ export default function EscalasMinisteriais({
                         {/* Grade de Voluntários */}
                         <div className="p-3.5 sm:p-4 bg-slate-50/20">
 
-                      <div className="grid sm:grid-cols-2 gap-3">
-                        {grupo.itens.map((item) => (
-                          <div
-                            key={item.id}
-                            className="bg-white rounded-2xl border border-slate-200/70 overflow-hidden flex flex-col justify-between group relative hover:border-slate-300/90 hover:shadow-md transition-all duration-300 shadow-2xs"
-                          >
-                            {/* Corpo do Card: Destaque do Voluntário e Status */}
-                            <div className="p-3.5 flex-1 flex flex-col justify-between gap-2.5">
-                              <div className="flex justify-between items-start gap-2">
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-1.5 flex-wrap">
-                                    <p className="text-sm font-black text-slate-900 tracking-tight truncate" title={item.pessoas?.nome}>
-                                      {item.pessoas?.nome}
-                                    </p>
-                                  </div>
-                                  <p className="text-[10px] sm:text-[11px] text-slate-500 font-semibold mt-0.5">
-                                    {item.ministerio_funcoes?.nome || 'Geral'}
-                                  </p>
-                                </div>
+                          <div className="grid sm:grid-cols-2 gap-3">
+                            {grupo.itens.map((item) => (
+                              <div
+                                key={item.id}
+                                className="bg-white rounded-2xl border border-slate-200/70 overflow-hidden flex flex-col justify-between group relative hover:border-slate-300/90 hover:shadow-md transition-all duration-300 shadow-2xs"
+                              >
+                                {/* Corpo do Card: Destaque do Voluntário e Status */}
+                                <div className="p-3.5 flex-1 flex flex-col justify-between gap-2.5">
+                                  <div className="flex justify-between items-start gap-2">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <p className="text-sm font-black text-slate-900 tracking-tight truncate" title={item.pessoas?.nome}>
+                                          {item.pessoas?.nome}
+                                        </p>
+                                      </div>
+                                      <p className="text-[10px] sm:text-[11px] text-slate-500 font-semibold mt-0.5">
+                                        {item.ministerio_funcoes?.nome || 'Geral'}
+                                      </p>
+                                    </div>
 
-                                <div className="flex items-center gap-1 shrink-0">
-                                  {renderStatusBadge(item)}
-                                  {!isMembroNormal && !item.isPregadorManual && (
-                                    <button
-                                      type="button"
-                                      onClick={() => excluirEscala(item.id)}
-                                      className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all active:scale-90 cursor-pointer"
-                                      title="Remover da escala"
-                                    >
-                                      <X size={14} strokeWidth={2.5} />
-                                    </button>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      {renderStatusBadge(item)}
+                                      {!isMembroNormal && !item.isPregadorManual && (
+                                        <button
+                                          type="button"
+                                          onClick={() => excluirEscala(item.id)}
+                                          className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all active:scale-90 cursor-pointer"
+                                          title="Remover da escala"
+                                        >
+                                          <X size={14} strokeWidth={2.5} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Detalhe de Justificativa / Recusa / Negativação */}
+                                  {item.status === 'recusado' && (
+                                    <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
+                                      <span className="shrink-0 text-rose-600">🚫</span>
+                                      <span className="leading-snug">
+                                        <strong>Motivo da Recusa:</strong> {item.justificativa ? item.justificativa : 'Voluntário informou que não poderá comparecer.'}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {((item.status === 'falta_justificada' || item.status === 'ausente_justificado') && item.justificativa) && (
+                                    <div className="text-[10px] text-amber-900 bg-amber-50/90 border border-amber-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
+                                      <span className="shrink-0 text-amber-600">💬</span>
+                                      <span className="italic leading-snug">
+                                        <strong>Justificativa:</strong> {item.justificativa}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {(item.status === 'falta' || item.status === 'falta_injustificada' || item.status === 'ausente') && (
+                                    <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
+                                      <span className="shrink-0 text-rose-600">⚠️</span>
+                                      <span className="leading-snug">
+                                        <strong>Negativação:</strong> {item.justificativa ? item.justificativa : 'Não compareceu ao evento para cumprir a escala.'}
+                                      </span>
+                                    </div>
                                   )}
                                 </div>
-                              </div>
 
-                              {/* Detalhe de Justificativa / Recusa / Negativação */}
-                              {item.status === 'recusado' && (
-                                <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
-                                  <span className="shrink-0 text-rose-600">🚫</span>
-                                  <span className="leading-snug">
-                                    <strong>Motivo da Recusa:</strong> {item.justificativa ? item.justificativa : 'Voluntário informou que não poderá comparecer.'}
-                                  </span>
-                                </div>
-                              )}
-
-                              {((item.status === 'falta_justificada' || item.status === 'ausente_justificado') && item.justificativa) && (
-                                <div className="text-[10px] text-amber-900 bg-amber-50/90 border border-amber-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
-                                  <span className="shrink-0 text-amber-600">💬</span>
-                                  <span className="italic leading-snug">
-                                    <strong>Justificativa:</strong> {item.justificativa}
-                                  </span>
-                                </div>
-                              )}
-
-                              {(item.status === 'falta' || item.status === 'falta_injustificada' || item.status === 'ausente') && (
-                                <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
-                                  <span className="shrink-0 text-rose-600">⚠️</span>
-                                  <span className="leading-snug">
-                                    <strong>Negativação:</strong> {item.justificativa ? item.justificativa : 'Não compareceu ao evento para cumprir a escala.'}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Rodapé Gradiente com Botões de Ações */}
-                            {!isMembroNormal && !item.isPregadorManual && (
-                              <div
-                                className="px-3 py-2 border-t flex items-center justify-between gap-1.5 transition-colors"
-                                style={{
-                                  background: `linear-gradient(135deg, ${corMin}24 0%, ${corMin}10 100%)`,
-                                  borderTopColor: `${corMin}30`
-                                }}
-                              >
-                                <span
-                                  className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider flex items-center gap-1"
-                                  style={{ color: corMin }}
-                                >
-                                  <span>⚡</span>
-                                  <span>Ações</span>
-                                </span>
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => copiarWhatsAppVoluntario(item, grupo)}
-                                    className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-emerald-800 hover:text-emerald-950 bg-white hover:bg-emerald-50 border border-emerald-300 shadow-2xs hover:shadow-xs px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer flex items-center gap-1 active:scale-95"
-                                    title="Enviar mensagem de aviso individual via WhatsApp"
+                                {/* Rodapé Gradiente com Botões de Ações */}
+                                {!isMembroNormal && !item.isPregadorManual && (
+                                  <div
+                                    className="px-3 py-2 border-t flex items-center justify-between gap-1.5 transition-colors"
+                                    style={{
+                                      background: `linear-gradient(135deg, ${corMin}24 0%, ${corMin}10 100%)`,
+                                      borderTopColor: `${corMin}30`
+                                    }}
                                   >
-                                    <Share2 size={10} className="text-emerald-600" />
-                                    <span>Avisar</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => abrirModalApontamento(item, grupo)}
-                                    className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-indigo-800 hover:text-indigo-950 bg-white hover:bg-indigo-50 border border-indigo-300 shadow-2xs hover:shadow-xs px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer flex items-center gap-1 active:scale-95"
-                                    title="Apontar presença, falta justificada ou negativação"
-                                  >
-                                    <CheckCircle size={10} className="text-indigo-600" />
-                                    <span>Apontar</span>
-                                  </button>
-                                </div>
+                                    <span
+                                      className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider flex items-center gap-1"
+                                      style={{ color: corMin }}
+                                    >
+                                      <span>⚡</span>
+                                      <span>Ações</span>
+                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => copiarWhatsAppVoluntario(item, grupo)}
+                                        className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-emerald-800 hover:text-emerald-950 bg-white hover:bg-emerald-50 border border-emerald-300 shadow-2xs hover:shadow-xs px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer flex items-center gap-1 active:scale-95"
+                                        title="Enviar mensagem de aviso individual via WhatsApp"
+                                      >
+                                        <Share2 size={10} className="text-emerald-600" />
+                                        <span>Avisar</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => abrirModalApontamento(item, grupo)}
+                                        className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-indigo-800 hover:text-indigo-950 bg-white hover:bg-indigo-50 border border-indigo-300 shadow-2xs hover:shadow-xs px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer flex items-center gap-1 active:scale-95"
+                                        title="Apontar presença, falta justificada ou negativação"
+                                      >
+                                        <CheckCircle size={10} className="text-indigo-600" />
+                                        <span>Apontar</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            ))}
                           </div>
-                        ))}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
 
                   {escalas.length === 0 && (
                     <div className="py-20 text-center text-slate-400 italic text-sm border-2 border-dashed border-slate-100 rounded-2xl">
@@ -2805,8 +3038,8 @@ export default function EscalasMinisteriais({
 
                   if (!temFardamentos && !eIntercessaoOuIntroducao) return null;
 
-                  const opcoesFardamento = temFardamentos 
-                    ? minSelObj.fardamentos 
+                  const opcoesFardamento = temFardamentos
+                    ? minSelObj.fardamentos
                     : ["Farda Oficial", "Camisa Preta", "Camisa Branca", "Camisa Azul", "Social"];
 
                   return (
@@ -2851,44 +3084,128 @@ export default function EscalasMinisteriais({
 
                   {novaEscala.ministerio_id ? (
                     <div className="space-y-3">
-                      {listaFuncoes.map(funcao => (
-                        <div key={funcao.id} className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 space-y-1.5 hover:border-blue-200 transition">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-black text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
-                              <span className="text-blue-600">📌</span> {funcao.nome}
-                            </span>
-                            {atribuicoesModal[funcao.id] ? (
-                              <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                                ✓ Selecionado
+                      {listaFuncoes.map(funcao => {
+                        const pIdSelecionado = String(atribuicoesModal[funcao.id] || '');
+                        const todasEscalasVoluntario = pIdSelecionado ? (mapaOutrasEscalas[pIdSelecionado] || []) : [];
+
+                        // 1. Escalas no MESMO evento (em outro ministério ou outra função deste mesmo culto)
+                        const noMesmoCulto = todasEscalasVoluntario.filter(e =>
+                          e.is_mesmo_evento &&
+                          (String(e.funcao_id) !== String(funcao.id) || String(e.ministerio_id) !== String(novaEscala.ministerio_id))
+                        );
+
+                        // 2. Escalas em OUTROS eventos / cultos do mês
+                        const emOutrosEventos = todasEscalasVoluntario.filter(e => !e.is_mesmo_evento);
+
+                        return (
+                          <div key={funcao.id} className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 space-y-2 hover:border-blue-200 transition">
+                            <div className="flex justify-between items-center">
+                              <span className="text-xs font-black text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
+                                <span className="text-blue-600">📌</span> {funcao.nome}
                               </span>
-                            ) : (
-                              <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
-                                Vago
-                              </span>
+                              {atribuicoesModal[funcao.id] ? (
+                                <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+                                  ✓ Selecionado
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                                  Vago
+                                </span>
+                              )}
+                            </div>
+
+                            <select
+                              value={atribuicoesModal[funcao.id] || ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setAtribuicoesModal(prev => ({ ...prev, [funcao.id]: val }));
+                              }}
+                              className={`w-full border rounded-xl px-3 py-2.5 text-xs bg-white outline-none transition cursor-pointer font-bold text-slate-700 ${noMesmoCulto.length > 0
+                                ? 'border-amber-400 focus:border-amber-500 bg-amber-50/20 ring-1 ring-amber-400/30'
+                                : 'border-slate-200 focus:border-blue-500'
+                                }`}
+                            >
+                              <option value="">— Selecionar Voluntário —</option>
+                              {listaPessoas.map(p => {
+                                const pId = String(p.pessoas?.id || p.pessoa_id || p.id || '');
+                                const pNome = p.pessoas?.nome || p.nome;
+                                return (
+                                  <option key={pId} value={pId}>
+                                    {pNome} {p.funcao ? `(${p.funcao})` : ''}
+                                  </option>
+                                );
+                              })}
+                            </select>
+
+                            {/* Detalhamento Visual das Outras Escalas do Voluntário Selecionado */}
+                            {pIdSelecionado && (
+                              <div className="pt-0.5 space-y-1.5 animate-in fade-in duration-200">
+                                {/* Alerta de conflito / mesmo culto */}
+                                {noMesmoCulto.map(c => (
+                                  <div
+                                    key={c.id}
+                                    className="p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 flex items-start gap-2 shadow-2xs"
+                                  >
+                                    <span className="text-sm shrink-0 leading-none mt-0.5">⚠️</span>
+                                    <div className="min-w-0 flex-1 text-[11px] leading-snug">
+                                      <p className="font-black text-amber-900">
+                                        Já escalado neste mesmo culto!
+                                      </p>
+                                      <p className="text-[10px] text-amber-800 mt-0.5 font-medium">
+                                        Função: <strong className="font-bold text-amber-950">{c.funcao_nome}</strong> no ministério <strong className="font-bold text-amber-950">{c.ministerio_nome}</strong>
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {/* Lista de escalas em outros eventos do mês com Dia, Horário e Função */}
+                                {emOutrosEventos.length > 0 ? (
+                                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-50/70 via-blue-50/40 to-slate-50 border border-indigo-200/70 text-slate-800 space-y-1.5 shadow-2xs">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-indigo-900 flex items-center gap-1">
+                                        <span></span> Outras escalas no mês ({emOutrosEventos.length})
+                                      </span>
+                                    </div>
+
+                                    <div className="space-y-1 max-h-32 overflow-y-auto pr-0.5 custom-scrollbar">
+                                      {emOutrosEventos.map(esc => (
+                                        <div
+                                          key={esc.id}
+                                          className="bg-white border border-indigo-100 rounded-lg px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-1 shadow-2xs"
+                                        >
+                                          <div className="flex items-center gap-1.5 min-w-0">
+                                            <span className="text-[11px] font-black text-slate-800 truncate">
+                                              {esc.data_formatada}
+                                            </span>
+                                            {esc.evento_titulo && (
+                                              <span className="text-[10px] text-slate-400 font-medium hidden sm:inline truncate max-w-[110px]">
+                                                · {esc.evento_titulo}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-1 shrink-0">
+                                            <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                                              {esc.funcao_nome}
+                                            </span>
+                                            <span className="text-[9px] font-bold text-slate-500">
+                                              ({esc.ministerio_nome})
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : noMesmoCulto.length === 0 ? (
+                                  <div className="px-2.5 py-1.5 rounded-xl bg-emerald-50/80 border border-emerald-200/70 text-[10px] text-emerald-800 flex items-center gap-1.5 shadow-2xs">
+                                    <span className="text-emerald-600 font-bold">✨</span>
+                                    <span className="font-semibold">Voluntário disponível · Sem outras escalas registradas no mês</span>
+                                  </div>
+                                ) : null}
+                              </div>
                             )}
                           </div>
-
-                          <select
-                            value={atribuicoesModal[funcao.id] || ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setAtribuicoesModal(prev => ({ ...prev, [funcao.id]: val }));
-                            }}
-                            className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-xs bg-white outline-none focus:border-blue-500 transition cursor-pointer font-bold text-slate-700"
-                          >
-                            <option value="">— Selecionar Voluntário —</option>
-                            {listaPessoas.map(p => {
-                              const pId = p.pessoas?.id || p.pessoa_id || p.id;
-                              const pNome = p.pessoas?.nome || p.nome;
-                              return (
-                                <option key={pId} value={pId}>
-                                  {pNome} {p.funcao ? `(${p.funcao})` : ''}
-                                </option>
-                              );
-                            })}
-                          </select>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {listaFuncoes.length === 0 && (
                         <div className="py-8 text-center text-xs text-slate-400 italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
@@ -2919,10 +3236,10 @@ export default function EscalasMinisteriais({
                 disabled={salvandoEscalasMultiplas || (!novaEscala.ministerio_id && pregadorModal.trim() === extrairPregador(eventoSelecionado).trim())}
                 className="w-full sm:flex-1 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 border border-blue-400/30 transition-all duration-200 active:scale-95 cursor-pointer text-center disabled:opacity-50"
               >
-                {salvandoEscalasMultiplas 
-                  ? 'Salvando...' 
-                  : novaEscala.ministerio_id 
-                    ? 'Salvar Escalas do Ministério' 
+                {salvandoEscalasMultiplas
+                  ? 'Salvando...'
+                  : novaEscala.ministerio_id
+                    ? 'Salvar Escalas do Ministério'
                     : 'Salvar Pregador do Evento'}
               </button>
             </div>
@@ -2997,8 +3314,8 @@ export default function EscalasMinisteriais({
                   type="button"
                   onClick={() => setAbaGerador('config')}
                   className={`px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 text-center cursor-pointer ${abaGerador === 'config'
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
-                      : 'text-slate-500 hover:text-slate-800'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
                     }`}
                 >
                   ⚙️ Regras
@@ -3007,8 +3324,8 @@ export default function EscalasMinisteriais({
                   type="button"
                   onClick={calcularPreviaEventos}
                   className={`px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-200 text-center cursor-pointer ${abaGerador === 'previa'
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
-                      : 'text-slate-500 hover:text-slate-800'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-800'
                     }`}
                 >
                   📋 Prévia
@@ -3253,8 +3570,8 @@ export default function EscalasMinisteriais({
                         <label
                           key={item.id_temp}
                           className={`flex items-start gap-3 p-3.5 border rounded-xl transition cursor-pointer select-none ${item.incluir
-                              ? 'bg-blue-50/40 border-blue-200 hover:bg-blue-50'
-                              : 'bg-slate-50 border-slate-100 text-slate-450 hover:bg-slate-100'
+                            ? 'bg-blue-50/40 border-blue-200 hover:bg-blue-50'
+                            : 'bg-slate-50 border-slate-100 text-slate-450 hover:bg-slate-100'
                             }`}
                         >
                           <input
@@ -3265,8 +3582,8 @@ export default function EscalasMinisteriais({
                           />
                           <div className="min-w-0">
                             <span className={`inline-block text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md mb-1.5 ${item.isCustom
-                                ? 'bg-amber-100 text-amber-800 border border-amber-200/50'
-                                : 'bg-slate-200 text-slate-650'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200/50'
+                              : 'bg-slate-200 text-slate-650'
                               }`}>
                               {item.isCustom ? 'Especial' : 'Recorrente'}
                             </span>
@@ -3532,108 +3849,108 @@ export default function EscalasMinisteriais({
                                 const fardaSel = ev.fardamentos?.[minExportarId];
                                 const hasVolunteers = atribuicoes.length > 0 || (pregadorEv && isMinisterioCultos(minObjSel?.nome));
 
-                            let previewItems = [];
-                            if (hasVolunteers) {
-                              if (funcoesExportar.length > 0) {
-                                const renderedIds = new Set();
-                                funcoesExportar.forEach((func) => {
-                                  renderedIds.add(String(func.id));
-                                  const item = atribuicoes.find(att => String(att.funcao_id) === String(func.id));
-                                  const isFuncPregacao = func.nome?.toLowerCase().includes('prega') || func.nome?.toLowerCase().includes('palavra') || func.id === '_pregacao_cultos';
-                                  const nomePessoa = item?.pessoas?.nome || (isFuncPregacao && pregadorEv ? pregadorEv : '— —');
-                                  const statusIcon = item 
-                                    ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡') 
-                                    : (isFuncPregacao && pregadorEv ? '🟢' : '');
+                                let previewItems = [];
+                                if (hasVolunteers) {
+                                  if (funcoesExportar.length > 0) {
+                                    const renderedIds = new Set();
+                                    funcoesExportar.forEach((func) => {
+                                      renderedIds.add(String(func.id));
+                                      const item = atribuicoes.find(att => String(att.funcao_id) === String(func.id));
+                                      const isFuncPregacao = func.nome?.toLowerCase().includes('prega') || func.nome?.toLowerCase().includes('palavra') || func.id === '_pregacao_cultos';
+                                      const nomePessoa = item?.pessoas?.nome || (isFuncPregacao && pregadorEv ? pregadorEv : '— —');
+                                      const statusIcon = item
+                                        ? (item.status === 'confirmado' ? '🟢' : item.status === 'recusado' ? '🔴' : '🟡')
+                                        : (isFuncPregacao && pregadorEv ? '🟢' : '');
 
-                                  previewItems.push(
-                                    <div key={func.id} className="mensal-export-assignment-cell">
-                                      <div className="mensal-export-assignment-role" style={{ color: minCorSel }}>{func.nome}</div>
-                                      <div className="mensal-export-assignment-name-row">
-                                        <span className={nomePessoa !== '— —' ? "mensal-export-assignment-name" : "mensal-export-assignment-name-empty"}>
-                                          {nomePessoa}
-                                        </span>
-                                        {statusIcon && <span style={{ fontSize: '12px' }}>{statusIcon}</span>}
-                                      </div>
-                                    </div>
-                                  );
-                                });
-
-                                atriibuicoes: atribuicoes.forEach(att => {
-                                  if (!att.funcao_id || !renderedIds.has(String(att.funcao_id))) {
-                                    const nomePessoa = att.pessoas?.nome || 'Voluntário';
-                                    const nomeFunc = att.ministerio_funcoes?.nome || 'Voluntário';
-                                    const statusIcon = att.status === 'confirmado' ? '🟢' : att.status === 'recusado' ? '🔴' : '🟡';
-                                    previewItems.push(
-                                      <div key={att.id} className="mensal-export-assignment-cell">
-                                        <div className="mensal-export-assignment-role" style={{ color: minCorSel }}>{nomeFunc}</div>
-                                        <div className="mensal-export-assignment-name-row">
-                                          <span className="mensal-export-assignment-name">{nomePessoa}</span>
-                                          <span style={{ fontSize: '12px' }}>{statusIcon}</span>
+                                      previewItems.push(
+                                        <div key={func.id} className="mensal-export-assignment-cell">
+                                          <div className="mensal-export-assignment-role" style={{ color: minCorSel }}>{func.nome}</div>
+                                          <div className="mensal-export-assignment-name-row">
+                                            <span className={nomePessoa !== '— —' ? "mensal-export-assignment-name" : "mensal-export-assignment-name-empty"}>
+                                              {nomePessoa}
+                                            </span>
+                                            {statusIcon && <span style={{ fontSize: '12px' }}>{statusIcon}</span>}
+                                          </div>
                                         </div>
-                                      </div>
-                                    );
+                                      );
+                                    });
+
+                                    atriibuicoes: atribuicoes.forEach(att => {
+                                      if (!att.funcao_id || !renderedIds.has(String(att.funcao_id))) {
+                                        const nomePessoa = att.pessoas?.nome || 'Voluntário';
+                                        const nomeFunc = att.ministerio_funcoes?.nome || 'Voluntário';
+                                        const statusIcon = att.status === 'confirmado' ? '🟢' : att.status === 'recusado' ? '🔴' : '🟡';
+                                        previewItems.push(
+                                          <div key={att.id} className="mensal-export-assignment-cell">
+                                            <div className="mensal-export-assignment-role" style={{ color: minCorSel }}>{nomeFunc}</div>
+                                            <div className="mensal-export-assignment-name-row">
+                                              <span className="mensal-export-assignment-name">{nomePessoa}</span>
+                                              <span style={{ fontSize: '12px' }}>{statusIcon}</span>
+                                            </div>
+                                          </div>
+                                        );
+                                      }
+                                    });
+                                  } else {
+                                    atribuicoes.forEach(att => {
+                                      const nomePessoa = att.pessoas?.nome || 'Voluntário';
+                                      const nomeFunc = att.ministerio_funcoes?.nome || 'Voluntário';
+                                      const statusIcon = att.status === 'confirmado' ? '🟢' : att.status === 'recusado' ? '🔴' : '🟡';
+                                      previewItems.push(
+                                        <div key={att.id} className="mensal-export-assignment-cell">
+                                          <div className="mensal-export-assignment-role" style={{ color: minCorSel }}>{nomeFunc}</div>
+                                          <div className="mensal-export-assignment-name-row">
+                                            <span className="mensal-export-assignment-name">{nomePessoa}</span>
+                                            <span style={{ fontSize: '12px' }}>{statusIcon}</span>
+                                          </div>
+                                        </div>
+                                      );
+                                    });
                                   }
-                                });
-                              } else {
-                                atribuicoes.forEach(att => {
-                                  const nomePessoa = att.pessoas?.nome || 'Voluntário';
-                                  const nomeFunc = att.ministerio_funcoes?.nome || 'Voluntário';
-                                  const statusIcon = att.status === 'confirmado' ? '🟢' : att.status === 'recusado' ? '🔴' : '🟡';
-                                  previewItems.push(
-                                    <div key={att.id} className="mensal-export-assignment-cell">
-                                      <div className="mensal-export-assignment-role" style={{ color: minCorSel }}>{nomeFunc}</div>
-                                      <div className="mensal-export-assignment-name-row">
-                                        <span className="mensal-export-assignment-name">{nomePessoa}</span>
-                                        <span style={{ fontSize: '12px' }}>{statusIcon}</span>
+                                }
+
+                                return (
+                                  <div key={ev.id} className="mensal-export-card">
+                                    <div className="mensal-export-date-badge">
+                                      <span className="mensal-export-date-badge-day">{diaSemanaStr}</span>
+                                      <span className="mensal-export-date-badge-num">{dataInfo.diaNum}</span>
+                                    </div>
+                                    <div className="mensal-export-content">
+                                      <div className="mensal-export-event-title">
+                                        <span>{ev.titulo}</span>
+                                        <span style={{ fontSize: '11px', opacity: 0.6 }}>⏰ {obterHoraExibicao(ev)}</span>
+                                      </div>
+                                      <div className="mensal-export-assignments-grid">
+                                        {hasVolunteers && previewItems.length > 0 ? (
+                                          previewItems
+                                        ) : (
+                                          <div className="mensal-export-assignment-name-empty" style={{ gridColumn: 'span 2' }}>
+                                            Sem voluntários escalados
+                                          </div>
+                                        )}
+                                        {fardaSel && (
+                                          <div className="mensal-export-uniform-badge">
+                                            <span style={{ fontSize: '24px' }}>👕</span>
+                                            <span>FARDA: <span style={{ color: minCorSel }}>{fardaSel}</span></span>
+                                          </div>
+                                        )}
                                       </div>
                                     </div>
-                                  );
-                                });
-                              }
-                            }
-
-                            return (
-                              <div key={ev.id} className="mensal-export-card">
-                                <div className="mensal-export-date-badge">
-                                  <span className="mensal-export-date-badge-day">{diaSemanaStr}</span>
-                                  <span className="mensal-export-date-badge-num">{dataInfo.diaNum}</span>
-                                </div>
-                                <div className="mensal-export-content">
-                                  <div className="mensal-export-event-title">
-                                    <span>{ev.titulo}</span>
-                                    <span style={{ fontSize: '11px', opacity: 0.6 }}>⏰ {obterHoraExibicao(ev)}</span>
                                   </div>
-                                  <div className="mensal-export-assignments-grid">
-                                    {hasVolunteers && previewItems.length > 0 ? (
-                                      previewItems
-                                    ) : (
-                                      <div className="mensal-export-assignment-name-empty" style={{ gridColumn: 'span 2' }}>
-                                        Sem voluntários escalados
-                                      </div>
-                                    )}
-                                    {fardaSel && (
-                                      <div className="mensal-export-uniform-badge">
-                                        <span style={{ fontSize: '24px' }}>👕</span>
-                                        <span>FARDA: <span style={{ color: minCorSel }}>{fardaSel}</span></span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
+                                );
+                              })}
+                            </div>
 
-                        <div className="mensal-export-footer">
-                          <img src="https://guznbiqposfhqalqjggw.supabase.co/storage/v1/object/public/fotos-membros/logo_betesda_branca.png" className="mensal-export-footer-logo" />
-                          <div className="mensal-export-footer-tagline">MIB CHURCH · DEPARTAMENTO DE COMUNICAÇÃO</div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
+                            <div className="mensal-export-footer">
+                              <img src="https://guznbiqposfhqalqjggw.supabase.co/storage/v1/object/public/fotos-membros/logo_betesda_branca.png" className="mensal-export-footer-logo" />
+                              <div className="mensal-export-footer-tagline">MIB CHURCH · DEPARTAMENTO DE COMUNICAÇÃO</div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -3678,7 +3995,7 @@ export default function EscalasMinisteriais({
             <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto shrink-0 shadow-inner">
               <AlertCircle size={26} />
             </div>
-            
+
             <div>
               <h3 className="text-base font-black text-slate-800 tracking-tight">
                 Conflito de Escala Detectado
@@ -3792,16 +4109,15 @@ export default function EscalasMinisteriais({
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
                   Selecione o Apontamento:
                 </label>
-                
+
                 <div className="space-y-2">
                   {/* Opção 1: Compareceu / Confirmado */}
                   <label
                     onClick={() => setStatusApontamento('confirmado')}
-                    className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 transition cursor-pointer select-none ${
-                      statusApontamento === 'confirmado' || statusApontamento === 'presente'
-                        ? 'border-emerald-500 bg-emerald-50/50 shadow-xs'
-                        : 'border-slate-100 hover:border-slate-200 bg-white'
-                    }`}
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 transition cursor-pointer select-none ${statusApontamento === 'confirmado' || statusApontamento === 'presente'
+                      ? 'border-emerald-500 bg-emerald-50/50 shadow-xs'
+                      : 'border-slate-100 hover:border-slate-200 bg-white'
+                      }`}
                   >
                     <input
                       type="radio"
@@ -3827,11 +4143,10 @@ export default function EscalasMinisteriais({
                   {/* Opção 2: Falta Justificada */}
                   <label
                     onClick={() => setStatusApontamento('falta_justificada')}
-                    className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 transition cursor-pointer select-none ${
-                      statusApontamento === 'falta_justificada' || statusApontamento === 'ausente_justificado'
-                        ? 'border-amber-500 bg-amber-50/50 shadow-xs'
-                        : 'border-slate-100 hover:border-slate-200 bg-white'
-                    }`}
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 transition cursor-pointer select-none ${statusApontamento === 'falta_justificada' || statusApontamento === 'ausente_justificado'
+                      ? 'border-amber-500 bg-amber-50/50 shadow-xs'
+                      : 'border-slate-100 hover:border-slate-200 bg-white'
+                      }`}
                   >
                     <input
                       type="radio"
@@ -3857,11 +4172,10 @@ export default function EscalasMinisteriais({
                   {/* Opção 3: Falta Injustificada / Negativação */}
                   <label
                     onClick={() => setStatusApontamento('falta')}
-                    className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 transition cursor-pointer select-none ${
-                      statusApontamento === 'falta' || statusApontamento === 'falta_injustificada' || statusApontamento === 'ausente'
-                        ? 'border-rose-500 bg-rose-50/50 shadow-xs'
-                        : 'border-slate-100 hover:border-slate-200 bg-white'
-                    }`}
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border-2 transition cursor-pointer select-none ${statusApontamento === 'falta' || statusApontamento === 'falta_injustificada' || statusApontamento === 'ausente'
+                      ? 'border-rose-500 bg-rose-50/50 shadow-xs'
+                      : 'border-slate-100 hover:border-slate-200 bg-white'
+                      }`}
                   >
                     <input
                       type="radio"
@@ -3887,11 +4201,10 @@ export default function EscalasMinisteriais({
                   {/* Opção 4: Pendente */}
                   <label
                     onClick={() => setStatusApontamento('pendente')}
-                    className={`flex items-start gap-3 p-3 rounded-2xl border transition cursor-pointer select-none ${
-                      statusApontamento === 'pendente'
-                        ? 'border-blue-400 bg-blue-50/30'
-                        : 'border-slate-100 hover:border-slate-200 bg-white'
-                    }`}
+                    className={`flex items-start gap-3 p-3 rounded-2xl border transition cursor-pointer select-none ${statusApontamento === 'pendente'
+                      ? 'border-blue-400 bg-blue-50/30'
+                      : 'border-slate-100 hover:border-slate-200 bg-white'
+                      }`}
                   >
                     <input
                       type="radio"
@@ -3990,6 +4303,21 @@ export default function EscalasMinisteriais({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Botão Oficial Azul "Escalar" Fixo Flutuante */}
+      {!isMembroNormal && !modalEscala && !modalEvento && !modalGerador && !modalApontamento && (
+        <button
+          type="button"
+          onClick={() => abrirModalEscala()}
+          className="fixed bottom-20 md:bottom-8 right-5 md:right-8 z-40 group flex items-center gap-2.5 px-5 py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-full shadow-2xl shadow-blue-600/40 hover:shadow-blue-600/60 border border-blue-400/40 ring-4 ring-blue-500/20 active:scale-95 hover:scale-105 transition-all duration-300 cursor-pointer font-black text-xs uppercase tracking-wider animate-in fade-in slide-in-from-bottom-4"
+          title="Escalar Voluntários no Culto"
+        >
+          <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform duration-300">
+            <Plus size={16} strokeWidth={3} className="text-white" />
+          </div>
+          <span className="pr-1 drop-shadow-xs">Escalar</span>
+        </button>
       )}
     </div>
   );

@@ -502,7 +502,9 @@ export const escalasService = {
         *,
         pessoas (
           id,
-          nome
+          nome,
+          status,
+          foto_url
         )
       `)
       .eq('ministerio_id', ministerioId);

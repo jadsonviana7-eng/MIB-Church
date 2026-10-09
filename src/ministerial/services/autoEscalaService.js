@@ -105,6 +105,7 @@ export const autoEscalaService = {
       .from('escalas')
       .select(`
         pessoa_id,
+        status,
         ministerio_id,
         ministerios:ministerio_id (
           nome
@@ -114,8 +115,14 @@ export const autoEscalaService = {
 
     if (errEscalasEv) throw errEscalasEv;
     const pessoasJaEscaladasNoEvento = new Set();
+    const pessoasRecusadasNoEvento = new Set();
     (escalasEvento || []).forEach(e => {
       if (!e.pessoa_id) return;
+      const st = (e.status || '').toLowerCase();
+      if (st === 'recusado' || st === 'ausente' || st === 'falta' || st === 'falta_justificada' || st === 'falta_injustificada' || st === 'indisponivel') {
+        pessoasRecusadasNoEvento.add(e.pessoa_id);
+      }
+
       const isMinEscalaManutencao = isMinisterioManutencao(e.ministerios?.nome);
 
       if (isDestinoManutencao) {
@@ -154,8 +161,8 @@ export const autoEscalaService = {
       }
     });
 
-    // 7. Preparar elegíveis
-    const candidatosFiltradosPorBloqueio = membrosAtivos.filter(m => !blockedPessoas.has(m.pessoa_id));
+    // 7. Preparar elegíveis (removendo pessoas bloqueadas por período ou que recusaram este evento)
+    const candidatosFiltradosPorBloqueio = membrosAtivos.filter(m => !blockedPessoas.has(m.pessoa_id) && !pessoasRecusadasNoEvento.has(m.pessoa_id));
 
     const voluntariosElegiveis = candidatosFiltradosPorBloqueio.map(m => {
       const pessoaId = m.pessoa_id;

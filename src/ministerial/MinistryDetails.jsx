@@ -7,13 +7,15 @@ import {
   Trash2,
   X,
   Pencil,
-  ChevronLeft
+  ChevronLeft,
+  Calendar
 } from 'lucide-react';
 
 import { supabase } from '../supabaseClient';
 import FuncoesMinisteriais from './FuncoesMinisteriais';
 import { MinistryIcon } from '../ui';
 import MembroHistoricoModal from './components/MembroHistoricoModal';
+import MinistryMonthlyOverview from './components/MinistryMonthlyOverview';
 import { escalasService } from './services/escalasService';
 
 export default function MinistryDetails({ ministerioId, onVoltar }) {
@@ -574,6 +576,18 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
         >
           Fardamentos
         </button>
+
+        <button
+          onClick={() => setAba('escala_mensal')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition ${
+            aba === 'escala_mensal'
+              ? 'bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white shadow-md shadow-blue-500/25 border border-blue-400/30'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <Calendar size={14} />
+          <span>Escala Mensal & Avisos</span>
+        </button>
       </div>
 
       {/* EQUIPE */}
@@ -720,6 +734,11 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
             )}
           </div>
         </div>
+      )}
+
+      {/* ESCALA MENSAL & AVISOS */}
+      {aba === 'escala_mensal' && (
+        <MinistryMonthlyOverview ministerio={ministerio} onVoltar={onVoltar} />
       )}
 
       {/* MODAL ADICIONAR MEMBRO */}

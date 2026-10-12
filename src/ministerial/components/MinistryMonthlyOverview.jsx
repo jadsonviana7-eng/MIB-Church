@@ -17,6 +17,31 @@ const NOMES_DIAS_SEMANA = [
   'Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'
 ];
 
+const parseDatabaseDate = (str) => {
+  if (!str) return null;
+  if (!str.includes('Z') && !str.match(/[+-]\d{2}(:?\d{2})?$/)) {
+    const clean = str.trim().replace(' ', 'T');
+    return new Date(clean + 'Z');
+  }
+  return new Date(str);
+};
+
+const formatarDataHoraEvento = (dataIso) => {
+  if (!dataIso) return { dataStr: '', horaStr: '', diaSemanaStr: '', dataCompletaStr: '' };
+  try {
+    const date = parseDatabaseDate(dataIso);
+    const bDate = new Date(date.getTime() - 3 * 3600 * 1000);
+    return {
+      dataStr: `${String(bDate.getUTCDate()).padStart(2, '0')}/${String(bDate.getUTCMonth() + 1).padStart(2, '0')}`,
+      dataCompletaStr: `${String(bDate.getUTCDate()).padStart(2, '0')}/${String(bDate.getUTCMonth() + 1).padStart(2, '0')}/${bDate.getUTCFullYear()}`,
+      horaStr: `${String(bDate.getUTCHours()).padStart(2, '0')}:${String(bDate.getUTCMinutes()).padStart(2, '0')}`,
+      diaSemanaStr: NOMES_DIAS_SEMANA[bDate.getUTCDay()]
+    };
+  } catch (_) {
+    return { dataStr: '', horaStr: '', diaSemanaStr: '', dataCompletaStr: '' };
+  }
+};
+
 export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
   const agora = new Date();
   const [filtroMes, setFiltroMes] = useState(agora.getMonth());
@@ -231,17 +256,7 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
 
     membro.escalas.forEach((esc, idx) => {
       const ev = esc.eventos_ministeriais;
-      const dataEv = ev?.data_evento ? new Date(ev.data_evento) : null;
-      let dataStr = '';
-      let horaStr = '';
-      let diaSemanaStr = '';
-
-      if (dataEv) {
-        const bDate = new Date(dataEv.getTime() - 3 * 3600 * 1000);
-        dataStr = `${String(bDate.getUTCDate()).padStart(2, '0')}/${String(bDate.getUTCMonth() + 1).padStart(2, '0')}`;
-        horaStr = `${String(bDate.getUTCHours()).padStart(2, '0')}:${String(bDate.getUTCMinutes()).padStart(2, '0')}`;
-        diaSemanaStr = NOMES_DIAS_SEMANA[bDate.getUTCDay()];
-      }
+      const { dataStr, horaStr, diaSemanaStr } = formatarDataHoraEvento(ev?.data_evento);
 
       const funcNome = esc.ministerio_funcoes?.nome || 'Voluntário';
       const fardaSel = ev?.fardamentos?.[ministerio?.id];
@@ -307,17 +322,7 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
       const escalasEv = escalasDoMes.filter(e => e.evento_id === ev.id);
       if (escalasEv.length === 0) return;
 
-      const dataEv = ev.data_evento ? new Date(ev.data_evento) : null;
-      let dataStr = '';
-      let horaStr = '';
-      let diaSemanaStr = '';
-
-      if (dataEv) {
-        const bDate = new Date(dataEv.getTime() - 3 * 3600 * 1000);
-        dataStr = `${String(bDate.getUTCDate()).padStart(2, '0')}/${String(bDate.getUTCMonth() + 1).padStart(2, '0')}`;
-        horaStr = `${String(bDate.getUTCHours()).padStart(2, '0')}:${String(bDate.getUTCMinutes()).padStart(2, '0')}`;
-        diaSemanaStr = NOMES_DIAS_SEMANA[bDate.getUTCDay()];
-      }
+      const { dataStr, horaStr, diaSemanaStr } = formatarDataHoraEvento(ev?.data_evento);
 
       const farda = ev.fardamentos?.[ministerio?.id];
 
@@ -764,17 +769,7 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
                     <div className="space-y-2">
                       {membro.escalas.map((esc) => {
                         const ev = esc.eventos_ministeriais;
-                        const dataEv = ev?.data_evento ? new Date(ev.data_evento) : null;
-                        let dataStr = 'Data indefinida';
-                        let horaStr = '';
-                        let diaSemanaStr = '';
-
-                        if (dataEv) {
-                          const bDate = new Date(dataEv.getTime() - 3 * 3600 * 1000);
-                          dataStr = `${String(bDate.getUTCDate()).padStart(2, '0')}/${String(bDate.getUTCMonth() + 1).padStart(2, '0')}`;
-                          horaStr = `${String(bDate.getUTCHours()).padStart(2, '0')}:${String(bDate.getUTCMinutes()).padStart(2, '0')}`;
-                          diaSemanaStr = NOMES_DIAS_SEMANA[bDate.getUTCDay()];
-                        }
+                        const { dataStr, horaStr, diaSemanaStr } = formatarDataHoraEvento(ev?.data_evento);
 
                         const funcNome = esc.ministerio_funcoes?.nome || 'Voluntário';
                         const farda = ev?.fardamentos?.[ministerio?.id];
@@ -858,17 +853,7 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
         <div className="space-y-4">
           {eventosDoMes.map(ev => {
             const escalasEv = escalasDoMes.filter(e => e.evento_id === ev.id);
-            const dataEv = ev.data_evento ? new Date(ev.data_evento) : null;
-            let dataStr = '';
-            let horaStr = '';
-            let diaSemanaStr = '';
-
-            if (dataEv) {
-              const bDate = new Date(dataEv.getTime() - 3 * 3600 * 1000);
-              dataStr = `${String(bDate.getUTCDate()).padStart(2, '0')}/${String(bDate.getUTCMonth() + 1).padStart(2, '0')}/${bDate.getUTCFullYear()}`;
-              horaStr = `${String(bDate.getUTCHours()).padStart(2, '0')}:${String(bDate.getUTCMinutes()).padStart(2, '0')}`;
-              diaSemanaStr = NOMES_DIAS_SEMANA[bDate.getUTCDay()];
-            }
+            const { dataCompletaStr: dataStr, horaStr, diaSemanaStr } = formatarDataHoraEvento(ev.data_evento);
 
             const farda = ev.fardamentos?.[ministerio?.id];
 

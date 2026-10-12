@@ -244,7 +244,6 @@ export default function PublicConfirmarEscala() {
   function obterHoraExibicao(evento) {
     if (!evento || !evento.data_evento) return 'Horário a definir';
     const dataInicio = parseDatabaseDate(evento.data_evento);
-    const dataFim = extrairHoraFim(evento);
 
     const formatarHora = (d) => {
       const bDate = new Date(d.getTime() - 3 * 3600 * 1000);
@@ -253,12 +252,7 @@ export default function PublicConfirmarEscala() {
       return `${hh}:${mm}`;
     };
 
-    const horaInicioStr = formatarHora(dataInicio);
-    if (dataFim) {
-      const horaFimStr = formatarHora(dataFim);
-      return `${horaInicioStr} - ${horaFimStr}`;
-    }
-    return horaInicioStr;
+    return formatarHora(dataInicio);
   }
 
   function formatarDataCompleta(evento) {

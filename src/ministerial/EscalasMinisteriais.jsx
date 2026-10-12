@@ -452,10 +452,10 @@ export default function EscalasMinisteriais({
     }
   }
 
-  function obterHoraExibicao(ev) {
+  function obterHoraExibicao(ev, apenasInicio = true) {
     if (!ev || !ev.data_evento) return '';
     const dataInicio = parseDatabaseDate(ev.data_evento);
-    const dataFim = extrairHoraFim(ev);
+    const dataFim = apenasInicio ? null : extrairHoraFim(ev);
 
     const formatarHora = (d) => {
       const bDate = new Date(d.getTime() - 3 * 3600 * 1000);
@@ -1909,7 +1909,7 @@ export default function EscalasMinisteriais({
 
         const statusIcon = esc.status === 'confirmado' ? '✅' : esc.status === 'recusado' ? '❌' : '⏳';
 
-        texto += `🗓️ *${idx + 1}. ${diaSemanaLong ? diaSemanaLong.toUpperCase() : ''}, ${Number(dataInfo.diaNum)} de ${mesNome} (${horaStr})* ${statusIcon}\n`;
+        texto += `🗓️ *${idx + 1}. ${diaSemanaLong ? diaSemanaLong.toUpperCase() : ''}, ${Number(dataInfo.diaNum)} de ${mesNome} às ${horaStr}* ${statusIcon}\n`;
         texto += ` • Evento: ${ev?.titulo || 'Culto'}\n`;
         if (minNome) texto += ` • Ministério: ${minNome}\n`;
         texto += ` • Função: ${funcNome}\n`;

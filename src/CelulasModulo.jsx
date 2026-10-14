@@ -71,7 +71,7 @@ export default function CelulasModulo({
     if (!membroLogado) return false;
     const p = (membroLogado.permissao || '').toLowerCase();
 
-    if (['admin', 'pastor'].includes(p)) return true;
+    if (['admin', 'pastor', 'secretaria', 'secretario'].includes(p) || p.includes('secretar')) return true;
     if (p.includes('lider') || p.includes('celula') || p.includes('supervisor')) return true;
     return celulas.some(cell => String(cell.lider_id || '') === String(membroLogado.id) || String(cell.co_lider_id || '') === String(membroLogado.id) || (membroLogado.celula_id && String(cell.id) === String(membroLogado.celula_id) && ['lider-celula', 'lider', 'supervisor'].includes(p)));
   }, [membroLogado, celulas]);
@@ -1283,7 +1283,7 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
     return () => clearTimeout(timer);
   }, [buscaTermo, isModalAberto]);
 
-  const isMembro = !['admin', 'pastor', 'lider-celula', 'lider', 'supervisor', 'secretaria'].includes(membroLogado?.permissao?.toLowerCase()) && !celulas.some(cell => String(cell.lider_id || '') === String(membroLogado?.id) || String(cell.co_lider_id || '') === String(membroLogado?.id));
+  const isMembro = !['admin', 'pastor', 'lider-celula', 'lider', 'supervisor', 'secretaria', 'secretario'].includes(membroLogado?.permissao?.toLowerCase()?.trim()) && !celulas.some(cell => String(cell.lider_id || '') === String(membroLogado?.id) || String(cell.co_lider_id || '') === String(membroLogado?.id));
 
   // Define a aba inicial como 'membros' se for desktop
   useEffect(() => {
@@ -2238,7 +2238,7 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
     if (!membroLogado) return false;
     const p = (membroLogado.permissao || '').toLowerCase();
 
-    if (['admin', 'pastor'].includes(p)) return true;
+    if (['admin', 'pastor', 'secretaria', 'secretario'].includes(p) || p.includes('secretar')) return true;
     if (celula && (String(celula.lider_id || '') === String(membroLogado.id) || String(celula.co_lider_id || '') === String(membroLogado.id))) return true;
     if (p.includes('lider') || p.includes('celula') || p.includes('supervisor')) return true;
     return false;

@@ -950,8 +950,8 @@ export default function OverviewDashboard({
                         <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Recomendação de entradas e saídas pagas nos últimos 6 meses</p>
                       </div>
                       
-                      <div className="w-full h-80">
-                        <ResponsiveContainer width="100%" height="100%">
+                      <div className="w-full h-80 min-w-0">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                           <ComposedChart data={financeData.graficoData} style={{ outline: 'none' }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />

@@ -138,7 +138,7 @@ function vinculosPermissaoMembro(membro) {
 }
 
 function calcularPermissoesPorPerfil(membro) {
-  const chave = String(membro?.permissao || 'membro').toLowerCase();
+  const chave = String(membro?.permissao || 'membro').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const itens = [];
 
   const push = (modulo, blocos) => {
@@ -166,7 +166,7 @@ function calcularPermissoesPorPerfil(membro) {
     return itens;
   }
 
-  if (chave.includes('secretaria')) {
+  if (chave.includes('secretar')) {
     push('Visão Geral', ['Dashboard', 'Indicadores e gráficos']);
     push('Pessoas', ['Ver todos', 'Adicionar pessoa', 'Aniversariantes', 'Relatórios', 'Ficha do membro']);
     push('Células', ['Lista de células', 'Nova célula', 'Reuniões', 'Detalhes da célula', 'Membros da célula']);

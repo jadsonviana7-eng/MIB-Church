@@ -117,8 +117,8 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
     <Card className={`p-0 ${className}`.trim()}>
       <CardHeader titulo={titulo} hideOnMobile={hideHeaderOnMobile} />
       <div className={`p-6 flex flex-col items-center gap-6 ${isHalfCircle ? (hideLegend ? 'min-h-[260px]' : 'min-h-[360px]') : 'min-h-[420px]'}`}>
-        <div className={`relative w-full max-w-md ${isHalfCircle ? 'h-56' : 'h-72'}`}>
-          <ResponsiveContainer width="100%" height="100%">
+        <div className={`relative w-full max-w-md min-w-0 ${isHalfCircle ? 'h-56' : 'h-72'}`}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
             <PieChart margin={isHalfCircle ? { top: 0, right: 10, bottom: 0, left: 10 } : { top: 20, right: 20, bottom: 20, left: 20 }} style={{ outline: 'none' }}>
               <Pie
                 activeIndex={activeIndex}
@@ -206,8 +206,8 @@ export function CombinationCard({ titulo, dados, periodo, setPeriodo, hideHeader
           </select>
         )}
       />
-      <div className="p-6 h-80">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="p-6 h-80 min-w-0">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
           <ComposedChart data={chartData} style={{ outline: 'none' }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="name" tick={{fontSize: 11}} axisLine={false} tickLine={false} />
@@ -237,8 +237,8 @@ export function ColumnChart({ titulo, dados, hideHeaderOnMobile = false, hideLeg
     <Card className={`p-0 ${className}`.trim()}>
       <CardHeader titulo={titulo} hideOnMobile={hideHeaderOnMobile} />
       <div className="p-6 flex flex-col items-center gap-6 min-h-[420px]">
-        <div className="w-full h-80">
-        <ResponsiveContainer width="100%" height="100%">
+        <div className="w-full h-80 min-w-0">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
           <BarChart data={chartData} style={{ outline: 'none' }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="name" tick={{fontSize: 10}} axisLine={false} tickLine={false} />
@@ -591,3 +591,4 @@ export function MinistryIcon({ icone, className = '', size = 20, style = {} }) {
 }
 
 export { default as ModalDuplicidadeCadastro } from './ModalDuplicidadeCadastro';
+export { default as ModalLinkCopiado } from './ModalLinkCopiado';

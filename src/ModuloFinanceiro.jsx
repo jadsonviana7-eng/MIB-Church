@@ -856,7 +856,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                   Nenhum lançamento no filtro.
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                   <ComposedChart data={dadosEvolucaoTemporal} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
@@ -899,7 +899,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                     Sem receitas no filtro.
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                     <BarChart data={dadosCategoriasFiltradas.receitas} layout="vertical" margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                       <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} />
@@ -932,7 +932,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                     Sem despesas no filtro.
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                     <BarChart data={dadosCategoriasFiltradas.despesas} layout="vertical" margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                       <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} />
@@ -968,7 +968,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 {dadosStatusPie.length === 0 ? (
                   <div className="text-slate-400 text-xs italic">Sem dados no filtro.</div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                     <PieChart>
                       <Pie
                         data={dadosStatusPie}
@@ -1007,7 +1007,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                     Sem dados por conta no filtro.
                   </div>
                 ) : (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                     <BarChart data={dadosSaldosContas} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                       <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />

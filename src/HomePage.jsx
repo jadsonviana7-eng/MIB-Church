@@ -797,8 +797,8 @@ export default function HomePage({
                     <h4 className="font-bold text-slate-800 text-xs">Fluxo de Caixa Mensal</h4>
                     <p className="text-[9px] text-slate-400">Recomendação dos últimos 6 meses</p>
                   </div>
-                  <div className="w-full h-64">
-                    <ResponsiveContainer width="100%" height="100%">
+                  <div className="w-full h-64 min-w-0">
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                       <ComposedChart data={financeData.graficoData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} style={{ outline: 'none' }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" tick={{ fontSize: 8 }} axisLine={false} tickLine={false} />

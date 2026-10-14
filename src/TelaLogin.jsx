@@ -12,6 +12,17 @@ const perfisAcesso = [
   { id: 'tesouraria', nome: 'Tesouraria', iniciais: 'TS' },
 ];
 
+function normalizarPermissaoLogin(perm) {
+  if (!perm) return 'membro';
+  const p = String(perm).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (p === 'secretaria' || p === 'secretario') return 'secretaria';
+  if (p === 'tesouraria' || p === 'tesoureiro' || p === 'tesoureira' || p === 'financeiro') return 'tesouraria';
+  if (p === 'pastor' || p === 'pastora') return 'pastor';
+  if (p === 'admin' || p === 'administrador') return 'admin';
+  if (p.includes('lider') || p.includes('celula') || p.includes('supervisor')) return 'lider-celula';
+  return p;
+}
+
 /* ── modos da tela ── */
 const MODO = {
   LOGIN: 'login',
@@ -79,12 +90,19 @@ export default function TelaLogin({ onEntrar }) {
           }
           // Busca o perfil real no banco para a sessão ativa
           const { data: pData } = await supabase.from('pessoas')
-            .select('permissao')
+            .select('nome, permissao, permissoes_json')
             .eq('email', session.user.email)
             .maybeSingle();
-          const pId = pData?.permissao?.toLowerCase() || 'membro';
+          const pId = normalizarPermissaoLogin(pData?.permissao);
           const perfil = perfisAcesso.find(p => p.id === pId) || perfisAcesso.find(p => p.id === 'membro');
-          onEntrar({ id: session.user.id, email: session.user.email, perfil, lembrarAcesso: true });
+          onEntrar({
+            id: session.user.id,
+            email: session.user.email,
+            nome: pData?.nome,
+            perfil,
+            permissoes_json: pData?.permissoes_json || {},
+            lembrarAcesso: true
+          });
         }
       } catch {
         // Mantem a tela de login disponível quando a sessão não puder ser verificada.
@@ -179,7 +197,7 @@ export default function TelaLogin({ onEntrar }) {
         .maybeSingle();
 
       if (data && data.permissao) {
-        const pId = data.permissao.toLowerCase();
+        const pId = normalizarPermissaoLogin(data.permissao);
         const perfil = perfisAcesso.find(x => x.id === pId) || perfisAcesso.find(x => x.id === 'membro');
         setPerfilIdentificado(perfil);
       } else {
@@ -200,19 +218,30 @@ export default function TelaLogin({ onEntrar }) {
       if (error) { setErro(error.message === 'Invalid login credentials' ? 'E-mail ou senha incorretos.' : error.message); return; }
       if (data?.user) {
         // Ao logar, busca a permissão oficial da tabela pessoas
-        const { data: pData } = await supabase.from('pessoas').select('permissao').eq('email', data.user.email).maybeSingle();
-        const pId = pData?.permissao?.toLowerCase() || 'membro';
+        const { data: pData } = await supabase.from('pessoas')
+          .select('nome, permissao, permissoes_json')
+          .eq('email', data.user.email)
+          .maybeSingle();
+        const pId = normalizarPermissaoLogin(pData?.permissao);
         const perfil = perfisAcesso.find(p => p.id === pId) || perfisAcesso.find(p => p.id === 'membro');
+        const sessaoUsuario = {
+          id: data.user.id,
+          email: data.user.email,
+          nome: pData?.nome,
+          perfil,
+          permissoes_json: pData?.permissoes_json || {},
+          lembrarAcesso: lembrar
+        };
 
         // Se o usuário logou usando uma senha padrão, redireciona para cadastrar definitiva
         const senhasPadrao = ['mib123', 'mib@123', 'mudar123', 'senha123', '123456', '12345678', 'mib2026', 'igreja123', 'mib2026@', 'mibchurch'];
         if (senhasPadrao.includes(senha.trim().toLowerCase())) {
-          setDadosUsuarioTemp({ id: data.user.id, email: data.user.email, perfil, lembrarAcesso: lembrar });
+          setDadosUsuarioTemp(sessaoUsuario);
           setNovaSenha('');
           setConfirmarSenha('');
           setModo(MODO.ALTERAR_SENHA_PADRAO);
         } else {
-          onEntrar({ id: data.user.id, email: data.user.email, perfil, lembrarAcesso: lembrar });
+          onEntrar(sessaoUsuario);
         }
       }
     } catch { setErro('Erro ao conectar. Tente novamente.'); }

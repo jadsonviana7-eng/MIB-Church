@@ -1363,7 +1363,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
           <span className="sm:hidden">Voltar</span>
         </button>
         <div className="flex items-center justify-end gap-1 sm:gap-2 flex-wrap">
-          {['admin', 'pastor', 'tesouraria', 'financeiro', 'secretaria'].includes(membroLogado?.permissao) && (
+          {['admin', 'pastor', 'tesouraria', 'financeiro', 'secretaria', 'secretario'].includes((membroLogado?.permissao || '').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '')) && (
             <button
               className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2 text-blue-600 border-blue-200 bg-blue-50 font-bold"
               onClick={onAbrirLeitor}
@@ -1381,8 +1381,16 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
             className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2"
             onClick={() => {
               const url = `${window.location.origin}/inscricao-evento/${evento.id}`;
-              navigator.clipboard.writeText(url);
-              alert('Link do formulário copiado!');
+              navigator.clipboard?.writeText?.(url);
+              if (window.modalLinkCopiado) {
+                window.modalLinkCopiado({
+                  url,
+                  titulo: 'Link de Inscrição Copiado!',
+                  subtitulo: `Link público de inscrição para "${evento.titulo || 'o evento'}".`
+                });
+              } else {
+                alert('Link do formulário copiado!');
+              }
             }}
             title="Copiar Link"
           >
@@ -1495,11 +1503,11 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
         {/* GRÁFICO DE INSCRIÇÕES POR PERÍODO */}
         <Card className="lg:col-span-2 p-0 overflow-hidden">
           <CardHeader titulo="Inscrições por Período" subtitulo="Tendência de novas adesões ao longo do tempo." />
-          <div className="h-64 p-6 pt-2">
+          <div className="h-64 p-6 pt-2 min-w-0">
             {chartData.length === 0 ? (
               <div className="h-full flex items-center justify-center text-slate-400 italic text-sm">Aguardando as primeiras inscrições...</div>
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                 <LineChart data={chartData} style={{ outline: 'none' }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />

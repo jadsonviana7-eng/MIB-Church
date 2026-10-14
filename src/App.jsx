@@ -10,7 +10,7 @@ import PessoasModulo from './PessoasModulo';
 import ModuloFinanceiro from './ModuloFinanceiro';
 import ModuloUtilitarios from './ModuloUtilitarios';
 import EscolasModulo from './EscolasModulo';
-import { ConfirmModal, ModalWrapper, ModalDuplicidadeCadastro } from './ui';
+import { ConfirmModal, ModalWrapper, ModalDuplicidadeCadastro, ModalLinkCopiado } from './ui';
 import GestaoMinisterial from './GestaoMinisterial';
 import AgendaModulo from './AgendaModulo';
 import PublicEventRegistration from './PublicEventRegistration';
@@ -28,10 +28,22 @@ const filtrosIniciais = {
   atuacao: '', batizado: '', relatorioCampo: '', relatorioValor: ''
 };
 
+export function normalizarPermissao(perm) {
+  if (!perm) return 'membro';
+  const p = String(perm).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (p === 'secretaria' || p === 'secretario') return 'secretaria';
+  if (p === 'tesouraria' || p === 'tesoureiro' || p === 'tesoureira' || p === 'financeiro') return 'tesouraria';
+  if (p === 'pastor' || p === 'pastora') return 'pastor';
+  if (p === 'admin' || p === 'administrador') return 'admin';
+  if (p.includes('lider') || p.includes('celula') || p.includes('supervisor')) return 'lider-celula';
+  return p;
+}
+
 
 export default function App() {
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [duplicidadeDialog, setDuplicidadeDialog] = useState(null);
+  const [linkCopiadoDialog, setLinkCopiadoDialog] = useState(null);
 
   useEffect(() => {
     window.confirmModal = (titulo, mensagem) => {
@@ -47,6 +59,11 @@ export default function App() {
           resolve,
         });
       });
+    };
+
+    window.modalLinkCopiado = (opcoesOuUrl) => {
+      const opcoes = typeof opcoesOuUrl === 'string' ? { url: opcoesOuUrl } : (opcoesOuUrl || {});
+      setLinkCopiadoDialog(opcoes);
     };
   }, []);
   // Filtros para Células
@@ -172,8 +189,33 @@ export default function App() {
   }, [menuAberto, moduloAtual]);
 
   const membroLogado = useMemo(() => {
-    if (!usuarioLogado?.email || pessoas.length === 0) return null;
-    return pessoas.find(p => p.email?.toLowerCase() === usuarioLogado.email.toLowerCase());
+    if (!usuarioLogado) return null;
+    const emailUsuario = usuarioLogado.email ? usuarioLogado.email.trim().toLowerCase() : '';
+    const idUsuario = usuarioLogado.id ? String(usuarioLogado.id).trim() : '';
+
+    const encontrado = pessoas.find(p => {
+      const emailPessoa = p.email ? String(p.email).trim().toLowerCase() : '';
+      if (emailUsuario && emailPessoa && emailUsuario === emailPessoa) return true;
+      if (idUsuario && (String(p.auth_user_id || '').trim() === idUsuario || String(p.id || '').trim() === idUsuario)) return true;
+      return false;
+    });
+
+    if (encontrado) return encontrado;
+
+    // Fallback resiliente: se o usuário está logado, usa os dados do perfil autenticado
+    // garantindo que o menu e as permissões carreguem imediatamente mesmo enquanto a tabela pessoas carrega
+    if (usuarioLogado.perfil?.id) {
+      return {
+        id: usuarioLogado.id,
+        email: usuarioLogado.email,
+        nome: usuarioLogado.nome || usuarioLogado.user_metadata?.nome || usuarioLogado.email?.split('@')[0] || 'Usuário',
+        permissao: usuarioLogado.perfil.id,
+        cargo: usuarioLogado.perfil.nome || usuarioLogado.perfil.id,
+        permissoes_json: usuarioLogado.permissoes_json || {}
+      };
+    }
+
+    return null;
   }, [usuarioLogado, pessoas]);
 
   const [reunioesVistas, setReunioesVistas] = useState([]);
@@ -321,7 +363,7 @@ export default function App() {
         }
       });
 
-      const isPastorOuAdmin = ['pastor', 'admin'].includes(membroLogado.permissao);
+      const isPastorOuAdmin = ['pastor', 'admin'].includes(normalizarPermissao(membroLogado.permissao));
 
       if (isPastorOuAdmin) {
         // 2. Novos cadastros
@@ -496,21 +538,21 @@ export default function App() {
     return celulas.filter(c =>
       String(c.lider_id || '') === String(membroLogado.id) ||
       String(c.co_lider_id || '') === String(membroLogado.id) ||
-      (membroLogado.celula_id && String(c.id) === String(membroLogado.celula_id) && ['lider-celula', 'lider', 'supervisor'].includes((membroLogado.permissao || '').toLowerCase()))
+      (membroLogado.celula_id && String(c.id) === String(membroLogado.celula_id) && ['lider-celula', 'lider', 'supervisor'].includes(normalizarPermissao(membroLogado.permissao)))
     );
   }, [celulas, membroLogado]);
 
   const isAdminOuPastor = useMemo(() => {
     if (!membroLogado) return false;
-    const p = (membroLogado.permissao || '').toLowerCase();
+    const p = normalizarPermissao(membroLogado.permissao);
     return p === 'admin' || p === 'pastor' || p === 'secretaria';
   }, [membroLogado]);
 
   const isPerfilLiderCelula = useMemo(() => {
     if (!membroLogado) return false;
-    const p = (membroLogado.permissao || '').toLowerCase();
+    const p = normalizarPermissao(membroLogado.permissao);
 
-    const temPermissaoDeclarada = p.includes('lider') || p.includes('celula') || p.includes('supervisor');
+    const temPermissaoDeclarada = p === 'lider-celula' || p.includes('lider') || p.includes('celula') || p.includes('supervisor');
 
     return temPermissaoDeclarada || celulasDoLider.length > 0;
   }, [membroLogado, celulasDoLider]);
@@ -550,7 +592,8 @@ export default function App() {
    */
   const hasAccess = useCallback((modulo, bloco = null, acao = null) => {
     if (!membroLogado) return false;
-    if (membroLogado.permissao === 'admin') return true;
+    const p = normalizarPermissao(membroLogado.permissao);
+    if (p === 'admin') return true;
 
     const json = membroLogado.permissoes_json || {};
     const temManual = Object.keys(json).length > 0;
@@ -573,9 +616,6 @@ export default function App() {
         if (Object.keys(json).some(k => k.startsWith(`${modulo}|`) && json[k] === true)) return true;
       }
     }
-
-    // Segue as regras padrões de perfil de acesso (Aditivo/Fallback)
-    const p = membroLogado.permissao?.toLowerCase() || 'membro';
 
     // Se for líder de célula (por perfil de permissão ou por liderar uma célula no BD), concede acesso às funções de célula
     if (modulo === 'Células' && isPerfilLiderCelula) {
@@ -814,13 +854,9 @@ export default function App() {
       const pessoasFiltradas = (dadosPessoas || []).filter((p) => normalizarTexto(p.status) !== 'excluido');
       setPessoas(pessoasFiltradas);
 
-      // Se a lista veio vazia (bloqueio de RLS por sessão expirada/inválida), força logout limpo
+      // Se a lista de pessoas veio vazia (ex: restrição pontual de RLS), mantém a sessão ativa com o perfil autenticado
       if (pessoasFiltradas.length === 0) {
-        console.warn('Nenhuma pessoa retornada do banco (sessão potencialmente expirada). Redirecionando para login...');
-        localStorage.removeItem('mibChurchSessao');
-        setUsuarioLogado(null);
-        setCarregando(false);
-        return;
+        console.warn('Nenhuma pessoa retornada do banco. Mantendo sessão ativa com perfil identificado...');
       }
 
       const { data: dadosCargos, error: erroCargos } = await supabase.from('cargos').select('*').order('nome');
@@ -1346,7 +1382,7 @@ export default function App() {
               membroLogado={membroLogado}
               onSair={handleSair}
               onVerPerfil={() => { 
-                if (membroLogado?.permissao === 'membro') {
+                if (normalizarPermissao(membroLogado?.permissao) === 'membro') {
                   setModuloAtual('dashboard');
                   setMembroSelecionadoId(membroLogado?.id);
                 } else {
@@ -1807,7 +1843,7 @@ export default function App() {
         </button>
 
         {/* Botão Busca */}
-        {membroLogado?.permissao !== 'membro' && (
+        {normalizarPermissao(membroLogado?.permissao) !== 'membro' && (
         <button
           onClick={() => { setBuscaMobile(''); setBuscaMobileAberta(true); }}
           className="flex flex-col items-center gap-1 text-slate-400 relative active:scale-95 transition-transform cursor-pointer"
@@ -1861,7 +1897,7 @@ export default function App() {
                   onVerPerfil={() => setMembroSelecionadoId(membroLogado.id)}
                 />
               )
-            ) : membroLogado?.permissao === 'membro' ? (
+            ) : normalizarPermissao(membroLogado?.permissao) === 'membro' ? (
               membroSelecionadoId ? (
                 <DetalhesMembro
                   pessoaId={membroSelecionadoId}
@@ -2113,6 +2149,15 @@ export default function App() {
                 navegar('pessoas', 'todos');
               }
             }}
+          />
+        )}
+        {linkCopiadoDialog && (
+          <ModalLinkCopiado
+            aberto={true}
+            url={linkCopiadoDialog.url}
+            titulo={linkCopiadoDialog.titulo}
+            subtitulo={linkCopiadoDialog.subtitulo}
+            onFechar={() => setLinkCopiadoDialog(null)}
           />
         )}
 

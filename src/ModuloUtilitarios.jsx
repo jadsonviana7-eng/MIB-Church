@@ -38,7 +38,7 @@ function getUtilitarios({ membroLogado, temVinculoEscala }) {
       desc: 'Gere o gráfico de ofertas semanais para compartilhamento.',
       icon: MenuIcons['u-relatorio-semanal'],
       gradient: 'from-purple-500 to-fuchsia-500',
-      show: ['admin', 'pastor', 'secretaria'].includes(membroLogado?.permissao),
+      show: ['admin', 'pastor', 'secretaria', 'secretario'].includes((membroLogado?.permissao || '').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '')),
     },
     {
       id: 'visitante-recepcao',

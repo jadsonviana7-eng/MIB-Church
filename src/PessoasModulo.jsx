@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Card, CardHeader, Avatar, SelectFiltro, ColumnChart, DoughnutCard, PageHeader } from './ui';
+import { Card, CardHeader, Avatar, SelectFiltro, ColumnChart, DoughnutCard, PageHeader, ModalLinkCopiado } from './ui';
 import { supabase } from './supabaseClient';
 import DetalhesMembro from './DetalhesMembro';
 import FormularioCadastro from './FormularioCadastro';
@@ -302,11 +302,28 @@ function TabelaPessoas({ pessoas, onSelecionar }) {
 }
 
 function LinkPublicoCadastro({ onNavigate }) {
-  const urlPublica = window.location.origin + '/cadastro-publico';
+  const urlPublica = typeof window !== 'undefined' ? `${window.location.origin}/cadastro-publico` : '';
+  const [modalAberto, setModalAberto] = useState(false);
   
-  const copiarLink = () => {
-    navigator.clipboard.writeText(urlPublica);
-    window.alert('✅ Link copiado! Agora você pode colar no WhatsApp ou redes sociais.');
+  const copiarLink = async () => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(urlPublica);
+      }
+    } catch (err) {
+      console.warn('Erro ao copiar link:', err);
+    }
+    setModalAberto(true);
+  };
+
+  const abrirWhatsApp = () => {
+    const textoMensagem = encodeURIComponent(
+      `Olá! Seja muito bem-vindo(a) à MIB Church! ✨\n\n` +
+      `Para realizar o seu cadastro em nossa comunidade e acompanhar nossos ministérios e atividades, acesse o link de autocadastro abaixo:\n\n` +
+      `${urlPublica}\n\n` +
+      `Ficamos muito felizes em ter você conosco! Deus abençoe! 🙏`
+    );
+    window.open(`https://api.whatsapp.com/send?text=${textoMensagem}`, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -318,46 +335,72 @@ function LinkPublicoCadastro({ onNavigate }) {
         subtitulo="Compartilhe este link para que novos membros preencham seus próprios dados."
       />
       
-      <Card className="p-8 text-center max-w-2xl mx-auto bg-gradient-to-br from-white to-blue-50/20">
-        <div className="w-20 h-20 bg-blue-100 text-blue-600 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-6 shadow-sm">
+      <Card className="p-6 sm:p-8 text-center max-w-2xl mx-auto bg-gradient-to-br from-white to-blue-50/25 border-slate-200/80 shadow-md">
+        <div className="w-18 h-18 bg-blue-100/90 text-blue-600 rounded-3xl flex items-center justify-center text-3xl mx-auto mb-5 shadow-sm ring-4 ring-blue-50">
           🔗
         </div>
         
-        <h3 className="text-xl font-bold text-slate-800 mb-2">Pronto para compartilhar!</h3>
-        <p className="text-sm text-slate-500 mb-8 max-w-md mx-auto leading-relaxed">
+        <h3 className="text-xl font-black text-slate-850 mb-2 tracking-tight">Pronto para compartilhar!</h3>
+        <p className="text-sm text-slate-500 mb-6 max-w-md mx-auto leading-relaxed">
           Copie o link abaixo e envie pelo WhatsApp para novos convertidos ou visitantes. 
           O formulário exibe automaticamente a logo e dados configurados em sua igreja.
         </p>
         
-        <div className="flex flex-col sm:flex-row items-stretch gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <code className="text-[11px] font-mono font-bold text-blue-700 bg-blue-50/50 px-4 py-3 rounded-xl flex-1 flex items-center break-all text-left">
+        <div className="flex flex-col sm:flex-row items-stretch gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs mb-4">
+          <code className="text-[11px] font-mono font-bold text-blue-700 bg-blue-50/60 px-4 py-3 rounded-xl flex-1 flex items-center break-all text-left select-all">
             {urlPublica}
           </code>
           <button 
+            type="button"
             onClick={copiarLink}
-            className="px-6 py-3 bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-xl text-xs font-bold transition-all active:scale-95 shadow-lg shadow-blue-900/20 whitespace-nowrap"
+            className="px-6 py-3 bg-[#1e3a8a] hover:bg-[#1e40af] text-white rounded-xl text-xs font-bold transition-all active:scale-95 shadow-md shadow-blue-900/20 whitespace-nowrap cursor-pointer flex items-center justify-center gap-1.5"
           >
             📋 Copiar Link
           </button>
         </div>
+
+        {/* Botões Rápidos de Ação */}
+        <div className="flex flex-wrap items-center justify-center gap-2.5 max-w-md mx-auto mb-8">
+          <button
+            type="button"
+            onClick={abrirWhatsApp}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200/70 transition-all cursor-pointer active:scale-95"
+          >
+            💬 Enviar pelo WhatsApp
+          </button>
+          <button
+            type="button"
+            onClick={() => window.open(urlPublica, '_blank', 'noopener,noreferrer')}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-700 text-xs font-bold transition-all cursor-pointer active:scale-95"
+          >
+            ↗️ Visualizar Formulário
+          </button>
+        </div>
         
-        <div className="mt-10 pt-8 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-6 text-left">
-          <div className="flex gap-4">
+        <div className="mt-6 pt-6 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-5 text-left">
+          <div className="flex gap-3.5">
             <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">🛡️</div>
             <div>
-              <p className="text-xs font-bold text-slate-700 uppercase tracking-tight">Segurança Total</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">O link permite apenas a criação de novos cadastros. Ninguém poderá ver dados de outros membros por aqui.</p>
+              <p className="text-xs font-bold text-slate-800 uppercase tracking-tight">Segurança Total</p>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">O link permite apenas a criação de novos cadastros. Ninguém poderá ver dados de outros membros por aqui.</p>
             </div>
           </div>
-          <div className="flex gap-4">
+          <div className="flex gap-3.5">
             <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center shrink-0">✨</div>
             <div>
-              <p className="text-xs font-bold text-slate-700 uppercase tracking-tight">Identidade Visual</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">A logo e os contatos que aparecem no topo são os que você definiu na tela de "Configurações".</p>
+              <p className="text-xs font-bold text-slate-800 uppercase tracking-tight">Identidade Visual</p>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">A logo e os contatos que aparecem no topo são os que você definiu na tela de "Configurações".</p>
             </div>
           </div>
         </div>
       </Card>
+
+      {/* Modal Elegante de Confirmação e Compartilhamento */}
+      <ModalLinkCopiado
+        aberto={modalAberto}
+        onFechar={() => setModalAberto(false)}
+        url={urlPublica}
+      />
     </div>
   );
 }

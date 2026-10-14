@@ -390,26 +390,27 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
   return (
     <div className="space-y-4 sm:space-y-6 pb-12">
 
-      {/* CONTEINER DO TÍTULO DA PÁGINA (PAGE HEADER) NO TOPO */}
-      <PageHeader
-        titulo={
-          abaAtiva === 'resumo' ? 'Visão Geral & Gráficos' :
+      {/* CONTEINER DO TÍTULO DA PÁGINA (PAGE HEADER) NO TOPO - OCULTO NA ABA RESUMO/DASHBOARD */}
+      {abaAtiva !== 'resumo' && (
+        <PageHeader
+          titulo={
             abaAtiva === 'transacoes' ? 'Transações Financeiras' :
               abaAtiva === 'categorias' ? 'Categorias Financeiras' :
                 abaAtiva === 'contas' ? 'Contas & Caixas' :
                   abaAtiva === 'relatorios' ? 'Relatórios Financeiros' :
                     'Histórico & Logs'
-        }
+          }
 
-        breadcrumb={
-          abaAtiva === 'transacoes' ? ['Financeiro', 'Transações'] :
-            abaAtiva === 'categorias' ? ['Financeiro', 'Categorias'] :
-              abaAtiva === 'contas' ? ['Financeiro', 'Contas'] :
-                abaAtiva === 'relatorios' ? ['Financeiro', 'Relatórios'] :
-                  ['Financeiro', 'Histórico']
-        }
-        onNavigate={abaAtiva !== 'resumo' ? () => handleMudarAba('resumo') : undefined}
-      />
+          breadcrumb={
+            abaAtiva === 'transacoes' ? ['Financeiro', 'Transações'] :
+              abaAtiva === 'categorias' ? ['Financeiro', 'Categorias'] :
+                abaAtiva === 'contas' ? ['Financeiro', 'Contas'] :
+                  abaAtiva === 'relatorios' ? ['Financeiro', 'Relatórios'] :
+                    ['Financeiro', 'Histórico']
+          }
+          onNavigate={() => handleMudarAba('resumo')}
+        />
+      )}
 
       {/* NAVEGAÇÃO SUPERIOR DE SUBMÓDULOS - EXIBIDO APENAS NA PÁGINA RESUMO */}
       {abaAtiva === 'resumo' && (

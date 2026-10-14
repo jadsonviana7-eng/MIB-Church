@@ -1,18 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
-import { 
-  Download, 
-  FileSpreadsheet, 
-  Users, 
-  CheckCircle, 
-  AlertCircle, 
-  XCircle, 
-  Award, 
-  Target, 
-  Star, 
-  TrendingUp, 
-  Calendar, 
-  AlertTriangle, 
-  ShieldCheck, 
+import {
+  Download,
+  FileSpreadsheet,
+  Users,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  Award,
+  Target,
+  Star,
+  TrendingUp,
+  Calendar,
+  AlertTriangle,
+  ShieldCheck,
   Briefcase,
   Search,
   X
@@ -21,12 +21,12 @@ import { supabase } from '../supabaseClient';
 import { ministeriosService } from './services/ministeriosService';
 import { jsPDF } from 'jspdf';
 
-export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNavegarGlobal }) {
+export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNavegarGlobal, hideHeader = false }) {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'exportar'
   const [toastMsg, setToastMsg] = useState('');
   const [rawDados, setRawDados] = useState(null);
-  
+
   // Modal de Detalhamento por Indicador (Pessoas/Voluntários)
   const [modalIndicadorAberto, setModalIndicadorAberto] = useState(null); // null | 'voluntarios' | 'servicos' | 'pendentes' | 'recusadas'
   const [buscaIndicador, setBuscaIndicador] = useState('');
@@ -36,7 +36,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
     if (modalIndicadorAberto) {
       try {
         window.history.pushState({ modalIndicador: modalIndicadorAberto }, '');
-      } catch (e) {}
+      } catch (e) { }
 
       const handlePop = () => {
         setModalIndicadorAberto(null);
@@ -48,7 +48,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       };
     }
   }, [modalIndicadorAberto]);
-  
+
   // State da Central de Respostas Estratégicas
   const [activeQuestao, setActiveQuestao] = useState('crescimento'); // 'crescimento' | 'sem_escalar' | 'sobrecarga' | 'lider_equipe'
 
@@ -353,7 +353,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
             doc.addPage();
             y = 20;
             drawHeader('Relatório Geral de Voluntários por Ministério');
-            
+
             doc.setFont('Helvetica', 'bold');
             doc.setFontSize(10);
             doc.setTextColor(30, 41, 59);
@@ -827,7 +827,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
               doc.addPage();
               y = 20;
               drawHeader();
-              
+
               doc.setFillColor(241, 245, 249);
               doc.rect(margin, y, contentWidth, 8, 'F');
               doc.setFont('Helvetica', 'bold');
@@ -866,7 +866,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
 
             doc.text(ministerioStr, margin + 3, y + 5);
             doc.text(funcaoStr, margin + 50, y + 5);
-            
+
             if (item.status === 'confirmado') {
               doc.setFont('Helvetica', 'bold');
               doc.setTextColor(15, 23, 42);
@@ -1177,12 +1177,12 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       } else if (ultimaData < trintaDiasAtras) {
         const diffTime = Math.abs(new Date() - ultimaData);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
+
         const YYYY = ultimaData.getFullYear();
         const MM = String(ultimaData.getMonth() + 1).padStart(2, '0');
         const DD = String(ultimaData.getDate()).padStart(2, '0');
         const dataFormatada = `${DD}/${MM}/${YYYY}`;
-        
+
         voluntarioSemEscala.push({
           pessoa_id: pessoaId,
           nome: pessoa.nome,
@@ -1198,7 +1198,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
     const rankingSobrecarga = ministerios.map(min => {
       const membrosCount = membros.filter(m => m.ministerio_id === min.id).length;
       const participacoesMin = escalasMesAtual.filter(e => e.ministerio_id === min.id && e.status === 'confirmado').length;
-      
+
       const razao = membrosCount > 0 ? (participacoesMin / membrosCount) : 0;
       let statusSobrecarga = 'Normal ✅';
       let statusCor = 'text-emerald-600 bg-emerald-50 border-emerald-100';
@@ -1266,28 +1266,28 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
       )}
 
       {/* HEADER E TABS */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight">Indicadores e Relatórios</h2>
-          <p className="text-xs text-slate-500">Gestão analítica, auditoria de escalas, justificativas e dados de assiduidade.</p>
-        </div>
+      <div className={`flex ${hideHeader ? 'justify-end' : 'flex-col sm:flex-row justify-between items-start sm:items-center'} gap-4`}>
+        {!hideHeader && (
+          <div>
+            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Indicadores e Relatórios</h2>
+
+          </div>
+        )}
 
         <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 gap-1 self-stretch sm:self-auto">
           <button
             type="button"
             onClick={() => setActiveTab('dashboard')}
-            className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              activeTab === 'dashboard' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-            }`}
+            className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${activeTab === 'dashboard' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              }`}
           >
             Dashboard V3
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('exportar')}
-            className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              activeTab === 'exportar' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-            }`}
+            className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${activeTab === 'exportar' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              }`}
           >
             Exportar Planilhas
           </button>
@@ -1299,7 +1299,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
           {/* CARDS INDICADORES (6 CARDS METRICOS) */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
             {/* Card 1: Voluntários Ativos */}
-            <div 
+            <div
               onClick={() => {
                 setModalIndicadorAberto('voluntarios');
                 setBuscaIndicador('');
@@ -1323,7 +1323,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
             </div>
 
             {/* Card 2: Serviços do Mês */}
-            <div 
+            <div
               onClick={() => {
                 setModalIndicadorAberto('servicos');
                 setBuscaIndicador('');
@@ -1347,7 +1347,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
             </div>
 
             {/* Card 3: Faltas Justificadas */}
-            <div 
+            <div
               onClick={() => {
                 setModalIndicadorAberto('faltas_justificadas');
                 setBuscaIndicador('');
@@ -1371,7 +1371,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
             </div>
 
             {/* Card 4: Faltas Injustificadas / Negativações */}
-            <div 
+            <div
               onClick={() => {
                 setModalIndicadorAberto('faltas_injustificadas');
                 setBuscaIndicador('');
@@ -1395,7 +1395,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
             </div>
 
             {/* Card 5: Escalas Pendentes */}
-            <div 
+            <div
               onClick={() => {
                 setModalIndicadorAberto('pendentes');
                 setBuscaIndicador('');
@@ -1419,7 +1419,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
             </div>
 
             {/* Card 6: Recusas Gerais */}
-            <div 
+            <div
               onClick={() => {
                 setModalIndicadorAberto('recusadas');
                 setBuscaIndicador('');
@@ -1455,8 +1455,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                 </div>
                 <div className="space-y-3.5">
                   {stats.graficoMembrosPorMin.map((item) => (
-                    <div 
-                      key={item.id} 
+                    <div
+                      key={item.id}
                       onClick={() => {
                         if (onNavegarTab) onNavegarTab('config', { ministerioId: item.id });
                       }}
@@ -1468,12 +1468,12 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                         <span className="font-black text-slate-800">{item.total} voluntários</span>
                       </div>
                       <div className="w-full bg-slate-50 border border-slate-100 h-3 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full rounded-full transition-all duration-500 group-hover:opacity-90" 
-                          style={{ 
+                        <div
+                          className="h-full rounded-full transition-all duration-500 group-hover:opacity-90"
+                          style={{
                             width: `${(item.total / maxMembros) * 100}%`,
-                            backgroundColor: item.cor 
-                          }} 
+                            backgroundColor: item.cor
+                          }}
                         />
                       </div>
                     </div>
@@ -1492,8 +1492,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                 </div>
                 <div className="space-y-3.5">
                   {stats.graficoParticipacoesPorMin.map((item) => (
-                    <div 
-                      key={item.id} 
+                    <div
+                      key={item.id}
                       onClick={() => {
                         const agora = new Date();
                         if (onNavegarTab) onNavegarTab('escalas', { ministerioId: item.id, mes: agora.getMonth(), ano: agora.getFullYear() });
@@ -1506,12 +1506,12 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                         <span className="font-black text-slate-800">{item.total} escalas confirmadas</span>
                       </div>
                       <div className="w-full bg-slate-50 border border-slate-100 h-3 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full rounded-full transition-all duration-500 shadow-sm group-hover:opacity-90" 
-                          style={{ 
+                        <div
+                          className="h-full rounded-full transition-all duration-500 shadow-sm group-hover:opacity-90"
+                          style={{
                             width: `${(item.total / maxParticipacoes) * 100}%`,
-                            backgroundColor: item.cor 
-                          }} 
+                            backgroundColor: item.cor
+                          }}
                         />
                       </div>
                     </div>
@@ -1533,14 +1533,13 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                 </div>
                 <div className="divide-y divide-slate-50">
                   {stats.graficoTopVoluntarios.map((item, index) => (
-                    <div 
-                      key={item.nome} 
+                    <div
+                      key={item.nome}
                       onClick={() => {
                         if (item.pessoa_id && onVerMembro) onVerMembro(item.pessoa_id);
                       }}
-                      className={`flex items-center justify-between text-xs py-2.5 px-2 rounded-xl transition-all ${
-                        item.pessoa_id ? 'cursor-pointer hover:bg-amber-50/60 hover:scale-[1.01]' : ''
-                      } first:pt-2 last:pb-2`}
+                      className={`flex items-center justify-between text-xs py-2.5 px-2 rounded-xl transition-all ${item.pessoa_id ? 'cursor-pointer hover:bg-amber-50/60 hover:scale-[1.01]' : ''
+                        } first:pt-2 last:pb-2`}
                       title={item.pessoa_id ? `Ver perfil de ${item.nome}` : ''}
                     >
                       <span className="flex items-center gap-2.5 text-slate-600 font-bold">
@@ -1564,14 +1563,13 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                 </div>
                 <div className="divide-y divide-slate-50">
                   {stats.graficoTopLideres.map((item, index) => (
-                    <div 
-                      key={item.nome} 
+                    <div
+                      key={item.nome}
                       onClick={() => {
                         if (item.pessoa_id && onVerMembro) onVerMembro(item.pessoa_id);
                       }}
-                      className={`flex items-center justify-between text-xs py-2.5 px-2 rounded-xl transition-all ${
-                        item.pessoa_id ? 'cursor-pointer hover:bg-blue-50/60 hover:scale-[1.01]' : ''
-                      } first:pt-2 last:pb-2`}
+                      className={`flex items-center justify-between text-xs py-2.5 px-2 rounded-xl transition-all ${item.pessoa_id ? 'cursor-pointer hover:bg-blue-50/60 hover:scale-[1.01]' : ''
+                        } first:pt-2 last:pb-2`}
                       title={item.pessoa_id ? `Ver perfil do líder ${item.nome}` : ''}
                     >
                       <span className="flex items-center gap-2.5 text-slate-600 font-bold">
@@ -1592,7 +1590,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
           {/* CENTRAL DE RESPOSTAS DA LIDERANÇA */}
           <div className="bg-slate-900 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-lg border border-slate-800">
             <div className="absolute top-[-30%] right-[-10%] w-96 h-96 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
-            
+
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center border border-blue-500/15">
                 <TrendingUp size={18} />
@@ -1608,44 +1606,40 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
               <button
                 type="button"
                 onClick={() => setActiveQuestao('crescimento')}
-                className={`py-3 px-4 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-wider border transition-all text-center cursor-pointer ${
-                  activeQuestao === 'crescimento'
+                className={`py-3 px-4 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-wider border transition-all text-center cursor-pointer ${activeQuestao === 'crescimento'
                     ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10'
                     : 'bg-slate-800/50 text-slate-400 border-slate-800 hover:text-slate-200 hover:bg-slate-800'
-                }`}
+                  }`}
               >
                 📈 Ministério Crescendo?
               </button>
               <button
                 type="button"
                 onClick={() => setActiveQuestao('sem_escalar')}
-                className={`py-3 px-4 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-wider border transition-all text-center cursor-pointer ${
-                  activeQuestao === 'sem_escalar'
+                className={`py-3 px-4 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-wider border transition-all text-center cursor-pointer ${activeQuestao === 'sem_escalar'
                     ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10'
                     : 'bg-slate-800/50 text-slate-400 border-slate-800 hover:text-slate-200 hover:bg-slate-800'
-                }`}
+                  }`}
               >
                 ⏳ Sem Escalar há Meses?
               </button>
               <button
                 type="button"
                 onClick={() => setActiveQuestao('sobrecarga')}
-                className={`py-3 px-4 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-wider border transition-all text-center cursor-pointer ${
-                  activeQuestao === 'sobrecarga'
+                className={`py-3 px-4 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-wider border transition-all text-center cursor-pointer ${activeQuestao === 'sobrecarga'
                     ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10'
                     : 'bg-slate-800/50 text-slate-400 border-slate-800 hover:text-slate-200 hover:bg-slate-800'
-                }`}
+                  }`}
               >
                 🔥 Ministério Sobrecarregado?
               </button>
               <button
                 type="button"
                 onClick={() => setActiveQuestao('lider_equipe')}
-                className={`py-3 px-4 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-wider border transition-all text-center cursor-pointer ${
-                  activeQuestao === 'lider_equipe'
+                className={`py-3 px-4 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-wider border transition-all text-center cursor-pointer ${activeQuestao === 'lider_equipe'
                     ? 'bg-blue-600 text-white border-blue-500 shadow-md shadow-blue-500/10'
                     : 'bg-slate-800/50 text-slate-400 border-slate-800 hover:text-slate-200 hover:bg-slate-800'
-                }`}
+                  }`}
               >
                 👑 Líder com mais pessoas?
               </button>
@@ -1653,7 +1647,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
 
             {/* PAINEL DE CONTEÚDO DA RESPOSTA SELECIONADA */}
             <div className="mt-6 bg-slate-950/80 border border-slate-800 rounded-2xl p-5 md:p-6 min-h-[180px]">
-              
+
               {activeQuestao === 'crescimento' && (
                 <div className="space-y-4">
                   <div>
@@ -1662,8 +1656,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     {stats.rankingCrescimento.slice(0, 4).map((min) => (
-                      <div 
-                        key={min.nome} 
+                      <div
+                        key={min.nome}
                         onClick={() => {
                           if (min.id && onNavegarTab) onNavegarTab('config', { ministerioId: min.id });
                         }}
@@ -1675,11 +1669,10 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                           <p className="text-[10px] text-slate-400 mt-0.5">Total de membros: {min.totalMembros}</p>
                         </div>
                         <div className="text-right">
-                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${
-                            min.novosMembros > 0 
-                              ? 'bg-emerald-950/50 text-emerald-400 border-emerald-500/20' 
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md border ${min.novosMembros > 0
+                              ? 'bg-emerald-950/50 text-emerald-400 border-emerald-500/20'
                               : 'bg-slate-800 text-slate-400 border-slate-700'
-                          }`}>
+                            }`}>
                             {min.novosMembros > 0 ? `+${min.novosMembros} novos` : 'Estável'}
                           </span>
                         </div>
@@ -1697,8 +1690,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                   </div>
                   <div className="max-h-[220px] overflow-y-auto pr-1 space-y-2 custom-scrollbar">
                     {stats.voluntarioSemEscala.map((vol) => (
-                      <div 
-                        key={vol.nome} 
+                      <div
+                        key={vol.nome}
                         onClick={() => {
                           if (vol.pessoa_id && onVerMembro) onVerMembro(vol.pessoa_id);
                           else if (onNavegarTab) onNavegarTab('escalas');
@@ -1737,8 +1730,8 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     {stats.rankingSobrecarga.slice(0, 4).map((min) => (
-                      <div 
-                        key={min.nome} 
+                      <div
+                        key={min.nome}
                         onClick={() => {
                           if (min.id && onNavegarTab) onNavegarTab('escalas', { ministerioId: min.id });
                         }}
@@ -1774,14 +1767,13 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                   </div>
                   <div className="grid md:grid-cols-3 gap-4">
                     {stats.graficoTopLideres.slice(0, 6).map((item, index) => (
-                      <div 
-                        key={item.nome} 
+                      <div
+                        key={item.nome}
                         onClick={() => {
                           if (item.pessoa_id && onVerMembro) onVerMembro(item.pessoa_id);
                         }}
-                        className={`bg-slate-900/60 border border-slate-800 hover:border-blue-500/50 rounded-xl p-4 text-center flex flex-col justify-center items-center relative transition-all group ${
-                          item.pessoa_id ? 'cursor-pointer hover:bg-slate-900' : ''
-                        }`}
+                        className={`bg-slate-900/60 border border-slate-800 hover:border-blue-500/50 rounded-xl p-4 text-center flex flex-col justify-center items-center relative transition-all group ${item.pessoa_id ? 'cursor-pointer hover:bg-slate-900' : ''
+                          }`}
                         title={item.pessoa_id ? `Ver perfil do líder ${item.nome}` : ''}
                       >
                         <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-black flex items-center justify-center">
@@ -2029,7 +2021,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         return (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh]">
-              
+
               {/* Header do Modal */}
               <div className="bg-slate-900 p-5 text-white flex justify-between items-start shrink-0">
                 <div>
@@ -2078,7 +2070,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                   }) : null;
 
                   return (
-                    <div 
+                    <div
                       key={item.id || idx}
                       className={`bg-white border border-slate-100 ${configModal.corBordaHover} rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs hover:shadow-md transition`}
                     >
@@ -2090,7 +2082,7 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                         />
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <h4 
+                            <h4
                               onClick={() => {
                                 setModalIndicadorAberto(null);
                                 if (item.pessoa_id && onVerMembro) onVerMembro(item.pessoa_id);

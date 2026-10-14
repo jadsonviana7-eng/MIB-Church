@@ -757,7 +757,9 @@ export default function EscolasModulo({
           -webkit-font-smoothing: antialiased;
         }
       `}</style>
-      <PageHeader titulo={getSubmenuTitle(submenu)} />
+      {submenu !== 'resumo' && (
+        <PageHeader titulo={getSubmenuTitle(submenu)} />
+      )}
 
       {submenu === 'resumo' && (
         <DashboardEscolas escolas={escolas} turmas={turmas} pessoas={pessoas} onNavigate={onNavigate} />

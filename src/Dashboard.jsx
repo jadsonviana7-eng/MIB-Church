@@ -52,9 +52,7 @@ export default function Dashboard({ pessoas, celulas, zonas, relatoriosCelula, i
 
   return (
     <div className="h-full overflow-y-auto p-4 sm:p-6 space-y-6 scrollbar-hide">
-      <div className="hidden md:block">
-        <PageHeader titulo="Visão Geral" />
-      </div>
+
       {carregando && <div className="text-sm font-medium text-[#055F6D]">Sincronizando dados...</div>}
       
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

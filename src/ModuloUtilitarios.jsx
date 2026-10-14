@@ -10,11 +10,20 @@ import QuizPersonalidade from './QuizPersonalidade';
 import PedidoOracao from './PedidoOracao';
 import MuralOracao from './MuralOracao';
 import FormularioVisitante from './FormularioVisitante';
+import RepertorioLouvor from './RepertorioLouvor';
 
 // Lista única de utilitários — usada tanto na grade da "Visão Geral"
 // quanto no painel lateral fixo (telas grandes).
 function getUtilitarios({ membroLogado, temVinculoEscala }) {
   return [
+    {
+      id: 'repertorio',
+      label: 'Repertório de Louvor',
+      desc: 'Monte o repertório dos cultos, com biblioteca de músicas e sugestões inteligentes.',
+      icon: MenuIcons['u-repertorio'],
+      gradient: 'from-amber-500 via-rose-500 to-purple-600',
+      show: true,
+    },
     {
       id: 'calculadora',
       label: 'Calculadora de Tributos',
@@ -91,12 +100,7 @@ export default function ModuloUtilitarios(props) {
   if (submenu === 'resumo' || !submenu) {
     conteudo = (
       <div className="space-y-6 animate-in fade-in duration-300 mx-[-3px] sm:mx-0">
-        {/* Page Header (visível em todos os tamanhos) */}
-        <div className="print:hidden mx-[3px] sm:mx-0">
-          <PageHeader
-            titulo="Utilitários"
-          />
-        </div>
+
 
         {/* ── BANNER PREMIUM DE INTRODUÇÃO ── */}
         <div className="relative rounded-[24px] overflow-hidden p-6 md:p-8 bg-gradient-to-r from-[#1e3a8a] via-[#14296b] to-[#1e3a8a] text-white shadow-lg border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -190,6 +194,8 @@ export default function ModuloUtilitarios(props) {
         </div>
       </div>
     );
+  } else if (submenu === 'repertorio') {
+    conteudo = <RepertorioLouvor onVoltar={() => onNavigate('resumo')} {...props} />;
   } else if (submenu === 'escalas') {
     conteudo = <EscalasMinisterial {...props} />;
   } else if (submenu === 'relatorio-semanal') {
@@ -217,7 +223,7 @@ export default function ModuloUtilitarios(props) {
       <div className="flex-1 min-w-0">{conteudo}</div>
 
       {/* Painel lateral fixo de atalhos — apenas em telas grandes */}
-      <aside className={`${submenu === 'escalas' ? 'hidden' : 'hidden xl:block'} w-64 shrink-0 sticky top-6`}>
+      <aside className={`${['escalas', 'repertorio'].includes(submenu) ? 'hidden' : 'hidden xl:block'} w-64 shrink-0 sticky top-6`}>
         <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4">
           <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400 px-2 mb-2">
             Utilitários

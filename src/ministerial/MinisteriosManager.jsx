@@ -42,7 +42,12 @@ const PRESET_COLORS = [
   { name: 'Cinza Executivo', value: '#4b5563' }
 ];
 
-export default function MinisteriosManager({ initialSelectedMinistryId = null }) {
+export default function MinisteriosManager({ 
+  initialSelectedMinistryId = null, 
+  hideHeader = false, 
+  onNavegarTab,
+  onMinisterioAtivoChange
+}) {
   const [ministerios, setMinisterios] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -57,10 +62,19 @@ export default function MinisteriosManager({ initialSelectedMinistryId = null })
   });
 
   useEffect(() => {
-    if (initialSelectedMinistryId) {
-      setSelectedMinistryId(initialSelectedMinistryId);
-    }
+    setSelectedMinistryId(initialSelectedMinistryId);
   }, [initialSelectedMinistryId]);
+
+  useEffect(() => {
+    if (!selectedMinistryId) {
+      onMinisterioAtivoChange?.(null);
+    } else if (ministerios.length > 0) {
+      const min = ministerios.find(m => m.id === selectedMinistryId);
+      if (min) {
+        onMinisterioAtivoChange?.(min);
+      }
+    }
+  }, [selectedMinistryId, ministerios]);
 
   useEffect(() => {
     carregar();
@@ -137,22 +151,31 @@ export default function MinisteriosManager({ initialSelectedMinistryId = null })
     return (
       <MinistryDetails
         ministerioId={selectedMinistryId}
-        onVoltar={() => setSelectedMinistryId(null)}
+        onVoltar={() => {
+          setSelectedMinistryId(null);
+          onMinisterioAtivoChange?.(null);
+        }}
+        onNavegarTab={onNavegarTab}
+        onMinisterioCarregado={(min) => {
+          onMinisterioAtivoChange?.(min);
+        }}
       />
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight">
-            Ministérios
-          </h2>
-          <p className="text-xs text-slate-500">
-            Cadastre os ministérios ativos da igreja e configure suas equipes.
-          </p>
-        </div>
+      <div className={`flex ${hideHeader ? 'justify-end' : 'justify-between'} items-center`}>
+        {!hideHeader && (
+          <div>
+            <h2 className="text-2xl font-black text-slate-800 tracking-tight">
+              Ministérios
+            </h2>
+            <p className="text-xs text-slate-500">
+              Cadastre os ministérios ativos da igreja e configure suas equipes.
+            </p>
+          </div>
+        )}
 
         <button
           onClick={() => setModalOpen(true)}
@@ -184,7 +207,10 @@ export default function MinisteriosManager({ initialSelectedMinistryId = null })
         {ministerios.map((m) => (
           <div
             key={m.id}
-            onClick={() => setSelectedMinistryId(m.id)}
+            onClick={() => {
+              setSelectedMinistryId(m.id);
+              onMinisterioAtivoChange?.(m);
+            }}
             className="bg-white rounded-2xl shadow-sm border border-slate-100/80 border-t-[4px] p-4 sm:p-5 cursor-pointer hover:shadow-md hover:border-slate-200 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 flex flex-col justify-between group"
             style={{ borderTopColor: m.cor_principal || '#2563eb' }}
           >

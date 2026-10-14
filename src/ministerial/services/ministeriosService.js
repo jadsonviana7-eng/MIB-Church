@@ -435,3 +435,15 @@ export const ministeriosService = {
     }
   }
 };
+
+export function isLouvorMinistry(nome) {
+  if (!nome) return false;
+  const n = String(nome).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return (
+    n.includes('louvor') ||
+    n.includes('musica') ||
+    n.includes('adoracao') ||
+    n.includes('banda') ||
+    n.includes('coral')
+  );
+}

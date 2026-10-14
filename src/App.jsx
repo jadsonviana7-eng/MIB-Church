@@ -19,7 +19,7 @@ import HomePage from './HomePage'; // Novo componente HomePage
 import PublicRegistrationForm from './PublicRegistrationForm'; // Importar o novo componente
 import PublicConfirmarEscala from './PublicConfirmarEscala';
 import { MenuIcons, submenuIconKey } from './icons'; // Importa MenuIcons e submenuIconKey do novo arquivo
-import { Settings, Bell } from 'lucide-react';
+import { Settings, Bell, ChevronLeft } from 'lucide-react';
 import { normalizarTexto, faixaDaIdade, meses, valorCampoRelatorio } from './churchUtils';
 import { setAppBadge, clearAppBadge, requestBadgePermission, syncAndroidNotificationBadge } from './badgeUtils';
 
@@ -1176,62 +1176,96 @@ export default function App() {
   const getModuloTitle = (modulo) => {
     switch (modulo) {
       case 'dashboard': return 'Visão Geral';
-      case 'pessoas': return 'Pessoas';
-      case 'celulas': return 'Células';
-      case 'financeiro': return 'Financeiro';
-      case 'escolas': return 'Escolas';
-      case 'gestao': return 'Gestor Ministerial';
+      case 'pessoas': return membroSelecionadoId ? 'Ficha do Membro' : 'Pessoas';
+      case 'celulas': {
+        if (celulaSelecionadaId) return 'Detalhes da Célula';
+        if (celulasSubmenu === 'lista') return 'Lista de Células';
+        if (celulasSubmenu === 'reunioes') return 'Reuniões de Célula';
+        if (celulasSubmenu === 'relatorios') return 'Relatórios de Células';
+        return 'Células';
+      }
+      case 'financeiro': {
+        if (financeiroSubmenu === 'transacoes') return 'Transações';
+        if (financeiroSubmenu === 'relatorios') return 'Relatórios Financeiros';
+        return 'Financeiro';
+      }
+      case 'escolas': {
+        if (alunoSelecionadoParaCadernetaId) return 'Ficha do Aluno';
+        if (turmaSelecionadaId) return 'Caderneta da Turma';
+        if (escolasSubmenu === 'turmas') return 'Turmas';
+        if (escolasSubmenu === 'cursos') return 'Cursos';
+        return 'Escolas';
+      }
+      case 'gestao': {
+        if (gestaoMinisterialSubmenu === 'repertorio') return 'Repertório de Louvor';
+        if (gestaoMinisterialSubmenu === 'escalas') return 'Escalas';
+        if (gestaoMinisterialSubmenu === 'historico') return 'Histórico';
+        if (gestaoMinisterialSubmenu === 'relatorios') return 'Relatórios';
+        if (gestaoMinisterialSubmenu === 'equipe') return 'Equipe Ministerial';
+        return 'Gestor Ministerial';
+      }
       case 'agenda': return 'Agenda';
       case 'utilitarios': return 'Utilitários';
       case 'configuracoes': return 'Configurações';
-      default: return '';
+      default: return 'MIB Church';
     }
   };
 
-  const mostrarBotaoVoltarMobile =
-    (moduloAtual === 'pessoas' && !!(filtros.cargo || filtros.zona || filtros.atuacao || filtros.relatorioCampo)) ||
-    (moduloAtual === 'celulas' && !!celulaSelecionadaId) ||
-    (moduloAtual === 'financeiro' && financeiroSubmenu !== 'resumo') ||
-    (moduloAtual === 'escolas' && (escolasSubmenu !== 'resumo' || !!turmaSelecionadaId || !!filtroCursoTurmas || !!alunoSelecionadoParaCadernetaId)) ||
-    (moduloAtual === 'utilitarios' && utilitariosSubmenu !== 'resumo');
+  const mostrarBotaoVoltarMobile = moduloAtual !== 'dashboard' || Boolean(membroSelecionadoId);
 
   const handleVoltarMobile = () => {
-    if (moduloAtual === 'pessoas') {
-      if (filtros.cargo) {
-        alterarFiltro('cargo', '');
-        navegar('pessoas', 'cargo');
-      } else if (filtros.zona) {
-        alterarFiltro('zona', '');
-        navegar('pessoas', 'zona');
-      } else if (filtros.atuacao) {
-        alterarFiltro('atuacao', '');
-        navegar('pessoas', 'atuacao');
-      } else if (filtros.relatorioCampo) {
-        setFiltros(prev => ({ ...prev, relatorioCampo: '', relatorioValor: '' }));
-        navegar('pessoas', 'relatorios');
+    if (membroSelecionadoId) {
+      setMembroSelecionadoId(null);
+      return;
+    }
+    if (moduloAtual === 'gestao') {
+      if (gestaoMinisterialSubmenu !== 'dashboard') {
+        setGestaoMinisterialSubmenu('dashboard');
+      } else {
+        navegar('dashboard');
+      }
+    } else if (moduloAtual === 'pessoas') {
+      if (filtros.cargo || filtros.zona || filtros.atuacao || filtros.relatorioCampo) {
+        setFiltros(prev => ({ ...prev, cargo: '', zona: '', atuacao: '', relatorioCampo: '', relatorioValor: '' }));
+      } else {
+        navegar('dashboard');
       }
     } else if (moduloAtual === 'celulas') {
       if (reuniaoSelecionadaId) {
         handleSetReuniaoSelecionadaId(null);
-      } else {
+      } else if (celulaSelecionadaId) {
         setCelulaSelecionadaId(null);
+      } else if (celulasSubmenu !== 'resumo') {
+        setCelulasSubmenu('resumo');
+      } else {
+        navegar('dashboard');
       }
     } else if (moduloAtual === 'escolas') {
-      if (escolasSubmenu === 'ficha-aluno') {
+      if (alunoSelecionadoParaCadernetaId) {
         setAlunoSelecionadoParaCadernetaId(null);
-        navegar('escolas', 'turmas');
       } else if (turmaSelecionadaId) {
         setTurmaSelecionadaId(null);
       } else if (filtroCursoTurmas) {
         setFiltroCursoTurmas('');
-        navegar('escolas', 'cursos');
+      } else if (escolasSubmenu !== 'resumo') {
+        setEscolasSubmenu('resumo');
       } else {
-        navegar('escolas', 'resumo');
+        navegar('dashboard');
       }
     } else if (moduloAtual === 'financeiro') {
-      navegar('financeiro', 'resumo');
+      if (financeiroSubmenu !== 'resumo') {
+        setFinanceiroSubmenu('resumo');
+      } else {
+        navegar('dashboard');
+      }
     } else if (moduloAtual === 'utilitarios') {
-      navegar('utilitarios', 'resumo');
+      if (utilitariosSubmenu !== 'resumo') {
+        setUtilitariosSubmenu('resumo');
+      } else {
+        navegar('dashboard');
+      }
+    } else {
+      navegar('dashboard');
     }
   };
 
@@ -1428,26 +1462,25 @@ export default function App() {
       </aside>
 
 
-      {/* ── SIDEBAR LATERAL — visível apenas no mobile ── */}
-      {/* Mobile Header */}
-      <div className="fixed top-0 inset-x-0 z-40 h-14 bg-[#1e3a8a] text-white flex items-center px-4 md:hidden print:hidden shadow-md"> {/* <--- Altere bg-[#hex] aqui para o Mobile */}
-        {mostrarBotaoVoltarMobile ? (
-          <button
-            type="button"
-            onClick={handleVoltarMobile}
-            className="w-12 h-12 flex items-center justify-start active:scale-95 transition-transform text-white/90 hover:text-white cursor-pointer"
-            aria-label="Voltar"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-            </svg>
-          </button>
-        ) : (
-          <div className="w-12" />
-        )}
-        <span className="flex-1 text-center text-sm font-bold uppercase tracking-wide">
-          {getModuloTitle(moduloAtual)}
-        </span>
+      {/* ── HEADER MOBILE PADRONIZADO (FAIXA AZUL RETANGULAR SEM RADIUS E SEM TÍTULO) ── */}
+      <div className="fixed top-0 inset-x-0 z-40 h-14 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#1e40af] text-white flex items-center justify-between px-3 sm:px-4 rounded-none shadow-md md:hidden print:hidden border-b border-blue-400/20">
+        {/* Setinha de voltar no topo (faixa azul), à esquerda */}
+        <div className="flex items-center w-10 z-10 shrink-0">
+          {mostrarBotaoVoltarMobile ? (
+            <button
+              type="button"
+              onClick={handleVoltarMobile}
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 active:scale-90 transition-all text-white cursor-pointer border border-white/10"
+              aria-label="Voltar"
+              title="Voltar"
+            >
+              <ChevronLeft size={22} strokeWidth={2.5} />
+            </button>
+          ) : (
+            <div className="w-9 h-9" />
+          )}
+        </div>
+
         <div className="flex items-center gap-1.5">
           {/* 🔔 Sino de Notificações no Mobile */}
           <button

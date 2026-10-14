@@ -27,7 +27,7 @@ function Card({ titulo, valor, Icon, corSub, desc, onClick }) {
   );
 }
 
-export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNavegarGlobal }) {
+export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNavegarGlobal, hideHeader = false }) {
   const [dados, setDados] = useState({
     totalMinisterios: 0,
     totalMembros: 0,
@@ -354,12 +354,14 @@ export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNa
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-slate-800 tracking-tight">
-          Painel de Indicadores
-        </h1>
-        <p className="text-xs text-slate-500">Métricas consolidadas de participação, voluntários e engajamento ministerial. Clique nos cartões para ver os detalhes.</p>
-      </div>
+      {!hideHeader && (
+        <div>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">
+            Painel de Indicadores
+          </h1>
+          <p className="text-xs text-slate-500">Métricas consolidadas de participação, voluntários e engajamento ministerial. Clique nos cartões para ver os detalhes.</p>
+        </div>
+      )}
 
       {/* Cards de Métricas Principais */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">

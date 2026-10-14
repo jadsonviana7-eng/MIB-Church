@@ -199,10 +199,7 @@ export default function PainelCelulas({
 
   return (
     <div className="space-y-6">
-      {/* PageHeader Premium */}
-      <PageHeader
-        titulo="Painel Células v2"
-      />
+
 
       {/* Grid de KPIs principais */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">

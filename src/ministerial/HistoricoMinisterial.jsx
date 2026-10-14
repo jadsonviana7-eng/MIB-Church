@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Clock, Filter, User, BookOpen } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
-export default function HistoricoMinisterial() {
+export default function HistoricoMinisterial({ initialStatus = null, hideHeader = false }) {
   const [logs, setLogs] = useState([]);
   const [filtroAcao, setFiltroAcao] = useState('');
   const [loading, setLoading] = useState(true);
@@ -60,11 +60,13 @@ export default function HistoricoMinisterial() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight">Histórico Ministerial</h2>
-          <p className="text-xs text-slate-500">Rastreabilidade completa de movimentações, escalas e promoções de voluntários.</p>
-        </div>
+      <div className={`flex ${hideHeader ? 'justify-end' : 'flex-col sm:flex-row justify-between items-start sm:items-center'} gap-4`}>
+        {!hideHeader && (
+          <div>
+            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Histórico Ministerial</h2>
+            <p className="text-xs text-slate-500">Rastreabilidade completa de movimentações, escalas e promoções de voluntários.</p>
+          </div>
+        )}
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <Filter size={14} className="text-slate-400" />

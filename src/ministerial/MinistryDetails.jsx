@@ -8,7 +8,8 @@ import {
   X,
   Pencil,
   ChevronLeft,
-  Calendar
+  Calendar,
+  Music
 } from 'lucide-react';
 
 import { supabase } from '../supabaseClient';
@@ -17,13 +18,19 @@ import { MinistryIcon } from '../ui';
 import MembroHistoricoModal from './components/MembroHistoricoModal';
 import MinistryMonthlyOverview from './components/MinistryMonthlyOverview';
 import { escalasService } from './services/escalasService';
+import { isLouvorMinistry } from './services/ministeriosService';
 
-export default function MinistryDetails({ ministerioId, onVoltar }) {
+export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, onMinisterioCarregado }) {
   const [aba, setAba] = useState('equipe');
   const [ministerio, setMinisterio] = useState(null);
   const [membros, setMembros] = useState([]);
   const [funcoes, setFuncoes] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Detecta se é o Ministério de Louvor / Música
+  const isMinisterioLouvor = useMemo(() => {
+    return isLouvorMinistry(ministerio?.nome);
+  }, [ministerio?.nome]);
 
   // States para gerenciar equipe
   const [showModalMembro, setShowModalMembro] = useState(false);
@@ -46,7 +53,7 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
   const [dispQuinta, setDispQuinta] = useState(true);
   const [dispSexta, setDispSexta] = useState(true);
   const [dispSabado, setDispSabado] = useState(true);
-  
+
   const [bloqueiosMembro, setBloqueiosMembro] = useState([]);
   const [blqInicio, setBlqInicio] = useState('');
   const [blqFim, setBlqFim] = useState('');
@@ -260,6 +267,7 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
         .order('nome');
 
       setMinisterio(ministerioData);
+      onMinisterioCarregado?.(ministerioData);
       setMembros(membrosData || []);
       setFuncoes(funcoesData || []);
       setPessoas(pessoasData || []);
@@ -322,7 +330,7 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
           .from('disponibilidade_ministerial')
           .delete()
           .eq('pessoa_id', pessoaSelecionada.id);
-          
+
         if (delDispError && !delDispError.message.includes('row-level security') && delDispError.code !== '42501') {
           throw delDispError;
         }
@@ -433,9 +441,9 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
   }
 
   function toggleFuncaoSelecionada(nomeFuncao) {
-    setFuncoesSelecionadas(prev => 
-      prev.includes(nomeFuncao) 
-        ? prev.filter(f => f !== nomeFuncao) 
+    setFuncoesSelecionadas(prev =>
+      prev.includes(nomeFuncao)
+        ? prev.filter(f => f !== nomeFuncao)
         : [...prev, nomeFuncao]
     );
   }
@@ -478,34 +486,49 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
     <div className="space-y-6">
       {/* HEADER */}
       <div className="bg-white rounded-xl shadow p-4 sm:p-6">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-          {onVoltar && (
-            <button
-              onClick={onVoltar}
-              className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer shrink-0 active:scale-95"
-              title="Voltar para Ministérios"
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 min-w-0">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+            {onVoltar && (
+              <button
+                onClick={onVoltar}
+                className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer shrink-0 active:scale-95"
+                title="Voltar para Ministérios"
+              >
+                <ChevronLeft size={18} strokeWidth={3} />
+              </button>
+            )}
+
+            <div
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-white shadow-md shadow-slate-200 shrink-0"
+              style={{
+                backgroundColor: ministerio.cor_principal || '#2563eb'
+              }}
             >
-              <ChevronLeft size={18} strokeWidth={3} />
+              <MinistryIcon icone={ministerio.icone} size={26} style={{ color: '#ffffff' }} />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h1 className="text-lg sm:text-2xl font-bold text-slate-900 truncate">
+                {ministerio.nome}
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 truncate">
+                {ministerio.descricao || 'Sem descrição.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Botão de Destaque no Topo à Direita para Repertório de Louvor */}
+          {isMinisterioLouvor && (
+            <button
+              type="button"
+              onClick={() => onNavegarTab && onNavegarTab('repertorio', { ministerioId: ministerio.id })}
+              className="shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-md shadow-purple-600/20 hover:shadow-purple-600/40 transition-all duration-200 cursor-pointer active:scale-95"
+              title="Acessar Repertório de Louvor no Gestor Ministerial"
+            >
+              <Music size={16} strokeWidth={2.5} />
+              <span>Acessar Repertório →</span>
             </button>
           )}
-
-          <div
-            className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-white shadow-md shadow-slate-200 shrink-0"
-            style={{
-              backgroundColor: ministerio.cor_principal || '#2563eb'
-            }}
-          >
-            <MinistryIcon icone={ministerio.icone} size={26} style={{ color: '#ffffff' }} />
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <h1 className="text-lg sm:text-2xl font-bold text-slate-900 truncate">
-              {ministerio.nome}
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 truncate">
-              {ministerio.descricao || 'Sem descrição.'}
-            </p>
-          </div>
         </div>
       </div>
 
@@ -547,11 +570,10 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
         <button
           type="button"
           onClick={() => setAba('equipe')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 sm:py-2.5 px-1 sm:px-4 rounded-xl transition cursor-pointer active:scale-95 text-center ${
-            aba === 'equipe'
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 sm:py-2.5 px-1 sm:px-4 rounded-xl transition cursor-pointer active:scale-95 text-center ${aba === 'equipe'
               ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-900/20'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
+            }`}
         >
           <Users size={22} strokeWidth={2.2} className="shrink-0 sm:w-4 sm:h-4" />
           <span className="text-[9px] sm:text-xs font-bold sm:font-black uppercase tracking-tight sm:tracking-wider leading-none truncate max-w-full">
@@ -562,11 +584,10 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
         <button
           type="button"
           onClick={() => setAba('funcoes')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 sm:py-2.5 px-1 sm:px-4 rounded-xl transition cursor-pointer active:scale-95 text-center ${
-            aba === 'funcoes'
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 sm:py-2.5 px-1 sm:px-4 rounded-xl transition cursor-pointer active:scale-95 text-center ${aba === 'funcoes'
               ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-900/20'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
+            }`}
         >
           <Settings size={22} strokeWidth={2.2} className="shrink-0 sm:w-4 sm:h-4" />
           <span className="text-[9px] sm:text-xs font-bold sm:font-black uppercase tracking-tight sm:tracking-wider leading-none truncate max-w-full">
@@ -577,11 +598,10 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
         <button
           type="button"
           onClick={() => setAba('fardamentos')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 sm:py-2.5 px-1 sm:px-4 rounded-xl transition cursor-pointer active:scale-95 text-center ${
-            aba === 'fardamentos'
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 sm:py-2.5 px-1 sm:px-4 rounded-xl transition cursor-pointer active:scale-95 text-center ${aba === 'fardamentos'
               ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-900/20'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
+            }`}
         >
           <span className="text-xl sm:text-sm leading-none">👕</span>
           <span className="text-[9px] sm:text-xs font-bold sm:font-black uppercase tracking-tight sm:tracking-wider leading-none truncate max-w-full">
@@ -593,11 +613,10 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
         <button
           type="button"
           onClick={() => setAba('escala_mensal')}
-          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 sm:py-2.5 px-1 sm:px-4 rounded-xl transition cursor-pointer active:scale-95 text-center ${
-            aba === 'escala_mensal'
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2.5 sm:py-2.5 px-1 sm:px-4 rounded-xl transition cursor-pointer active:scale-95 text-center ${aba === 'escala_mensal'
               ? 'bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white shadow-md shadow-blue-500/25 border border-blue-400/30'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-          }`}
+            }`}
         >
           <Calendar size={22} strokeWidth={2.2} className="shrink-0 sm:w-4 sm:h-4" />
           <span className="text-[9px] sm:text-xs font-bold sm:font-black uppercase tracking-tight sm:tracking-wider leading-none truncate max-w-full">
@@ -649,7 +668,7 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
                     <div className="flex flex-wrap gap-1 mt-1">
                       {membro.funcao ? (
                         membro.funcao.split(',').map((f, idx) => (
-                          <span 
+                          <span
                             key={idx}
                             className="px-2 py-0.5 bg-slate-100 border border-slate-200/60 rounded text-[9px] font-black uppercase tracking-wider text-slate-500"
                           >
@@ -795,7 +814,7 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
                       onChange={(e) => setBuscaPessoa(e.target.value)}
                       className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-500 transition bg-slate-50/30"
                     />
-                    
+
                     {buscaPessoa.trim() !== '' && (
                       <div className="border border-slate-150 rounded-xl overflow-hidden divide-y divide-slate-100 bg-white shadow-sm max-h-[200px] overflow-y-auto">
                         {pessoasFiltradas.map(p => (
@@ -865,7 +884,7 @@ export default function MinistryDetails({ ministerioId, onVoltar }) {
                     <p className="text-[10px] text-slate-450 italic">Nenhuma função especial cadastrada.</p>
                   )}
                 </div>
-                
+
                 {/* Adicionar função customizada */}
                 <div className="mt-2.5 flex gap-2">
                   <input

@@ -34,7 +34,8 @@ import {
   Calculator,
   Brain,
   Heart,
-  MessageSquare
+  MessageSquare,
+  Music
 } from 'lucide-react';
 
 export const MenuIcons = {
@@ -99,6 +100,7 @@ export const MenuIcons = {
   'u-pedido-oracao': <Heart className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
   'u-mural-oracao': <MessageSquare className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
   'u-visitante-recepcao': <UserPlus className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
+  'u-repertorio': <Music className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
 
   // Submenus Agenda
   'a-calendario': <Calendar className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
@@ -116,7 +118,8 @@ export const submenuIconKey = {
   agenda: { calendario: 'a-calendario', eventos: 'a-eventos', mural: 'a-mural' },
   utilitarios: { 
     resumo: 'u-resumo', escalas: 'u-escalas', 'relatorio-semanal': 'u-relatorio-semanal', calculadora: 'u-calculadora',
-    quiz: 'u-quiz', 'pedido-oracao': 'u-pedido-oracao', 'mural-oracao': 'u-mural-oracao'
-    , 'carne-generator': 'u-carne-generator', 'leitor-carne': 'u-leitor-carne', 'visitante-recepcao': 'u-visitante-recepcao'
+    quiz: 'u-quiz', 'pedido-oracao': 'u-pedido-oracao', 'mural-oracao': 'u-mural-oracao',
+    'carne-generator': 'u-carne-generator', 'leitor-carne': 'u-leitor-carne', 'visitante-recepcao': 'u-visitante-recepcao',
+    repertorio: 'u-repertorio'
   },
 };

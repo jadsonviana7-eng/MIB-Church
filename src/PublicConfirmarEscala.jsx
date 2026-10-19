@@ -32,6 +32,25 @@ export default function PublicConfirmarEscala() {
   const [justificativasPorEscala, setJustificativasPorEscala] = useState({});
   const [sucessoMensagem, setSucessoMensagem] = useState(null);
 
+  // Detecta se a página foi aberta dentro do aplicativo PWA instalado no celular
+  const isStandalone = typeof window !== 'undefined' && (
+    window.matchMedia?.('(display-mode: standalone)')?.matches ||
+    window.navigator?.standalone === true ||
+    (typeof document !== 'undefined' && document.referrer?.includes('android-app://'))
+  );
+
+  const handleAbrirNoNavegador = () => {
+    const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
+    const urlAtual = window.location.href;
+    if (isAndroid) {
+      // Intent scheme para forçar a abertura no navegador padrão (Chrome) no Android
+      const hostAndPath = window.location.host + window.location.pathname + window.location.search + window.location.hash;
+      window.location.href = `intent://${hostAndPath}#Intent;scheme=https;package=com.android.chrome;end`;
+    } else {
+      window.open(urlAtual, '_blank');
+    }
+  };
+
   // 1. Extrair parâmetros da URL
   useEffect(() => {
     let id = null;
@@ -319,6 +338,19 @@ export default function PublicConfirmarEscala() {
 
         {/* Cabeçalho da Igreja */}
         <header className="text-center mb-6 animate-in fade-in slide-from-top-4 duration-500">
+          {isStandalone && (
+            <div className="flex justify-center mb-3">
+              <button
+                type="button"
+                onClick={handleAbrirNoNavegador}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-slate-300 hover:text-white text-[11px] font-bold tracking-wide transition shadow-sm cursor-pointer active:scale-95"
+                title="Abrir esta página no navegador do celular"
+              >
+                <ExternalLink size={12} className="text-blue-400" />
+                <span>Abrir no navegador</span>
+              </button>
+            </div>
+          )}
           <img
             src="/logo-betesda-mundau.png"
             alt={dadosIgreja?.nome || 'MIB Church'}
@@ -746,8 +778,24 @@ export default function PublicConfirmarEscala() {
       </main>
 
       {/* Rodapé */}
-      <footer className="relative z-10 py-6 text-center text-[11px] text-slate-600 font-medium">
-        © {new Date().getFullYear()} {dadosIgreja?.nome || 'Igreja'} · Módulo de Gestão Ministerial
+      <footer className="relative z-10 py-6 text-center text-[11px] text-slate-600 font-medium space-y-1.5">
+        <div>
+          © {new Date().getFullYear()} {dadosIgreja?.nome || 'Igreja'} · Módulo de Gestão Ministerial
+        </div>
+        <div>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.history && window.history.pushState) {
+                window.history.pushState({}, '', '/');
+              }
+              window.dispatchEvent(new CustomEvent('mib-navigate-route', { detail: { url: '/' } }));
+            }}
+            className="text-slate-500 hover:text-slate-400 underline transition cursor-pointer text-[10px]"
+          >
+            Acessar Painel Interno MIB Church
+          </button>
+        </div>
       </footer>
     </div>
   );

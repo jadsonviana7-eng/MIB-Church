@@ -1012,13 +1012,24 @@ export default function App() {
 
   // ── Navegação Mobile & Botão Voltar (HTML5 History API) ────────────────────
   useEffect(() => {
+    const isPublic = 
+      window.location.pathname === '/confirmar-escala' ||
+      window.location.pathname.startsWith('/confirmar-escala/') ||
+      window.location.pathname === '/cadastro-publico' ||
+      window.location.pathname.startsWith('/inscricao-evento') ||
+      window.location.search.includes('confirmar-escala') ||
+      window.location.search.includes('escala=') ||
+      window.location.search.includes('escala_id=');
+
+    if (isPublic) return;
+
     // Sincroniza o estado inicial no histórico se necessário
     if (!window.history.state) {
       try {
         window.history.replaceState({
           modulo: 'dashboard',
           isRoot: true
-        }, '');
+        }, '', window.location.href);
       } catch (e) {}
     }
 

@@ -9,6 +9,9 @@
   "background_color": "#f4f7fa",
   "theme_color": "#1E3A8A",
   "categories": ["productivity", "utilities"],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "icons": [
     {
       "src": "/logo-mib-mundau.png",

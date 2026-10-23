@@ -488,6 +488,97 @@ export default function App() {
         });
       }
 
+      // 7. Pedidos de Substituição e Recusas de Escala (para Administrador, Pastor e Líder de Ministério)
+      try {
+        let ministeriosLideradosIds = [];
+        try {
+          const { data: mData } = await supabase
+            .from('ministerio_membros')
+            .select('ministerio_id')
+            .eq('pessoa_id', membroLogado.id)
+            .eq('lider', true);
+          if (mData && mData.length > 0) {
+            ministeriosLideradosIds = mData.map(m => m.ministerio_id).filter(Boolean);
+          }
+        } catch (_) {}
+
+        const podeVerSubstituicoes = isPastorOuAdmin || ministeriosLideradosIds.length > 0;
+
+        if (podeVerSubstituicoes) {
+          let querySubst = supabase
+            .from('escalas')
+            .select(`
+              id,
+              evento_id,
+              ministerio_id,
+              funcao_id,
+              status,
+              justificativa,
+              substituido_por_pessoa_id,
+              pedido_substituicao,
+              created_at,
+              pessoas:pessoa_id (
+                id,
+                nome
+              ),
+              eventos_ministeriais (
+                id,
+                titulo,
+                data_evento
+              ),
+              ministerios (
+                id,
+                nome
+              ),
+              ministerio_funcoes (
+                id,
+                nome
+              )
+            `)
+            .or('pedido_substituicao.eq.true,status.in.(recusado,falta_justificada,falta)')
+            .is('substituido_por_pessoa_id', null)
+            .gte('created_at', limiteDias.toISOString())
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+          if (!isPastorOuAdmin && ministeriosLideradosIds.length > 0) {
+            querySubst = querySubst.in('ministerio_id', ministeriosLideradosIds);
+          }
+
+          const { data: recusas, error: errRecusas } = await querySubst;
+
+          if (!errRecusas && recusas) {
+            recusas.forEach(esc => {
+              const nomePessoa = esc.pessoas?.nome || 'Voluntário';
+              const nomeMin = esc.ministerios?.nome || 'Ministério';
+              const nomeFunc = esc.ministerio_funcoes?.nome || 'Função';
+              const tituloEv = esc.eventos_ministeriais?.titulo || 'Culto';
+              const dataEv = esc.eventos_ministeriais?.data_evento
+                ? new Date(esc.eventos_ministeriais.data_evento).toLocaleDateString('pt-BR')
+                : 'Data a definir';
+              const motivoTexto = esc.justificativa ? `Motivo: "${esc.justificativa}".` : 'Sem justificativa informada.';
+
+              lista.push({
+                id: `subst_escala_${esc.id}`,
+                tipo: 'escala_substituicao',
+                titulo: `🔄 Pedido de Substituição: ${nomePessoa}`,
+                descricao: `${nomePessoa} não poderá comparecer como ${nomeFunc} no ${nomeMin} (${tituloEv} - ${dataEv}). ${motivoTexto} Clique para providenciar um substituto.`,
+                dados: {
+                  modulo: 'gestao',
+                  tab: 'escalas',
+                  eventoId: esc.evento_id,
+                  ministerioId: esc.ministerio_id,
+                  escalaId: esc.id
+                },
+                created_at: esc.created_at || new Date().toISOString()
+              });
+            });
+          }
+        }
+      } catch (errSubst) {
+        console.warn('Erro ao carregar notificações de substituição de escala:', errSubst);
+      }
+
       // Sort notifications by date (newest first)
       lista.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
@@ -503,7 +594,12 @@ export default function App() {
     if (membroLogado) {
       carregarNotificacoes();
       const interval = setInterval(carregarNotificacoes, 5 * 60 * 1000);
-      return () => clearInterval(interval);
+      const handleNovaNotif = () => carregarNotificacoes();
+      window.addEventListener('mib-nova-notificacao', handleNovaNotif);
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener('mib-nova-notificacao', handleNovaNotif);
+      };
     }
   }, [membroLogado, carregarNotificacoes]);
 
@@ -2250,6 +2346,9 @@ export default function App() {
                     } else if (n.tipo === 'novo_membro_celula') {
                       icon = '🏡';
                       badgeColor = 'bg-teal-50 border-teal-100 text-teal-700';
+                    } else if (n.tipo === 'escala_substituicao') {
+                      icon = '🔄';
+                      badgeColor = 'bg-rose-50 border-rose-200 text-rose-700';
                     }
 
                     const handleNotifClick = () => {
@@ -2265,9 +2364,14 @@ export default function App() {
                       } else if (n.tipo === 'inscricao_curso') {
                         setModuloAtual('escolas');
                         setEscolasSubmenu('resumo');
-                      } else if (n.tipo === 'escala_pendente') {
+                      } else if (n.tipo === 'escala_pendente' || n.tipo === 'escala_substituicao') {
                         setModuloAtual('gestao');
                         setGestaoMinisterialSubmenu('escalas');
+                        if (n.dados?.eventoId || n.dados?.escalaId) {
+                          setTimeout(() => {
+                            window.dispatchEvent(new CustomEvent('mib-selecionar-escala', { detail: n.dados }));
+                          }, 100);
+                        }
                       } else if (n.tipo === 'novo_membro_celula') {
                         setModuloAtual('celulas');
                         setCelulasSubmenu('lista');

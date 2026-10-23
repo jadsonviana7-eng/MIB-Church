@@ -1040,7 +1040,9 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
         data_evento: e.eventos_ministeriais?.data_evento,
         local: e.eventos_ministeriais?.local,
         justificativa: e.justificativa,
-        statusBadge: '🔴 Recusado'
+        substituido_por_pessoa_id: e.substituido_por_pessoa_id,
+        substituto_nome: e.substituto?.nome,
+        statusBadge: e.substituido_por_pessoa_id ? '🔄 Recusado (Substituído)' : '🔴 Recusado'
       }));
 
     // Gráfico 1: Membros por Ministério
@@ -2109,6 +2111,12 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                             <div className="mt-1.5 text-[11px] text-amber-900 bg-amber-50/90 border border-amber-200/60 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5">
                               <span className="text-xs">💬</span>
                               <span><strong>Justificativa/Motivo:</strong> {item.justificativa}</span>
+                            </div>
+                          )}
+                          {item.substituto_nome && (
+                            <div className="mt-1.5 text-[11px] text-indigo-900 bg-indigo-50/90 border border-indigo-200/60 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5">
+                              <span className="text-xs">🔄</span>
+                              <span><strong>Substituído(a) por:</strong> {item.substituto_nome}</span>
                             </div>
                           )}
                         </div>

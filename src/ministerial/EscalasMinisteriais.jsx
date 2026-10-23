@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Calendar, Plus, X, Search, Check, AlertCircle, Share2, Printer, CheckCircle, XCircle, Trash2, ChevronLeft, ChevronRight, Pencil, Sparkles, Zap } from 'lucide-react';
-import { escalasService } from './services/escalasService';
+import { Calendar, Plus, X, Search, Check, AlertCircle, Share2, Printer, CheckCircle, XCircle, Trash2, ChevronLeft, ChevronRight, Pencil, Sparkles, Zap, UserCheck, RefreshCw } from 'lucide-react';
+import { escalasService, limparTextoJustificativa } from './services/escalasService';
 import { autoEscalaService } from './services/autoEscalaService';
 import { supabase } from '../supabaseClient';
 import { toPng } from 'html-to-image';
@@ -12,12 +12,39 @@ export default function EscalasMinisteriais({
   initialFiltroMinisterioId = null,
   initialStatus = null,
   initialFiltroMes = null,
-  initialFiltroAno = null
+  initialFiltroAno = null,
+  colunaRecolhida = false
 }) {
   const [eventos, setEventos] = useState([]);
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [escalas, setEscalas] = useState([]);
   const [minhasEscalas, setMinhasEscalas] = useState([]);
+
+  // Estado sincronizado de recolhimento da coluna direita
+  const [colunaDireitaRetraida, setColunaDireitaRetraida] = useState(() => {
+    if (colunaRecolhida !== undefined && colunaRecolhida !== null) return Boolean(colunaRecolhida);
+    try {
+      return localStorage.getItem('mib_ministerial_coluna_recolhida') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    if (colunaRecolhida !== undefined && colunaRecolhida !== null) {
+      setColunaDireitaRetraida(Boolean(colunaRecolhida));
+    }
+  }, [colunaRecolhida]);
+
+  useEffect(() => {
+    const onToggle = (e) => {
+      if (e.detail?.colunaRecolhida !== undefined) {
+        setColunaDireitaRetraida(Boolean(e.detail.colunaRecolhida));
+      }
+    };
+    window.addEventListener('mib-coluna-direita-toggle', onToggle);
+    return () => window.removeEventListener('mib-coluna-direita-toggle', onToggle);
+  }, []);
 
   // Modais e Estados de Criação
   const [modalEvento, setModalEvento] = useState(false);
@@ -60,6 +87,17 @@ export default function EscalasMinisteriais({
   const [justificativaApontamento, setJustificativaApontamento] = useState('');
   const [salvandoApontamento, setSalvandoApontamento] = useState(false);
 
+  // Estado do Modal de Substituição de Voluntário
+  const [modalSubstituicao, setModalSubstituicao] = useState(null); // { escala, grupo, evento }
+  const [candidatosSubstitutos, setCandidatosSubstitutos] = useState([]);
+  const [carregandoCandidatos, setCarregandoCandidatos] = useState(false);
+  const [buscaSubstituto, setBuscaSubstituto] = useState('');
+  const [substitutoSelecionado, setSubstitutoSelecionado] = useState(null);
+  const [statusInicialSubstituto, setStatusInicialSubstituto] = useState('pendente'); // 'pendente' | 'confirmado'
+  const [motivoSubstituicao, setMotivoSubstituicao] = useState('');
+  const [notificarWhatsAppSubstituto, setNotificarWhatsAppSubstituto] = useState(true);
+  const [salvandoSubstituicao, setSalvandoSubstituicao] = useState(false);
+
   // Suporte ao botão voltar do celular para fechar o modal de apontamento
   useEffect(() => {
     if (modalApontamento) {
@@ -78,6 +116,24 @@ export default function EscalasMinisteriais({
     }
   }, [modalApontamento]);
 
+  // Suporte ao botão voltar do celular para fechar o modal de substituição
+  useEffect(() => {
+    if (modalSubstituicao) {
+      try {
+        window.history.pushState({ modalSubstituicao: true }, '');
+      } catch (e) { }
+
+      const handlePop = () => {
+        setModalSubstituicao(null);
+      };
+
+      window.addEventListener('popstate', handlePop, { once: true });
+      return () => {
+        window.removeEventListener('popstate', handlePop);
+      };
+    }
+  }, [modalSubstituicao]);
+
   // Suporte ao botão voltar do celular para fechar o modal de conflito
   useEffect(() => {
     if (modalConflito) {
@@ -95,6 +151,31 @@ export default function EscalasMinisteriais({
       };
     }
   }, [modalConflito]);
+
+  // Listener para navegação direta vinda de notificações (seleciona evento e abre substituição se aplicável)
+  useEffect(() => {
+    const handleSelecionarEscala = async (e) => {
+      const { eventoId, escalaId } = e.detail || {};
+      if (eventoId && eventos.length > 0) {
+        const evAlvo = eventos.find(ev => String(ev.id) === String(eventoId));
+        if (evAlvo) {
+          await selecionarEvento(evAlvo);
+          if (escalaId) {
+            setTimeout(async () => {
+              const listaAtual = await escalasService.listarEscalas(evAlvo.id);
+              const escAlvo = listaAtual.find(item => String(item.id) === String(escalaId));
+              if (escAlvo) {
+                abrirModalSubstituicao(escAlvo, escAlvo.ministerios);
+              }
+            }, 300);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('mib-selecionar-escala', handleSelecionarEscala);
+    return () => window.removeEventListener('mib-selecionar-escala', handleSelecionarEscala);
+  }, [eventos]);
 
   // Filtro de Período
   const [filtroMes, setFiltroMes] = useState(() => (initialFiltroMes !== null && initialFiltroMes !== undefined) ? initialFiltroMes : new Date().getMonth());
@@ -1475,14 +1556,19 @@ export default function EscalasMinisteriais({
     setJustificativaApontamento('');
   }
 
-  async function salvarApontamentoFrequencia() {
+  async function salvarApontamentoFrequencia(abrirSubstituicaoApos = false) {
     if (!modalApontamento?.escala?.id) return;
+    const escalaSalva = modalApontamento.escala;
+    const grupoSalvo = modalApontamento.grupo;
     setSalvandoApontamento(true);
     try {
       await escalasService.atualizarStatusEscala(
-        modalApontamento.escala.id,
+        escalaSalva.id,
         statusApontamento,
-        justificativaApontamento.trim() || null
+        justificativaApontamento.trim() || null,
+        {
+          pedido_substituicao: statusApontamento === 'recusado' || statusApontamento === 'falta_justificada' || statusApontamento === 'falta'
+        }
       );
 
       mostrarToast(
@@ -1499,9 +1585,19 @@ export default function EscalasMinisteriais({
 
       fecharModalApontamento();
       if (eventoSelecionado) {
-        selecionarEvento(eventoSelecionado);
+        await selecionarEvento(eventoSelecionado);
       }
       carregarMinhasEscalas();
+
+      if (abrirSubstituicaoApos) {
+        setTimeout(() => {
+          abrirModalSubstituicao({
+            ...escalaSalva,
+            status: statusApontamento,
+            justificativa: justificativaApontamento.trim() || escalaSalva.justificativa
+          }, grupoSalvo);
+        }, 150);
+      }
     } catch (error) {
       console.error('Erro ao salvar apontamento de frequência:', error);
       mostrarToast('⚠️ Erro ao salvar apontamento: ' + error.message);
@@ -1510,46 +1606,197 @@ export default function EscalasMinisteriais({
     }
   }
 
-  function renderStatusBadge(item) {
+  async function abrirModalSubstituicao(item, grupo) {
+    if (!item) return;
+    setModalSubstituicao({
+      escala: item,
+      evento: eventoSelecionado,
+      grupo: grupo
+    });
+    setSubstitutoSelecionado(null);
+    setStatusInicialSubstituto('pendente');
+    setMotivoSubstituicao(item.justificativa || '');
+    setBuscaSubstituto('');
+    setCarregandoCandidatos(true);
+
+    try {
+      const minId = item.ministerio_id || grupo?.id;
+      let membrosMin = [];
+      if (minId) {
+        membrosMin = await escalasService.listarPessoasMinisterio(minId);
+      }
+
+      const mapaEscaladosNesteEvento = new Set(
+        (escalas || [])
+          .filter(e => String(e.id) !== String(item.id))
+          .map(e => String(e.pessoa_id))
+      );
+
+      const listaFormatada = (membrosMin || [])
+        .filter(m => m.pessoas && String(m.pessoa_id) !== String(item.pessoa_id))
+        .map(m => {
+          const jaEscaladoNesteEvento = mapaEscaladosNesteEvento.has(String(m.pessoa_id));
+          return {
+            ...m,
+            jaEscaladoNesteEvento
+          };
+        });
+
+      setCandidatosSubstitutos(listaFormatada);
+    } catch (err) {
+      console.error('Erro ao carregar candidatos a substituto:', err);
+      mostrarToast('⚠️ Erro ao carregar voluntários: ' + err.message);
+    } finally {
+      setCarregandoCandidatos(false);
+    }
+  }
+
+  function fecharModalSubstituicao() {
+    setModalSubstituicao(null);
+    setSubstitutoSelecionado(null);
+    setBuscaSubstituto('');
+    setMotivoSubstituicao('');
+  }
+
+  async function confirmarSubstituicao() {
+    if (!modalSubstituicao?.escala?.id || !substitutoSelecionado) {
+      mostrarToast('⚠️ Selecione um voluntário substituto.');
+      return;
+    }
+
+    setSalvandoSubstituicao(true);
+    try {
+      await escalasService.substituirVoluntarioEscala({
+        escalaOriginalId: modalSubstituicao.escala.id,
+        novoPessoaId: substitutoSelecionado.pessoa_id,
+        statusInicial: statusInicialSubstituto,
+        motivo: motivoSubstituicao.trim() || modalSubstituicao.escala.justificativa || null
+      });
+
+      mostrarToast(`✓ ${substitutoSelecionado.pessoas?.nome || 'Voluntário'} foi escalado(a) como substituto(a)! Registro original preservado.`);
+
+      if (notificarWhatsAppSubstituto) {
+        const ev = modalSubstituicao.evento;
+        const min = modalSubstituicao.grupo || modalSubstituicao.escala.ministerios;
+        const func = modalSubstituicao.escala.ministerio_funcoes;
+        const dataInfo = obterInfoDataBrasilia(ev?.data_evento);
+        const hora = obterHoraExibicao(ev);
+        const nomeSubstituto = substitutoSelecionado.pessoas?.nome || 'Voluntário';
+        const nomeOriginal = modalSubstituicao.escala.pessoas?.nome || 'nosso voluntário';
+
+        const texto = `👋 Olá, *${nomeSubstituto}*!\n\n` +
+          `Você foi escalado(a) no ministério *${min?.nome || 'Ministério'}* para substituir *${nomeOriginal}* no culto abaixo:\n\n` +
+          `📅 *Evento:* ${ev?.titulo || 'Culto'}\n` +
+          `🗓️ *Data:* ${dataInfo.dia}/${dataInfo.mesIndex + 1}/${dataInfo.ano} às ${hora}\n` +
+          `📍 *Local:* ${ev?.local || 'Templo Sede'}\n` +
+          `🎯 *Função:* ${func?.nome || 'Geral'}\n\n` +
+          `Contamos com você! Por gentileza, confirme sua presença no sistema MIB Church. Deus abençoe! 🙏`;
+
+        copiarEAbrirWhatsApp(texto, `✓ WhatsApp aberto para avisar ${nomeSubstituto}!`);
+      }
+
+      fecharModalSubstituicao();
+      if (eventoSelecionado) {
+        await selecionarEvento(eventoSelecionado);
+      }
+      carregarMinhasEscalas();
+    } catch (err) {
+      console.error('Erro ao efetivar substituição:', err);
+      if (err.conflito) {
+        setModalConflito(err.conflito);
+      } else {
+        mostrarToast('⚠️ Erro ao salvar substituição: ' + err.message);
+      }
+    } finally {
+      setSalvandoSubstituicao(false);
+    }
+  }
+
+  async function handleCancelarSubstituicao(item) {
+    if (!item?.id) return;
+    const confirma = window.confirm(`Deseja realmente cancelar a substituição de ${item.pessoas?.nome}? A vaga voltará a constar como pendente de substituto.`);
+    if (!confirma) return;
+
+    try {
+      await escalasService.cancelarSubstituicao(item.id);
+      mostrarToast('✓ Substituição desfeita. A escala retornou para a lista de substituições pendentes.');
+      if (eventoSelecionado) {
+        await selecionarEvento(eventoSelecionado);
+      }
+    } catch (err) {
+      console.error('Erro ao cancelar substituição:', err);
+      mostrarToast('⚠️ Erro ao cancelar substituição: ' + err.message);
+    }
+  }
+
+  function renderStatusBadge(item, jaFoiSubstituidoFlag = null, eSubstitutoFlag = null) {
     const st = (item.status || '').toLowerCase();
+    const badges = [];
+
+    const isSubstituido = jaFoiSubstituidoFlag !== null
+      ? jaFoiSubstituidoFlag
+      : Boolean(item.substituido_por_pessoa_id || item.substituto);
+
+    const isAtuandoComoSubstituto = eSubstitutoFlag !== null
+      ? eSubstitutoFlag
+      : Boolean(item.substituindo_pessoa_id || item.substituindo);
+
+    if (isSubstituido) {
+      badges.push(
+        <span key="subst-por" className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 border border-purple-300 flex items-center gap-1 shadow-2xs" title={`Substituído por: ${item.substituto?.nome || 'Substituto'}`}>
+          <span className="w-1.5 h-1.5 rounded-full bg-purple-600 inline-block" />
+          Substituído
+        </span>
+      );
+    }
+
+    if (isAtuandoComoSubstituto) {
+      badges.push(
+        <span key="subst-de" className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 border border-blue-300 flex items-center gap-1 shadow-2xs" title={`Substituindo: ${item.substituindo?.nome || 'Voluntário'}`}>
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 inline-block" />
+          Substituto
+        </span>
+      );
+    }
+
     if (st === 'confirmado' || st === 'presente') {
-      return (
-        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+      badges.push(
+        <span key="st-conf" className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
           Confirmado
         </span>
       );
-    }
-    if (st === 'falta_justificada' || st === 'ausente_justificado') {
-      return (
-        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1" title={item.justificativa ? `Justificativa: ${item.justificativa}` : 'Falta Justificada'}>
+    } else if (st === 'falta_justificada' || st === 'ausente_justificado') {
+      badges.push(
+        <span key="st-fj" className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1" title={item.justificativa ? `Justificativa: ${item.justificativa}` : 'Falta Justificada'}>
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
           Falta Justificada
         </span>
       );
-    }
-    if (st === 'falta' || st === 'falta_injustificada' || st === 'ausente') {
-      return (
-        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1" title="Falta Injustificada / Negativação">
+    } else if (st === 'falta' || st === 'falta_injustificada' || st === 'ausente') {
+      badges.push(
+        <span key="st-f" className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1" title="Falta Injustificada / Negativação">
           <span className="w-1.5 h-1.5 rounded-full bg-rose-600 inline-block" />
           Falta / Negativação
         </span>
       );
-    }
-    if (st === 'recusado') {
-      return (
-        <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200 flex items-center gap-1" title={item.justificativa ? `Motivo da Recusa: ${item.justificativa}` : 'Recusado pelo voluntário'}>
+    } else if (st === 'recusado') {
+      badges.push(
+        <span key="st-rec" className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-red-50 text-red-700 border border-red-200 flex items-center gap-1" title={item.justificativa ? `Motivo da Recusa: ${item.justificativa}` : 'Recusado pelo voluntário'}>
           <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
           Recusado
         </span>
       );
+    } else {
+      badges.push(
+        <span key="st-pend" className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+          Pendente
+        </span>
+      );
     }
-    return (
-      <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-        Pendente
-      </span>
-    );
+
+    return <div className="flex items-center gap-1 flex-wrap">{badges}</div>;
   }
 
   function obterIconeMinisterio(nome, iconeDefinido) {
@@ -2512,50 +2759,108 @@ export default function EscalasMinisteriais({
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end shrink-0 w-full sm:w-auto">
                     {!isMembroNormal && (
                       <>
+                        {/* Botão Quadrado: EDITAR */}
                         <button
                           type="button"
                           onClick={() => abrirModalEditar(eventoSelecionado)}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-50 to-indigo-50/60 hover:from-blue-100 hover:to-indigo-100 text-blue-700 border border-blue-200/80 hover:border-blue-300 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+                          className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-blue-900 hover:text-blue-950 bg-white hover:bg-blue-50/90 border border-blue-200/90 hover:border-blue-300 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
                           title="Editar este Evento"
                         >
-                          <Pencil size={13} strokeWidth={2.5} />
-                          <span>Editar</span>
+                          <Pencil size={16} strokeWidth={2.4} className="text-blue-600 group-hover:scale-115 transition-transform shrink-0" />
+                          <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5">
+                            Editar
+                          </span>
                         </button>
+
+                        {/* Botão Quadrado: EXCLUIR */}
                         <button
                           type="button"
                           onClick={excluirEventoAtual}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-rose-50 to-red-50/60 hover:from-rose-100 hover:to-red-100 text-rose-600 hover:text-rose-700 border border-rose-200/80 hover:border-rose-300 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+                          className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-rose-900 hover:text-rose-950 bg-white hover:bg-rose-50/90 border border-rose-200/90 hover:border-rose-300 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
                           title="Excluir este Evento"
                         >
-                          <Trash2 size={13} strokeWidth={2.5} />
-                          <span>Excluir</span>
+                          <Trash2 size={16} strokeWidth={2.4} className="text-rose-600 group-hover:scale-115 transition-transform shrink-0" />
+                          <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5">
+                            Excluir
+                          </span>
                         </button>
                       </>
                     )}
+
+                    {/* Botão Quadrado: WHATSAPP (Evento) */}
                     <button
                       type="button"
                       onClick={copiarWhatsApp}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-50 to-teal-50/60 hover:from-emerald-100 hover:to-teal-100 text-emerald-700 border border-emerald-200/80 hover:border-emerald-300 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200 shadow-2xs hover:shadow-xs active:scale-95 cursor-pointer"
+                      className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-white bg-gradient-to-b from-emerald-500 via-teal-600 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 border border-emerald-400/30 shadow-xs shadow-emerald-700/20 hover:shadow-md hover:shadow-emerald-700/30 transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
                       title="Copiar texto formatado para WhatsApp"
                     >
-                      <Share2 size={13} strokeWidth={2.5} />
-                      <span>WhatsApp</span>
+                      <Share2 size={16} strokeWidth={2.4} className="shrink-0 transition-transform duration-200 group-hover:scale-115" />
+                      <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none whitespace-nowrap w-full text-center px-0.5">
+                        WhatsApp
+                      </span>
                     </button>
+
+                    {/* Botão Quadrado: ESCALAR (Evento) */}
                     {!isMembroNormal && (
                       <button
                         type="button"
                         onClick={() => abrirModalEscala()}
-                        className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white px-4.5 py-2 rounded-xl flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 border border-blue-400/30 transition-all duration-200 active:scale-95 cursor-pointer"
+                        className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-white bg-gradient-to-b from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 shadow-xs shadow-blue-500/25 hover:shadow-md hover:shadow-blue-500/40 border border-blue-400/30 transition-all duration-200 active:scale-95 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0"
+                        title="Escalar Voluntários no Culto"
                       >
-                        <Plus size={14} strokeWidth={3} />
-                        <span>Escalar</span>
+                        <Plus size={17} strokeWidth={2.8} className="shrink-0 transition-transform duration-200 group-hover:scale-115" />
+                        <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none whitespace-nowrap w-full text-center px-0.5">
+                          Escalar
+                        </span>
                       </button>
                     )}
                   </div>
                 </div>
+
+                {/* Alerta de Substituições Pendentes no Evento */}
+                {(() => {
+                  const pedidosPendentes = (escalas || []).filter((e) => {
+                    if (e.substituindo_escala_id) return false;
+                    const isAusente = e.status === 'recusado' || e.status === 'falta' || e.status === 'falta_justificada' || e.status === 'ausente';
+                    const jaSubstituido = Boolean(
+                      e.substituido_por_pessoa_id ||
+                      e.substituto ||
+                      (escalas || []).some(outro =>
+                        String(outro.id) !== String(e.id) && (
+                          (outro.substituindo_escala_id && String(outro.substituindo_escala_id) === String(e.id)) ||
+                          (outro.substituindo_pessoa_id && String(outro.substituindo_pessoa_id) === String(e.pessoa_id) && String(outro.funcao_id) === String(e.funcao_id)) ||
+                          (isAusente && String(outro.funcao_id) === String(e.funcao_id) && String(outro.ministerio_id) === String(e.ministerio_id) && (outro.status === 'confirmado' || outro.status === 'pendente' || outro.status === 'presente'))
+                        )
+                      )
+                    );
+                    if (jaSubstituido) return false;
+                    return e.pedido_substituicao || e.status === 'recusado' || e.status === 'falta' || e.status === 'falta_justificada';
+                  });
+                  if (pedidosPendentes.length === 0) return null;
+                  return (
+                    <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border border-amber-300/70 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-base shadow-sm shrink-0">
+                          ⚠️
+                        </div>
+                        <div>
+                          <h4 className="text-xs sm:text-sm font-black text-amber-950 uppercase tracking-wide">
+                            {pedidosPendentes.length === 1 ? '1 Substituição Pendente Neste Evento' : `${pedidosPendentes.length} Substituições Pendentes Neste Evento`}
+                          </h4>
+                          <p className="text-[11px] text-amber-800 font-medium mt-0.5">
+                            Voluntários que recusaram ou apontaram ausência necessitam de substituto. O histórico original será preservado nos relatórios e rankings.
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-200/60 text-amber-900 border border-amber-300 shrink-0">
+                        Ação Necessária
+                      </span>
+                    </div>
+                  );
+                })()}
 
                 {/* Escalas Agrupadas */}
                 <div className="space-y-6">
@@ -2623,37 +2928,46 @@ export default function EscalasMinisteriais({
                             </span>
                           </div>
 
-                          {/* Lado Direito: Ações de Gestão (Escalar, WhatsApp, AutoEscala) - 100% responsivo para mobile */}
-                          <div className="grid grid-cols-3 gap-1 w-full md:flex md:w-auto md:items-center md:gap-1.5 shrink-0">
+                          {/* Lado Direito: Ações de Gestão (Escalar, WhatsApp, AutoEscala) - Botões Quadrados Padronizados */}
+                          <div className="flex items-center gap-1.5 sm:gap-2 justify-end shrink-0 w-full md:w-auto">
+                            {/* Botão Quadrado: ESCALAR */}
                             <button
                               type="button"
                               onClick={() => abrirModalEscala(grupo.id)}
-                              className="text-[7px] xs:text-[7.5px] sm:text-[10px] font-bold uppercase tracking-tight sm:tracking-wider text-white px-1 py-1 sm:px-3 sm:py-1.5 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-0.5 sm:gap-1 shadow-xs active:scale-95 hover:brightness-110 border border-white/25 w-full md:w-auto min-w-0"
+                              className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-white shadow-xs hover:shadow-md hover:brightness-110 active:scale-95 transition-all duration-200 cursor-pointer border border-white/25 w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0"
                               style={{ backgroundColor: corMin }}
                               title="Escalar voluntário neste ministério"
                             >
-                              <Plus size={9} strokeWidth={3} className="shrink-0 sm:w-[11px] sm:h-[11px]" />
-                              <span className="truncate">Escalar</span>
+                              <Plus size={17} strokeWidth={2.8} className="shrink-0 transition-transform duration-200 group-hover:scale-115" />
+                              <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none whitespace-nowrap w-full text-center px-0.5">
+                                Escalar
+                              </span>
                             </button>
 
+                            {/* Botão Quadrado: WHATSAPP */}
                             <button
                               type="button"
                               onClick={() => copiarWhatsAppMinisterio(grupo)}
-                              className="text-[7px] xs:text-[7.5px] sm:text-[10px] font-bold uppercase tracking-tight sm:tracking-wider text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 border border-emerald-400/40 shadow-xs shadow-emerald-600/20 hover:shadow-emerald-600/35 px-1 py-1 sm:px-3 sm:py-1.5 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-0.5 sm:gap-1 active:scale-95 w-full md:w-auto min-w-0"
+                              className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-white bg-gradient-to-b from-emerald-500 via-teal-600 to-emerald-700 hover:from-emerald-400 hover:to-emerald-600 border border-emerald-400/30 shadow-xs shadow-emerald-700/20 hover:shadow-md hover:shadow-emerald-700/30 active:scale-95 transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0"
                               title="Copiar escala deste ministério para WhatsApp"
                             >
-                              <Share2 size={9} strokeWidth={2.5} className="shrink-0 sm:w-[11px] sm:h-[11px]" />
-                              <span className="truncate">WhatsApp</span>
+                              <Share2 size={16} strokeWidth={2.4} className="shrink-0 transition-transform duration-200 group-hover:scale-115" />
+                              <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none whitespace-nowrap w-full text-center px-0.5">
+                                WhatsApp
+                              </span>
                             </button>
 
+                            {/* Botão Quadrado: AUTOESCALA */}
                             <button
                               type="button"
                               onClick={() => rodarAutoEscala(grupo.id)}
-                              className="text-[7px] xs:text-[7.5px] sm:text-[10px] font-bold uppercase tracking-tight sm:tracking-wider text-white bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:via-orange-400 hover:to-amber-500 border border-amber-300/40 shadow-xs shadow-amber-500/20 hover:shadow-amber-500/35 px-1 py-1 sm:px-3 sm:py-1.5 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center gap-0.5 sm:gap-1 active:scale-95 relative overflow-hidden group w-full md:w-auto min-w-0"
+                              className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-white bg-gradient-to-b from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:via-orange-400 hover:to-amber-500 border border-amber-300/40 shadow-xs shadow-amber-500/20 hover:shadow-md hover:shadow-amber-500/30 active:scale-95 transition-all duration-200 cursor-pointer relative overflow-hidden w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0"
                               title="Montar escala automaticamente com base no histórico e disponibilidade."
                             >
-                              <Sparkles size={9} className="text-amber-100 group-hover:rotate-12 transition-transform shrink-0 sm:w-[11px] sm:h-[11px]" />
-                              <span className="truncate">AutoEscala</span>
+                              <Sparkles size={16} strokeWidth={2.2} className="text-amber-100 group-hover:rotate-12 group-hover:scale-115 transition-transform duration-200 shrink-0" />
+                              <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none whitespace-nowrap w-full text-center px-0.5">
+                                AutoEscala
+                              </span>
                             </button>
                           </div>
                         </div>
@@ -2702,8 +3016,58 @@ export default function EscalasMinisteriais({
                         {/* Grade de Voluntários */}
                         <div className="p-3.5 sm:p-4 bg-slate-50/20">
 
-                          <div className="grid sm:grid-cols-2 gap-3">
-                            {grupo.itens.map((item) => (
+                          <div className={`grid gap-3 transition-all duration-300 ${colunaDireitaRetraida ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+                            {grupo.itens.map((item) => {
+                              const isAusente = item.status === 'recusado' || item.status === 'falta' || item.status === 'falta_justificada' || item.status === 'ausente';
+
+                              // Localiza se há outra escala deste evento que está atuando como substituta deste voluntário
+                              const substitutoEscala = (escalas || []).find(e =>
+                                String(e.id) !== String(item.id) && (
+                                  (e.substituindo_escala_id && String(e.substituindo_escala_id) === String(item.id)) ||
+                                  (item.substituido_por_pessoa_id && String(e.pessoa_id) === String(item.substituido_por_pessoa_id)) ||
+                                  (e.substituindo_pessoa_id && String(e.substituindo_pessoa_id) === String(item.pessoa_id) && String(e.funcao_id) === String(item.funcao_id)) ||
+                                  (isAusente && String(e.funcao_id) === String(item.funcao_id) && String(e.ministerio_id) === String(item.ministerio_id) && (e.status === 'confirmado' || e.status === 'pendente' || e.status === 'presente'))
+                                )
+                              );
+
+                              // Localiza se esta escala está atuando como substituta de alguém ausente
+                              const escalaOriginalSubstituida = (escalas || []).find(e =>
+                                String(e.id) !== String(item.id) && (
+                                  (item.substituindo_escala_id && String(item.substituindo_escala_id) === String(e.id)) ||
+                                  (item.substituindo_pessoa_id && String(item.substituindo_pessoa_id) === String(e.pessoa_id)) ||
+                                  (e.substituido_por_pessoa_id && String(e.substituido_por_pessoa_id) === String(item.pessoa_id)) ||
+                                  (!isAusente && String(e.funcao_id) === String(item.funcao_id) && String(e.ministerio_id) === String(item.ministerio_id) && (e.status === 'recusado' || e.status === 'falta' || e.status === 'falta_justificada' || e.status === 'ausente'))
+                                )
+                              );
+
+                              const jaFoiSubstituido = Boolean(
+                                item.substituido_por_pessoa_id ||
+                                item.substituto ||
+                                (isAusente && substitutoEscala)
+                              );
+
+                              const eSubstituto = Boolean(
+                                item.substituindo_pessoa_id ||
+                                item.substituindo ||
+                                (!isAusente && escalaOriginalSubstituida)
+                              );
+
+                              const nomeSubstituto = item.substituto?.nome ||
+                                                     substitutoEscala?.pessoas?.nome ||
+                                                     'Voluntário Substituto';
+
+                              const nomeSubstituindo = item.substituindo?.nome ||
+                                                       escalaOriginalSubstituida?.pessoas?.nome ||
+                                                       'Voluntário Ausente';
+
+                              const precisaSubstituto = !jaFoiSubstituido && !eSubstituto && Boolean(
+                                item.status === 'recusado' ||
+                                item.pedido_substituicao ||
+                                item.status === 'falta' ||
+                                item.status === 'falta_justificada'
+                              );
+
+                              return (
                               <div
                                 key={item.id}
                                 className="bg-white rounded-2xl border border-slate-200/70 overflow-hidden flex flex-col justify-between group relative hover:border-slate-300/90 hover:shadow-md transition-all duration-300 shadow-2xs"
@@ -2716,6 +3080,11 @@ export default function EscalasMinisteriais({
                                         <p className="text-sm font-black text-slate-900 tracking-tight truncate" title={item.pessoas?.nome}>
                                           {item.pessoas?.nome}
                                         </p>
+                                        {eSubstituto && (
+                                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200" title={`Substituindo ${nomeSubstituindo}`}>
+                                            Substituto
+                                          </span>
+                                        )}
                                       </div>
                                       <p className="text-[10px] sm:text-[11px] text-slate-500 font-semibold mt-0.5">
                                         {item.ministerio_funcoes?.nome || 'Geral'}
@@ -2723,7 +3092,14 @@ export default function EscalasMinisteriais({
                                     </div>
 
                                     <div className="flex items-center gap-1 shrink-0">
-                                      {renderStatusBadge(item)}
+                                      <button
+                                        type="button"
+                                        onClick={() => !isMembroNormal && abrirModalApontamento(item, grupo)}
+                                        className="cursor-pointer hover:opacity-85 transition active:scale-95 text-left"
+                                        title="Clique para apontar frequência"
+                                      >
+                                        {renderStatusBadge(item, jaFoiSubstituido, eSubstituto)}
+                                      </button>
                                       {!isMembroNormal && !item.isPregadorManual && (
                                         <button
                                           type="button"
@@ -2742,7 +3118,7 @@ export default function EscalasMinisteriais({
                                     <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
                                       <span className="shrink-0 text-rose-600">🚫</span>
                                       <span className="leading-snug">
-                                        <strong>Motivo da Recusa:</strong> {item.justificativa ? item.justificativa : 'Voluntário informou que não poderá comparecer.'}
+                                        <strong>Motivo da Recusa:</strong> {limparTextoJustificativa(item.justificativa) || 'Voluntário informou que não poderá comparecer.'}
                                       </span>
                                     </div>
                                   )}
@@ -2751,7 +3127,7 @@ export default function EscalasMinisteriais({
                                     <div className="text-[10px] text-amber-900 bg-amber-50/90 border border-amber-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
                                       <span className="shrink-0 text-amber-600">💬</span>
                                       <span className="italic leading-snug">
-                                        <strong>Justificativa:</strong> {item.justificativa}
+                                        <strong>Justificativa:</strong> {limparTextoJustificativa(item.justificativa)}
                                       </span>
                                     </div>
                                   )}
@@ -2760,52 +3136,129 @@ export default function EscalasMinisteriais({
                                     <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
                                       <span className="shrink-0 text-rose-600">⚠️</span>
                                       <span className="leading-snug">
-                                        <strong>Negativação:</strong> {item.justificativa ? item.justificativa : 'Não compareceu ao evento para cumprir a escala.'}
+                                        <strong>Negativação:</strong> {limparTextoJustificativa(item.justificativa) || 'Não compareceu ao evento para cumprir a escala.'}
                                       </span>
+                                    </div>
+                                  )}
+
+                                  {/* Info de Substituição: Já Substituído */}
+                                  {jaFoiSubstituido && (
+                                    <div className="text-[10px] text-indigo-950 bg-indigo-50/90 border border-indigo-200/80 px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-1.5 animate-in fade-in">
+                                      <span className="flex items-center gap-1.5 min-w-0">
+                                        <span className="text-xs shrink-0">🔄</span>
+                                        <span className="truncate">
+                                          <strong>Substituído(a) por:</strong> {nomeSubstituto}
+                                        </span>
+                                      </span>
+                                      {!isMembroNormal && (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleCancelarSubstituicao(item)}
+                                          className="text-[9px] font-bold text-indigo-600 hover:text-rose-600 underline cursor-pointer shrink-0"
+                                          title="Desfazer substituição"
+                                        >
+                                          Desfazer
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Info de Substituição: Atuando como Substituto */}
+                                  {eSubstituto && (
+                                    <div className="text-[10px] text-emerald-950 bg-emerald-50/90 border border-emerald-200/80 px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 animate-in fade-in">
+                                      <span className="text-xs shrink-0">🤝</span>
+                                      <span className="truncate">
+                                        <strong>Substituindo:</strong> {nomeSubstituindo}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {/* Alerta de Necessidade de Substituto: Exibido APENAS enquanto NÃO houver substituição */}
+                                  {precisaSubstituto && (
+                                    <div className="text-[10px] text-amber-950 bg-amber-50/90 border border-amber-300/80 px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-1.5 animate-in fade-in">
+                                      <span className="flex items-center gap-1.5 font-bold">
+                                        <span className="text-amber-600">⚠️</span>
+                                        <span>Necessita de substituto</span>
+                                      </span>
+                                      {!isMembroNormal && (
+                                        <button
+                                          type="button"
+                                          onClick={() => abrirModalSubstituicao(item, grupo)}
+                                          className="text-[9px] font-black uppercase tracking-wider bg-amber-600 hover:bg-amber-700 text-white px-2 py-0.5 rounded-md transition shadow-2xs active:scale-95 cursor-pointer"
+                                        >
+                                          Substituir
+                                        </button>
+                                      )}
                                     </div>
                                   )}
                                 </div>
 
-                                {/* Rodapé Gradiente com Botões de Ações */}
+                                {/* Rodapé Gradiente com Botões de Ações Quadrados (Ícone Acima, Legenda Abaixo) */}
                                 {!isMembroNormal && !item.isPregadorManual && (
                                   <div
-                                    className="px-3 py-2 border-t flex items-center justify-between gap-1.5 transition-colors"
+                                    className="px-3 py-2 border-t flex items-center justify-end gap-1.5 sm:gap-2 transition-colors"
                                     style={{
-                                      background: `linear-gradient(135deg, ${corMin}24 0%, ${corMin}10 100%)`,
-                                      borderTopColor: `${corMin}30`
+                                      background: `linear-gradient(135deg, ${corMin}16 0%, ${corMin}06 100%)`,
+                                      borderTopColor: `${corMin}25`
                                     }}
                                   >
-                                    <span
-                                      className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider flex items-center gap-1"
-                                      style={{ color: corMin }}
+                                    {/* 1. Botão Quadrado APONTAR */}
+                                    <button
+                                      type="button"
+                                      onClick={() => abrirModalApontamento(item, grupo)}
+                                      className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-indigo-900 hover:text-indigo-950 bg-white hover:bg-indigo-50/90 border border-indigo-200/90 hover:border-indigo-300 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
+                                      title="Apontar presença, falta justificada ou negativação"
                                     >
-                                      <span>⚡</span>
-                                      <span>Ações</span>
-                                    </span>
-                                    <div className="flex items-center gap-1.5">
+                                      <CheckCircle size={16} strokeWidth={2.4} className="text-indigo-600 group-hover:scale-115 transition-transform shrink-0" />
+                                      <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5">
+                                        Apontar
+                                      </span>
+                                    </button>
+
+                                    {/* 2. Botão Quadrado AVISAR (WhatsApp) */}
+                                    <button
+                                      type="button"
+                                      onClick={() => copiarWhatsAppVoluntario(item, grupo)}
+                                      className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-emerald-900 hover:text-emerald-950 bg-white hover:bg-emerald-50/90 border border-emerald-200/90 hover:border-emerald-300 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
+                                      title="Enviar mensagem de aviso individual via WhatsApp"
+                                    >
+                                      <Share2 size={16} strokeWidth={2.4} className="text-emerald-600 group-hover:scale-115 transition-transform shrink-0" />
+                                      <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5">
+                                        Avisar
+                                      </span>
+                                    </button>
+
+                                    {/* 3. Botão Quadrado SUBSTITUIR: Removido após a substituição ser feita */}
+                                    {!jaFoiSubstituido && !eSubstituto && (
                                       <button
                                         type="button"
-                                        onClick={() => copiarWhatsAppVoluntario(item, grupo)}
-                                        className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-emerald-800 hover:text-emerald-950 bg-white hover:bg-emerald-50 border border-emerald-300 shadow-2xs hover:shadow-xs px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer flex items-center gap-1 active:scale-95"
-                                        title="Enviar mensagem de aviso individual via WhatsApp"
+                                        onClick={() => abrirModalSubstituicao(item, grupo)}
+                                        className={`group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95 ${
+                                          precisaSubstituto
+                                            ? 'bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black border border-amber-400 shadow-xs shadow-amber-500/25 animate-pulse'
+                                            : 'bg-white hover:bg-amber-50/90 text-amber-900 hover:text-amber-950 border border-amber-200/90 hover:border-amber-300 shadow-2xs hover:shadow-xs'
+                                        }`}
+                                        title="Substituir este voluntário preservando o histórico"
                                       >
-                                        <Share2 size={10} className="text-emerald-600" />
-                                        <span>Avisar</span>
+                                        <UserCheck
+                                          size={16}
+                                          strokeWidth={2.4}
+                                          className={`shrink-0 transition-transform group-hover:scale-115 ${
+                                            precisaSubstituto ? 'text-white' : 'text-amber-600'
+                                          }`}
+                                        />
+                                        <span className={`text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5 ${
+                                          precisaSubstituto ? 'text-white' : 'text-amber-900'
+                                        }`}>
+                                          Substituir
+                                        </span>
                                       </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => abrirModalApontamento(item, grupo)}
-                                        className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider text-indigo-800 hover:text-indigo-950 bg-white hover:bg-indigo-50 border border-indigo-300 shadow-2xs hover:shadow-xs px-2.5 py-1 rounded-lg transition-all duration-200 cursor-pointer flex items-center gap-1 active:scale-95"
-                                        title="Apontar presença, falta justificada ou negativação"
-                                      >
-                                        <CheckCircle size={10} className="text-indigo-600" />
-                                        <span>Apontar</span>
-                                      </button>
-                                    </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
@@ -4292,9 +4745,21 @@ export default function EscalasMinisteriais({
               >
                 Cancelar
               </button>
+              {(statusApontamento === 'falta_justificada' || statusApontamento === 'falta' || statusApontamento === 'recusado' || statusApontamento === 'ausente_justificado') && !modalApontamento?.escala?.substituido_por_pessoa_id && (
+                <button
+                  type="button"
+                  onClick={() => salvarApontamentoFrequencia(true)}
+                  disabled={salvandoApontamento}
+                  className="w-full sm:flex-1 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-amber-500/25 border border-amber-400/30 transition-all duration-200 active:scale-95 disabled:opacity-50 cursor-pointer text-center flex items-center justify-center gap-1.5"
+                  title="Salvar a falta/recusa e abrir imediatamente a seleção de substituto"
+                >
+                  <UserCheck size={14} />
+                  <span>{salvandoApontamento ? 'Salvando...' : 'Salvar e Substituir'}</span>
+                </button>
+              )}
               <button
                 type="button"
-                onClick={salvarApontamentoFrequencia}
+                onClick={() => salvarApontamentoFrequencia(false)}
                 disabled={salvandoApontamento}
                 className="w-full sm:flex-1 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 border border-blue-400/30 transition-all duration-200 active:scale-95 disabled:opacity-50 cursor-pointer text-center"
               >
@@ -4305,8 +4770,278 @@ export default function EscalasMinisteriais({
         </div>
       )}
 
+      {/* Modal - Substituição de Voluntário na Escala */}
+      {modalSubstituicao && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="bg-slate-900 p-5 text-white flex justify-between items-start shrink-0">
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-950/60 px-2.5 py-0.5 rounded-full border border-amber-800/60 inline-block mb-1.5">
+                  Gestão Ministerial · Substituição
+                </span>
+                <h3 className="text-base sm:text-lg font-black tracking-tight flex items-center gap-2 text-white">
+                  <span>🔄</span> Substituir Voluntário
+                </h3>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Escala um substituto preservando o registro original para relatórios e rankings.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={fecharModalSubstituicao}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer shrink-0"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Informações da Escala Sendo Substituída */}
+            <div className="bg-slate-50/90 border-b border-slate-100 p-4 space-y-2 shrink-0">
+              <div className="flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black text-rose-600 uppercase tracking-wider">Voluntário Ausente</p>
+                  <h4 className="text-sm font-black text-slate-800 truncate">
+                    {modalSubstituicao.escala?.pessoas?.nome}
+                  </h4>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Ministério / Função</p>
+                  <p className="text-xs font-bold text-blue-600">
+                    {modalSubstituicao.grupo?.nome || modalSubstituicao.escala?.ministerios?.nome} · {modalSubstituicao.escala?.ministerio_funcoes?.nome || 'Geral'}
+                  </p>
+                </div>
+              </div>
+
+              {modalSubstituicao.evento && (
+                <div className="text-[11px] text-slate-500 bg-white p-2 rounded-xl border border-slate-200/70 flex items-center justify-between gap-2">
+                  <span className="font-bold text-slate-700 truncate">
+                    📍 {modalSubstituicao.evento.titulo}
+                  </span>
+                  <span className="shrink-0 text-[10px] text-slate-400 font-bold">
+                    📅 {new Date(modalSubstituicao.evento.data_evento).toLocaleDateString('pt-BR')} · {obterHoraExibicao(modalSubstituicao.evento)}
+                  </span>
+                </div>
+              )}
+
+              {modalSubstituicao.escala?.justificativa && (
+                <div className="text-[10px] text-amber-900 bg-amber-50 p-2 rounded-lg border border-amber-200/70 flex items-start gap-1.5">
+                  <span className="shrink-0 text-amber-600">💬</span>
+                  <span className="leading-snug">
+                    <strong>Motivo informado:</strong> {modalSubstituicao.escala.justificativa}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Corpo: Seleção do Substituto */}
+            <div className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
+              {/* Busca de Substituto */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                  Selecione o Voluntário Substituto:
+                </label>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={buscaSubstituto}
+                    onChange={(e) => setBuscaSubstituto(e.target.value)}
+                    placeholder="Buscar voluntário por nome..."
+                    className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50/60 focus:bg-white focus:border-blue-500 outline-none transition font-medium"
+                  />
+                  {buscaSubstituto && (
+                    <button
+                      type="button"
+                      onClick={() => setBuscaSubstituto('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Lista de Candidatos */}
+              <div className="space-y-1.5 max-h-48 overflow-y-auto border border-slate-100 rounded-2xl p-1.5 bg-slate-50/40">
+                {carregandoCandidatos ? (
+                  <div className="py-6 text-center text-xs text-slate-400 font-medium italic">
+                    Carregando membros do ministério...
+                  </div>
+                ) : candidatosSubstitutos.length === 0 ? (
+                  <div className="py-6 text-center text-xs text-slate-400 font-medium italic">
+                    Nenhum outro voluntário encontrado neste ministério.
+                  </div>
+                ) : (
+                  (() => {
+                    const filtrados = candidatosSubstitutos.filter((c) => {
+                      if (!buscaSubstituto) return true;
+                      const termo = buscaSubstituto.toLowerCase();
+                      const nome = (c.pessoas?.nome || '').toLowerCase();
+                      return nome.includes(termo);
+                    });
+
+                    if (filtrados.length === 0) {
+                      return (
+                        <div className="py-6 text-center text-xs text-slate-400 font-medium italic">
+                          Nenhum voluntário encontrado para "{buscaSubstituto}".
+                        </div>
+                      );
+                    }
+
+                    return filtrados.map((cand) => {
+                      const isSel = substitutoSelecionado?.pessoa_id === cand.pessoa_id;
+                      return (
+                        <button
+                          key={cand.pessoa_id}
+                          type="button"
+                          onClick={() => setSubstitutoSelecionado(cand)}
+                          className={`w-full text-left p-2.5 rounded-xl border transition-all duration-200 flex items-center justify-between cursor-pointer ${
+                            isSel
+                              ? 'bg-blue-50/80 border-blue-400 text-blue-900 shadow-2xs ring-1 ring-blue-300'
+                              : 'bg-white border-slate-200/70 hover:border-slate-300 hover:bg-slate-50/60 text-slate-700'
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <p className="text-xs font-bold truncate">
+                                {cand.pessoas?.nome}
+                              </p>
+                              {cand.lider && (
+                                <span className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                                  Líder
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-400 truncate">
+                              {cand.pessoas?.telefone || cand.pessoas?.email || 'Membro do Ministério'}
+                            </p>
+                          </div>
+
+                          <div className="shrink-0 flex items-center gap-1.5 ml-2">
+                            {cand.jaEscaladoNesteEvento ? (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200" title="Já escalado em outra função neste evento">
+                                ⚠️ Já escalado
+                              </span>
+                            ) : null}
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                              isSel ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300'
+                            }`}>
+                              {isSel && <Check size={10} strokeWidth={3} />}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    });
+                  })()
+                )}
+              </div>
+
+              {/* Status Inicial do Substituto */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                  Status Inicial da Nova Escala:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <label
+                    onClick={() => setStatusInicialSubstituto('pendente')}
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${
+                      statusInicialSubstituto === 'pendente'
+                        ? 'border-blue-500 bg-blue-50 text-blue-900 font-bold'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="statusInicialSubstituto"
+                      checked={statusInicialSubstituto === 'pendente'}
+                      onChange={() => setStatusInicialSubstituto('pendente')}
+                      className="text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>⚪ Aguardando Confirmação</span>
+                  </label>
+
+                  <label
+                    onClick={() => setStatusInicialSubstituto('confirmado')}
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${
+                      statusInicialSubstituto === 'confirmado'
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="statusInicialSubstituto"
+                      checked={statusInicialSubstituto === 'confirmado'}
+                      onChange={() => setStatusInicialSubstituto('confirmado')}
+                      className="text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <span>🟢 Já Confirmado</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Checkbox Notificar WhatsApp */}
+              <div className="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200/80">
+                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={notificarWhatsAppSubstituto}
+                    onChange={(e) => setNotificarWhatsAppSubstituto(e.target.checked)}
+                    className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                      <span>📲</span>
+                      <span>Notificar Substituto via WhatsApp</span>
+                    </p>
+                    <p className="text-[10px] text-emerald-800">
+                      Abre o WhatsApp com mensagem formatada convidando o voluntário para a substituição.
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Observação / Motivo */}
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+                  Motivo / Observações da Substituição (Opcional):
+                </label>
+                <input
+                  type="text"
+                  value={motivoSubstituicao}
+                  onChange={(e) => setMotivoSubstituicao(e.target.value)}
+                  placeholder="Ex: Voluntário titular em viagem / atestado médico..."
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-white focus:border-blue-500 outline-none transition font-medium"
+                />
+              </div>
+            </div>
+
+            {/* Rodapé */}
+            <div className="p-4 sm:p-5 border-t border-slate-100 bg-slate-50/70 flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={fecharModalSubstituicao}
+                className="w-full sm:flex-1 py-2.5 border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 transition-all active:scale-95 cursor-pointer text-center"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarSubstituicao}
+                disabled={salvandoSubstituicao || !substitutoSelecionado}
+                className="w-full sm:flex-1 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/25 border border-blue-400/30 transition-all duration-200 active:scale-95 disabled:opacity-50 cursor-pointer text-center flex items-center justify-center gap-1.5"
+              >
+                <UserCheck size={14} />
+                <span>{salvandoSubstituicao ? 'Substituindo...' : 'Confirmar Substituição'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Botão Oficial Azul "Escalar" Fixo Flutuante */}
-      {!isMembroNormal && !modalEscala && !modalEvento && !modalGerador && !modalApontamento && (
+      {!isMembroNormal && !modalEscala && !modalEvento && !modalGerador && !modalApontamento && !modalSubstituicao && (
         <button
           type="button"
           onClick={() => abrirModalEscala()}

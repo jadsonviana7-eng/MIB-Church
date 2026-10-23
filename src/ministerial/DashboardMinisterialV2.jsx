@@ -301,7 +301,9 @@ export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNa
         funcao: e.ministerio_funcoes?.nome || 'Geral',
         evento: e.eventos_ministeriais?.titulo || 'Culto/Evento',
         data_evento: e.eventos_ministeriais?.data_evento,
-        statusBadge: '🔴 Escala Recusada'
+        substituido_por_pessoa_id: e.substituido_por_pessoa_id,
+        substituto_nome: e.substituto?.nome,
+        statusBadge: e.substituido_por_pessoa_id ? '🔄 Recusado (Substituído)' : '🔴 Escala Recusada'
       }));
 
     // 8. Total de Escalados (Pessoas)
@@ -887,6 +889,16 @@ export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNa
                           <p className="text-xs text-slate-500 mt-0.5 truncate font-medium">
                             <strong className="text-slate-700 font-bold">{item.ministerio}</strong> · {item.funcao}
                           </p>
+                          {item.substituto_nome && (
+                            <p className="text-[10px] text-indigo-700 font-bold mt-0.5">
+                              🔄 Substituído(a) por: {item.substituto_nome}
+                            </p>
+                          )}
+                          {item.substituindo_nome && (
+                            <p className="text-[10px] text-emerald-700 font-bold mt-0.5">
+                              🤝 Substituindo: {item.substituindo_nome}
+                            </p>
+                          )}
                           {dataInfo && (
                             <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1.5 flex-wrap">
                               <span>📅 {item.evento}</span>

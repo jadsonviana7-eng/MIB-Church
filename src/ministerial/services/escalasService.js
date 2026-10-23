@@ -6,6 +6,126 @@ export const isMinisterioManutencao = (nome) => {
   return n.includes('manutencao') || n.includes('manutenc') || n.includes('obras') || n.includes('patrimonio');
 };
 
+export const limparTextoJustificativa = (txt) => {
+  if (!txt) return '';
+  return String(txt)
+    .replace(/\[SUBSTITUIDO_POR:[^\]]+\]/g, '')
+    .replace(/\[SUBSTITUINDO:[^\]]+\]/g, '')
+    .trim();
+};
+
+export const hidratarSubstitutos = async (listaEscalas) => {
+  if (!listaEscalas || listaEscalas.length === 0) return listaEscalas;
+
+  // 1. Extração de tags de substituição em justificativa caso colunas nativas não estejam presentes
+  listaEscalas.forEach(esc => {
+    const just = String(esc.justificativa || '');
+    const mSubPor = just.match(/\[SUBSTITUIDO_POR:([^\]]+)\]/);
+    if (mSubPor && mSubPor[1]) {
+      esc.substituido_por_pessoa_id = esc.substituido_por_pessoa_id || mSubPor[1].trim();
+    }
+
+    const mSubDe = just.match(/\[SUBSTITUINDO:([^:\]]+)(?::([^\]]+))?\]/);
+    if (mSubDe) {
+      if (mSubDe[1]) esc.substituindo_escala_id = esc.substituindo_escala_id || mSubDe[1].trim();
+      if (mSubDe[2]) esc.substituindo_pessoa_id = esc.substituindo_pessoa_id || mSubDe[2].trim();
+    }
+  });
+
+  // 2. Mapeamentos internos entre as escalas da lista
+  const mapSubstitutoPorEscalaId = new Map();
+  const mapSubstitutoPorPessoaEFuncao = new Map();
+
+  for (const esc of listaEscalas) {
+    if (esc.substituindo_escala_id) {
+      mapSubstitutoPorEscalaId.set(String(esc.substituindo_escala_id), esc);
+    }
+    if (esc.substituindo_pessoa_id && esc.funcao_id) {
+      mapSubstitutoPorPessoaEFuncao.set(`${esc.substituindo_pessoa_id}_${esc.funcao_id}`, esc);
+    }
+  }
+
+  // 3. Preenche substituido_por_pessoa_id na escala original caso ainda não conste
+  listaEscalas.forEach(esc => {
+    if (!esc.substituido_por_pessoa_id) {
+      const subEsc = mapSubstitutoPorEscalaId.get(String(esc.id)) ||
+                     mapSubstitutoPorPessoaEFuncao.get(`${esc.pessoa_id}_${esc.funcao_id}`);
+      if (subEsc && subEsc.pessoa_id) {
+        esc.substituido_por_pessoa_id = subEsc.pessoa_id;
+      }
+    }
+  });
+
+  // 4. Detecção inteligente por função no mesmo evento e ministério:
+  // Se uma escala está ausente/falta/recusada e há outra escala ativa (confirmado/pendente) na mesma função:
+  listaEscalas.forEach(esc => {
+    const isAusente = esc.status === 'recusado' || esc.status === 'falta' || esc.status === 'falta_justificada' || esc.status === 'ausente' || esc.status === 'ausente_justificado';
+    if (isAusente && !esc.substituido_por_pessoa_id) {
+      const ativa = listaEscalas.find(outro =>
+        String(outro.id) !== String(esc.id) &&
+        String(outro.funcao_id) === String(esc.funcao_id) &&
+        String(outro.ministerio_id) === String(esc.ministerio_id) &&
+        (outro.status === 'confirmado' || outro.status === 'pendente' || outro.status === 'presente') &&
+        (!outro.substituindo_pessoa_id || String(outro.substituindo_pessoa_id) === String(esc.pessoa_id))
+      );
+      if (ativa) {
+        esc.substituido_por_pessoa_id = ativa.pessoa_id;
+        if (!ativa.substituindo_pessoa_id) {
+          ativa.substituindo_pessoa_id = esc.pessoa_id;
+          ativa.substituindo_escala_id = esc.id;
+        }
+      }
+    }
+  });
+
+  const extraPessoaIds = [...new Set(
+    listaEscalas.flatMap(e => [e.substituido_por_pessoa_id, e.substituindo_pessoa_id]).filter(Boolean)
+  )];
+
+  let mapExtras = new Map();
+  if (extraPessoaIds.length > 0) {
+    try {
+      const { data: pessoasExtras } = await supabase
+        .from('pessoas')
+        .select('id, nome, foto_url, telefone')
+        .in('id', extraPessoaIds);
+
+      mapExtras = new Map((pessoasExtras || []).map(p => [String(p.id), p]));
+    } catch (err) {
+      console.warn('Erro ao hidratar pessoas de substituição:', err);
+    }
+  }
+
+  return listaEscalas.map(e => {
+    const subEsc = mapSubstitutoPorEscalaId.get(String(e.id)) ||
+                   mapSubstitutoPorPessoaEFuncao.get(`${e.pessoa_id}_${e.funcao_id}`) ||
+                   listaEscalas.find(outro =>
+                     String(outro.id) !== String(e.id) &&
+                     String(outro.pessoa_id) === String(e.substituido_por_pessoa_id)
+                   );
+
+    const pessoaSubstituto = e.substituido_por_pessoa_id
+      ? (mapExtras.get(String(e.substituido_por_pessoa_id)) ||
+         subEsc?.pessoas ||
+         listaEscalas.find(x => String(x.pessoa_id) === String(e.substituido_por_pessoa_id))?.pessoas ||
+         null)
+      : (subEsc?.pessoas || null);
+
+    const pessoaSubstituindo = e.substituindo_pessoa_id
+      ? (mapExtras.get(String(e.substituindo_pessoa_id)) ||
+         listaEscalas.find(x => String(x.pessoa_id) === String(e.substituindo_pessoa_id))?.pessoas ||
+         null)
+      : null;
+
+    return {
+      ...e,
+      substituido_por_pessoa_id: e.substituido_por_pessoa_id || subEsc?.pessoa_id || null,
+      substituto: pessoaSubstituto,
+      substituindo: pessoaSubstituindo
+    };
+  });
+};
+
 export const escalasService = {
 
   async listarEventos() {
@@ -87,7 +207,7 @@ export const escalasService = {
         `)
         .eq('evento_id', eventoId);
 
-      if (!error && data) return data;
+      if (!error && data) return await hidratarSubstitutos(data);
       if (error) throw error;
     } catch (err1) {
       console.warn('Tentando fallback 1 para listarEscalas:', err1?.message || err1);
@@ -112,7 +232,7 @@ export const escalasService = {
           `)
           .eq('evento_id', eventoId);
 
-        if (!err2 && data2) return data2;
+        if (!err2 && data2) return await hidratarSubstitutos(data2);
         if (err2) throw err2;
       } catch (err2) {
         console.warn('Tentando fallback 2 (busca direta sem joins) para listarEscalas:', err2?.message || err2);
@@ -128,7 +248,11 @@ export const escalasService = {
         }
         if (!rawEscalas || rawEscalas.length === 0) return [];
 
-        const pessoaIds = [...new Set(rawEscalas.map(e => e.pessoa_id).filter(Boolean))];
+        const pessoaIds = [...new Set([
+          ...rawEscalas.map(e => e.pessoa_id),
+          ...rawEscalas.map(e => e.substituido_por_pessoa_id),
+          ...rawEscalas.map(e => e.substituindo_pessoa_id)
+        ].filter(Boolean))];
         const ministerioIds = [...new Set(rawEscalas.map(e => e.ministerio_id).filter(Boolean))];
         const funcaoIds = [...new Set(rawEscalas.map(e => e.funcao_id).filter(Boolean))];
 
@@ -138,15 +262,17 @@ export const escalasService = {
           funcaoIds.length > 0 ? supabase.from('ministerio_funcoes').select('id, nome').in('id', funcaoIds) : { data: [] }
         ]);
 
-        const mapPessoas = new Map((resPessoas.data || []).map(p => [p.id, p]));
-        const mapMin = new Map((resMin.data || []).map(m => [m.id, m]));
-        const mapFunc = new Map((resFunc.data || []).map(f => [f.id, f]));
+        const mapPessoas = new Map((resPessoas.data || []).map(p => [String(p.id), p]));
+        const mapMin = new Map((resMin.data || []).map(m => [String(m.id), m]));
+        const mapFunc = new Map((resFunc.data || []).map(f => [String(f.id), f]));
 
         return rawEscalas.map(e => ({
           ...e,
-          pessoas: mapPessoas.get(e.pessoa_id) || { nome: 'Voluntário' },
-          ministerios: mapMin.get(e.ministerio_id) || { nome: 'Ministério' },
-          ministerio_funcoes: mapFunc.get(e.funcao_id) || { nome: 'Geral' }
+          pessoas: mapPessoas.get(String(e.pessoa_id)) || { nome: 'Voluntário' },
+          ministerios: mapMin.get(String(e.ministerio_id)) || { nome: 'Ministério' },
+          ministerio_funcoes: mapFunc.get(String(e.funcao_id)) || { nome: 'Geral' },
+          substituto: e.substituido_por_pessoa_id ? mapPessoas.get(String(e.substituido_por_pessoa_id)) || null : null,
+          substituindo: e.substituindo_pessoa_id ? mapPessoas.get(String(e.substituindo_pessoa_id)) || null : null
         }));
       }
     }
@@ -366,6 +492,11 @@ export const escalasService = {
     if (justificativa !== undefined && justificativa !== null) {
       payload.justificativa = justificativa;
     }
+    if (status === 'recusado' || status === 'falta_justificada' || status === 'falta') {
+      payload.pedido_substituicao = true;
+    } else if (status === 'confirmado' || status === 'presente') {
+      payload.pedido_substituicao = false;
+    }
 
     try {
       const { data, error } = await supabase
@@ -374,17 +505,41 @@ export const escalasService = {
         .in('id', escalaIds)
         .select();
 
-      if (!error) return data || [];
+      if (!error) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
+        }
+        return data || [];
+      }
+
+      // Fallback se pedido_substituicao falhar
+      const payloadSemSubst = { status };
+      if (justificativa !== undefined && justificativa !== null) payloadSemSubst.justificativa = justificativa;
+      const { data: dataFallback, error: errFallback } = await supabase
+        .from('escalas')
+        .update(payloadSemSubst)
+        .in('id', escalaIds)
+        .select();
+
+      if (!errFallback) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
+        }
+        return dataFallback || [];
+      }
 
       // Fallback se justificativa falhar por ausência de coluna
-      const { data: dataFallback, error: errFallback } = await supabase
+      const { data: dataFb2, error: errFb2 } = await supabase
         .from('escalas')
         .update({ status })
         .in('id', escalaIds)
         .select();
 
-      if (errFallback) throw errFallback;
-      return dataFallback || [];
+      if (errFb2) throw errFb2;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
+      }
+      return dataFb2 || [];
     } catch (error) {
       console.error('Erro em atualizarStatusMultiplasEscalas:', error);
       throw error;
@@ -547,10 +702,17 @@ export const escalasService = {
     }
   },
 
-  async atualizarStatusEscala(id, status, justificativa = null) {
+  async atualizarStatusEscala(id, status, justificativa = null, options = {}) {
     const payload = { status };
     if (justificativa !== undefined && justificativa !== null) {
       payload.justificativa = justificativa;
+    }
+    if (options.pedido_substituicao !== undefined) {
+      payload.pedido_substituicao = options.pedido_substituicao;
+    } else if (status === 'recusado' || status === 'falta_justificada' || status === 'falta') {
+      payload.pedido_substituicao = true;
+    } else if (status === 'confirmado' || status === 'presente') {
+      payload.pedido_substituicao = false;
     }
 
     try {
@@ -560,30 +722,56 @@ export const escalasService = {
         .eq('id', id)
         .select();
 
-      if (!error) return (data && data[0]) ? data[0] : { id, ...payload };
+      if (!error) {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
+        }
+        return (data && data[0]) ? data[0] : { id, ...payload };
+      }
 
-      // Fallback se a coluna justificativa não existir no Postgres
-      if (error && (error.code === 'PGRST204' || error.message?.includes('justificativa') || error.code === '42703')) {
-        const { data: dataFallback, error: errFallback } = await supabase
+      // Fallback se a coluna pedido_substituicao não existir no Postgres
+      if (error && (error.code === 'PGRST204' || error.message?.includes('pedido_substituicao') || error.code === '42703')) {
+        const payloadSemSubst = { status };
+        if (justificativa !== undefined && justificativa !== null) payloadSemSubst.justificativa = justificativa;
+        const { data: dataFb1, error: errFb1 } = await supabase
           .from('escalas')
-          .update({ status })
+          .update(payloadSemSubst)
           .eq('id', id)
           .select();
-        if (errFallback) throw errFallback;
-        return (dataFallback && dataFallback[0]) ? dataFallback[0] : { id, status };
+
+        if (!errFb1) {
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
+          }
+          return (dataFb1 && dataFb1[0]) ? dataFb1[0] : { id, ...payloadSemSubst };
+        }
       }
-      throw error;
+
+      // Fallback se a coluna justificativa também não existir no Postgres
+      const { data: dataFallback, error: errFallback } = await supabase
+        .from('escalas')
+        .update({ status })
+        .eq('id', id)
+        .select();
+      if (errFallback) throw errFallback;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
+      }
+      return (dataFallback && dataFallback[0]) ? dataFallback[0] : { id, status };
     } catch (err) {
-      if (err.message?.includes('justificativa') || err.code === '42703') {
-        const { data: dataFallback, error: errFallback } = await supabase
+      try {
+        const { data: dataFallback } = await supabase
           .from('escalas')
           .update({ status })
           .eq('id', id)
           .select();
-        if (errFallback) throw errFallback;
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
+        }
         return (dataFallback && dataFallback[0]) ? dataFallback[0] : { id, status };
+      } catch (_) {
+        throw err;
       }
-      throw err;
     }
   },
 
@@ -744,7 +932,7 @@ export const escalasService = {
         .in('evento_id', eventoIds)
         .eq('ministerio_id', ministerioId);
 
-      if (!error && data) return data;
+      if (!error && data) return await hidratarSubstitutos(data);
       if (error) throw error;
     } catch (err1) {
       console.warn('Tentando fallback 1 para listarEscalasMes:', err1?.message || err1);
@@ -772,7 +960,7 @@ export const escalasService = {
           .in('evento_id', eventoIds)
           .eq('ministerio_id', ministerioId);
 
-        if (!err2 && data2) return data2;
+        if (!err2 && data2) return await hidratarSubstitutos(data2);
         if (err2) throw err2;
       } catch (err2) {
         console.warn('Tentando fallback 2 (hidratação manual) para listarEscalasMes:', err2?.message || err2);
@@ -789,7 +977,11 @@ export const escalasService = {
         }
         if (!rawEscalas || rawEscalas.length === 0) return [];
 
-        const pessoaIds = [...new Set(rawEscalas.map(e => e.pessoa_id).filter(Boolean))];
+        const pessoaIds = [...new Set([
+          ...rawEscalas.map(e => e.pessoa_id),
+          ...rawEscalas.map(e => e.substituido_por_pessoa_id),
+          ...rawEscalas.map(e => e.substituindo_pessoa_id)
+        ].filter(Boolean))];
         const ministerioIds = [...new Set(rawEscalas.map(e => e.ministerio_id).filter(Boolean))];
         const funcaoIds = [...new Set(rawEscalas.map(e => e.funcao_id).filter(Boolean))];
 
@@ -807,9 +999,314 @@ export const escalasService = {
           ...e,
           pessoas: mapPessoas.get(String(e.pessoa_id)) || { nome: 'Voluntário' },
           ministerios: mapMin.get(String(e.ministerio_id)) || { nome: 'Ministério' },
-          ministerio_funcoes: mapFunc.get(String(e.funcao_id)) || { nome: 'Geral' }
+          ministerio_funcoes: mapFunc.get(String(e.funcao_id)) || { nome: 'Geral' },
+          substituto: e.substituido_por_pessoa_id ? mapPessoas.get(String(e.substituido_por_pessoa_id)) || null : null,
+          substituindo: e.substituindo_pessoa_id ? mapPessoas.get(String(e.substituindo_pessoa_id)) || null : null
         }));
       }
     }
+  },
+
+  /**
+   * Solicita a substituição de um voluntário em uma escala mantendo o registro original.
+   */
+  async solicitarSubstituicao(escalaId, motivo = null) {
+    if (!escalaId) throw new Error('ID da escala é obrigatório.');
+    return await this.atualizarStatusEscala(escalaId, 'recusado', motivo, { pedido_substituicao: true });
+  },
+
+  /**
+   * Efetiva a substituição de um voluntário escalado:
+   * - Preserva a escala original com status de recusa/falta, preenchendo quem substituiu e quando.
+   * - Insere uma nova escala para o voluntário substituto associada à vaga.
+   * - Não remove nem apaga registros para não afetar relatórios e rankings.
+   */
+  async substituirVoluntarioEscala({ escalaOriginalId, novoPessoaId, statusInicial = 'pendente', motivo = null }) {
+    if (!escalaOriginalId || !novoPessoaId) {
+      throw new Error('Identificadores da escala original e do novo voluntário são obrigatórios.');
+    }
+
+    // 1. Obter a escala original
+    const { data: originalData, error: errOrig } = await supabase
+      .from('escalas')
+      .select('*')
+      .eq('id', escalaOriginalId)
+      .limit(1);
+
+    if (errOrig || !originalData || originalData.length === 0) {
+      throw new Error('Escala original não encontrada para substituição.');
+    }
+
+    const escalaOriginal = originalData[0];
+
+    if (String(escalaOriginal.pessoa_id) === String(novoPessoaId)) {
+      throw new Error('O voluntário substituto não pode ser a mesma pessoa original da escala.');
+    }
+
+    // 2. Verificar conflito de horário/evento para o substituto
+    const conflito = await this.verificarConflitoEscala({
+      eventoId: escalaOriginal.evento_id,
+      pessoaId: novoPessoaId,
+      ministerioId: escalaOriginal.ministerio_id
+    });
+
+    if (conflito && conflito.temConflito) {
+      const err = new Error(`ESTA_PESSOA_JA_ESCALADA::${conflito.pessoaNome}::${conflito.ministerioNome}::${conflito.eventoTitulo}`);
+      err.conflito = conflito;
+      throw err;
+    }
+
+    // 3. Atualizar a escala original: vincula substituto e desativa pedido pendente
+    const payloadUpdateOriginal = {
+      substituido_por_pessoa_id: novoPessoaId,
+      substituido_em: new Date().toISOString(),
+      pedido_substituicao: false
+    };
+
+    if (escalaOriginal.status === 'pendente' || escalaOriginal.status === 'confirmado') {
+      payloadUpdateOriginal.status = 'recusado';
+    }
+    if (motivo && !escalaOriginal.justificativa) {
+      payloadUpdateOriginal.justificativa = motivo;
+    }
+
+    let originalAtualizada = null;
+    try {
+      const { data: upOrigData, error: errUpOrig } = await supabase
+        .from('escalas')
+        .update(payloadUpdateOriginal)
+        .eq('id', escalaOriginalId)
+        .select();
+
+      if (!errUpOrig && upOrigData && upOrigData.length > 0) {
+        originalAtualizada = upOrigData[0];
+      } else if (errUpOrig) {
+        console.warn('Fallback ao atualizar escala original:', errUpOrig);
+        const baseJust = (payloadUpdateOriginal.justificativa || escalaOriginal.justificativa || '')
+          .replace(/\[SUBSTITUIDO_POR:[^\]]+\]/g, '')
+          .trim();
+        const justComTag = baseJust ? `${baseJust} [SUBSTITUIDO_POR:${novoPessoaId}]` : `[SUBSTITUIDO_POR:${novoPessoaId}]`;
+        const { data: fallbackOrig } = await supabase
+          .from('escalas')
+          .update({
+            status: payloadUpdateOriginal.status || escalaOriginal.status,
+            justificativa: justComTag
+          })
+          .eq('id', escalaOriginalId)
+          .select();
+        originalAtualizada = (fallbackOrig && fallbackOrig[0]) || { ...escalaOriginal, justificativa: justComTag };
+        originalAtualizada.substituido_por_pessoa_id = novoPessoaId;
+      }
+    } catch (e) {
+      console.warn('Exceção ao atualizar escala original:', e);
+    }
+
+    // 4. Inserir a nova escala para o voluntário substituto
+    const payloadNovaEscala = {
+      evento_id: escalaOriginal.evento_id,
+      ministerio_id: escalaOriginal.ministerio_id,
+      funcao_id: escalaOriginal.funcao_id,
+      pessoa_id: novoPessoaId,
+      status: statusInicial || 'pendente',
+      substituindo_escala_id: escalaOriginalId,
+      substituindo_pessoa_id: escalaOriginal.pessoa_id,
+      justificativa: motivo ? `Substituto escalado: ${motivo}` : null
+    };
+
+    let novaEscalaCriada = null;
+    try {
+      const { data: novaData, error: errNova } = await supabase
+        .from('escalas')
+        .insert(payloadNovaEscala)
+        .select()
+        .single();
+
+      if (!errNova && novaData) {
+        novaEscalaCriada = novaData;
+      } else if (errNova) {
+        console.warn('Fallback de inserção de nova escala sem colunas extras:', errNova);
+        const justSubstituto = `[SUBSTITUINDO:${escalaOriginalId}:${escalaOriginal.pessoa_id}]${motivo ? ` - ${motivo}` : ''}`;
+        const { data: fallbackNova, error: errFbNova } = await supabase
+          .from('escalas')
+          .insert({
+            evento_id: escalaOriginal.evento_id,
+            ministerio_id: escalaOriginal.ministerio_id,
+            funcao_id: escalaOriginal.funcao_id,
+            pessoa_id: novoPessoaId,
+            status: statusInicial || 'pendente',
+            justificativa: justSubstituto
+          })
+          .select()
+          .single();
+
+        if (errFbNova) throw errFbNova;
+        novaEscalaCriada = fallbackNova;
+        novaEscalaCriada.substituindo_escala_id = escalaOriginalId;
+        novaEscalaCriada.substituindo_pessoa_id = escalaOriginal.pessoa_id;
+      }
+    } catch (insErr) {
+      console.error('Erro ao inserir nova escala para substituto:', insErr);
+      throw insErr;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
+    }
+
+    return {
+      sucesso: true,
+      escalaOriginal: originalAtualizada || escalaOriginal,
+      novaEscala: novaEscalaCriada
+    };
+  },
+
+  /**
+   * Desfaz uma substituição, removendo o substituto e reabrindo o pedido na escala original.
+   */
+  async cancelarSubstituicao(escalaOriginalId) {
+    if (!escalaOriginalId) return;
+
+    try {
+      await supabase
+        .from('escalas')
+        .delete()
+        .eq('substituindo_escala_id', escalaOriginalId);
+    } catch (e) {
+      console.warn('Erro ao remover escala de substituto:', e);
+    }
+
+    try {
+      const { data: origList } = await supabase
+        .from('escalas')
+        .select('*')
+        .eq('id', escalaOriginalId)
+        .limit(1);
+
+      if (origList && origList.length > 0) {
+        const orig = origList[0];
+        const just = String(orig.justificativa || '');
+        const matchSubPor = just.match(/\[SUBSTITUIDO_POR:([^\]]+)\]/);
+        const subPessoaId = orig.substituido_por_pessoa_id || (matchSubPor ? matchSubPor[1].trim() : null);
+
+        if (subPessoaId) {
+          await supabase
+            .from('escalas')
+            .delete()
+            .eq('evento_id', orig.evento_id)
+            .eq('ministerio_id', orig.ministerio_id)
+            .eq('funcao_id', orig.funcao_id)
+            .eq('pessoa_id', subPessoaId);
+        }
+
+        const novaJust = just.replace(/\[SUBSTITUIDO_POR:[^\]]+\]/g, '').trim() || null;
+        try {
+          await supabase
+            .from('escalas')
+            .update({
+              substituido_por_pessoa_id: null,
+              substituido_em: null,
+              pedido_substituicao: true,
+              justificativa: novaJust
+            })
+            .eq('id', escalaOriginalId);
+        } catch (upErr) {
+          await supabase
+            .from('escalas')
+            .update({
+              justificativa: novaJust
+            })
+            .eq('id', escalaOriginalId);
+        }
+      }
+    } catch (e2) {
+      console.warn('Erro ao limpar substituto na escala original:', e2);
+    }
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
+    }
+
+    return { sucesso: true };
+  },
+
+  /**
+   * Busca escalas que possuem pedido de substituição pendente (ou recusa/falta sem substituto).
+   */
+  async listarPedidosSubstituicaoPendentes() {
+    try {
+      const { data, error } = await supabase
+        .from('escalas')
+        .select(`
+          *,
+          eventos_ministeriais (
+            id,
+            titulo,
+            data_evento,
+            local
+          ),
+          pessoas:pessoa_id (
+            id,
+            nome,
+            foto_url,
+            telefone
+          ),
+          ministerios (
+            id,
+            nome,
+            cor_principal,
+            icone
+          ),
+          ministerio_funcoes (
+            id,
+            nome
+          )
+        `)
+        .or('pedido_substituicao.eq.true,status.in.(recusado,falta_justificada,falta)')
+        .is('substituido_por_pessoa_id', null)
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+      if (!error && data) return data;
+      if (error) {
+        // Fallback básico se coluna pedido_substituicao não existir
+        const { data: dataFb, error: errFb } = await supabase
+          .from('escalas')
+          .select(`
+            *,
+            eventos_ministeriais (
+              id,
+              titulo,
+              data_evento,
+              local
+            ),
+            pessoas:pessoa_id (
+              id,
+              nome,
+              foto_url,
+              telefone
+            ),
+            ministerios (
+              id,
+              nome,
+              cor_principal,
+              icone
+            ),
+            ministerio_funcoes (
+              id,
+              nome
+            )
+          `)
+          .in('status', ['recusado', 'falta_justificada', 'falta'])
+          .order('created_at', { ascending: false })
+          .limit(30);
+
+        if (!errFb && dataFb) return dataFb;
+      }
+      return [];
+    } catch (err) {
+      console.warn('Erro ao consultar pedidos de substituição pendentes:', err);
+      return [];
+    }
   }
 }
+

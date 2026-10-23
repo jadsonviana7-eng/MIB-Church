@@ -146,7 +146,9 @@ export default function PublicConfirmarEscala() {
     setSalvandoId(escalaId);
     setSucessoMensagem(null);
     try {
-      await escalasService.atualizarStatusEscala(escalaId, novoStatus, motivo);
+      await escalasService.atualizarStatusEscala(escalaId, novoStatus, motivo, {
+        pedido_substituicao: novoStatus === 'recusado'
+      });
 
       setDadosMes(prev => {
         if (!prev) return prev;
@@ -154,7 +156,7 @@ export default function PublicConfirmarEscala() {
           ...prev,
           escalas: prev.escalas.map(e => {
             if (e.id === escalaId) {
-              return { ...e, status: novoStatus, justificativa: motivo };
+              return { ...e, status: novoStatus, justificativa: motivo, pedido_substituicao: novoStatus === 'recusado' };
             }
             return e;
           })
@@ -164,7 +166,7 @@ export default function PublicConfirmarEscala() {
       if (novoStatus === 'confirmado') {
         setSucessoMensagem('Presença nesta escala confirmada com sucesso! Deus abençoe!');
       } else if (novoStatus === 'recusado') {
-        setSucessoMensagem('Agradecemos pelo aviso. A liderança ministerial foi notificada.');
+        setSucessoMensagem('Aviso de ausência registrado! O administrador, pastor e o líder ministerial foram notificados para providenciar sua substituição.');
       }
       setJustificativaAbertaId(null);
     } catch (err) {
@@ -191,7 +193,7 @@ export default function PublicConfirmarEscala() {
         if (!prev) return prev;
         return {
           ...prev,
-          escalas: prev.escalas.map(e => ({ ...e, status: 'confirmado' }))
+          escalas: prev.escalas.map(e => ({ ...e, status: 'confirmado', pedido_substituicao: false }))
         };
       });
 
@@ -218,11 +220,11 @@ export default function PublicConfirmarEscala() {
         if (!prev) return prev;
         return {
           ...prev,
-          escalas: prev.escalas.map(e => ({ ...e, status: 'recusado', justificativa: motivo }))
+          escalas: prev.escalas.map(e => ({ ...e, status: 'recusado', justificativa: motivo, pedido_substituicao: true }))
         };
       });
 
-      setSucessoMensagem('Aviso de ausência registrado para todas as escalas do mês. Obrigado por nos avisar!');
+      setSucessoMensagem('Aviso de ausência registrado para todas as escalas do mês. O administrador, pastor e líder foram notificados para substituição.');
       setJustificativaAbertaId(null);
     } catch (err) {
       console.error('Erro ao recusar escalas:', err);
@@ -230,6 +232,26 @@ export default function PublicConfirmarEscala() {
     } finally {
       setSalvandoId(null);
     }
+  }
+
+  function enviarAvisoRecusaWhatsApp(item, motivo = null) {
+    if (!item) return;
+    const ev = item.eventos_ministeriais;
+    const min = item.ministerios;
+    const func = item.ministerio_funcoes;
+    const dataInfo = formatarDataCompleta(ev);
+    const pessoaNome = pessoa?.nome || 'Voluntário';
+
+    const texto = `🚨 *AVISO DE AUSÊNCIA / PEDIDO DE SUBSTITUIÇÃO*\n\n` +
+      `Olá! Sou *${pessoaNome}*, e estou avisando que infelizmente não poderei comparecer à minha escala:\n\n` +
+      `📅 *Evento:* ${ev?.titulo || 'Culto'}\n` +
+      `🗓️ *Data:* ${dataInfo.dataStr} às ${dataInfo.horaStr}\n` +
+      `🏛️ *Ministério:* ${min?.nome || 'Ministério'} - *Função:* ${func?.nome || 'Função'}\n` +
+      `📝 *Motivo:* ${motivo || item.justificativa || 'Sem justificativa informada'}\n\n` +
+      `Agradeço pela compreensão para que a liderança possa providenciar um substituto a tempo. Deus abençoe! 🙏`;
+
+    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`;
+    window.open(url, '_blank');
   }
 
   // Auxiliares de Formatação de Data / Horário (Fuso Brasília UTC-3)
@@ -685,10 +707,22 @@ export default function PublicConfirmarEscala() {
                         ) : isRecusado && !justAberta ? (
                           <div className="space-y-2">
                             {item.justificativa && (
-                              <p className="text-xs text-slate-400 italic bg-slate-950/40 p-2 rounded-lg border border-slate-800">
-                                Motivo: "{item.justificativa}"
+                              <p className="text-xs text-slate-400 italic bg-slate-950/40 p-2.5 rounded-xl border border-slate-800">
+                                Motivo informado: "{item.justificativa}"
                               </p>
                             )}
+                            <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[11px] text-rose-300 font-medium flex items-center justify-between gap-2">
+                              <span>⚠️ Pedido de substituição enviado à liderança.</span>
+                              <button
+                                type="button"
+                                onClick={() => enviarAvisoRecusaWhatsApp(item)}
+                                className="px-2.5 py-1 bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0 cursor-pointer"
+                                title="Enviar aviso diretamente no WhatsApp da liderança"
+                              >
+                                <Share2 size={11} />
+                                <span>Avisar no WhatsApp</span>
+                              </button>
+                            </div>
                             <button
                               type="button"
                               onClick={() => handleResponderIndividual(item.id, 'confirmado')}

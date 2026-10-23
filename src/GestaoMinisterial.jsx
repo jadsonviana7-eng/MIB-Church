@@ -31,7 +31,23 @@ export default function GestaoMinisterial(props) {
   const [filtroAnoEscala, setFiltroAnoEscala] = useState(null);
 
   // Controle de recolhimento da coluna direita
-  const [colunaRecolhida, setColunaRecolhida] = useState(false);
+  const [colunaRecolhida, setColunaRecolhida] = useState(() => {
+    try {
+      return localStorage.getItem('mib_ministerial_coluna_recolhida') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleColunaRecolhida = (novoValor) => {
+    setColunaRecolhida(novoValor);
+    try {
+      localStorage.setItem('mib_ministerial_coluna_recolhida', String(novoValor));
+      window.dispatchEvent(new CustomEvent('mib-coluna-direita-toggle', { detail: { colunaRecolhida: novoValor } }));
+    } catch (e) {
+      // ignore
+    }
+  };
 
   // Detecta se está dentro do ambiente específico do Ministério de Louvor
   const isLouvorAmbiente = useMemo(() => {
@@ -199,6 +215,7 @@ export default function GestaoMinisterial(props) {
               initialStatus={filtroStatusEscala}
               initialFiltroMes={filtroMesEscala}
               initialFiltroAno={filtroAnoEscala}
+              colunaRecolhida={colunaRecolhida}
             />
           )}
           {aba === 'historico' && (
@@ -273,7 +290,7 @@ export default function GestaoMinisterial(props) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setColunaRecolhida(false)}
+                  onClick={() => handleToggleColunaRecolhida(false)}
                   title="Expandir menu"
                   className="p-1 rounded-lg text-slate-400 hover:text-blue-700 hover:bg-blue-50 transition cursor-pointer"
                 >
@@ -295,7 +312,7 @@ export default function GestaoMinisterial(props) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setColunaRecolhida(true)}
+                  onClick={() => handleToggleColunaRecolhida(true)}
                   title="Recolher menu para ícones"
                   className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer shrink-0"
                 >

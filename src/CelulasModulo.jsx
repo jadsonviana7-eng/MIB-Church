@@ -1670,17 +1670,29 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
           {/* Botões de Ação (abaixo das abas, full-width em mobile) */}
           <div className="px-2 sm:px-0">
             {abaAtiva === 'membros' && !isMembro && (
-              <button type="button" onClick={() => setIsModalAberto(true)} className="w-full sm:w-auto px-4 py-2 bg-[#2563eb] text-white rounded-xl text-xs font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">
+              <button
+                type="button"
+                onClick={() => setIsModalAberto(true)}
+                className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase transition-all cursor-pointer shadow-sm shadow-blue-500/20 border border-blue-400/30"
+              >
                 + Vincular Pessoas
               </button>
             )}
             {abaAtiva === 'reunioes' && !isMembro && (
-              <button type="button" onClick={() => setIsModalReuniaoAberto(true)} className="w-full sm:w-auto px-4 py-2 bg-[#055F6D] text-white rounded-xl text-xs font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">
+              <button
+                type="button"
+                onClick={() => setIsModalReuniaoAberto(true)}
+                className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white rounded-xl text-xs font-black uppercase transition-all cursor-pointer shadow-sm shadow-teal-900/20 border border-teal-400/30"
+              >
                 📅 Nova Reunião
               </button>
             )}
             {abaAtiva === 'visitantes' && !isMembro && (
-              <button type="button" onClick={() => abrirModalVisitante()} className="w-full sm:w-auto px-4 py-2 bg-amber-500 text-white rounded-xl text-xs font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">
+              <button
+                type="button"
+                onClick={() => abrirModalVisitante()}
+                className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl text-xs font-black uppercase transition-all cursor-pointer shadow-sm shadow-amber-900/20 border border-amber-400/30"
+              >
                 + Adicionar Visitante
               </button>
             )}
@@ -1996,14 +2008,20 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
 
       {/* MODAL 1: SELEÇÃO E VÍNCULO DE MEMBROS */}
       {isModalAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-[#17223b] rounded-2xl border border-slate-200 dark:border-[#2b3954] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] text-slate-800 dark:text-slate-100">
+            <div className="p-5 border-b border-slate-100 dark:border-[#2b3954] flex items-center justify-between bg-slate-50/50 dark:bg-[#131d31]">
               <div>
-                <h4 className="font-semibold text-slate-950 text-base">Vincular Pessoas</h4>
-                <p className="text-xs text-slate-400">Selecione os membros que deseja trazer para a célula <strong>{celula.nome}</strong>.</p>
+                <h4 className="font-bold text-slate-950 dark:text-slate-100 text-base">Vincular Pessoas</h4>
+                <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">Selecione os membros que deseja trazer para a célula <strong className="text-slate-700 dark:text-slate-200">{celula.nome}</strong>.</p>
               </div>
-              <button type="button" onClick={() => { setIsModalAberto(false); setPessoasSelecionadas([]); setBuscaTermo(''); }} className="text-slate-400 hover:text-slate-600 font-bold p-1 text-sm">✕</button>
+              <button
+                type="button"
+                onClick={() => { setIsModalAberto(false); setPessoasSelecionadas([]); setBuscaTermo(''); }}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-[#1c2b4a] border border-slate-200 dark:border-[#2b3954] text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer text-sm"
+              >
+                ✕
+              </button>
             </div>
 
             {/* Input de Busca */}
@@ -2013,24 +2031,24 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                   type="text"
                   value={buscaTermo}
                   onChange={e => setBuscaTermo(e.target.value)}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-1 focus:ring-emerald-500 focus:outline-none text-xs"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl bg-slate-50 dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:bg-white dark:focus:bg-[#0b1329] focus:ring-2 focus:ring-emerald-500/20 focus:outline-none text-xs transition"
                   placeholder="Buscar membros por nome, telefone ou e-mail..."
                   autoComplete="off"
                 />
                 {buscando && (
-                  <div className="absolute right-3 top-2.5 text-[9px] text-slate-400 font-bold uppercase tracking-wider">Buscando...</div>
+                  <div className="absolute right-3 top-2.5 text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Buscando...</div>
                 )}
               </div>
             </div>
 
             {/* Banner de Selecionados */}
             {pessoasSelecionadas.length > 0 && (
-              <div className="mx-5 mt-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex flex-wrap items-center gap-1.5 max-h-24 overflow-y-auto">
-                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider mr-1">Selecionados:</span>
+              <div className="mx-5 mt-3 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-800/40 rounded-xl flex flex-wrap items-center gap-1.5 max-h-24 overflow-y-auto">
+                <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mr-1">Selecionados:</span>
                 {pessoasSelecionadas.map(p => (
-                  <span key={p.id} className="inline-flex items-center gap-1 bg-white border border-emerald-200 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  <span key={p.id} className="inline-flex items-center gap-1 bg-white dark:bg-[#1c2b4a] border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
                     {p.nome}
-                    <button type="button" onClick={() => handleCheckboxChange(p)} className="text-rose-500 hover:text-rose-700 font-black">×</button>
+                    <button type="button" onClick={() => handleCheckboxChange(p)} className="text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 font-black cursor-pointer">×</button>
                   </span>
                 ))}
               </div>
@@ -2044,24 +2062,36 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                     buscaResultados.map((p) => {
                       const estaMarcado = estaPessoaMarcada(p.id);
                       return (
-                        <label key={p.id} className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold cursor-pointer select-none transition ${estaMarcado ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950' : 'bg-white border-slate-100 hover:bg-slate-50 text-slate-700'}`}>
+                        <label
+                          key={p.id}
+                          className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold cursor-pointer select-none transition ${
+                            estaMarcado
+                              ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100'
+                              : 'bg-white dark:bg-[#131d31] border-slate-100 dark:border-[#24334f] hover:bg-slate-50 dark:hover:bg-[#1c2b4a] text-slate-700 dark:text-slate-200'
+                          }`}
+                        >
                           <div className="flex items-center gap-3">
-                            <input type="checkbox" checked={estaMarcado} onChange={() => handleCheckboxChange(p)} className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                            <input
+                              type="checkbox"
+                              checked={estaMarcado}
+                              onChange={() => handleCheckboxChange(p)}
+                              className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0b1329] text-emerald-600 focus:ring-emerald-500/20 cursor-pointer"
+                            />
                             <div>
                               <span className="block font-bold">{p.nome}</span>
-                              <span className="block text-[10px] text-slate-400 font-normal">{p.telefone || p.email || 'Sem contato'}</span>
+                              <span className="block text-[10px] text-slate-400 dark:text-slate-500 font-normal">{p.telefone || p.email || 'Sem contato'}</span>
                             </div>
                           </div>
                           {p.celula_nome ? (
-                            <span className="text-[10px] bg-amber-50 border border-amber-100 text-amber-600 px-2 py-0.5 rounded-md font-bold">Célula: {p.celula_nome}</span>
+                            <span className="text-[10px] bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-800/50 text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-md font-bold">Célula: {p.celula_nome}</span>
                           ) : (
-                            <span className="text-[10px] bg-emerald-50 border border-emerald-100 text-emerald-600 px-2 py-0.5 rounded-md font-bold">Sem célula</span>
+                            <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md font-bold">Sem célula</span>
                           )}
                         </label>
                       );
                     })
                   ) : (
-                    <div className="text-center py-6 text-xs text-slate-400 italic">Nenhum membro encontrado para "{buscaTermo}".</div>
+                    <div className="text-center py-6 text-xs text-slate-400 dark:text-slate-500 italic">Nenhum membro encontrado para "{buscaTermo}".</div>
                   )
                 ) : (
                   /* Lista Padrão de Pessoas Disponíveis (se houver) */
@@ -2069,25 +2099,47 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
                     pessoasDisponiveis.map((p) => {
                       const estaMarcado = estaPessoaMarcada(p.id);
                       return (
-                        <label key={p.id} className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold cursor-pointer select-none transition ${estaMarcado ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950' : 'bg-white border-slate-100 hover:bg-slate-50 text-slate-700'}`}>
+                        <label
+                          key={p.id}
+                          className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-semibold cursor-pointer select-none transition ${
+                            estaMarcado
+                              ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-950 dark:text-emerald-100'
+                              : 'bg-white dark:bg-[#131d31] border-slate-100 dark:border-[#24334f] hover:bg-slate-50 dark:hover:bg-[#1c2b4a] text-slate-700 dark:text-slate-200'
+                          }`}
+                        >
                           <div className="flex items-center gap-3">
-                            <input type="checkbox" checked={estaMarcado} onChange={() => handleCheckboxChange(p)} className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                            <input
+                              type="checkbox"
+                              checked={estaMarcado}
+                              onChange={() => handleCheckboxChange(p)}
+                              className="h-4 w-4 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0b1329] text-emerald-600 focus:ring-emerald-500/20 cursor-pointer"
+                            />
                             <span>{p.nome}</span>
                           </div>
-                          {p.celulas?.nome && <span className="text-[10px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-md font-normal">vindo de: {p.celulas.nome}</span>}
+                          {p.celulas?.nome && <span className="text-[10px] bg-slate-100 dark:bg-[#1c2b4a] text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md font-normal">vindo de: {p.celulas.nome}</span>}
                         </label>
                       );
                     })
                   ) : (
-                    <div className="text-center py-6 text-xs text-slate-400 italic">
+                    <div className="text-center py-6 text-xs text-slate-400 dark:text-slate-500 italic">
                       Use a barra de busca acima para encontrar e selecionar membros cadastrados da igreja.
                     </div>
                   )
                 )}
               </div>
-              <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
-                <button type="button" onClick={() => { setIsModalAberto(false); setPessoasSelecionadas([]); setBuscaTermo(''); }} className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700">Cancelar</button>
-                <button type="submit" disabled={salvandoModal || pessoasSelecionadas.length === 0} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition disabled:bg-slate-200 disabled:text-slate-400 shadow-sm cursor-pointer">
+              <div className="p-4 bg-slate-50/60 dark:bg-[#131d31] border-t border-slate-100 dark:border-[#2b3954] flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setIsModalAberto(false); setPessoasSelecionadas([]); setBuscaTermo(''); }}
+                  className="px-4 py-2 text-xs border border-slate-200 dark:border-[#2b3954] rounded-xl bg-white dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-[#24334f] transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={salvandoModal || pessoasSelecionadas.length === 0}
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-emerald-600/20 border border-emerald-400/30 cursor-pointer"
+                >
                   Salvar e Vincular
                 </button>
               </div>
@@ -2111,67 +2163,67 @@ function DetalhesCelula({ celula, celulas, pessoas, zonas, relatoriosCelula, onF
       )}
 
       {isModalVisitanteAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md overflow-hidden flex flex-col">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-[#17223b] rounded-2xl border border-slate-200 dark:border-[#2b3954] shadow-2xl w-full max-w-md overflow-hidden flex flex-col text-slate-800 dark:text-slate-100">
+            <div className="p-5 border-b border-slate-100 dark:border-[#2b3954] flex items-center justify-between bg-slate-50/50 dark:bg-[#131d31]">
               <div>
-                <h4 className="font-semibold text-slate-950 text-base">
+                <h4 className="font-bold text-slate-950 dark:text-slate-100 text-base">
                   {visitanteEditando ? 'Editar Visitante' : 'Adicionar Visitante'}
                 </h4>
-                <p className="text-xs text-slate-400">Célula <strong>{celula.nome}</strong></p>
+                <p className="text-xs text-slate-400 mt-0.5">Célula <strong className="text-slate-700 dark:text-slate-200">{celula.nome}</strong></p>
               </div>
               <button
                 type="button"
                 onClick={() => { setIsModalVisitanteAberto(false); setVisitanteEditando(null); }}
-                className="text-slate-400 hover:text-slate-600 font-bold p-1 text-sm cursor-pointer"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-[#1c2b4a] border border-slate-200 dark:border-[#2b3954] text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer text-sm"
               >
                 ✕
               </button>
             </div>
             <form onSubmit={handleSalvarVisitante} className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Nome *</label>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Nome *</label>
                 <input
                   type="text"
                   value={formVisitante.nome}
                   onChange={(e) => setFormVisitante((prev) => ({ ...prev, nome: e.target.value }))}
                   required
                   placeholder="Nome completo"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl bg-slate-50 dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Telefone</label>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Telefone</label>
                 <input
                   type="text"
                   value={formVisitante.telefone}
                   onChange={(e) => setFormVisitante((prev) => ({ ...prev, telefone: mascaraTelefone(e.target.value) }))}
                   placeholder="(00) 00000-0000"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl bg-slate-50 dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Endereço</label>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Endereço</label>
                 <input
                   type="text"
                   value={formVisitante.endereco}
                   onChange={(e) => setFormVisitante((prev) => ({ ...prev, endereco: e.target.value }))}
                   placeholder="Rua, número, bairro"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl bg-slate-50 dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 transition"
                 />
               </div>
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => { setIsModalVisitanteAberto(false); setVisitanteEditando(null); }}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+                  className="px-4 py-2 text-xs border border-slate-200 dark:border-[#2b3954] rounded-xl bg-white dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-[#24334f] transition cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={salvandoVisitante || !formVisitante.nome.trim()}
-                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition disabled:opacity-50 shadow-sm cursor-pointer"
+                  className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition disabled:opacity-50 shadow-sm shadow-amber-600/20 border border-amber-400/30 cursor-pointer"
                 >
                   {salvandoVisitante ? 'Salvando...' : 'Salvar'}
                 </button>

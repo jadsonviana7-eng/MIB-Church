@@ -62,11 +62,11 @@ export default function PainelAprovacoes({ onVerDetalhes, onAprovado }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
       {/* Cabeçalho */}
-      <div className="px-5 pt-5 pb-3 flex items-center justify-between">
+      <div className="px-5 pt-5 pb-3 flex items-center justify-between border-b border-slate-50 dark:border-slate-800/80">
         <div>
-          <h3 className="text-sm font-bold text-slate-800">Cadastros pendentes</h3>
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Cadastros pendentes</h3>
           <p className="text-[10px] text-slate-400 mt-0.5">
             {pendentes.length > 0
               ? 'Clique para revisar e aprovar'
@@ -115,11 +115,11 @@ export default function PainelAprovacoes({ onVerDetalhes, onAprovado }) {
               key={p.id}
               type="button"
               onClick={() => handleClicar(p.id)}
-              className="w-full text-left flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:border-blue-100 hover:bg-blue-50/30 hover:shadow-sm transition-all group"
+              className="w-full text-left flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-800/80 hover:border-blue-100 dark:hover:border-blue-900/40 hover:bg-blue-50/30 dark:hover:bg-slate-800/60 hover:shadow-sm transition-all group cursor-pointer"
             >
               <Avatar pessoa={p} tamanho="w-9 h-9" />
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-slate-800 truncate">{p.nome}</p>
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{p.nome}</p>
                 <p className="text-[10px] text-slate-400 mt-0.5 truncate">
                   {p.cargo || ''}
                 </p>

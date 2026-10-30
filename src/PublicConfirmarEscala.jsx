@@ -601,7 +601,7 @@ export default function PublicConfirmarEscala() {
                             color: corMin
                           }}
                         >
-                          <MinistryIcon icone={iconeMin} size={20} style={{ color: corMin }} />
+                          <MinistryIcon icone={iconeMin} nome={min?.nome} size={20} style={{ color: corMin }} />
                         </div>
                         <div className="min-w-0">
                           <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/10 text-slate-300 border border-white/10 inline-block mb-0.5">

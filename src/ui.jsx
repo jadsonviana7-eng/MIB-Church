@@ -53,7 +53,7 @@ export async function uploadImagemCelula(arquivo, prefix = 'nova') {
 export function Card({ children, className = '', style = {}, ...props }) {
   return (
     <section 
-      className={`card border-b-2 border-[#60a5fa]/20 ${className}`.trim()} 
+      className={`card border-b-2 border-[#60a5fa]/20 bg-white dark:bg-slate-800 dark:border-slate-700 dark:border-b-blue-500/30 dark:text-slate-100 ${className}`.trim()} 
       style={{ fontFamily: "var(--font-body)", ...style }}
       {...props}
     >
@@ -65,13 +65,13 @@ export function Card({ children, className = '', style = {}, ...props }) {
 export function CardHeader({ titulo, subtitulo, children, className = '' }) {
   return (
     <div
-      className={`card-header flex flex-wrap items-center justify-between gap-3 border-b border-[#0095ff]/15 ${className}`.trim()}
+      className={`card-header flex flex-wrap items-center justify-between gap-3 border-b border-[#0095ff]/15 bg-slate-50/50 dark:bg-slate-800/80 dark:border-slate-700 ${className}`.trim()}
       style={{ fontFamily: "var(--font-body)" }}
     >
       <div>
         {titulo && (
           <h3 
-            className="text-base font-bold text-[var(--text-heading)] tracking-tight" 
+            className="text-base font-bold text-[var(--text-heading)] dark:text-white tracking-tight" 
             style={{ fontFamily: "var(--font-heading)" }}
           >
             {titulo}
@@ -79,7 +79,7 @@ export function CardHeader({ titulo, subtitulo, children, className = '' }) {
         )}
         {subtitulo && (
           <p 
-            className="text-xs text-[var(--text-muted)] mt-0.5"
+            className="text-xs text-[var(--text-muted)] dark:text-slate-400 mt-0.5"
             style={{ fontFamily: "var(--font-body)", fontWeight: 400 }}
           >
             {subtitulo}
@@ -91,7 +91,7 @@ export function CardHeader({ titulo, subtitulo, children, className = '' }) {
   );
 }
 
-export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hideLegend = false, hideHeaderOnMobile = false, className = '' }) {
+export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hideLegend = false, hideHeaderOnMobile = false, className = '', onSliceClick = null }) {
   const [activeIndex, setActiveIndex] = useState(-1);
   const entradas = Object.entries(dados).sort((a, b) => b[1] - a[1]);
   const total = entradas.reduce((sum, [, valor]) => sum + valor, 0); // Corrigido para somar corretamente
@@ -105,7 +105,7 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
         cx={cx}
         cy={cy}
         innerRadius={innerRadius}
-        outerRadius={outerRadius + 2} // Subtle expansion
+        outerRadius={outerRadius + 3} // Subtle expansion
         startAngle={startAngle}
         endAngle={endAngle}
         fill={fill}
@@ -115,7 +115,18 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
 
   return (
     <Card className={`p-0 ${className}`.trim()}>
-      <CardHeader titulo={titulo} hideOnMobile={hideHeaderOnMobile} />
+      <CardHeader 
+        titulo={titulo} 
+        hideOnMobile={hideHeaderOnMobile}
+        children={onSliceClick ? (
+          <span 
+            className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 px-2 py-0.5 rounded-lg flex items-center gap-1 shrink-0"
+            title="Clique nas fatias ou na tabela para filtrar membros"
+          >
+            <span>🔍</span><span className="hidden sm:inline">Filtrar pessoas</span>
+          </span>
+        ) : null}
+      />
       <div className={`p-6 flex flex-col items-center gap-6 ${isHalfCircle ? (hideLegend ? 'min-h-[260px]' : 'min-h-[360px]') : 'min-h-[420px]'}`}>
         <div className={`relative w-full max-w-md min-w-0 ${isHalfCircle ? 'h-56' : 'h-72'}`}>
           <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
@@ -134,13 +145,24 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
                 endAngle={endAngle}
                 onMouseEnter={(_, index) => setActiveIndex(index)}
                 onMouseLeave={() => setActiveIndex(-1)}
-                style={{ cursor: 'pointer' }}
+                onClick={(entry) => onSliceClick && onSliceClick(entry)}
+                style={{ cursor: onSliceClick ? 'pointer' : 'default' }}
               >
                 {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={chartColors[index % chartColors.length]} 
+                    onClick={() => onSliceClick && onSliceClick(entry)}
+                    style={{ cursor: onSliceClick ? 'pointer' : 'default' }}
+                  />
                 ))}
               </Pie>
-              <Tooltip />
+              <Tooltip 
+                formatter={(val, name) => [
+                  `${val} (${total > 0 ? ((val / total) * 100).toFixed(0) : 0}%)${onSliceClick ? ' • Clique para filtrar' : ''}`, 
+                  name
+                ]}
+              />
             </PieChart>
           </ResponsiveContainer>
           <div 
@@ -152,7 +174,7 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
           </div>
         </div>
         {!hideLegend && (
-          <div className="w-full max-w-md mt-4 border-t border-slate-100 pt-4">
+          <div className="w-full max-w-md mt-4 border-t border-slate-100 dark:border-slate-700/60 pt-4">
             {entradas.length === 0 ? (
               <p className="text-center text-xs text-slate-400 italic">Sem dados para exibir.</p>
             ) : (
@@ -164,17 +186,19 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
                     return (
                       <tr 
                         key={label} 
-                        className={`transition-all border-b border-slate-50 last:border-0 hover:bg-slate-50 cursor-pointer ${isHover ? 'bg-slate-50' : ''}`}
+                        className={`transition-all border-b border-slate-50 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-700/40 cursor-pointer ${isHover ? 'bg-slate-50 dark:bg-slate-750/50' : ''}`}
                         onMouseEnter={() => setActiveIndex(index)}
                         onMouseLeave={() => setActiveIndex(-1)}
+                        onClick={() => onSliceClick && onSliceClick({ name: label, value: valor })}
+                        title={onSliceClick ? `Clique para filtrar por ${label}` : undefined}
                       >
                         <td className="py-2 pl-2">
                           <div className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: chartColors[index % chartColors.length] }} />
-                            <span className="font-bold text-slate-600">{label}</span>
+                            <span className="font-bold text-slate-600 dark:text-slate-200">{label}</span>
                           </div>
                         </td>
-                        <td className="py-2 text-right font-black text-slate-700">{valor}</td>
+                        <td className="py-2 text-right font-black text-slate-700 dark:text-slate-100">{valor}</td>
                         <td className="py-2 text-right pr-2 text-slate-400 font-bold w-12">{pct}%</td>
                       </tr>
                     );
@@ -189,7 +213,7 @@ export function DoughnutCard({ titulo, dados, startAngle = 0, endAngle = 360, hi
   );
 }
 
-export function CombinationCard({ titulo, dados, periodo, setPeriodo, hideHeaderOnMobile = false }) {
+export function CombinationCard({ titulo, dados, periodo, setPeriodo, hideHeaderOnMobile = false, onBarClick = null }) {
   const entradas = Object.entries(dados);
   const chartData = entradas.map(([name, value]) => ({ name, value }));
 
@@ -199,11 +223,21 @@ export function CombinationCard({ titulo, dados, periodo, setPeriodo, hideHeader
         titulo={titulo}
         hideOnMobile={hideHeaderOnMobile}
         children={(
-          <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="rounded-xl border border-[var(--border)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] bg-white cursor-pointer">
-            <option value="semana">Semana</option>
-            <option value="mes">Meses</option>
-            <option value="ano">Ano</option>
-          </select>
+          <div className="flex items-center gap-2">
+            {onBarClick && (
+              <span 
+                className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 px-2 py-0.5 rounded-lg flex items-center gap-1 shrink-0"
+                title="Clique nas barras para filtrar pessoas"
+              >
+                <span>🔍</span><span className="hidden sm:inline">Filtrar</span>
+              </span>
+            )}
+            <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="rounded-xl border border-[var(--border)] dark:border-slate-700 px-3 py-2 text-xs font-medium text-[var(--text-primary)] dark:text-slate-200 bg-white dark:bg-slate-900 cursor-pointer">
+              <option value="semana">Semana</option>
+              <option value="mes">Meses</option>
+              <option value="ano">Ano</option>
+            </select>
+          </div>
         )}
       />
       <div className="p-6 h-80 min-w-0">
@@ -212,7 +246,13 @@ export function CombinationCard({ titulo, dados, periodo, setPeriodo, hideHeader
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="name" tick={{fontSize: 11}} axisLine={false} tickLine={false} />
             <YAxis tick={{fontSize: 11}} axisLine={false} tickLine={false} />
-            <Tooltip cursor={{fill: '#f8fafc'}} />
+            <Tooltip 
+              cursor={{fill: '#f8fafc'}}
+              formatter={(val, name) => [
+                `${val}${onBarClick ? ' • Clique para filtrar' : ''}`, 
+                name || 'Total'
+              ]}
+            />
             <Bar 
               dataKey="value" 
               fill={chartColors[0]} 
@@ -220,7 +260,8 @@ export function CombinationCard({ titulo, dados, periodo, setPeriodo, hideHeader
               barSize={40} 
               activeBar={{ fillOpacity: 0.8, stroke: chartColors[0], strokeWidth: 2 }}
               animationDuration={500}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: onBarClick ? 'pointer' : 'default' }}
+              onClick={(entry) => onBarClick && onBarClick(entry)}
             />
             <Line type="monotone" dataKey="value" stroke={chartColors[2]} strokeWidth={3} dot={{ r: 4, fill: chartColors[2] }} />
           </ComposedChart>
@@ -230,12 +271,23 @@ export function CombinationCard({ titulo, dados, periodo, setPeriodo, hideHeader
   );
 }
 
-export function ColumnChart({ titulo, dados, hideHeaderOnMobile = false, hideLegend = false, className = '' }) {
+export function ColumnChart({ titulo, dados, hideHeaderOnMobile = false, hideLegend = false, className = '', onBarClick = null }) {
   const chartData = Object.entries(dados).map(([name, value]) => ({ name, value }));
 
   return (
     <Card className={`p-0 ${className}`.trim()}>
-      <CardHeader titulo={titulo} hideOnMobile={hideHeaderOnMobile} />
+      <CardHeader 
+        titulo={titulo} 
+        hideOnMobile={hideHeaderOnMobile}
+        children={onBarClick ? (
+          <span 
+            className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 px-2 py-0.5 rounded-lg flex items-center gap-1 shrink-0"
+            title="Clique nas colunas para filtrar pessoas"
+          >
+            <span>🔍</span><span className="hidden sm:inline">Filtrar pessoas</span>
+          </span>
+        ) : null}
+      />
       <div className="p-6 flex flex-col items-center gap-6 min-h-[420px]">
         <div className="w-full h-80 min-w-0">
         <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
@@ -243,22 +295,34 @@ export function ColumnChart({ titulo, dados, hideHeaderOnMobile = false, hideLeg
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="name" tick={{fontSize: 10}} axisLine={false} tickLine={false} />
             <YAxis tick={{fontSize: 11}} axisLine={false} tickLine={false} />
-            <Tooltip cursor={{fill: '#f8fafc'}} />
+            <Tooltip 
+              cursor={{fill: '#f8fafc'}}
+              formatter={(val, name) => [
+                `${val}${onBarClick ? ' • Clique para filtrar' : ''}`, 
+                name || 'Total'
+              ]}
+            />
             <Bar 
               dataKey="value" 
               radius={[6, 6, 0, 0]}
               activeBar={{ fillOpacity: 0.8 }}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: onBarClick ? 'pointer' : 'default' }}
+              onClick={(entry) => onBarClick && onBarClick(entry)}
             >
               {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={chartColors[index % chartColors.length]} />
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={chartColors[index % chartColors.length]} 
+                  onClick={() => onBarClick && onBarClick(entry)}
+                  style={{ cursor: onBarClick ? 'pointer' : 'default' }}
+                />
               ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
         </div>
         {!hideLegend && (
-          <div className="w-full max-w-md mt-4 border-t border-slate-100 pt-4">
+          <div className="w-full max-w-md mt-4 border-t border-slate-100 dark:border-slate-700/60 pt-4">
             {chartData.length === 0 ? (
               <p className="text-center text-xs text-slate-400 italic">Sem dados para exibir.</p>
             ) : (
@@ -267,15 +331,17 @@ export function ColumnChart({ titulo, dados, hideHeaderOnMobile = false, hideLeg
                   {chartData.map((item, index) => (
                     <tr 
                       key={item.name} 
-                      className="border-b border-slate-50 last:border-0"
+                      className={`border-b border-slate-50 dark:border-slate-800 last:border-0 ${onBarClick ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors' : ''}`}
+                      onClick={() => onBarClick && onBarClick(item)}
+                      title={onBarClick ? `Clique para filtrar por ${item.name}` : undefined}
                     >
                       <td className="py-2 pl-2">
                         <div className="flex items-center gap-2">
                           <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: chartColors[index % chartColors.length] }} />
-                          <span className="font-bold text-slate-600">{item.name}</span>
+                          <span className="font-bold text-slate-600 dark:text-slate-200">{item.name}</span>
                         </div>
                       </td>
-                      <td className="py-2 text-right pr-2 font-black text-slate-700">{item.value}</td>
+                      <td className="py-2 text-right pr-2 font-black text-slate-700 dark:text-slate-100">{item.value}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -315,9 +381,9 @@ export function PageHeader({ titulo, subtitulo, breadcrumb = [], onNavigate, chi
   return (
     <div className="mb-6 xl:mb-2 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between pt-0 w-full">
       <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 w-full md:w-auto">
-        <div className="flex flex-col w-full md:w-auto bg-white border border-t-0 border-slate-200/90 md:bg-transparent md:border-0 rounded-t-none rounded-b-2xl sm:rounded-b-3xl md:rounded-none px-4 py-3.5 md:p-0 shadow-2xs md:shadow-none text-center md:text-left items-center md:items-start">
-          <h2 className="mt-0 text-sm sm:text-base md:text-3xl xl:text-[18px] font-black uppercase md:normal-case tracking-wider md:tracking-tight text-slate-800 text-center md:text-left">{titulo}</h2>
-          {subtitulo && <p className="mt-1 md:mt-2 text-[11px] md:text-sm text-[var(--text-muted)] max-w-3xl text-center md:text-left">{subtitulo}</p>}
+        <div className="flex flex-col w-full md:w-auto bg-white dark:bg-slate-800 border border-t-0 border-slate-200/90 dark:border-slate-700 md:bg-transparent md:dark:bg-transparent md:border-0 rounded-t-none rounded-b-2xl sm:rounded-b-3xl md:rounded-none px-4 py-3.5 md:p-0 shadow-2xs md:shadow-none text-center md:text-left items-center md:items-start">
+          <h2 className="mt-0 text-sm sm:text-base md:text-3xl xl:text-[18px] font-black uppercase md:normal-case tracking-wider md:tracking-tight text-slate-800 dark:text-white text-center md:text-left">{titulo}</h2>
+          {subtitulo && <p className="mt-1 md:mt-2 text-[11px] md:text-sm text-[var(--text-muted)] dark:text-slate-400 max-w-3xl text-center md:text-left">{subtitulo}</p>}
         </div>
         {breadcrumb.length > 0 && (
           <nav className="hidden md:flex items-center gap-2 text-[11px] font-bold tracking-tight text-slate-400" aria-label="Breadcrumb">
@@ -351,9 +417,9 @@ export function PageHeader({ titulo, subtitulo, breadcrumb = [], onNavigate, chi
 export function Avatar({ pessoa, tamanho = 'w-10 h-10' }) {
   if (!pessoa) return null;
   return pessoa.foto_url ? (
-    <img src={pessoa.foto_url} alt={pessoa.nome} className={`${tamanho} rounded-xl object-cover border border-slate-200 bg-slate-100 shrink-0`} />
+    <img src={pessoa.foto_url} alt={pessoa.nome} className={`${tamanho} rounded-xl object-cover border border-slate-200 dark:border-[#2b3954] bg-slate-100 dark:bg-[#1c2b4a] shrink-0`} />
   ) : (
-    <div className={`${tamanho} rounded-xl bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-500 border border-slate-300 shrink-0`}>
+    <div className={`${tamanho} rounded-xl bg-slate-200 dark:bg-[#1c2b4a] flex items-center justify-center text-xs font-bold text-slate-500 dark:text-slate-200 border border-slate-300 dark:border-[#2b3954] shrink-0`}>
       {pessoa.nome ? pessoa.nome.charAt(0).toUpperCase() : '?'}
     </div>
   );
@@ -382,7 +448,7 @@ export function SelectFiltro({ label, valor, onChange, opcoes }) {
   return (
     <div>
       <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">{label}</label>
-      <select value={valor} onChange={(e) => onChange(e.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-normal text-slate-700 bg-white cursor-pointer h-[42px]">
+      <select value={valor} onChange={(e) => onChange(e.target.value)} className="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm font-normal text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 cursor-pointer h-[42px]">
         <option value="">Todos</option>
         {opcoes.map((o) => {
           const itemValor = typeof o === 'object' ? o.valor : o;
@@ -396,9 +462,9 @@ export function SelectFiltro({ label, valor, onChange, opcoes }) {
 
 export function CampoLinha({ label, valor }) {
   return (
-    <div className="rounded-xl bg-[var(--surface-muted)] border border-[var(--border)] px-3 py-2.5">
-      <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">{label}</p>
-      <p className="mt-0.5 text-sm font-medium text-[var(--text-heading)]">{valor || '—'}</p>
+    <div className="rounded-xl bg-[var(--surface-muted)] dark:bg-slate-800/60 border border-[var(--border)] dark:border-slate-700 px-3 py-2.5">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)] dark:text-slate-400">{label}</p>
+      <p className="mt-0.5 text-sm font-medium text-[var(--text-heading)] dark:text-slate-100">{valor || '—'}</p>
     </div>
   );
 }
@@ -406,37 +472,38 @@ export function CampoLinha({ label, valor }) {
 export function CampoInput({ label, value, onChange, disabled, mask, type = 'text' }) {
   return (
     <div>
-      <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">{label}</label>
+      <label className="block text-[11px] font-medium text-[var(--text-muted)] dark:text-slate-400 mb-0.5">{label}</label>
       <input
         type={type}
         disabled={disabled}
         value={value}
         onChange={(e) => onChange(mask ? mask(e.target.value) : e.target.value)}
-        className="w-full px-3 py-1.5 text-xs font-medium border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)] text-[var(--text-heading)] bg-white"
+        className="w-full px-3 py-1.5 text-xs font-medium border border-[var(--border)] dark:border-slate-700 rounded-xl disabled:bg-[var(--surface-muted)] dark:disabled:bg-slate-800/40 text-[var(--text-heading)] dark:text-slate-100 bg-white dark:bg-slate-900"
       />
     </div>
   );
 }
 
-export function StatCard({ label, valor, detalhe, icone, className = "" }) {
-  const iconOnTop = className.includes('flex-col');
+export function StatCard({ label, valor, detalhe, icone, className = "", onClick = null }) {
+  const isHorizontal = className.includes('horizontal');
+  const clickClasses = onClick ? 'cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all' : '';
 
-  if (iconOnTop) {
+  if (isHorizontal) {
     return (
-      <Card className={`p-4 flex flex-col justify-between gap-4 ${className}`.trim()}>
-        <div className="flex items-center gap-3 w-full">
+      <Card onClick={onClick} className={`p-4 flex items-center justify-between gap-4 ${clickClasses} ${className}`.trim()}>
+        <div className="flex items-center gap-3.5 min-w-0">
           {icone && <div className="shrink-0">{icone}</div>}
-          <div className="flex flex-col min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate text-left leading-snug">{label}</p>
+          <div className="min-w-0 flex flex-col">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 truncate leading-snug">{label}</p>
             {detalhe && (
-              <span className="text-[11px] text-slate-500 font-semibold mt-0.5 text-left leading-none truncate">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5 truncate leading-none">
                 {detalhe}
               </span>
             )}
           </div>
         </div>
-        <div className="text-left w-full">
-          <span className="text-2xl sm:text-3xl font-black text-slate-800 leading-none block">
+        <div className="shrink-0 text-right">
+          <span className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none">
             {valor}
           </span>
         </div>
@@ -445,22 +512,29 @@ export function StatCard({ label, valor, detalhe, icone, className = "" }) {
   }
 
   return (
-    <Card className={`p-4 flex items-center justify-between gap-4 ${className}`.trim()}>
-      <div className="flex items-center gap-3.5 min-w-0">
+    <Card onClick={onClick} className={`p-3.5 sm:p-4 flex flex-col justify-between rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 shadow-xs hover:shadow-md transition-all duration-200 ${clickClasses} ${className}`.trim()}>
+      {/* 1. Topo: Ícone à esquerda e Número indicador ao lado à direita */}
+      <div className="flex items-center justify-between w-full gap-2">
         {icone && <div className="shrink-0">{icone}</div>}
-        <div className="min-w-0 flex flex-col">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate leading-snug">{label}</p>
-          {detalhe && (
-            <span className="text-[11px] text-slate-500 font-semibold mt-0.5 truncate leading-none">
-              {detalhe}
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="shrink-0 text-right">
-        <span className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight leading-none">
+        <span className={`font-black text-slate-800 dark:text-slate-100 tracking-tight leading-none text-right shrink-0 ${
+          typeof valor === 'string' && valor.length > 8
+            ? 'text-lg sm:text-xl xl:text-2xl'
+            : 'text-2xl sm:text-3xl xl:text-4xl'
+        }`}>
           {valor}
         </span>
+      </div>
+
+      {/* 2. Legendas abaixo do ícone e número — ajustadas ao conteúdo */}
+      <div className="flex flex-col min-w-0 mt-2.5">
+        <p className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 leading-snug break-words">
+          {label}
+        </p>
+        {detalhe && (
+          <span className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5 leading-tight break-words">
+            {detalhe}
+          </span>
+        )}
       </div>
     </Card>
   );
@@ -468,13 +542,15 @@ export function StatCard({ label, valor, detalhe, icone, className = "" }) {
 
 export function ModalWrapper({ titulo, children, onFechar }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh] self-end sm:self-center">
-        <div className="p-4 sm:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
-          <h3 className="font-black text-slate-800 text-lg uppercase tracking-tight">{titulo}</h3>
-          <button onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border text-slate-400 hover:text-rose-500 transition cursor-pointer">✕</button>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-md">
+      <div className="bg-white dark:bg-slate-900 border border-transparent dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh] self-end sm:self-center text-slate-800 dark:text-slate-100">
+        <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-850 shrink-0">
+          <h3 className="font-black text-slate-800 dark:text-white text-lg uppercase tracking-tight">{titulo}</h3>
+          <button onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer">✕</button>
         </div>
-        {children}
+        <div className="flex-1 overflow-y-auto bg-white dark:bg-slate-900">
+          {children}
+        </div>
       </div>
     </div>
   );
@@ -482,29 +558,29 @@ export function ModalWrapper({ titulo, children, onFechar }) {
 
 export function ConfirmModal({ titulo, mensagem, onConfirm, onCancel }) {
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-6 border-b border-rose-50 bg-rose-50/30 flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg shrink-0">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200 text-slate-800 dark:text-slate-100">
+        <div className="p-6 border-b border-rose-50 dark:border-rose-950/50 bg-rose-50/30 dark:bg-rose-950/20 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center text-lg shrink-0 border border-rose-200 dark:border-rose-800/40">
             ⚠️
           </div>
           <div className="flex-1">
-            <h3 className="font-black text-slate-800 text-base">{titulo || 'Confirmar Ação'}</h3>
-            <p className="text-xs text-slate-500 mt-1 leading-relaxed">{mensagem || 'Deseja realmente prosseguir?'}</p>
+            <h3 className="font-black text-slate-800 dark:text-white text-base">{titulo || 'Confirmar Ação'}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{mensagem || 'Deseja realmente prosseguir?'}</p>
           </div>
         </div>
-        <div className="p-6 bg-slate-50/50 flex gap-3">
+        <div className="p-6 bg-slate-50/50 dark:bg-slate-850/50 flex gap-3 border-t border-transparent dark:border-slate-800">
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-white transition cursor-pointer"
+            className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition cursor-pointer"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-100 transition active:scale-95 cursor-pointer"
+            className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-900/30 transition active:scale-95 cursor-pointer"
           >
             🗑️ Confirmar
           </button>
@@ -540,27 +616,112 @@ const ICON_MAP = {
   Settings
 };
 
-export function MinistryIcon({ icone, className = '', size = 20, style = {} }) {
-  if (!icone) {
-    return (
-      <span 
-        className={className} 
-        style={{ 
-          fontSize: `${size}px`, 
-          lineHeight: 1, 
-          display: 'inline-flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          ...style 
-        }}
-      >
-        🙏
-      </span>
-    );
+const EMOJI_TO_ICON_MAP = {
+  '🙏': HelpingHand,
+  '🤲': HelpingHand,
+  '🎵': Music,
+  '🎶': Music,
+  '🎤': Mic,
+  '❤️': Heart,
+  '💖': Heart,
+  '👶': Sparkles,
+  '👧': Sparkles,
+  '🧒': Sparkles,
+  '🔥': Flame,
+  '📖': BookOpen,
+  '👥': Users,
+  '👤': Users,
+  '🧭': Compass,
+  '🌍': Globe,
+  '🌎': Globe,
+  '🌏': Globe,
+  '🎬': Clapperboard,
+  '🎥': Video,
+  '📹': Video,
+  '📺': Tv,
+  '🖥️': Tv,
+  '🛠️': Wrench,
+  '🔧': Wrench,
+  '🔨': Hammer,
+  '🛡️': Shield,
+  '📜': Scroll,
+  '🗓️': Calendar,
+  '📅': Calendar,
+  '💡': Sparkles,
+  '✨': Sparkles,
+  '⭐': Sparkles,
+  '☕': Heart,
+  '🏠': Home,
+  '⛪': BookOpen,
+  '🏆': Award
+};
+
+const NAME_TO_ICON_MAP = {
+  'louvor': Music,
+  'musica': Music,
+  'música': Music,
+  'cultos': Scroll,
+  'culto': Scroll,
+  'jovens': Flame,
+  'jovens go': Flame,
+  'infantil': Sparkles,
+  'kids': Sparkles,
+  'intercessao': HelpingHand,
+  'intercessão': HelpingHand,
+  'oracao': HelpingHand,
+  'oração': HelpingHand,
+  'introducao': Heart,
+  'introdução': Heart,
+  'recepcao': Heart,
+  'recepção': Heart,
+  'boas vindas': Heart,
+  'acolhimento': Heart,
+  'projecao': Tv,
+  'projeção': Tv,
+  'midia': Clapperboard,
+  'mídia': Clapperboard,
+  'comunicacao': Clapperboard,
+  'comunicação': Clapperboard,
+  'transmissao': Video,
+  'transmissão': Video,
+  'manutencao': Wrench,
+  'manutenção': Wrench,
+  'obras': Hammer,
+  'diaconato': HelpingHand,
+  'social': HelpingHand,
+  'missoes': Globe,
+  'missões': Globe,
+  'evangelismo': Compass,
+  'ensino': BookOpen,
+  'ebd': BookOpen,
+  'seguranca': Shield,
+  'segurança': Shield
+};
+
+export function MinistryIcon({ icone, nome, className = '', size = 20, style = {} }) {
+  let IconComponent = null;
+
+  // 1. Direct match in ICON_MAP (e.g. 'Music', 'Sparkles')
+  if (icone && ICON_MAP[icone]) {
+    IconComponent = ICON_MAP[icone];
   }
 
-  let IconComponent = ICON_MAP[icone];
-  if (!IconComponent && typeof icone === 'string') {
+  // 2. Direct match in EMOJI_TO_ICON_MAP (e.g. '🙏' -> HelpingHand)
+  if (!IconComponent && icone && EMOJI_TO_ICON_MAP[icone]) {
+    // If it's the generic default emoji '🙏' and we have a specific ministry name, prefer name-based icon (e.g. Infantil -> Sparkles)
+    if (icone === '🙏' && nome) {
+      const lowerNome = String(nome).toLowerCase().trim();
+      if (NAME_TO_ICON_MAP[lowerNome]) {
+        IconComponent = NAME_TO_ICON_MAP[lowerNome];
+      }
+    }
+    if (!IconComponent) {
+      IconComponent = EMOJI_TO_ICON_MAP[icone];
+    }
+  }
+
+  // 3. Case-insensitive lookup in ICON_MAP
+  if (!IconComponent && icone && typeof icone === 'string') {
     const lower = icone.toLowerCase().trim();
     const foundKey = Object.keys(ICON_MAP).find(k => k.toLowerCase() === lower);
     if (foundKey) {
@@ -568,26 +729,25 @@ export function MinistryIcon({ icone, className = '', size = 20, style = {} }) {
     }
   }
 
-  if (IconComponent) {
-    return <IconComponent className={className} size={size} style={style} />;
+  // 4. Try matching by ministry name if no icon found or icon is null/empty
+  if (!IconComponent && nome && typeof nome === 'string') {
+    const lowerNome = nome.toLowerCase().trim();
+    if (NAME_TO_ICON_MAP[lowerNome]) {
+      IconComponent = NAME_TO_ICON_MAP[lowerNome];
+    } else {
+      const matchKey = Object.keys(NAME_TO_ICON_MAP).find(k => lowerNome.includes(k));
+      if (matchKey) {
+        IconComponent = NAME_TO_ICON_MAP[matchKey];
+      }
+    }
   }
 
-  // Fallback to emoji or icon
-  return (
-    <span 
-      className={className} 
-      style={{ 
-        fontSize: `${size}px`, 
-        lineHeight: 1, 
-        display: 'inline-flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        ...style 
-      }}
-    >
-      {icone}
-    </span>
-  );
+  // 5. Fallback: ALWAYS an SVG Lucide icon, never an emoji!
+  if (!IconComponent) {
+    IconComponent = HelpingHand;
+  }
+
+  return <IconComponent className={className} size={size} style={style} />;
 }
 
 export { default as ModalDuplicidadeCadastro } from './ModalDuplicidadeCadastro';

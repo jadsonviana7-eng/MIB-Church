@@ -535,7 +535,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
         <PageHeader titulo="Baixa de Evento (QR)" onNavigate={onVoltar} />
       </div>
 
-      <Card className="p-0 overflow-hidden shadow-xl border border-slate-100 rounded-[28px] bg-white">
+      <Card className="p-0 overflow-hidden shadow-xl border border-slate-100 dark:border-slate-800 rounded-[28px] bg-white dark:bg-slate-900">
         <div className="p-6 space-y-6">
           {/* Scanner Viewport Container */}
           <div className="relative rounded-2xl overflow-hidden bg-slate-900 border border-slate-800 shadow-inner min-h-[300px]">
@@ -599,17 +599,17 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
           {status.msg && !recibo && (
             <div className="animate-in fade-in zoom-in duration-200">
               {status.loading ? (
-                <div className="p-8 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col items-center justify-center text-center space-y-3">
+                <div className="p-8 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl flex flex-col items-center justify-center text-center space-y-3">
                   <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{status.msg}</p>
                 </div>
               ) : (
                 <div
                   className={`p-6 rounded-2xl border flex flex-col items-center text-center space-y-4 ${status.type === 'success'
-                      ? 'bg-emerald-50/50 border-emerald-100 text-emerald-800'
+                      ? 'bg-emerald-50/50 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300'
                       : status.type === 'error'
-                        ? 'bg-rose-50/50 border-rose-100 text-rose-800'
-                        : 'bg-amber-50/50 border-amber-100 text-amber-800'
+                        ? 'bg-rose-50/50 dark:bg-rose-950/40 border-rose-100 dark:border-rose-800/60 text-rose-800 dark:text-rose-300'
+                        : 'bg-amber-50/50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-800/60 text-amber-800 dark:text-amber-300'
                     }`}
                 >
                   <div
@@ -648,47 +648,47 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
           {recibo && (
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-300">
 
-              <div className="relative border border-slate-150 bg-slate-50/40 rounded-3xl p-5 space-y-4 overflow-hidden shadow-inner">
+              <div className="relative border border-slate-150 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-800/40 rounded-3xl p-5 space-y-4 overflow-hidden shadow-inner">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
 
-                <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
-                  <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg">
+                <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-3">
+                  <div className="p-1.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 rounded-lg">
                     <CheckCircle size={16} />
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Comprovante de Inscrição</h4>
+                    <h4 className="font-extrabold text-xs text-slate-800 dark:text-slate-100 uppercase tracking-wider">Comprovante de Inscrição</h4>
                     <p className="text-[9px] text-slate-400 font-medium font-semibold">Baixa realizada via QR Code</p>
                   </div>
                 </div>
 
-                <div className="space-y-2.5 text-xs text-slate-700 font-medium">
-                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                <div className="space-y-2.5 text-xs text-slate-700 dark:text-slate-200 font-medium">
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100 dark:border-slate-700/60">
                     <span className="font-bold text-slate-400 flex items-center gap-1.5"><User size={13} /> Participante</span>
-                    <span className="font-extrabold text-slate-800">{recibo.nome}</span>
+                    <span className="font-extrabold text-slate-800 dark:text-slate-100">{recibo.nome}</span>
                   </div>
-                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100 dark:border-slate-700/60">
                     <span className="font-bold text-slate-400 flex items-center gap-1.5"><Calendar size={13} /> Evento</span>
-                    <span className="font-bold text-slate-800 truncate max-w-[200px]">{recibo.evento}</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-100 truncate max-w-[200px]">{recibo.evento}</span>
                   </div>
-                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100 dark:border-slate-700/60">
                     <span className="font-bold text-slate-400 flex items-center gap-1.5"><Tag size={13} /> Referência</span>
-                    <span className="font-bold text-slate-800">
+                    <span className="font-bold text-slate-800 dark:text-slate-100">
                       {recibo.ehParcela ? `Parcela ${recibo.parcelaNum} de ${recibo.totalParcelas}` : 'Pagamento Integral'}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100 dark:border-slate-700/60">
                     <span className="font-bold text-slate-400 flex items-center gap-1.5"><DollarSign size={13} /> Valor da Parcela</span>
-                    <span className="font-extrabold text-emerald-600">R$ {recibo.valor.toFixed(2)}</span>
+                    <span className="font-extrabold text-emerald-600 dark:text-emerald-400">R$ {recibo.valor.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center py-1 border-b border-slate-100">
+                  <div className="flex justify-between items-center py-1 border-b border-slate-100 dark:border-slate-700/60">
                     <span className="font-bold text-slate-400 flex items-center gap-1.5"><Clock size={13} /> Data de Baixa</span>
-                    <span className="font-semibold text-slate-600">{recibo.data.toLocaleDateString('pt-BR')}</span>
+                    <span className="font-semibold text-slate-600 dark:text-slate-300">{recibo.data.toLocaleDateString('pt-BR')}</span>
                   </div>
                   <div className="flex justify-between items-center py-1">
                     <span className="font-bold text-slate-400 flex items-center gap-1.5"><Info size={13} /> Situação</span>
                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${recibo.statusPagamento === 'pago'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-amber-100 text-amber-800'
+                        ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                        : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
                       }`}>
                       {recibo.statusPagamento === 'pago' ? 'Quitado' : 'Pendente'}
                     </span>

@@ -63,27 +63,27 @@ export default function HistoricoMinisterial({ initialStatus = null, hideHeader 
       <div className={`flex ${hideHeader ? 'justify-end' : 'flex-col sm:flex-row justify-between items-start sm:items-center'} gap-4`}>
         {!hideHeader && (
           <div>
-            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Histórico Ministerial</h2>
-            <p className="text-xs text-slate-500">Rastreabilidade completa de movimentações, escalas e promoções de voluntários.</p>
+            <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Histórico Ministerial</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Rastreabilidade completa de movimentações, escalas e promoções de voluntários.</p>
           </div>
         )}
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Filter size={14} className="text-slate-400" />
+          <Filter size={14} className="text-slate-400 dark:text-slate-400" />
           <select
             value={filtroAcao}
             onChange={(e) => setFiltroAcao(e.target.value)}
-            className="w-full sm:w-auto border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white outline-none font-bold text-slate-600 cursor-pointer"
+            className="w-full sm:w-auto border border-slate-200 dark:border-[#334155] rounded-xl px-3 py-2 text-xs bg-white dark:bg-[#0b1329] outline-none font-bold text-slate-600 dark:text-slate-200 cursor-pointer"
           >
-            <option value="">Filtrar todos os eventos...</option>
-            <option value="ENTRADA_MINISTERIO">Entrada em Ministério</option>
-            <option value="SAIDA_MINISTERIO">Saída de Ministério</option>
-            <option value="PARTICIPACAO_ESCALA">Participação em Escala</option>
+            <option value="" className="bg-white dark:bg-[#0b1329]">Filtrar todos os eventos...</option>
+            <option value="ENTRADA_MINISTERIO" className="bg-white dark:bg-[#0b1329]">Entrada em Ministério</option>
+            <option value="SAIDA_MINISTERIO" className="bg-white dark:bg-[#0b1329]">Saída de Ministério</option>
+            <option value="PARTICIPACAO_ESCALA" className="bg-white dark:bg-[#0b1329]">Participação em Escala</option>
           </select>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+      <div className="bg-white dark:bg-[#17223b] rounded-2xl border border-slate-100 dark:border-[#2b3954] p-6 shadow-sm">
         {loading ? (
           <div className="py-16 text-center text-slate-400 italic">
             Buscando linha do tempo ministerial...
@@ -93,7 +93,7 @@ export default function HistoricoMinisterial({ initialStatus = null, hideHeader 
             Nenhum evento registrado no histórico ministerial.
           </div>
         ) : (
-          <div className="relative border-l-2 border-slate-100 pl-6 ml-4 space-y-6">
+          <div className="relative border-l-2 border-slate-100 dark:border-[#2b3954] pl-6 ml-4 space-y-6">
             {logs.map((log) => {
               const data = new Date(log.criado_em).toLocaleDateString('pt-BR', {
                 day: '2-digit',
@@ -106,24 +106,24 @@ export default function HistoricoMinisterial({ initialStatus = null, hideHeader 
               return (
                 <div key={log.id} className="relative group">
                   {/* Ponto na timeline */}
-                  <span className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-white border-2 border-blue-500 group-hover:scale-125 transition-transform" />
+                  <span className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-white dark:bg-[#17223b] border-2 border-blue-500 group-hover:scale-125 transition-transform" />
                   
-                  <div className="bg-slate-50/50 hover:bg-slate-50 border border-slate-100 rounded-xl p-4 transition">
+                  <div className="bg-slate-50/50 dark:bg-[#111a30]/60 hover:bg-slate-50 dark:hover:bg-[#111a30] border border-slate-100 dark:border-[#2b3954] rounded-xl p-4 transition">
                     <div className="flex justify-between items-start flex-wrap gap-2">
                       <div className="flex items-center gap-2">
                         {getAcaoBadge(log.acao)}
-                        <h4 className="font-bold text-sm text-slate-800">
+                        <h4 className="font-bold text-sm text-slate-800 dark:text-white">
                           {log.pessoas?.nome || 'Voluntário'}
                         </h4>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 flex items-center gap-1">
                         <Clock size={12} />
                         {data}
                       </span>
                     </div>
 
-                    <p className="text-xs text-slate-600 mt-2">
-                      {log.detalhes} {log.ministerios && <>no ministério <strong className="text-slate-800 font-bold">{log.ministerios.nome}</strong></>}
+                    <p className="text-xs text-slate-600 dark:text-slate-300 mt-2">
+                      {log.detalhes} {log.ministerios && <>no ministério <strong className="text-slate-800 dark:text-white font-bold">{log.ministerios.nome}</strong></>}
                     </p>
                   </div>
                 </div>

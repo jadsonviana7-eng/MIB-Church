@@ -282,6 +282,13 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
     setTemaModo(modo);
     setTemaAcento(acento);
     setIdioma(lang);
+
+    const handleTemaAlterado = (e) => {
+      if (e.detail?.modo) setTemaModo(e.detail.modo);
+      if (e.detail?.acento) setTemaAcento(e.detail.acento);
+    };
+    window.addEventListener('mib-theme-changed', handleTemaAlterado);
+    return () => window.removeEventListener('mib-theme-changed', handleTemaAlterado);
   }, []);
 
   const carregarLogsSistema = async () => {

@@ -33,16 +33,7 @@ const RobotoStyle = () => (
       main { padding-top: 0 !important; padding-bottom: 0 !important; }
     }
 
-    /* ── SunEditor Definitivo Styles ── */
-    .sun-editor-wrapper { margin-top: 8px; border-radius: 12px; overflow: hidden; border: 1.5px solid #e8edf5; background: #fff; min-height: 350px; }
-    .sun-editor { border: none !important; font-family: 'Roboto', sans-serif !important; }
-    .sun-editor .se-toolbar { background-color: #f8fafc !important; outline: 1px solid #e8edf5 !important; }
-    .sun-editor .se-resizing-bar { background-color: #f8fafc !important; border-top: 1px solid #e8edf5 !important; }
-    .sun-editor .se-wrapper-inner { min-height: 250px !important; }
-    .sun-editor .se-btn-module-border { border-color: #f1f5f9 !important; }
-    .sun-editor-editable { font-size: 14px !important; color: #334155 !important; line-height: 1.6 !important; }
-
-    /* ── tokens ── */
+    /* ── tokens claros ── */
     .agenda-root {
       --blue-900: #1e3a8a;
       --blue-700: #1d4ed8;
@@ -54,9 +45,12 @@ const RobotoStyle = () => (
       --slate-700:#334155;
       --slate-500:#64748b;
       --slate-300:#cbd5e1;
+      --slate-200:#e2e8f0;
       --slate-100:#f1f5f9;
       --slate-50: #f8fafc;
       --white:    #ffffff;
+      --card-bg:  #ffffff;
+      --card-border: #e8edf5;
       --radius-sm:8px;
       --radius:   14px;
       --radius-lg:20px;
@@ -64,6 +58,38 @@ const RobotoStyle = () => (
       --shadow:   0 4px 16px rgba(30,58,138,.10);
       --shadow-lg:0 10px 40px rgba(30,58,138,.18);
     }
+
+    /* ── tokens escuros (Dark Mode) ── */
+    html.dark .agenda-root, .dark .agenda-root, .dark.agenda-root {
+      --blue-900: #3b82f6;
+      --blue-700: #60a5fa;
+      --blue-500: #93c5fd;
+      --blue-50:  rgba(59, 130, 246, 0.18);
+      --teal:     #14b8a6;
+      --rose:     #fb7185;
+      --slate-900:#f8fafc;
+      --slate-700:#cbd5e1;
+      --slate-500:#94a3b8;
+      --slate-300:#334155;
+      --slate-200:#1e293b;
+      --slate-100:#1e293b;
+      --slate-50: #0b1329;
+      --white:    #0f172a;
+      --card-bg:  #0f172a;
+      --card-border: #1e293b;
+      --shadow-sm:0 1px 3px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);
+      --shadow:   0 4px 16px rgba(0,0,0,.45);
+      --shadow-lg:0 10px 40px rgba(0,0,0,.65);
+    }
+
+    /* ── SunEditor Styles ── */
+    .sun-editor-wrapper { margin-top: 8px; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--card-border); background: var(--white); min-height: 350px; }
+    .sun-editor { border: none !important; font-family: 'Roboto', sans-serif !important; }
+    .sun-editor .se-toolbar { background-color: var(--slate-50) !important; outline: 1px solid var(--card-border) !important; }
+    .sun-editor .se-resizing-bar { background-color: var(--slate-50) !important; border-top: 1px solid var(--card-border) !important; }
+    .sun-editor .se-wrapper-inner { min-height: 250px !important; }
+    .sun-editor .se-btn-module-border { border-color: var(--card-border) !important; }
+    .sun-editor-editable { font-size: 14px !important; color: var(--slate-700) !important; background-color: var(--white) !important; line-height: 1.6 !important; }
 
     /* ── btn-primary ── */
     .agenda-root .btn-primary {
@@ -98,14 +124,14 @@ const RobotoStyle = () => (
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: background .15s, border-color .15s;
+      transition: background .15s, border-color .15s, color .15s;
     }
-    .agenda-root .btn-ghost:hover { background: var(--slate-50); border-color: var(--blue-500); color: var(--blue-700); }
+    .agenda-root .btn-ghost:hover { background: var(--slate-100); border-color: var(--blue-500); color: var(--blue-700); }
 
     .agenda-root .btn-danger {
       background: transparent;
       color: var(--rose);
-      border: 1.5px solid #fecdd3;
+      border: 1.5px solid rgba(225, 29, 72, 0.3);
       border-radius: var(--radius);
       font-weight: 600;
       font-size: 12px;
@@ -116,12 +142,12 @@ const RobotoStyle = () => (
       gap: 5px;
       transition: background .15s;
     }
-    .agenda-root .btn-danger:hover { background: #fff1f2; }
+    .agenda-root .btn-danger:hover { background: rgba(225, 29, 72, 0.12); }
 
     .agenda-root .btn-icon {
       width: 34px; height: 34px;
       border-radius: var(--radius-sm);
-      border: 1.5px solid var(--slate-200);
+      border: 1.5px solid var(--slate-300);
       background: var(--white);
       display: inline-flex; align-items: center; justify-content: center;
       cursor: pointer;
@@ -131,7 +157,7 @@ const RobotoStyle = () => (
       flex-shrink: 0;
     }
     .agenda-root .btn-icon:hover { background: var(--blue-50); border-color: var(--blue-500); color: var(--blue-700); }
-    .agenda-root .btn-icon.danger:hover { background: #fff1f2; border-color: #fecdd3; color: var(--rose); }
+    .agenda-root .btn-icon.danger:hover { background: rgba(225, 29, 72, 0.12); border-color: rgba(225, 29, 72, 0.3); color: var(--rose); }
 
     /* ── campo ── */
     .agenda-root .campo-label {
@@ -156,16 +182,17 @@ const RobotoStyle = () => (
       transition: border-color .18s, box-shadow .18s;
       box-sizing: border-box;
     }
-    .agenda-root .campo-input:focus { border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(59,130,246,.15); }
-    .agenda-root .campo-input::placeholder { color: var(--slate-300); }
+    .agenda-root .campo-input:focus { border-color: var(--blue-500); box-shadow: 0 0 0 3px rgba(59,130,246,.2); }
+    .agenda-root .campo-input::placeholder { color: var(--slate-500); }
 
     /* ── card ── */
     .agenda-root .ag-card {
-      background: var(--white);
+      background: var(--card-bg);
       border-radius: var(--radius-lg);
-      border: 1.5px solid #e8edf5;
+      border: 1.5px solid var(--card-border);
       box-shadow: var(--shadow-sm);
       padding: 24px;
+      color: var(--slate-900);
     }
     .agenda-root .ag-card-header {
       display: flex;
@@ -181,45 +208,44 @@ const RobotoStyle = () => (
       display: flex;
       align-items: center;
       gap: 10px;
-      color: var(--blue-900);
+      color: var(--blue-700);
       font-size: 11px;
       font-weight: 800;
       letter-spacing: .1em;
       text-transform: uppercase;
       margin-bottom: 18px;
     }
-    .agenda-root .section-divider::after { content:''; flex:1; height:1px; background: linear-gradient(to right, #dbeafe, transparent); }
+    .agenda-root .section-divider::after { content:''; flex:1; height:1px; background: linear-gradient(to right, var(--slate-300), transparent); }
 
     /* ── Tiptap Editor Completo ── */
-    .tiptap-wrapper { margin-top: 8px; border-radius: 12px; overflow: hidden; border: 1.5px solid #e8edf5; background: #fff; display: flex; flex-direction: column; }
-    .tiptap-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 8px 10px; background: #f8fafc; border-bottom: 1.5px solid #e8edf5; }
-    .tiptap-toolbar button { padding: 4px 9px; border: 1.5px solid transparent; border-radius: 6px; background: transparent; color: #334155; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s; font-family: 'Roboto', sans-serif; line-height: 1.4; }
-    .tiptap-toolbar button:hover { background: #e8edf5; }
-    .tiptap-toolbar button.is-active { background: #dbeafe; color: #1d4ed8; border-color: #bfdbfe; }
-    .tiptap-sep { display: inline-block; width: 1px; height: 18px; background: #e8edf5; margin: 0 4px; vertical-align: middle; flex-shrink: 0; }
-    .tiptap-content { flex: 1; padding: 16px; min-height: 300px; font-size: 14px; color: #334155; line-height: 1.6; }
+    .tiptap-wrapper { margin-top: 8px; border-radius: 12px; overflow: hidden; border: 1.5px solid var(--card-border); background: var(--white); display: flex; flex-direction: column; }
+    .tiptap-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 8px 10px; background: var(--slate-50); border-bottom: 1.5px solid var(--card-border); }
+    .tiptap-toolbar button { padding: 4px 9px; border: 1.5px solid transparent; border-radius: 6px; background: transparent; color: var(--slate-700); font-size: 12px; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s; font-family: 'Roboto', sans-serif; line-height: 1.4; }
+    .tiptap-toolbar button:hover { background: var(--slate-100); }
+    .tiptap-toolbar button.is-active { background: var(--blue-50); color: var(--blue-700); border-color: var(--blue-500); }
+    .tiptap-sep { display: inline-block; width: 1px; height: 18px; background: var(--card-border); margin: 0 4px; vertical-align: middle; flex-shrink: 0; }
+    .tiptap-content { flex: 1; padding: 16px; min-height: 300px; font-size: 14px; color: var(--slate-700); line-height: 1.6; }
     .tiptap-content .ProseMirror { min-height: 280px; outline: none; }
     .tiptap-content .ProseMirror p { margin: 0 0 8px; }
-    .tiptap-content .ProseMirror h1 { font-size: 22px; font-weight: 800; margin: 14px 0 6px; color: #0f172a; }
-    .tiptap-content .ProseMirror h2 { font-size: 18px; font-weight: 700; margin: 12px 0 5px; color: #1e293b; }
-    .tiptap-content .ProseMirror h3 { font-size: 15px; font-weight: 700; margin: 10px 0 4px; color: #334155; }
+    .tiptap-content .ProseMirror h1 { font-size: 22px; font-weight: 800; margin: 14px 0 6px; color: var(--slate-900); }
+    .tiptap-content .ProseMirror h2 { font-size: 18px; font-weight: 700; margin: 12px 0 5px; color: var(--slate-900); }
+    .tiptap-content .ProseMirror h3 { font-size: 15px; font-weight: 700; margin: 10px 0 4px; color: var(--slate-900); }
     .tiptap-content .ProseMirror ul, .tiptap-content .ProseMirror ol { padding-left: 22px; margin: 6px 0; }
     .tiptap-content .ProseMirror li { margin: 3px 0; }
-    .tiptap-content .ProseMirror blockquote { border-left: 3px solid #3b82f6; padding-left: 14px; color: #64748b; margin: 10px 0; font-style: italic; }
-    .tiptap-content .ProseMirror a { color: #1d4ed8; text-decoration: underline; cursor: pointer; }
+    .tiptap-content .ProseMirror blockquote { border-left: 3px solid var(--blue-500); padding-left: 14px; color: var(--slate-500); margin: 10px 0; font-style: italic; }
+    .tiptap-content .ProseMirror a { color: var(--blue-700); text-decoration: underline; cursor: pointer; }
     .tiptap-content .ProseMirror img { max-width: 100%; border-radius: 8px; margin: 8px 0; display: block; }
     .tiptap-content .ProseMirror strong { font-weight: 700; }
     .tiptap-content .ProseMirror em { font-style: italic; }
     .tiptap-content .ProseMirror u { text-decoration: underline; }
     /* Tabela */
     .tiptap-content .ProseMirror table { border-collapse: collapse; width: 100%; margin: 12px 0; border-radius: 8px; overflow: hidden; }
-    .tiptap-content .ProseMirror th { background: #f1f5f9; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #475569; padding: 10px 14px; border: 1px solid #e2e8f0; text-align: left; }
-    .tiptap-content .ProseMirror td { padding: 9px 14px; border: 1px solid #e2e8f0; font-size: 13px; color: #334155; vertical-align: top; }
-    .tiptap-content .ProseMirror tr:nth-child(even) td { background: #f8fafc; }
-    .tiptap-content .ProseMirror .selectedCell { background: #dbeafe !important; }
+    .tiptap-content .ProseMirror th { background: var(--slate-100); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--slate-700); padding: 10px 14px; border: 1px solid var(--slate-300); text-align: left; }
+    .tiptap-content .ProseMirror td { padding: 9px 14px; border: 1px solid var(--slate-300); font-size: 13px; color: var(--slate-700); vertical-align: top; }
+    .tiptap-content .ProseMirror tr:nth-child(even) td { background: var(--slate-50); }
+    .tiptap-content .ProseMirror .selectedCell { background: var(--blue-50) !important; }
     /* YouTube */
     .tiptap-content .ProseMirror iframe { border-radius: 10px; max-width: 100%; margin: 10px 0; display: block; }
-
 
     /* ── tag/badge ── */
     .agenda-root .badge {
@@ -245,10 +271,10 @@ const RobotoStyle = () => (
 
     /* ── table ── */
     .agenda-root .ag-table { width: 100%; border-collapse: collapse; }
-    .agenda-root .ag-table th { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--slate-500); padding: 10px 16px; border-bottom: 1.5px solid var(--slate-100); text-align: left; }
-    .agenda-root .ag-table td { padding: 12px 16px; font-size: 13px; color: var(--slate-700); border-bottom: 1px solid var(--slate-100); }
+    .agenda-root .ag-table th { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--slate-500); padding: 10px 16px; border-bottom: 1.5px solid var(--card-border); text-align: left; background: var(--slate-50); }
+    .agenda-root .ag-table td { padding: 12px 16px; font-size: 13px; color: var(--slate-700); border-bottom: 1px solid var(--card-border); }
     .agenda-root .ag-table tr:last-child td { border-bottom: none; }
-    .agenda-root .ag-table tr:hover td { background: var(--slate-50); }
+    .agenda-root .ag-table tr:hover td { background: var(--slate-100); }
 
     /* ── inscricao campo preview ── */
     .agenda-root .preview-field {
@@ -273,16 +299,18 @@ const RobotoStyle = () => (
       position: fixed; inset: 0; z-index: 100;
       display: flex; align-items: center; justify-content: center;
       padding: 16px;
-      background: rgba(15,23,42,.55);
+      background: rgba(0,0,0,.75);
       backdrop-filter: blur(4px);
     }
     .agenda-root .modal-box {
       background: var(--white);
       border-radius: var(--radius-lg);
+      border: 1.5px solid var(--card-border);
       width: 100%; max-width: 520px;
       box-shadow: var(--shadow-lg);
       overflow: hidden;
       animation: zoomIn .18s ease;
+      color: var(--slate-900);
     }
     @keyframes zoomIn { from { opacity:0; transform:scale(.95); } to { opacity:1; transform:scale(1); } }
 
@@ -299,13 +327,13 @@ const RobotoStyle = () => (
     .agenda-root .tab-btn.active { background: var(--white); color: var(--blue-700); box-shadow: var(--shadow-sm); }
 
     /* ── Horizontal Cards ── */
-    .ag-horiz-card { display: flex; background: #fff; border-radius: var(--radius-lg); border: 1.5px solid #e8edf5; overflow: hidden; cursor: pointer; transition: transform .2s, box-shadow .2s; height: 190px; }
-    .ag-horiz-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--blue-300); }
+    .ag-horiz-card { display: flex; background: var(--card-bg); border-radius: var(--radius-lg); border: 1.5px solid var(--card-border); overflow: hidden; cursor: pointer; transition: transform .2s, box-shadow .2s; height: 190px; }
+    .ag-horiz-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); border-color: var(--blue-500); }
     .ag-horiz-img { width: 145px; height: 100%; object-fit: cover; background: var(--slate-100); shrink: 0; }
     .ag-horiz-body { flex: 1; padding: 20px 24px; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
     .ag-horiz-title { font-size: 19px; font-weight: 900; color: var(--slate-900); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
     .ag-horiz-sub { font-size: 13px; color: var(--slate-500); line-height: 1.4; line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
-    .ag-horiz-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--slate-50); margin-top: 8px; }
+    .ag-horiz-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--card-border); margin-top: 8px; }
   `}</style>
 );
 
@@ -389,14 +417,14 @@ function TiptapMenuBar({ editor, onImageUpload }) {
       <span className="tiptap-sep" />
 
       {/* Fonte */}
-      <select title="Fonte" style={{ fontSize: 11, padding: '3px 4px', border: '1.5px solid #e8edf5', borderRadius: 6, background: '#fff', color: '#334155', cursor: 'pointer' }}
+      <select title="Fonte" style={{ fontSize: 11, padding: '3px 4px', border: '1.5px solid var(--card-border)', borderRadius: 6, background: 'var(--white)', color: 'var(--slate-700)', cursor: 'pointer' }}
         onChange={e => editor.chain().focus().setFontFamily(e.target.value).run()}>
         <option value="">Fonte</option>
         {FONT_FAMILIES.map(f => <option key={f} value={f}>{f}</option>)}
       </select>
 
       {/* Tamanho */}
-      <select title="Tamanho" style={{ fontSize: 11, padding: '3px 4px', border: '1.5px solid #e8edf5', borderRadius: 6, background: '#fff', color: '#334155', cursor: 'pointer' }}
+      <select title="Tamanho" style={{ fontSize: 11, padding: '3px 4px', border: '1.5px solid var(--card-border)', borderRadius: 6, background: 'var(--white)', color: 'var(--slate-700)', cursor: 'pointer' }}
         onChange={e => {
           editor.chain().focus().setMark('textStyle', { fontSize: e.target.value }).run();
         }}>
@@ -405,7 +433,7 @@ function TiptapMenuBar({ editor, onImageUpload }) {
       </select>
 
       {/* Parágrafo */}
-      <select title="Estilo" style={{ fontSize: 11, padding: '3px 4px', border: '1.5px solid #e8edf5', borderRadius: 6, background: '#fff', color: '#334155', cursor: 'pointer' }}
+      <select title="Estilo" style={{ fontSize: 11, padding: '3px 4px', border: '1.5px solid var(--card-border)', borderRadius: 6, background: 'var(--white)', color: 'var(--slate-700)', cursor: 'pointer' }}
         onChange={e => {
           const v = e.target.value;
           if (v === 'paragraph') editor.chain().focus().setParagraph().run();
@@ -426,7 +454,7 @@ function TiptapMenuBar({ editor, onImageUpload }) {
       <span className="tiptap-sep" />
 
       {/* Cor */}
-      <label title="Cor do texto" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: '1.5px solid #e8edf5', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+      <label title="Cor do texto" style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: '1.5px solid var(--card-border)', borderRadius: 6, background: 'var(--white)', color: 'var(--slate-700)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
         A
         <input type="color" style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }}
           onChange={e => editor.chain().focus().setColor(e.target.value).run()} />
@@ -466,7 +494,7 @@ function TiptapMenuBar({ editor, onImageUpload }) {
         }}>🔗</button>
 
       {/* Upload de imagem */}
-      <label title="Upload de imagem" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: '1.5px solid #e8edf5', borderRadius: 6, background: '#fff', cursor: 'pointer', fontSize: 14 }}>
+      <label title="Upload de imagem" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, border: '1.5px solid var(--card-border)', borderRadius: 6, background: 'var(--white)', color: 'var(--slate-700)', cursor: 'pointer', fontSize: 14 }}>
         🖼
         <input type="file" accept="image/*" style={{ display: 'none' }} onChange={onImageUpload} />
       </label>
@@ -735,10 +763,10 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
       {/* ── CALENDÁRIO ── */}
       {submenu === 'calendario' && (
         <div className="ag-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1.5px solid #e8edf5', background: '#f8fafc' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1.5px solid var(--card-border)', background: 'var(--slate-50)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <button className="btn-icon" onClick={() => mudarMes(-1)}><Icon.ChevL /></button>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#1e293b', textTransform: 'capitalize', minWidth: 160, textAlign: 'center' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--slate-900)', textTransform: 'capitalize', minWidth: 160, textAlign: 'center' }}>
                 {dataAtual.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
               </h3>
               <button className="btn-icon" onClick={() => mudarMes(1)}><Icon.ChevR /></button>
@@ -852,8 +880,8 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
       {modalEvento.aberto && (
         <div className="modal-overlay">
           <div className="modal-box">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1.5px solid #e8edf5', background: '#f8fafc' }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 24px', borderBottom: '1.5px solid var(--card-border)', background: 'var(--slate-50)' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--slate-900)' }}>
                 {modalEvento.dados?.id ? 'Editar Evento' : 'Novo Evento'}
               </h3>
               <button className="btn-icon" onClick={() => setModalEvento({ aberto: false, dados: null })}>
@@ -951,13 +979,13 @@ function GerenciadorMural({ onVoltar, membroLogado }) {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="w-5 h-5 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
+          <div className="w-5 h-5 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center shadow-inner">
             <Icon.Mural />
           </div>
           <div>
-            <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight leading-tight">Gerenciar Mural</h2>
+            <h2 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight leading-tight">Gerenciar Mural</h2>
             <p className="text-[10px] text-slate-400 font-bold uppercase">Anúncios da Página Inicial</p>
           </div>
         </div>
@@ -966,7 +994,7 @@ function GerenciadorMural({ onVoltar, membroLogado }) {
         </button>
       </div>
 
-      <Card className="p-0 overflow-hidden">
+      <Card className="p-0 overflow-hidden dark:bg-slate-900 dark:border-slate-800">
         <div className="overflow-x-auto">
           <table className="ag-table">
             <thead>
@@ -979,7 +1007,7 @@ function GerenciadorMural({ onVoltar, membroLogado }) {
             </thead>
             <tbody>
               {carregando ? (
-                <tr><td colSpan="4" className="text-center py-10 animate-pulse">Carregando mural...</td></tr>
+                <tr><td colSpan="4" className="text-center py-10 animate-pulse text-slate-400">Carregando mural...</td></tr>
               ) : avisos.length === 0 ? (
                 <tr><td colSpan="4" className="text-center py-16 text-slate-400 italic">Nenhum aviso cadastrado no momento.</td></tr>
               ) : (
@@ -987,20 +1015,20 @@ function GerenciadorMural({ onVoltar, membroLogado }) {
                   <tr key={av.id}>
                     <td className="py-3">
                       <div className="flex items-center gap-3">
-                        {av.imagem_url && <img src={av.imagem_url} className="w-12 h-12 rounded-lg object-cover border border-slate-100" alt="" />}
+                        {av.imagem_url && <img src={av.imagem_url} className="w-12 h-12 rounded-lg object-cover border border-slate-100 dark:border-slate-800" alt="" />}
                         <div>
-                          <p className="font-bold text-slate-800">{av.titulo}</p>
-                          <p className="text-xs text-slate-500 line-clamp-1">{av.subtitulo || 'Sem subtítulo'}</p>
+                          <p className="font-bold text-slate-800 dark:text-slate-100">{av.titulo}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">{av.subtitulo || 'Sem subtítulo'}</p>
                         </div>
                       </div>
                     </td>
                     <td>
-                      <span className={`badge ${av.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
+                      <span className={`badge ${av.ativo ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
                         {av.ativo ? 'Visível' : 'Oculto'}
                       </span>
                     </td>
                     <td>
-                      <span className="text-xs font-bold text-slate-500">{av.prioridade || 0}</span>
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{av.prioridade || 0}</span>
                     </td>
                     <td className="text-right pr-6 space-x-2">
                       <button className="btn-icon" onClick={() => { setEditando(av); setView('form'); }}><Icon.Edit /></button>
@@ -1096,8 +1124,8 @@ function FormularioAviso({ aviso, onSucesso, onCancelar }) {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-        <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight">
+      <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm">
+        <h2 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">
           {aviso ? 'Editar Aviso' : 'Novo Aviso'}
         </h2>
         <div className="flex gap-2">
@@ -1110,7 +1138,7 @@ function FormularioAviso({ aviso, onSucesso, onCancelar }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          <Card className="p-6 space-y-4">
+          <Card className="p-6 space-y-4 dark:bg-slate-900 dark:border-slate-800">
             <InputField label="Título do Aviso *" value={titulo} onChange={setTitulo} placeholder="Ex: Grande Vigília de Adoração" />
             <InputField label="Subtítulo / Chamada" value={subtitulo} onChange={setSubtitulo} placeholder="Ex: Nesta sexta-feira, às 22h" />
             <InputField label="Link de Destino (Opcional)" value={linkExterno} onChange={setLinkExterno} placeholder="https://exemplo.com/inscricao" />
@@ -1128,9 +1156,9 @@ function FormularioAviso({ aviso, onSucesso, onCancelar }) {
         </div>
 
         <div className="space-y-4">
-          <Card className="p-0 overflow-hidden">
+          <Card className="p-0 overflow-hidden dark:bg-slate-900 dark:border-slate-800">
             <CardHeader titulo="Imagem do Cartaz" />
-            <div className="p-4 border-b border-slate-50">
+            <div className="p-4 border-b border-slate-50 dark:border-slate-800">
               <Campo label="Formato do Cartaz">
                 <div className="tab-bar">
                   <button type="button" className={`tab-btn ${formato === 'retrato' ? 'active' : ''}`} onClick={() => setFormato('retrato')}>Retrato (4:5)</button>
@@ -1141,7 +1169,7 @@ function FormularioAviso({ aviso, onSucesso, onCancelar }) {
             </div>
             <div className="p-4 space-y-4">
               <div
-                className="bg-slate-100 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden relative group"
+                className="bg-slate-100 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center overflow-hidden relative group"
                 style={{ aspectRatio: aspect }}
               >
                 {imagemPreview ? (
@@ -1175,8 +1203,8 @@ function FormularioAviso({ aviso, onSucesso, onCancelar }) {
       {mostrarCortador && (
         <div className="modal-overlay px-2 py-4" style={{ zIndex: 200 }}>
           <div className="modal-box" style={{ maxWidth: 500 }}>
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Ajustar Cartaz</h3>
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-tight">Ajustar Cartaz</h3>
               <button type="button" className="btn-icon" onClick={() => setMostrarCortador(false)}><Icon.Close /></button>
             </div>
             <div className="relative h-80 w-full bg-slate-900">
@@ -1190,7 +1218,7 @@ function FormularioAviso({ aviso, onSucesso, onCancelar }) {
                 onZoomChange={setZoom}
               />
             </div>
-            <div className="p-4 bg-slate-50 flex gap-2">
+            <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex gap-2">
               <button type="button" onClick={() => setMostrarCortador(false)} className="btn-ghost flex-1">Cancelar</button>
               <button type="button" onClick={criarImagemRecortadaAviso} className="btn-primary flex-1 justify-center">Confirmar Recorte</button>
             </div>
@@ -1456,17 +1484,17 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="badge" style={{ background: 'var(--blue-900)', color: '#fff' }}>{evento.tipo}</span>
                 {evento.publicado === false && (
-                  <span className="badge" style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1' }}>Despublicado</span>
+                  <span className="badge" style={{ background: 'var(--slate-100)', color: 'var(--slate-500)', border: '1px solid var(--slate-300)' }}>Despublicado</span>
                 )}
               </div>
-              <h1 className="text-4xl font-black text-slate-800 mt-3 tracking-tight">{evento.titulo}</h1>
-              <p className="text-slate-500 font-medium text-xl leading-snug">{evento.subtitulo}</p>
+              <h1 className="text-4xl font-black text-slate-800 dark:text-slate-100 mt-3 tracking-tight">{evento.titulo}</h1>
+              <p className="text-slate-500 dark:text-slate-400 font-medium text-xl leading-snug">{evento.subtitulo}</p>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 pt-8 border-t border-slate-100">
-              <div><span className="campo-label">Início do Evento</span><p className="text-sm font-black text-slate-700">{formatarDataHoraExibicao(evento.data_inicio)}</p></div>
-              <div><span className="campo-label">Término</span><p className="text-sm font-black text-slate-700">{formatarDataHoraExibicao(evento.data_fim)}</p></div>
-              <div><span className="campo-label">Confirmados</span><p className="text-sm font-black text-blue-600">{inscritos.length} inscritos</p></div>
-              <div><span className="campo-label">Vagas Totais</span><p className="text-sm font-black text-slate-700">{evento.vagas || 'Sem limite'}</p></div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 pt-8 border-t border-slate-100 dark:border-slate-800">
+              <div><span className="campo-label">Início do Evento</span><p className="text-sm font-black text-slate-700 dark:text-slate-200">{formatarDataHoraExibicao(evento.data_inicio)}</p></div>
+              <div><span className="campo-label">Término</span><p className="text-sm font-black text-slate-700 dark:text-slate-200">{formatarDataHoraExibicao(evento.data_fim)}</p></div>
+              <div><span className="campo-label">Confirmados</span><p className="text-sm font-black text-blue-600 dark:text-blue-400">{inscritos.length} inscritos</p></div>
+              <div><span className="campo-label">Vagas Totais</span><p className="text-sm font-black text-slate-700 dark:text-slate-200">{evento.vagas || 'Sem limite'}</p></div>
             </div>
           </div>
         </div>
@@ -1509,17 +1537,17 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
             ) : (
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                 <LineChart data={chartData} style={{ outline: 'none' }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)' }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--card-border)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700, fill: 'var(--slate-500)' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fontWeight: 700, fill: 'var(--slate-500)' }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid var(--card-border)', background: 'var(--card-bg)', color: 'var(--slate-900)', boxShadow: 'var(--shadow-lg)' }} />
                   <Line
                     type="monotone"
                     dataKey="value"
                     name="Inscrições"
                     stroke="var(--blue-900)"
                     strokeWidth={4}
-                    dot={{ r: 4, fill: 'var(--blue-900)', strokeWidth: 2, stroke: '#fff' }}
+                    dot={{ r: 4, fill: 'var(--blue-900)', strokeWidth: 2, stroke: 'var(--card-bg)' }}
                     activeDot={{ r: 6, strokeWidth: 0 }}
                   />
                 </LineChart>
@@ -1546,10 +1574,10 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                     return (
                       <div key={metodo} className="space-y-1.5">
                         <div className="flex justify-between items-center text-xs font-bold">
-                          <span className="text-slate-600 uppercase tracking-wider">{metodo}</span>
-                          <span className="text-slate-800">{qtd} {qtd === 1 ? 'optante' : 'optantes'} ({porcentagem}%)</span>
+                          <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider">{metodo}</span>
+                          <span className="text-slate-800 dark:text-slate-200">{qtd} {qtd === 1 ? 'optante' : 'optantes'} ({porcentagem}%)</span>
                         </div>
-                        <div className="w-full bg-slate-100 rounded-full h-2">
+                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
                           <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${porcentagem}%` }} />
                         </div>
                       </div>
@@ -1562,7 +1590,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
 
           {/* Card Opção de Transporte */}
           {Number(evento.valor_transporte) > 0 && (
-            <Card className="p-0 overflow-hidden">
+            <Card className="p-0 overflow-hidden dark:bg-slate-900 dark:border-slate-800">
               <CardHeader titulo="Opção de Transporte" subtitulo="Adesão ao transporte opcional oferecido pelo evento." />
               <div className="p-6 space-y-4">
                 <div className="space-y-4">
@@ -1575,21 +1603,21 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                       <>
                         <div className="space-y-1.5">
                           <div className="flex justify-between items-center text-xs font-bold">
-                            <span className="text-slate-600 uppercase tracking-wider">🚌 Com Transporte</span>
-                            <span className="text-slate-800">{stats.transporteSim} {stats.transporteSim === 1 ? 'pessoa' : 'pessoas'} ({porcentagemSim}%)</span>
+                            <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider">🚌 Com Transporte</span>
+                            <span className="text-slate-800 dark:text-slate-200">{stats.transporteSim} {stats.transporteSim === 1 ? 'pessoa' : 'pessoas'} ({porcentagemSim}%)</span>
                           </div>
-                          <div className="w-full bg-slate-100 rounded-full h-2">
+                          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
                             <div className="bg-emerald-600 h-2 rounded-full transition-all duration-500" style={{ width: `${porcentagemSim}%` }} />
                           </div>
                         </div>
 
                         <div className="space-y-1.5">
                           <div className="flex justify-between items-center text-xs font-bold">
-                            <span className="text-slate-600 uppercase tracking-wider">🚶 Sem Transporte</span>
-                            <span className="text-slate-800">{stats.transporteNao} {stats.transporteNao === 1 ? 'pessoa' : 'pessoas'} ({porcentagemNao}%)</span>
+                            <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider">🚶 Sem Transporte</span>
+                            <span className="text-slate-800 dark:text-slate-200">{stats.transporteNao} {stats.transporteNao === 1 ? 'pessoa' : 'pessoas'} ({porcentagemNao}%)</span>
                           </div>
-                          <div className="w-full bg-slate-100 rounded-full h-2">
-                            <div className="bg-slate-400 h-2 rounded-full transition-all duration-500" style={{ width: `${porcentagemNao}%` }} />
+                          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
+                            <div className="bg-slate-400 dark:bg-slate-600 h-2 rounded-full transition-all duration-500" style={{ width: `${porcentagemNao}%` }} />
                           </div>
                         </div>
                       </>
@@ -1636,9 +1664,9 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
       </div>
 
       <div className="ag-card print:border-none print:shadow-none print:p-0" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="ag-card-header print:hidden" style={{ padding: '20px 24px', marginBottom: 0, borderBottom: '1.5px solid #f1f5f9', background: '#fcfcfd' }}>
+        <div className="ag-card-header print:hidden" style={{ padding: '20px 24px', marginBottom: 0, borderBottom: '1.5px solid var(--card-border)', background: 'var(--slate-50)' }}>
           <div className="ag-card-title">Participantes Inscritos</div>
-          <span className="badge" style={{ background: '#eff6ff', color: '#1e3a8a' }}>{inscritos.length} registros</span>
+          <span className="badge" style={{ background: 'var(--blue-50)', color: 'var(--blue-900)' }}>{inscritos.length} registros</span>
         </div>
         <div style={{ overflowX: 'auto' }} className="print:overflow-visible">
           {carregando ? (
@@ -1663,23 +1691,23 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                     const pagas = i.dados_inscricao?.parcelas_pagas || [];
 
                     return (
-                      <tr key={i.id} className="cursor-pointer hover:bg-slate-50 transition" onClick={() => setModalInscrito({ aberto: true, dados: i })}>
+                      <tr key={i.id} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 transition" onClick={() => setModalInscrito({ aberto: true, dados: i })}>
                         <td className="text-xs font-bold text-slate-400">{new Date(i.created_at).toLocaleDateString('pt-BR')}</td>
-                        <td className="font-bold text-slate-700">
-                          {nome} {membroFound && <span className="ml-2 text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 font-black">MEMBRO</span>}
+                        <td className="font-bold text-slate-700 dark:text-slate-200">
+                          {nome} {membroFound && <span className="ml-2 text-[9px] bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 font-black">MEMBRO</span>}
                         </td>
-                        <td className="text-xs text-slate-500">{contato}</td>
+                        <td className="text-xs text-slate-500 dark:text-slate-400">{contato}</td>
                         <td style={{ textAlign: 'right' }}>
                           {i.status_pagamento === 'pago' ? (
-                            <span className="badge bg-emerald-50 text-emerald-700">pago</span>
+                            <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">pago</span>
                           ) : i.status_pagamento === 'cancelado' ? (
-                            <span className="badge bg-rose-50 text-rose-700">cancelado</span>
+                            <span className="badge bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">cancelado</span>
                           ) : (totalParcelas > 1 && pagas.length > 0) ? (
-                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 whitespace-nowrap">
+                            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800 whitespace-nowrap">
                               {pagas.length}/{totalParcelas} Parc.
                             </span>
                           ) : (
-                            <span className="badge bg-amber-50 text-amber-700">pendente</span>
+                            <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">pendente</span>
                           )}
                         </td>
                         <td style={{ textAlign: 'right', paddingRight: '24px' }} className="print:hidden">
@@ -1709,7 +1737,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
               </table>
 
               {/* Lista Mobile (max-sm) */}
-              <div className="sm:hidden divide-y divide-slate-100">
+              <div className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800">
                 {inscritos.map(i => {
                   const nome = findInJsonGlobal(i.dados_inscricao, 'nome') || findInJsonGlobal(i.dados_inscricao, 'completo') || 'Participante';
                   const email = findInJsonGlobal(i.dados_inscricao, 'email');
@@ -1720,20 +1748,20 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                   const pagas = i.dados_inscricao?.parcelas_pagas || [];
 
                   return (
-                    <div key={i.id} className="p-4 flex flex-col gap-2 active:bg-slate-50 transition" onClick={() => setModalInscrito({ aberto: true, dados: i })}>
+                    <div key={i.id} className="p-4 flex flex-col gap-2 active:bg-slate-50 dark:active:bg-slate-800 transition" onClick={() => setModalInscrito({ aberto: true, dados: i })}>
                       <div className="flex justify-between items-start">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(i.created_at).toLocaleDateString('pt-BR')}</span>
                         <div className="flex items-center gap-2">
                           {i.status_pagamento === 'pago' ? (
-                            <span className="badge bg-emerald-50 text-emerald-700">pago</span>
+                            <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">pago</span>
                           ) : i.status_pagamento === 'cancelado' ? (
-                            <span className="badge bg-rose-50 text-rose-700">cancelado</span>
+                            <span className="badge bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">cancelado</span>
                           ) : (totalParcelas > 1 && pagas.length > 0) ? (
-                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 whitespace-nowrap">
+                            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800 whitespace-nowrap">
                               {pagas.length}/{totalParcelas} Parc.
                             </span>
                           ) : (
-                            <span className="badge bg-amber-50 text-amber-700">pendente</span>
+                            <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">pendente</span>
                           )}
                           <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                             <button
@@ -1754,8 +1782,8 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                           </div>
                         </div>
                       </div>
-                      <p className="font-bold text-slate-800 leading-tight">{nome} {membroFound && <span className="ml-1 text-[8px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded border border-blue-100 font-black">MEMBRO</span>}</p>
-                      <p className="text-xs text-slate-500 font-medium truncate">{contato}</p>
+                      <p className="font-bold text-slate-800 dark:text-slate-100 leading-tight">{nome} {membroFound && <span className="ml-1 text-[8px] bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 font-black">MEMBRO</span>}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">{contato}</p>
                     </div>
                   );
                 })}
@@ -1769,8 +1797,8 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
       {modalInscrito.aberto && (
         <div className="modal-overlay px-2 py-4">
           <div className="modal-box" style={{ maxWidth: 600 }}>
-            <div className="p-6 border-b bg-slate-50 flex justify-between items-center">
-              <h3 className="font-black text-slate-800 uppercase tracking-tight">Detalhes da Inscrição</h3>
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+              <h3 className="font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Detalhes da Inscrição</h3>
               <button className="btn-icon" onClick={() => setModalInscrito({ aberto: false, dados: null })}><Icon.Close /></button>
             </div>
             <div className="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
@@ -1784,9 +1812,9 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                     ? mascaraCPF(valor)
                     : (Array.isArray(valor) ? valor.join(', ') : String(valor));
                   return (
-                    <div key={label} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <div key={label} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700">
                       <p className="text-[10px] font-black text-slate-400 uppercase mb-1">{label}</p>
-                      <p className="text-sm font-bold text-slate-700">{valorFormatado}</p>
+                      <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{valorFormatado}</p>
                     </div>
                   );
                 })}
@@ -1800,12 +1828,12 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
 
                 if (membro) {
                   return (
-                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-between">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 rounded-2xl flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="text-2xl">👤</div>
                         <div>
-                          <p className="text-xs font-black text-blue-800 uppercase">Membro Identificado</p>
-                          <p className="text-[11px] text-blue-600">Este inscrito consta na sua base de membros.</p>
+                          <p className="text-xs font-black text-blue-800 dark:text-blue-200 uppercase">Membro Identificado</p>
+                          <p className="text-[11px] text-blue-600 dark:text-blue-400">Este inscrito consta na sua base de membros.</p>
                         </div>
                       </div>
                       <button className="btn-primary" style={{ fontSize: 11, padding: '6px 12px' }} onClick={() => onVerMembro(membro.id)}>Abrir Ficha ➔</button>
@@ -1830,7 +1858,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                 const saldoDevedor = valorTotal - valorPago;
 
                 return (
-                  <div className="pt-4 border-t space-y-4">
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Controle de Parcelas</p>
                       <div className="flex gap-3">
@@ -1843,7 +1871,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                       {Array.from({ length: totalParc }, (_, i) => i + 1).map(num => {
                         const isPago = pagas.includes(num);
                         return (
-                          <button key={num} onClick={() => handleToggleParcela(num)} className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${isPago ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-400'}`}>
+                          <button key={num} onClick={() => handleToggleParcela(num)} className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${isPago ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-300'}`}>
                             {num}ª Parcela {isPago ? '✓' : ''}
                           </button>
                         );
@@ -1853,7 +1881,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                 );
               })()}
 
-              <div className="pt-4 border-t space-y-3">
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Alterar Status de Pagamento</p>
                 <div className="flex gap-2">
                   <button onClick={() => handleUpdateStatus(modalInscrito.dados.id, 'pago')} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-100">Confirmar Pagamento</button>
@@ -1862,7 +1890,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                 </div>
               </div>
 
-              <div className="pt-4 border-t space-y-3">
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Geração de Documentos</p>
                 <div className="flex gap-2">
                   <button 
@@ -2168,10 +2196,10 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
             {/* capa */}
             <div>
               <span className="campo-label">Capa / Cartaz</span>
-              <div style={{ aspectRatio: '3/4', borderRadius: 12, border: '2px dashed #cbd5e1', background: '#f8fafc', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }} className="group">
+              <div style={{ aspectRatio: '3/4', borderRadius: 12, border: '2px dashed var(--slate-300)', background: 'var(--slate-50)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }} className="group">
                 {capaPreview
                   ? <img src={capaPreview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#94a3b8' }}>
+                  : <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: 'var(--slate-500)' }}>
                     <Icon.Image />
                     <span style={{ fontSize: 11, fontWeight: 600 }}>Clique para adicionar</span>
                   </div>
@@ -2196,10 +2224,10 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                 <InputField label="Data Inicial *" type="datetime-local" value={dataIni} onChange={setDataIni} />
                 <InputField label="Data Final *" type="datetime-local" value={dataFim} onChange={setDataFim} />
               </div>
-              <div style={{ borderTop: '1.5px solid #f1f5f9', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ borderTop: '1.5px solid var(--card-border)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={notifEmail} onChange={e => setNotifEmail(e.target.checked)} style={{ accentColor: '#1e3a8a', width: 15, height: 15 }} />
-                  <span style={{ fontSize: 13, fontWeight: 500, color: '#334155' }}>Receber notificações por e-mail a cada inscrição</span>
+                  <input type="checkbox" checked={notifEmail} onChange={e => setNotifEmail(e.target.checked)} style={{ accentColor: 'var(--blue-900)', width: 15, height: 15 }} />
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--slate-700)' }}>Receber notificações por e-mail a cada inscrição</span>
                 </label>
                 {notifEmail && (
                   <InputField label="E-mail para alertas" type="email" value={emailAlerta} onChange={setEmailAlerta} placeholder="secretaria@igreja.com" />
@@ -2227,10 +2255,10 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
               <InputField label="Valor do Transporte (Opcional R$)" type="number" value={valorTransporte} onChange={setValorTransporte} placeholder="0,00" />
             )}
             {tipoValor === 'pago' && (
-              <div style={{ background: '#eff6ff', borderRadius: 12, border: '1.5px solid #bfdbfe', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ background: 'var(--blue-50)', borderRadius: 12, border: '1.5px solid var(--blue-700)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span className="campo-label" style={{ color: '#2563eb', marginBottom: 0 }}>Formas de Pagamento Aceitas</span>
-                  <button type="button" onClick={handleAddNovaFormaGlobal} className="btn-ghost" style={{ fontSize: 10, padding: '4px 10px', color: '#1e3a8a', background: '#fff' }}>
+                  <span className="campo-label" style={{ color: 'var(--blue-900)', marginBottom: 0 }}>Formas de Pagamento Aceitas</span>
+                  <button type="button" onClick={handleAddNovaFormaGlobal} className="btn-ghost" style={{ fontSize: 10, padding: '4px 10px', color: 'var(--blue-900)', background: 'var(--white)' }}>
                     + Novo Tipo
                   </button>
                 </div>
@@ -2238,14 +2266,14 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                 {formasDisponiveis.map(f => {
                   const nomeForma = typeof f === 'object' ? f.nome : f;
                   return (
-                    <div key={nomeForma} style={{ background: '#fff', padding: '10px 12px', borderRadius: 10, border: '1px solid #dbeafe' }}>
+                    <div key={nomeForma} style={{ background: 'var(--white)', padding: '10px 12px', borderRadius: 10, border: '1px solid var(--card-border)' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                         <input type="checkbox" checked={formasPagamento.some(i => i.tipo === nomeForma)}
                           onChange={e => e.target.checked
                             ? setFormasPagamento([...formasPagamento, { tipo: nomeForma, instrucao: '', permite_parcelas: f.permite_parcelamento, max_parcelas: f.max_parcelas || 1 }])
                             : setFormasPagamento(formasPagamento.filter(x => x.tipo !== nomeForma))}
-                          style={{ accentColor: '#1e3a8a', width: 14, height: 14 }} />
-                        <span style={{ fontSize: 13, fontWeight: 500, color: '#1e40af' }}>
+                          style={{ accentColor: 'var(--blue-900)', width: 14, height: 14 }} />
+                        <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--slate-900)' }}>
                           {nomeForma}
                           {f.permite_parcelamento && <span style={{ fontSize: 10, marginLeft: 6, opacity: 0.6 }}>(Carnê/Parcelado até {f.max_parcelas}x)</span>}
                         </span>
@@ -2336,7 +2364,7 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
               <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: 13 }}>Nenhum bloco adicionado ainda.</div>
             )}
             {programacao.map((p, idx) => (
-              <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '1fr 130px 100px 34px', gap: 10, alignItems: 'end', background: '#f8fafc', borderRadius: 10, padding: 12, border: '1.5px solid #e8edf5' }}>
+              <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '1fr 130px 100px 34px', gap: 10, alignItems: 'end', background: 'var(--slate-50)', borderRadius: 10, padding: 12, border: '1.5px solid var(--card-border)' }}>
                 <InputField label="Título" value={p.titulo} onChange={v => { const n = [...programacao]; n[idx].titulo = v; setProgramacao(n); }} />
                 <InputField label="Data" type="date" value={p.data} onChange={v => { const n = [...programacao]; n[idx].data = v; setProgramacao(n); }} />
                 <InputField label="Horário" type="time" value={p.horario} onChange={v => { const n = [...programacao]; n[idx].horario = v; setProgramacao(n); }} />
@@ -2365,7 +2393,7 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
               <div style={{ textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: 13 }}>Nenhum campo adicionado. Clique em "Inserir Campo" para começar.</div>
             )}
             {camposInscricao.map((c, idx) => ( // Changed to use map directly
-              <div key={c.id} style={{ background: '#f8fafc', border: '1.5px solid #e8edf5', borderRadius: 12, padding: 16 }}>
+              <div key={c.id} style={{ background: 'var(--slate-50)', border: '1.5px solid var(--card-border)', borderRadius: 12, padding: 16 }}>
                 {/* linha superior: ordenação, nome, obrigatório, tipo, excluir */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 110px 160px auto', gap: 12, alignItems: 'end' }}>
                   {/* Controles de Ordenação */}
@@ -2406,25 +2434,25 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                 <div style={{ marginTop: 12 }}>
                   {tipoEhTexto(c.tipo) && (
                     <div>
-                      <span className="campo-label" style={{ color: '#94a3b8' }}>Pré-visualização no formulário</span>
+                      <span className="campo-label" style={{ color: 'var(--slate-500)' }}>Pré-visualização no formulário</span>
                       <input
                         type="text"
                         className="campo-input"
                         placeholder={c.nome || 'Campo de texto curto'}
                         readOnly
-                        style={{ background: '#fff', cursor: 'default', borderStyle: 'dashed' }}
+                        style={{ background: 'var(--white)', cursor: 'default', borderStyle: 'dashed' }}
                       />
                     </div>
                   )}
 
                   {tipoEhArea(c.tipo) && (
                     <div>
-                      <span className="campo-label" style={{ color: '#94a3b8' }}>Pré-visualização no formulário</span>
+                      <span className="campo-label" style={{ color: 'var(--slate-500)' }}>Pré-visualização no formulário</span>
                       <textarea
                         className="campo-input"
                         placeholder={c.nome || 'Área de texto'}
                         readOnly rows={3}
-                        style={{ background: '#fff', cursor: 'default', borderStyle: 'dashed', resize: 'none' }}
+                        style={{ background: 'var(--white)', cursor: 'default', borderStyle: 'dashed', resize: 'none' }}
                       />
                     </div>
                   )}
@@ -2519,12 +2547,12 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
               <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '24px 0', color: '#94a3b8', fontSize: 13 }}>Nenhum palestrante adicionado ainda.</div>
             )}
             {palestrantes.map((p, idx) => (
-              <div key={p.id} style={{ background: '#f8fafc', border: '1.5px solid #e8edf5', borderRadius: 14, padding: 16, display: 'flex', gap: 14, position: 'relative' }}>
+              <div key={p.id} style={{ background: 'var(--slate-50)', border: '1.5px solid var(--card-border)', borderRadius: 14, padding: 16, display: 'flex', gap: 14, position: 'relative' }}>
                 {/* foto */}
-                <div style={{ width: 72, height: 72, borderRadius: 12, background: '#e2e8f0', flexShrink: 0, overflow: 'hidden', position: 'relative', border: '2px solid #e8edf5' }}>
+                <div style={{ width: 72, height: 72, borderRadius: 12, background: 'var(--slate-100)', flexShrink: 0, overflow: 'hidden', position: 'relative', border: '2px solid var(--card-border)' }}>
                   {p.preview
                     ? <img src={p.preview} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', color: '#94a3b8' }}><Icon.User /></div>
+                    : <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', color: 'var(--slate-500)' }}><Icon.User /></div>
                   }
                   <label style={{ position: 'absolute', inset: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,.45)', opacity: 0, transition: 'opacity .2s' }}
                     onMouseEnter={e => e.currentTarget.style.opacity = 1}
@@ -2560,8 +2588,8 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
         {mostrarCortador && (
           <div className="modal-overlay px-2 py-4" style={{ background: 'rgba(15,23,42,0.85)' }}>
             <div className="modal-box" style={{ maxWidth: 450 }}>
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight">Ajustar Foto do Palestrante</h3>
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-tight">Ajustar Foto do Palestrante</h3>
                 <button type="button" className="btn-icon" onClick={() => setMostrarCortador(false)}><Icon.Close /></button>
               </div>
               <div className="relative h-64 w-full bg-slate-900">
@@ -2577,7 +2605,7 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                   onZoomChange={setZoom}
                 />
               </div>
-              <div className="p-4 bg-slate-50 flex gap-2">
+              <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex gap-2">
                 <button type="button" onClick={() => setMostrarCortador(false)} className="btn-ghost flex-1">Cancelar</button>
                 <button type="button" onClick={criarImagemRecortada} className="btn-primary flex-1 justify-center">Confirmar Recorte</button>
               </div>
@@ -2589,9 +2617,9 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
         {isModalNovaFormaAberta && (
           <div className="modal-overlay px-2 py-4">
             <div className="modal-box" style={{ maxWidth: 450 }}>
-              <div className="p-6 border-b bg-slate-50 flex justify-between items-center">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
                 <div>
-                  <h3 className="font-black text-slate-800 uppercase tracking-tight text-sm">Nova Forma de Pagamento</h3>
+                  <h3 className="font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight text-sm">Nova Forma de Pagamento</h3>
                   <p className="text-[10px] text-slate-400 font-bold uppercase">Configuração Global</p>
                 </div>
                 <button type="button" className="btn-icon" onClick={() => setIsModalNovaFormaAberta(false)}><Icon.Close /></button>
@@ -2672,14 +2700,14 @@ function CalendarioMensal({ data, eventos, onEditarEvento, podeEditar }) {
   return (
     <div style={{ padding: '8px 12px 12px' }} className="agenda-root">
       <RobotoStyle />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1.5px solid #f1f5f9', marginBottom: 4 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1.5px solid var(--card-border)', marginBottom: 4 }}>
         {diasSemana.map(d => (
-          <div key={d} style={{ textAlign: 'center', padding: '8px 0', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em', color: '#94a3b8' }}>{d}</div>
+          <div key={d} style={{ textAlign: 'center', padding: '8px 0', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--slate-500)' }}>{d}</div>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: '#f1f5f9' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: 'var(--card-border)' }}>
         {matriz.map((dia, idx) => {
-          if (!dia) return <div key={`e${idx}`} style={{ background: '#fff', minHeight: 90 }} />;
+          if (!dia) return <div key={`e${idx}`} style={{ background: 'var(--white)', minHeight: 90 }} />;
           const eventosDia = eventos.filter(ev => {
             if (!ev.data_inicio) return false;
             const [y, m, d] = ev.data_inicio.split('T')[0].split('-').map(Number);
@@ -2690,12 +2718,12 @@ function CalendarioMensal({ data, eventos, onEditarEvento, podeEditar }) {
           return (
             <div key={dia.toISOString()}
               onClick={() => podeEditar && onEditarEvento({ data_inicio: new Date(dia.setHours(19, 0)).toISOString().slice(0, 16) })}
-              style={{ background: '#fff', minHeight: 90, padding: '6px 6px 4px', cursor: podeEditar ? 'pointer' : 'default', transition: 'background .15s' }}
-              onMouseEnter={e => { if (podeEditar) e.currentTarget.style.background = '#f8fafc'; }}
-              onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+              style={{ background: 'var(--white)', minHeight: 90, padding: '6px 6px 4px', cursor: podeEditar ? 'pointer' : 'default', transition: 'background .15s' }}
+              onMouseEnter={e => { if (podeEditar) e.currentTarget.style.background = 'var(--slate-50)'; }}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--white)'}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <span style={isHoje ? { width: 22, height: 22, borderRadius: '50%', background: '#1e3a8a', color: '#fff', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' } : { fontSize: 11, fontWeight: 700, color: '#94a3b8' }}>
+                <span style={isHoje ? { width: 22, height: 22, borderRadius: '50%', background: 'var(--blue-500)', color: '#fff', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' } : { fontSize: 11, fontWeight: 700, color: 'var(--slate-500)' }}>
                   {dia.getDate()}
                 </span>
               </div>

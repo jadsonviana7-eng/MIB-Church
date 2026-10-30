@@ -9,7 +9,10 @@ import {
   Pencil,
   ChevronLeft,
   Calendar,
-  Music
+  Music,
+  Shirt,
+  Lightbulb,
+  Ban
 } from 'lucide-react';
 
 import { supabase } from '../supabaseClient';
@@ -18,9 +21,11 @@ import { MinistryIcon } from '../ui';
 import MembroHistoricoModal from './components/MembroHistoricoModal';
 import MinistryMonthlyOverview from './components/MinistryMonthlyOverview';
 import { escalasService } from './services/escalasService';
-import { isLouvorMinistry } from './services/ministeriosService';
+import { isLouvorMinistry, clarearCorParaModoEscuro } from './services/ministeriosService';
+import { useIsDarkMode } from './hooks/useIsDarkMode';
 
 export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, onMinisterioCarregado }) {
+  const isDark = useIsDarkMode();
   const [aba, setAba] = useState('equipe');
   const [ministerio, setMinisterio] = useState(null);
   const [membros, setMembros] = useState([]);
@@ -498,23 +503,37 @@ export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, 
               </button>
             )}
 
-            <div
-              className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-white shadow-md shadow-slate-200 shrink-0"
-              style={{
-                backgroundColor: ministerio.cor_principal || '#2563eb'
-              }}
-            >
-              <MinistryIcon icone={ministerio.icone} size={26} style={{ color: '#ffffff' }} />
-            </div>
+            {(() => {
+              const corMinOriginal = ministerio.cor_principal || '#2563eb';
+              const corMin = isDark ? clarearCorParaModoEscuro(corMinOriginal) : corMinOriginal;
 
-            <div className="min-w-0 flex-1">
-              <h1 className="text-lg sm:text-2xl font-bold text-slate-900 truncate">
-                {ministerio.nome}
-              </h1>
-              <p className="text-xs sm:text-sm text-gray-500 truncate">
-                {ministerio.descricao || 'Sem descrição.'}
-              </p>
-            </div>
+              return (
+                <>
+                  <div
+                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-white shadow-md shadow-slate-200 dark:shadow-none shrink-0"
+                    style={{
+                      backgroundColor: isDark ? `${corMin}28` : corMinOriginal,
+                      color: isDark ? corMin : '#ffffff',
+                      border: isDark ? `2px solid ${corMin}60` : undefined
+                    }}
+                  >
+                    <MinistryIcon icone={ministerio.icone} nome={ministerio.nome} size={26} style={{ color: isDark ? corMin : '#ffffff' }} />
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <h1
+                      className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white truncate nome-ministerio-contraste"
+                      style={{ color: isDark ? corMin : undefined }}
+                    >
+                      {ministerio.nome}
+                    </h1>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 truncate">
+                      {ministerio.descricao || 'Sem descrição.'}
+                    </p>
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Botão de Destaque no Topo à Direita para Repertório de Louvor */}
@@ -603,7 +622,7 @@ export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, 
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
         >
-          <span className="text-xl sm:text-sm leading-none">👕</span>
+          <Shirt size={22} strokeWidth={2.2} className="shrink-0 sm:w-4 sm:h-4" />
           <span className="text-[9px] sm:text-xs font-bold sm:font-black uppercase tracking-tight sm:tracking-wider leading-none truncate max-w-full">
             <span className="sm:hidden">Fardas</span>
             <span className="hidden sm:inline">Fardamentos</span>
@@ -634,10 +653,12 @@ export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, 
             <button
               type="button"
               onClick={abrirNovoMembro}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer"
+              className="group relative overflow-hidden flex items-center gap-2 py-2 px-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-blue-600/25 hover:shadow-lg hover:shadow-blue-600/40 border border-blue-400/30 transition-all duration-200 active:scale-95 cursor-pointer"
             >
-              <Plus size={14} strokeWidth={3} />
-              Adicionar Membro
+              <div className="w-4.5 h-4.5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                <Plus size={13} strokeWidth={3} />
+              </div>
+              <span>Adicionar Membro</span>
             </button>
           </div>
 
@@ -738,9 +759,11 @@ export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, 
             />
             <button
               type="submit"
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
+              className="group relative overflow-hidden w-full sm:w-auto flex items-center justify-center gap-2 py-2.5 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-blue-600/25 hover:shadow-lg hover:shadow-blue-600/40 border border-blue-400/30 transition-all duration-200 active:scale-95 cursor-pointer shrink-0"
             >
-              <Plus size={14} strokeWidth={3} />
+              <div className="w-4.5 h-4.5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                <Plus size={13} strokeWidth={3} />
+              </div>
               <span>Adicionar</span>
             </button>
           </form>
@@ -917,8 +940,9 @@ export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, 
                   <label htmlFor="checkbox-lider" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
                     Definir este membro como Líder do Ministério
                   </label>
-                  <p className="text-[10px] text-slate-500 font-medium mt-0.5">
-                    💡 <em>Membros e Líderes de Célula marcados como líder terão a função <strong>"Escalar"</strong> habilitada no Gestor Ministerial.</em>
+                  <p className="text-[10px] text-slate-500 font-medium mt-0.5 flex items-center gap-1">
+                    <Lightbulb size={12} className="text-amber-500 shrink-0" />
+                    <em>Membros e Líderes de Célula marcados como líder terão a função <strong>"Escalar"</strong> habilitada no Gestor Ministerial.</em>
                   </p>
                 </div>
               </div>
@@ -927,8 +951,9 @@ export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, 
               {pessoaSelecionada && (
                 <div className="border-t border-slate-100 pt-4 space-y-3">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
-                      🗓️ Dias de Disponibilidade
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                      <Calendar size={13} className="text-slate-500 shrink-0" />
+                      Dias de Disponibilidade
                     </label>
                     <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3.5 border border-slate-200/60 rounded-xl">
                       <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
@@ -1002,8 +1027,9 @@ export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, 
 
                   {/* Bloqueios / Férias */}
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      🚫 Bloqueios / Períodos de Ausência
+                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <Ban size={13} className="text-rose-500 shrink-0" />
+                      Bloqueios / Períodos de Ausência
                     </label>
 
                     {/* Lista de bloqueios atuais */}
@@ -1016,9 +1042,10 @@ export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, 
                           <button
                             type="button"
                             onClick={() => handleRemoverBloqueioLocal(b.id)}
-                            className="text-rose-500 hover:text-rose-700 font-bold ml-2 cursor-pointer"
+                            className="text-rose-500 hover:text-rose-700 font-bold ml-2 cursor-pointer p-0.5 hover:bg-rose-100/60 rounded"
+                            title="Remover Bloqueio"
                           >
-                            ✕
+                            <X size={13} />
                           </button>
                         </div>
                       ))}

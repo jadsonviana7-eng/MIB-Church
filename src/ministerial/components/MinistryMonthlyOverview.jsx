@@ -3,7 +3,8 @@ import {
   Calendar, Users, CheckCircle2, Clock, XCircle, Share2,
   Send, Copy, Check, ChevronLeft, ChevronRight, Search,
   Sparkles, AlertCircle, Phone, ExternalLink, Filter,
-  Layers, List, ArrowRight, MessageSquare, Shield
+  Layers, List, ArrowRight, MessageSquare, Shield,
+  Pin, Shirt, MapPin, X
 } from 'lucide-react';
 import { escalasService } from '../services/escalasService';
 import { supabase } from '../../supabaseClient';
@@ -477,7 +478,7 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight mt-1 flex items-center gap-2">
-              <span>🗓️</span> {NOMES_MESES[filtroMes]} de {filtroAno}
+              <Calendar size={22} className="text-blue-600 shrink-0" /> {NOMES_MESES[filtroMes]} de {filtroAno}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Visão geral de todos os voluntários escalados e disparos de confirmação via WhatsApp.
@@ -698,8 +699,8 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
         </div>
       ) : dadosPorMembro.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-12 text-center text-slate-400 space-y-3">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">
-            📅
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Calendar size={28} />
           </div>
           <h3 className="text-sm font-black text-slate-700 uppercase tracking-wider">
             Nenhuma escala cadastrada para este ministério em {NOMES_MESES[filtroMes]}/{filtroAno}
@@ -795,8 +796,8 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
                                 {horaStr && <span className="text-[10px] opacity-75">({horaStr})</span>}
                               </div>
                               <div className="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-slate-500 font-medium">
-                                <span>📌 <strong>Função:</strong> {funcNome}</span>
-                                {farda && <span>👕 <strong>Farda:</strong> {farda}</span>}
+                                <span className="flex items-center gap-1"><Pin size={11} className="text-slate-400 shrink-0" /> <strong>Função:</strong> {funcNome}</span>
+                                {farda && <span className="flex items-center gap-1"><Shirt size={11} className="text-slate-400 shrink-0" /> <strong>Farda:</strong> {farda}</span>}
                               </div>
                             </div>
 
@@ -863,26 +864,34 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
                 <div className="p-4 bg-slate-50/80 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     <span className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 font-black text-xs flex items-center justify-center shrink-0">
-                      {diaSemanaStr ? diaSemanaStr.slice(0, 3).toUpperCase() : '📅'}
+                      {diaSemanaStr ? diaSemanaStr.slice(0, 3).toUpperCase() : <Calendar size={14} />}
                     </span>
                     <div>
                       <h4 className="font-black text-sm text-slate-800">
                         {ev.titulo}
                       </h4>
-                      <p className="text-[11px] text-slate-500 font-medium">
-                        📅 {dataStr} · ⏰ {horaStr} {ev.local ? `· 📍 ${ev.local}` : ''}
+                      <p className="text-[11px] text-slate-500 font-medium flex flex-wrap items-center gap-1.5">
+                        <span className="flex items-center gap-1"><Calendar size={11} className="text-slate-400 shrink-0" /> {dataStr}</span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1"><Clock size={11} className="text-slate-400 shrink-0" /> {horaStr}</span>
+                        {ev.local && (
+                          <>
+                            <span>·</span>
+                            <span className="flex items-center gap-1"><MapPin size={11} className="text-slate-400 shrink-0" /> {ev.local}</span>
+                          </>
+                        )}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2">
                     {farda && (
-                      <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-200/60">
-                        👕 Farda: {farda}
+                      <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-200/60 flex items-center gap-1">
+                        <Shirt size={11} className="text-blue-600 shrink-0" /> Farda: {farda}
                       </span>
                     )}
-                    <span className="text-[10px] font-black uppercase tracking-wider bg-slate-200/80 text-slate-700 px-2.5 py-1 rounded-lg">
-                      👥 {escalasEv.length} escalado(s)
+                    <span className="text-[10px] font-black uppercase tracking-wider bg-slate-200/80 text-slate-700 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                      <Users size={11} className="text-slate-600 shrink-0" /> {escalasEv.length} escalado(s)
                     </span>
                   </div>
                 </div>
@@ -922,11 +931,11 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
 
                             <div className="shrink-0">
                               {isConf ? (
-                                <span className="text-emerald-600 text-xs" title="Confirmado">✅</span>
+                                <span className="text-emerald-600 flex items-center" title="Confirmado"><CheckCircle2 size={14} /></span>
                               ) : isRec ? (
-                                <span className="text-rose-600 text-xs" title="Recusado">❌</span>
+                                <span className="text-rose-600 flex items-center" title="Recusado"><XCircle size={14} /></span>
                               ) : (
-                                <span className="text-amber-600 text-xs" title="Pendente">⏳</span>
+                                <span className="text-amber-600 flex items-center" title="Pendente"><Clock size={14} /></span>
                               )}
                             </div>
                           </div>
@@ -948,8 +957,8 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
             {/* Header do Modal */}
             <div className="p-4 sm:p-5 border-b border-slate-100 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl shrink-0">
-                  📲
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                  <Phone size={20} className="text-white" />
                 </div>
                 <div>
                   <h3 className="text-base font-black uppercase tracking-wider">
@@ -969,7 +978,7 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
                 }}
                 className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer"
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
@@ -1067,9 +1076,10 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
                           <h5 className="font-bold text-xs text-slate-800 truncate">
                             {membro.nome}
                           </h5>
-                          <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
-                            <span>📱 {membro.telefone || 'Sem telefone'}</span>
-                            <span>· 🗓️ {membro.escalas.length} {membro.escalas.length === 1 ? 'escala' : 'escalas'}</span>
+                          <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1.5 flex-wrap">
+                            <span className="flex items-center gap-1"><Phone size={11} className="text-slate-400 shrink-0" /> {membro.telefone || 'Sem telefone'}</span>
+                            <span>·</span>
+                            <span className="flex items-center gap-1"><Calendar size={11} className="text-slate-400 shrink-0" /> {membro.escalas.length} {membro.escalas.length === 1 ? 'escala' : 'escalas'}</span>
                             {membro.totalPendentes > 0 && <span className="text-amber-600 font-bold">({membro.totalPendentes} pendente)</span>}
                           </p>
                         </div>

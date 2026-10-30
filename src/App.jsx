@@ -19,13 +19,16 @@ import HomePage from './HomePage'; // Novo componente HomePage
 import PublicRegistrationForm from './PublicRegistrationForm'; // Importar o novo componente
 import PublicConfirmarEscala from './PublicConfirmarEscala';
 import { MenuIcons, submenuIconKey } from './icons'; // Importa MenuIcons e submenuIconKey do novo arquivo
-import { Settings, Bell, ChevronLeft } from 'lucide-react';
+import { Settings, Bell, ChevronLeft, Sun, Moon } from 'lucide-react';
+import { alternarTemaModo, obterTemaCarregado } from './themeUtils';
 import { normalizarTexto, faixaDaIdade, meses, valorCampoRelatorio } from './churchUtils';
 import { setAppBadge, clearAppBadge, requestBadgePermission, syncAndroidNotificationBadge } from './badgeUtils';
 
 const filtrosIniciais = {
   busca: '', genero: '', estadoCivil: '', faixaEtaria: '', zona: '', cargo: '',
-  atuacao: '', batizado: '', relatorioCampo: '', relatorioValor: ''
+  atuacao: '', batizado: '', relatorioCampo: '', relatorioValor: '',
+  mesAniversario: '', mesConversao: '', anoConversao: '', novoConvertido: false,
+  celula: '', celulaNome: '', celulaFaixaEtaria: '', temCelula: ''
 };
 
 export function normalizarPermissao(perm) {
@@ -41,6 +44,25 @@ export function normalizarPermissao(perm) {
 
 
 export default function App() {
+  const [temaModo, setTemaModo] = useState(() => {
+    return obterTemaCarregado().modo;
+  });
+
+  useEffect(() => {
+    const handleTemaAlterado = (e) => {
+      if (e.detail?.modo) {
+        setTemaModo(e.detail.modo);
+      }
+    };
+    window.addEventListener('mib-theme-changed', handleTemaAlterado);
+    return () => window.removeEventListener('mib-theme-changed', handleTemaAlterado);
+  }, []);
+
+  const handleAlternarTema = () => {
+    const novoModo = alternarTemaModo();
+    setTemaModo(novoModo);
+  };
+
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [duplicidadeDialog, setDuplicidadeDialog] = useState(null);
   const [linkCopiadoDialog, setLinkCopiadoDialog] = useState(null);
@@ -829,9 +851,73 @@ export default function App() {
         const roles = p.atuacao ? p.atuacao.split(',').map(s => s.trim().toLowerCase()) : [];
         if (!roles.includes(filtros.atuacao.toLowerCase())) return false;
       }
+
+      // Filtro de Batizado
+      if (filtros.batizado) {
+        if (filtros.batizado === 'sim' || filtros.batizado === 'batizado') {
+          if (!p.batizado_aguas) return false;
+        } else if (filtros.batizado === 'nao' || filtros.batizado === 'nao_batizado') {
+          if (p.batizado_aguas) return false;
+        }
+      }
+
+      // Filtro de Mês de Aniversário
+      if (filtros.mesAniversario !== '' && filtros.mesAniversario !== undefined && filtros.mesAniversario !== null) {
+        if (!p.data_nascimento) return false;
+        const dNasc = new Date(`${p.data_nascimento}T00:00:00`);
+        const mesNome = meses[dNasc.getMonth()];
+        if (typeof filtros.mesAniversario === 'number') {
+          if (dNasc.getMonth() !== filtros.mesAniversario) return false;
+        } else if (mesNome !== filtros.mesAniversario && String(dNasc.getMonth()) !== String(filtros.mesAniversario)) {
+          return false;
+        }
+      }
+
+      // Filtro de Conversão (Mês, Ano ou Novo Convertido)
+      if (filtros.novoConvertido) {
+        if (!p.data_conversao) return false;
+      }
+      if (filtros.mesConversao) {
+        if (!p.data_conversao) return false;
+        const dConv = new Date(`${p.data_conversao}T00:00:00`);
+        const mesConvNome = meses[dConv.getMonth()];
+        if (mesConvNome !== filtros.mesConversao && String(dConv.getMonth()) !== String(filtros.mesConversao)) return false;
+      }
+      if (filtros.anoConversao) {
+        if (!p.data_conversao) return false;
+        const dConv = new Date(`${p.data_conversao}T00:00:00`);
+        if (String(dConv.getFullYear()) !== String(filtros.anoConversao)) return false;
+      }
+
+      // Filtro de Célula específica
+      if (filtros.celula && String(p.celula_id || '') !== String(filtros.celula)) {
+        return false;
+      }
+
+      // Filtro de Faixa Etária da Célula
+      if (filtros.celulaFaixaEtaria) {
+        const celulaPessoa = celulasVisiveis.find(c => String(c.id) === String(p.celula_id));
+        const faixaCelula = celulaPessoa?.faixa_etaria || p.celulas?.faixa_etaria || '';
+        const faixaMembro = faixasEtarias.find(f => f.id === faixaDaIdade(p.data_nascimento))?.curto;
+        if (faixaCelula !== filtros.celulaFaixaEtaria && faixaMembro !== filtros.celulaFaixaEtaria) {
+          return false;
+        }
+      }
+
+      // Filtro de Tem Célula (Em Célula vs Sem Célula)
+      if (filtros.temCelula) {
+        if (filtros.temCelula === 'sim' && !p.celula_id) return false;
+        if (filtros.temCelula === 'nao' && p.celula_id) return false;
+      }
+
+      // Filtro de Estado Civil
+      if (filtros.estadoCivil && p.estado_civil !== filtros.estadoCivil) {
+        return false;
+      }
+
       return true;
     });
-  }, [pessoasVisiveis, filtros]);
+  }, [pessoasVisiveis, filtros, zonas, celulasVisiveis]);
 
   const celulasFiltradas = useMemo(() => {
     return celulasVisiveis.filter((c) => {
@@ -1368,8 +1454,9 @@ export default function App() {
         navegar('dashboard');
       }
     } else if (moduloAtual === 'pessoas') {
-      if (filtros.cargo || filtros.zona || filtros.atuacao || filtros.relatorioCampo) {
-        setFiltros(prev => ({ ...prev, cargo: '', zona: '', atuacao: '', relatorioCampo: '', relatorioValor: '' }));
+      const temFiltroAtivo = Object.keys(filtros).some(k => k === 'novoConvertido' ? filtros[k] : Boolean(filtros[k]));
+      if (temFiltroAtivo) {
+        setFiltros(filtrosIniciais);
       } else {
         navegar('dashboard');
       }
@@ -1450,7 +1537,22 @@ export default function App() {
         />
 
         {/* Configurações e Perfil do Usuário */}
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
+          {/* Alternar Modo Claro / Modo Escuro */}
+          <button
+            type="button"
+            onClick={handleAlternarTema}
+            className="p-1.5 rounded-xl transition-all duration-200 cursor-pointer flex items-center justify-center border border-transparent text-slate-300 hover:text-white hover:bg-white/10 active:scale-95 group relative"
+            title={temaModo === 'escuro' ? 'Alternar para Modo Claro' : 'Alternar para Modo Escuro'}
+            aria-label="Alternar modo claro e escuro"
+          >
+            {temaModo === 'escuro' ? (
+              <Sun size={18} className="text-amber-400 group-hover:rotate-45 transition-transform duration-300" />
+            ) : (
+              <Moon size={18} className="text-slate-300 group-hover:text-amber-200 group-hover:-rotate-12 transition-all duration-300" />
+            )}
+          </button>
+
           {/* Central de Notificações */}
           <button
             type="button"
@@ -1505,7 +1607,7 @@ export default function App() {
 
 
       {/* ── SIDEBAR LATERAL DESKTOP — ícones + nomes retraída ── */}
-      <aside className="hidden md:flex print:hidden fixed left-0 top-14 bottom-0 z-40 w-16 flex-col bg-slate-200 border-r border-slate-300 overflow-visible">
+      <aside className="hidden md:flex print:hidden fixed left-0 top-14 bottom-0 z-40 w-16 flex-col bg-slate-200 border-r border-slate-300 dark:bg-slate-900 dark:border-slate-800 overflow-visible transition-colors">
         <nav className="flex-1 flex flex-col items-center py-2 gap-0.5 px-1">
           {hasAccess('Visão Geral') && (
             <SideNavBtn ativo={moduloAtual === 'dashboard'} onClick={() => navegar('dashboard')} icon={MenuIcons.dashboard} label="Visão Geral" />
@@ -1625,6 +1727,21 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-1.5">
+          {/* Alternar Modo Claro / Escuro no Mobile */}
+          <button
+            type="button"
+            onClick={handleAlternarTema}
+            className="p-1.5 active:scale-90 transition-transform text-white cursor-pointer rounded-xl hover:bg-white/10"
+            title={temaModo === 'escuro' ? 'Alternar para Modo Claro' : 'Alternar para Modo Escuro'}
+            aria-label="Alternar modo claro e escuro"
+          >
+            {temaModo === 'escuro' ? (
+              <Sun size={20} className="text-amber-400" />
+            ) : (
+              <Moon size={20} className="text-blue-100" />
+            )}
+          </button>
+
           {/* 🔔 Sino de Notificações no Mobile */}
           <button
             onClick={() => {
@@ -1973,8 +2090,7 @@ export default function App() {
         )}
       </nav>
 
-      {/* ── CONTEÚDO PRINCIPAL — offset do header + sidebar ── */}
-      <main className="min-w-0 px-2 pb-20 pt-14 sm:px-6 sm:pb-6 md:pl-20 md:pr-6 md:pt-16 lg:pl-20 lg:pr-10 lg:pt-16 lg:pb-8 flex-1 overflow-y-auto">
+      <main className="min-w-0 px-2 pb-20 pt-14 sm:px-6 sm:pb-6 md:pl-20 md:pr-6 md:pt-16 lg:pl-20 lg:pr-10 lg:pt-16 lg:pb-8 flex-1 overflow-y-auto scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {/* Nova HomePage como a tela principal do dashboard */}
         {moduloAtual === 'dashboard' && (
           <>
@@ -2046,6 +2162,7 @@ export default function App() {
                 }}
                 abaDashboard={abaDashboard}
                 setAbaDashboard={setAbaDashboard}
+                abrirPessoasFiltradas={abrirPessoasFiltradas}
               />
             </div>
 
@@ -2073,6 +2190,7 @@ export default function App() {
                 usuarioLogado={usuarioLogado}
                 hasAccess={hasAccess}
                 onNavigate={navegar}
+                abrirPessoasFiltradas={abrirPessoasFiltradas}
                 />
               </div>
             </>
@@ -2097,7 +2215,7 @@ export default function App() {
             setMembroSelecionadoId={setMembroSelecionadoId}
             setSubmenu={setPessoasSubmenu}
             obterDados={obterDados}
-            onNavigate={(sub) => navegar('pessoas', sub)}
+            onNavigate={(sub) => sub === 'dashboard' ? navegar('dashboard') : navegar('pessoas', sub)}
             abrirPessoasFiltradas={abrirPessoasFiltradas}
             membroLogado={membroLogado}
             hasAccess={hasAccess}
@@ -2617,8 +2735,8 @@ function SideNavBtn({ ativo, onClick, icon, label, submenu, submenuAtivo, onSubm
         onClick={onClick}
         className={`w-full flex flex-col items-center gap-1 px-1 py-2.5 rounded-xl transition-all
           ${ativo
-            ? 'bg-slate-400/30 text-slate-900'
-            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-300/60'
+            ? 'bg-slate-400/30 text-slate-900 dark:bg-slate-800 dark:text-blue-300'
+            : 'text-slate-500 hover:text-slate-900 hover:bg-slate-300/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/60'
           }`}
       >
         <span className="leading-none">{icon}</span>
@@ -2628,7 +2746,7 @@ function SideNavBtn({ ativo, onClick, icon, label, submenu, submenuAtivo, onSubm
       {/* Flyout de submenu — abre para cima ou para baixo conforme espaço disponível */}
       {temSubmenu && hovered && (
         <div className={`absolute left-full z-50 pl-1 ${abreParaCima ? 'bottom-0' : 'top-0'}`}>
-          <div className="w-48 bg-slate-200 border border-slate-300 rounded-xl shadow-2xl overflow-hidden py-1">
+          <div className="w-48 bg-slate-200 border border-slate-300 dark:bg-slate-900 dark:border-slate-800 rounded-xl shadow-2xl overflow-hidden py-1">
             <p className="px-3 pt-2 pb-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</p>
             {submenu.map(([id, lbl]) => (
               <button
@@ -2638,7 +2756,7 @@ function SideNavBtn({ ativo, onClick, icon, label, submenu, submenuAtivo, onSubm
                 className={`w-full text-left px-3 py-2 text-xs font-semibold transition cursor-pointer flex items-center gap-2
                   ${moduloAtual === moduloKey && submenuAtivo === id
                     ? 'bg-[#2563eb] text-white'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/60'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-300/60 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white'
                   }`}
               >
                 {lbl}

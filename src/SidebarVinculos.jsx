@@ -119,15 +119,15 @@ export default function SidebarVinculos({ pessoaId, pessoaData, matriculasEscola
 
   return (
     <aside className="w-full lg:w-80 shrink-0 space-y-4 print:hidden">
-      <Card className="p-0 overflow-hidden shadow-sm border-slate-200/60 bg-white">
+      <Card className="p-0 overflow-hidden shadow-sm border-slate-200/60 dark:border-slate-700 bg-white dark:bg-slate-800">
         <CardHeader titulo="Vínculos e Ministérios" subtitulo="Conexões ativas na igreja" />
         <div className="p-5 space-y-6">
           {/* Célula */}
           <div className="space-y-2">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Célula</label>
-            <div className="flex items-center gap-3 p-3 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+            <div className="flex items-center gap-3 p-3 bg-emerald-50/50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-100/50 dark:border-emerald-800/50">
               <AvatarCelula celula={pessoaData?.celulas} tamanho="w-10 h-10" />
-              <span className="font-bold text-slate-700 text-sm">{pessoaData?.celulas?.nome || 'Sem Célula'}</span>
+              <span className="font-bold text-slate-700 dark:text-slate-100 text-sm">{pessoaData?.celulas?.nome || 'Sem Célula'}</span>
             </div>
           </div>
 
@@ -137,11 +137,11 @@ export default function SidebarVinculos({ pessoaId, pessoaData, matriculasEscola
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Atuação como Professor</label>
               <div className="space-y-2">
                 {docencias.map((d, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                  <div key={i} className="flex items-center gap-3 p-3 bg-indigo-50/50 dark:bg-indigo-950/40 rounded-2xl border border-indigo-100/50 dark:border-indigo-800/50">
                     <span className="text-xl">👨‍🏫</span>
                     <div>
-                      <span className="font-bold text-slate-700 text-xs block leading-tight">{d.disciplinas?.nome}</span>
-                      <p className="text-[9px] text-slate-500 font-bold uppercase mt-1">
+                      <span className="font-bold text-slate-700 dark:text-slate-100 text-xs block leading-tight">{d.disciplinas?.nome}</span>
+                      <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase mt-1">
                         {d.turmas?.nome} · {d.turmas?.escolas?.nome}
                       </p>
                     </div>
@@ -156,12 +156,12 @@ export default function SidebarVinculos({ pessoaId, pessoaData, matriculasEscola
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ministérios (Escalas)</label>
             <div className="flex flex-wrap gap-2">
               {carregando ? (
-                <div className="h-4 w-20 bg-slate-100 animate-pulse rounded" />
+                <div className="h-4 w-20 bg-slate-100 dark:bg-slate-700 animate-pulse rounded" />
               ) : ministerios.length === 0 ? (
                 <p className="text-[10px] text-slate-400 italic">Nenhum vínculo em escalas.</p>
               ) : (
                 ministerios.map((m, i) => (
-                  <span key={i} className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-xl text-[10px] font-black uppercase tracking-tight">
+                  <span key={i} className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800/60 rounded-xl text-[10px] font-black uppercase tracking-tight">
                     {m.tipo_escala}
                   </span>
                 ))
@@ -175,11 +175,11 @@ export default function SidebarVinculos({ pessoaId, pessoaData, matriculasEscola
             {matriculasEscolares && matriculasEscolares.length > 0 ? (
               <div className="space-y-2">
                 {matriculasEscolares.map((matricula) => (
-                  <div key={matricula.id} className="flex items-center gap-3 p-3 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                  <div key={matricula.id} className="flex items-center gap-3 p-3 bg-blue-50/50 dark:bg-blue-950/40 rounded-2xl border border-blue-100/50 dark:border-blue-800/50">
                     <span className="text-xl">🎓</span>
                     <div>
-                      <span className="font-bold text-slate-700 text-xs block leading-tight">{matricula.turmas?.nome}</span>
-                      <p className="text-[9px] text-slate-500 uppercase font-bold mt-1">{matricula.turmas?.escolas?.nome}</p>
+                      <span className="font-bold text-slate-700 dark:text-slate-100 text-xs block leading-tight">{matricula.turmas?.nome}</span>
+                      <p className="text-[9px] text-slate-500 dark:text-slate-400 uppercase font-bold mt-1">{matricula.turmas?.escolas?.nome}</p>
                     </div>
                   </div>
                 ))}
@@ -195,17 +195,17 @@ export default function SidebarVinculos({ pessoaId, pessoaData, matriculasEscola
             {inscricoes.length > 0 ? (
               <div className="space-y-2">
                 {inscricoes.map((ins) => (
-                  <div key={ins.id} className="p-3 bg-amber-50/50 rounded-2xl border border-amber-100/50 flex items-center justify-between">
+                  <div key={ins.id} className="p-3 bg-amber-50/50 dark:bg-amber-950/40 rounded-2xl border border-amber-100/50 dark:border-amber-800/50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-lg">🎟️</span>
                       <div>
-                        <span className="font-bold text-slate-700 text-xs block leading-tight">{ins.agenda_eventos?.titulo}</span>
-                        <p className="text-[9px] text-slate-500 uppercase font-bold mt-1">
+                        <span className="font-bold text-slate-700 dark:text-slate-100 text-xs block leading-tight">{ins.agenda_eventos?.titulo}</span>
+                        <p className="text-[9px] text-slate-500 dark:text-slate-400 uppercase font-bold mt-1">
                           {new Date(ins.agenda_eventos?.data_inicio).toLocaleDateString('pt-BR')}
                         </p>
                       </div>
                     </div>
-                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md ${ins.status_pagamento === 'pago' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md ${ins.status_pagamento === 'pago' ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300' : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'}`}>
                       {ins.status_pagamento || 'pendente'}
                     </span>
                   </div>

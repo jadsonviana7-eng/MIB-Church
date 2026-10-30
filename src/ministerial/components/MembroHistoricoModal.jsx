@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Award, UserCheck, Loader2, Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { X, Calendar, Award, UserCheck, Loader2, Clock, CheckCircle, AlertCircle, XCircle, TrendingUp } from 'lucide-react';
 import { escalasService } from '../services/escalasService';
 
 export default function MembroHistoricoModal({ isOpen, onClose, pessoa }) {
@@ -265,7 +265,8 @@ export default function MembroHistoricoModal({ isOpen, onClose, pessoa }) {
               {/* Seção de Frequência */}
               <div className="space-y-3">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                  📈 Frequência e Presença
+                  <TrendingUp size={13} className="text-blue-600 shrink-0" />
+                  Frequência e Presença
                 </h4>
                 <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-4 w-full sm:w-auto">

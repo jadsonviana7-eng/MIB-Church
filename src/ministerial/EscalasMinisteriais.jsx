@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { Calendar, Plus, X, Search, Check, AlertCircle, Share2, Printer, CheckCircle, XCircle, Trash2, ChevronLeft, ChevronRight, Pencil, Sparkles, Zap, UserCheck, RefreshCw } from 'lucide-react';
 import { escalasService, limparTextoJustificativa } from './services/escalasService';
 import { autoEscalaService } from './services/autoEscalaService';
+import { clarearCorParaModoEscuro } from './services/ministeriosService';
+import { useIsDarkMode } from './hooks/useIsDarkMode';
 import { supabase } from '../supabaseClient';
 import { toPng } from 'html-to-image';
 import { MinistryIcon } from '../ui';
@@ -15,6 +17,7 @@ export default function EscalasMinisteriais({
   initialFiltroAno = null,
   colunaRecolhida = false
 }) {
+  const isDark = useIsDarkMode();
   const [eventos, setEventos] = useState([]);
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [escalas, setEscalas] = useState([]);
@@ -592,35 +595,35 @@ export default function EscalasMinisteriais({
         return {
           bgHeader: 'bg-rose-600',
           textHeader: 'text-white',
-          border: 'border-rose-100 shadow-rose-50/50',
+          border: 'border-rose-200 dark:border-rose-900/60 shadow-rose-50/50',
           bgBody: 'bg-rose-50/20'
         };
       case 3:
         return {
           bgHeader: 'bg-emerald-600',
           textHeader: 'text-white',
-          border: 'border-emerald-100 shadow-emerald-50/50',
+          border: 'border-emerald-200 dark:border-emerald-900/60 shadow-emerald-50/50',
           bgBody: 'bg-emerald-50/20'
         };
       case 4:
         return {
           bgHeader: 'bg-amber-600',
           textHeader: 'text-white',
-          border: 'border-amber-100 shadow-amber-50/50',
+          border: 'border-amber-200 dark:border-amber-900/60 shadow-amber-50/50',
           bgBody: 'bg-amber-50/20'
         };
       case 6:
         return {
           bgHeader: 'bg-indigo-600',
           textHeader: 'text-white',
-          border: 'border-indigo-100 shadow-indigo-50/50',
+          border: 'border-indigo-200 dark:border-indigo-900/60 shadow-indigo-50/50',
           bgBody: 'bg-indigo-50/20'
         };
       default:
         return {
           bgHeader: 'bg-slate-500',
           textHeader: 'text-white',
-          border: 'border-slate-100 shadow-slate-50/50',
+          border: 'border-slate-200 dark:border-slate-800 shadow-slate-50/50',
           bgBody: 'bg-slate-50/20'
         };
     }
@@ -2499,7 +2502,7 @@ export default function EscalasMinisteriais({
               const dataInfo = obterInfoDataBrasilia(esc.eventos_ministeriais?.data_evento);
               const dataStr = `${dataInfo.diaNum}/${String(dataInfo.mesIndex + 1).padStart(2, '0')} · ${obterHoraExibicao(esc.eventos_ministeriais)}`;
               return (
-                <div key={esc.id} className="bg-white rounded-2xl border border-blue-100 p-4.5 flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
+                <div key={esc.id} className="card-voluntario-item bg-white dark:bg-[#17223b] rounded-2xl border border-blue-100 dark:border-blue-900/50 p-4.5 flex flex-col justify-between shadow-xs transition-all">
                   <div>
                     <h4 className="font-bold text-slate-800 text-sm">
                       {esc.eventos_ministeriais?.titulo}
@@ -2583,10 +2586,10 @@ export default function EscalasMinisteriais({
 
       <div className="grid grid-cols-12 gap-6 items-start">
         {/* Painel Esquerdo - Eventos */}
-        <div className="col-span-12 lg:col-span-4 bg-white rounded-2xl border border-slate-100/80 p-5 shadow-sm space-y-4">
-          <div className="flex items-center justify-between text-slate-800 pb-3 border-b border-slate-100">
+        <div className="col-span-12 lg:col-span-4 bg-white dark:bg-[#131d31] rounded-2xl border border-slate-100/80 dark:border-[#24334f] p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between text-slate-800 dark:text-slate-100 pb-3 border-b border-slate-100 dark:border-[#24334f]">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100 shadow-2xs">
+              <div className="w-7 h-7 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-800/40 shadow-2xs">
                 <Calendar size={15} strokeWidth={2.5} />
               </div>
               <h3 className="font-black text-sm uppercase tracking-wider">Eventos</h3>
@@ -2594,20 +2597,20 @@ export default function EscalasMinisteriais({
           </div>
 
           {/* Filtro de Período */}
-          <div className="flex items-center justify-between bg-slate-50/90 border border-slate-200/80 rounded-2xl p-1.5 shadow-2xs backdrop-blur-xs">
+          <div className="flex items-center justify-between bg-slate-50/90 dark:bg-[#0b1329] border border-slate-200/80 dark:border-[#24334f] rounded-2xl p-1.5 shadow-2xs backdrop-blur-xs">
             <button
               onClick={retrocederMes}
-              className="p-1.5 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200/80 hover:border-blue-300 rounded-xl transition-all active:scale-90 shadow-2xs cursor-pointer"
+              className="p-1.5 bg-white dark:bg-[#17223b] hover:bg-blue-50 dark:hover:bg-[#1c2b4a] text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200/80 dark:border-[#2b3954] hover:border-blue-300 dark:hover:border-blue-500/50 rounded-xl transition-all active:scale-90 shadow-2xs cursor-pointer"
               title="Mês anterior"
             >
               <ChevronLeft size={16} strokeWidth={2.5} />
             </button>
-            <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest px-2">
+            <span className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest px-2">
               {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes]} {filtroAno}
             </span>
             <button
               onClick={avancarMes}
-              className="p-1.5 bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200/80 hover:border-blue-300 rounded-xl transition-all active:scale-90 shadow-2xs cursor-pointer"
+              className="p-1.5 bg-white dark:bg-[#17223b] hover:bg-blue-50 dark:hover:bg-[#1c2b4a] text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200/80 dark:border-[#2b3954] hover:border-blue-300 dark:hover:border-blue-500/50 rounded-xl transition-all active:scale-90 shadow-2xs cursor-pointer"
               title="Próximo mês"
             >
               <ChevronRight size={16} strokeWidth={2.5} />
@@ -2626,36 +2629,49 @@ export default function EscalasMinisteriais({
                 <button
                   key={ev.id}
                   onClick={() => selecionarEvento(ev, true)}
-                  className={`w-full text-left p-2.5 rounded-2xl border transition-all duration-200 flex items-center justify-between cursor-pointer group relative overflow-hidden ${eventoSelecionado?.id === ev.id
-                    ? 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 border-blue-500 text-white shadow-lg shadow-blue-500/25 ring-2 ring-blue-400/40'
-                    : 'bg-white border-slate-150 hover:border-blue-200 hover:bg-gradient-to-r hover:from-white hover:to-blue-50/30 hover:shadow-sm text-slate-700'
+                  className={`w-full text-left p-2.5 rounded-2xl border transition-all duration-200 flex items-center justify-between cursor-pointer group relative overflow-hidden card-evento-btn ${eventoSelecionado?.id === ev.id
+                    ? 'card-evento-selected text-white ring-2 ring-blue-400/40'
+                    : 'card-evento-unselected text-slate-700 dark:text-slate-200'
                     }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {/* Calendar Badge */}
-                    <div className={`w-11 h-12 rounded-xl border flex flex-col overflow-hidden shrink-0 shadow-xs transition bg-white ${eventoSelecionado?.id === ev.id ? 'border-white/30 shadow-md' : cores.border
+                    <div className={`w-11 h-12 rounded-xl border flex flex-col overflow-hidden shrink-0 shadow-xs transition-all ${eventoSelecionado?.id === ev.id
+                      ? 'border-white/30 bg-white/15 shadow-md backdrop-blur-xs'
+                      : `bg-white dark:bg-[#0b1329] ${cores.border} dark:border-[#2b3954] group-hover:border-blue-400 dark:group-hover:border-blue-400 group-hover:shadow-xs group-hover:scale-105`
                       }`}>
-                      <div className={`text-[8px] font-black py-0.5 text-center tracking-wider uppercase ${eventoSelecionado?.id === ev.id ? 'bg-white/20 text-white' : `${cores.bgHeader} ${cores.textHeader}`
+                      <div className={`text-[8px] font-black py-0.5 text-center tracking-wider uppercase transition-colors ${eventoSelecionado?.id === ev.id
+                        ? 'bg-white/20 text-white'
+                        : `${cores.bgHeader} ${cores.textHeader}`
                         }`}>
                         {diaSemanaStr}
                       </div>
-                      <div className={`flex-1 flex items-center justify-center font-black text-base leading-none ${eventoSelecionado?.id === ev.id ? 'text-blue-600 font-bold' : 'text-slate-800'
+                      <div className={`flex-1 flex items-center justify-center font-black text-base leading-none transition-colors ${eventoSelecionado?.id === ev.id
+                        ? 'text-white font-bold'
+                        : 'text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-300'
                         }`}>
                         {diaNum}
                       </div>
                     </div>
 
                     <div className="min-w-0 pr-1">
-                      <h4 className={`font-bold text-xs truncate leading-snug ${eventoSelecionado?.id === ev.id ? 'text-white' : 'text-slate-800 group-hover:text-blue-600 transition-colors'
+                      <h4 className={`font-bold text-xs truncate leading-snug transition-colors ${eventoSelecionado?.id === ev.id
+                        ? 'text-white'
+                        : 'text-slate-800 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-300'
                         }`}>
                         {ev.titulo}
                       </h4>
-                      <p className={`text-[10px] mt-0.5 truncate flex items-center gap-1 ${eventoSelecionado?.id === ev.id ? 'text-white/80' : 'text-slate-400'
+                      <p className={`text-[10px] mt-0.5 truncate flex items-center gap-1 transition-colors ${eventoSelecionado?.id === ev.id
+                        ? 'text-blue-100'
+                        : 'text-slate-400 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'
                         }`}>
                         📍 {ev.local || 'Templo Sede'}
                       </p>
                       {extrairPregador(ev) && (
-                        <p className={`text-[9px] font-black mt-0.5 truncate flex items-center gap-1 ${eventoSelecionado?.id === ev.id ? 'text-cyan-200' : 'text-blue-700'}`}>
+                        <p className={`text-[9px] font-black mt-0.5 truncate flex items-center gap-1 transition-colors ${eventoSelecionado?.id === ev.id
+                          ? 'text-cyan-200'
+                          : 'text-blue-700 dark:text-blue-400 group-hover:text-blue-800 dark:group-hover:text-blue-300'
+                          }`}>
                           <span>🎙️</span> {extrairPregador(ev)}
                         </p>
                       )}
@@ -2663,7 +2679,9 @@ export default function EscalasMinisteriais({
                   </div>
 
                   <div className="text-right shrink-0">
-                    <span className={`text-[10px] font-black block ${eventoSelecionado?.id === ev.id ? 'text-white/95' : 'text-slate-700'
+                    <span className={`text-[10px] font-black block transition-colors card-evento-time ${eventoSelecionado?.id === ev.id
+                      ? 'text-white/95'
+                      : 'text-slate-700 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-300'
                       }`}>
                       {obterHoraExibicao(ev)}
                     </span>
@@ -2673,8 +2691,8 @@ export default function EscalasMinisteriais({
             })}
 
             {eventosFiltrados.length === 0 && (
-              <div className="py-6 px-3 bg-slate-50/80 rounded-2xl border border-slate-100 text-center space-y-3 animate-in fade-in">
-                <p className="text-xs text-slate-500 font-medium">
+              <div className="py-6 px-3 bg-slate-50/80 dark:bg-[#131d31] rounded-2xl border border-slate-100 dark:border-[#24334f] text-center space-y-3 animate-in fade-in">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                   Nenhum evento em <strong>{['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtroMes]} de {filtroAno}</strong>.
                 </p>
 
@@ -2692,11 +2710,11 @@ export default function EscalasMinisteriais({
                             setFiltroMes(m.mesIndex);
                             setFiltroAno(m.ano);
                           }}
-                          className="text-[10px] font-bold bg-white hover:bg-blue-50 text-blue-700 hover:text-blue-900 border border-blue-200 px-2.5 py-1 rounded-xl transition shadow-2xs cursor-pointer flex items-center gap-1 active:scale-95"
+                          className="text-[10px] font-bold bg-white dark:bg-[#17223b] hover:bg-blue-50 dark:hover:bg-[#1e2f52] text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-200 border border-blue-200 dark:border-blue-800/60 px-2.5 py-1 rounded-xl transition shadow-2xs cursor-pointer flex items-center gap-1 active:scale-95"
                         >
                           <span>📅</span>
                           {['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][m.mesIndex]} {m.ano}
-                          <span className="bg-blue-100 text-blue-800 text-[9px] px-1.5 rounded-full font-black">
+                          <span className="bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 text-[9px] px-1.5 rounded-full font-black">
                             {m.total}
                           </span>
                         </button>
@@ -2706,7 +2724,7 @@ export default function EscalasMinisteriais({
                 )}
 
                 {!isMembroNormal && (
-                  <div className="pt-2 border-t border-slate-200/60">
+                  <div className="pt-2 border-t border-slate-200/60 dark:border-[#24334f]">
                     <button
                       type="button"
                       onClick={() => {
@@ -2728,17 +2746,17 @@ export default function EscalasMinisteriais({
         </div>
 
         {/* Painel Direito - Grade da Escala */}
-        <div className={`col-span-12 lg:col-span-8 ${modalGradeMobile ? 'fixed inset-0 z-50 bg-white flex flex-col p-0 lg:static lg:bg-transparent lg:p-0 lg:flex-none lg:block' : 'hidden lg:block'}`}>
-          <div className={`bg-white w-full ${modalGradeMobile ? 'h-full min-h-screen rounded-none p-4 sm:p-6 overflow-y-auto relative flex flex-col flex-1' : 'rounded-2xl border border-slate-100/80 p-6 shadow-sm h-full'}`}>
+        <div className={`col-span-12 lg:col-span-8 ${modalGradeMobile ? 'fixed inset-0 z-50 bg-white dark:bg-[#0b1329] flex flex-col p-0 lg:static lg:bg-transparent lg:p-0 lg:flex-none lg:block' : 'hidden lg:block'}`}>
+          <div className={`bg-white dark:bg-[#131d31] w-full ${modalGradeMobile ? 'h-full min-h-screen rounded-none p-4 sm:p-6 overflow-y-auto relative flex flex-col flex-1' : 'rounded-2xl border border-slate-100/80 dark:border-[#24334f] p-6 shadow-sm h-full'}`}>
             {modalGradeMobile && (
-              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 lg:hidden sticky top-0 bg-white/95 backdrop-blur-xs z-30 -mt-1 pt-1">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 dark:border-[#24334f] lg:hidden sticky top-0 bg-white/95 dark:bg-[#131d31]/95 backdrop-blur-xs z-30 -mt-1 pt-1">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                   <span>📋</span> Detalhes do Evento
                 </span>
                 <button
                   type="button"
                   onClick={() => setModalGradeMobile(false)}
-                  className="text-slate-600 hover:text-slate-900 cursor-pointer bg-slate-100 hover:bg-slate-200 px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 text-xs font-bold active:scale-95"
+                  className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer bg-slate-100 dark:bg-[#1c2b4a] hover:bg-slate-200 dark:hover:bg-[#25375e] px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 text-xs font-bold active:scale-95"
                 >
                   <X size={15} /> Fechar
                 </button>
@@ -2747,13 +2765,13 @@ export default function EscalasMinisteriais({
             {eventoSelecionado ? (
               <>
                 {/* Header do Evento */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-5 border-b border-slate-100">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-5 border-b border-slate-100 dark:border-[#24334f]">
                   <div>
-                    <h3 className="text-xl font-black text-slate-800 tracking-tight">
+                    <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">
                       {eventoSelecionado.titulo}
                     </h3>
-                    <p className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-1.5">
-                      <span className="font-bold text-slate-600">📅 {new Date(eventoSelecionado.data_evento).toLocaleDateString('pt-BR')}</span>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-1.5">
+                      <span className="font-bold text-slate-600 dark:text-slate-300">📅 {new Date(eventoSelecionado.data_evento).toLocaleDateString('pt-BR')}</span>
                       <span>· ⏰ {obterHoraExibicao(eventoSelecionado)}</span>
                       <span>· 📍 {eventoSelecionado.local || 'Templo Sede'}</span>
                     </p>
@@ -2766,10 +2784,10 @@ export default function EscalasMinisteriais({
                         <button
                           type="button"
                           onClick={() => abrirModalEditar(eventoSelecionado)}
-                          className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-blue-900 hover:text-blue-950 bg-white hover:bg-blue-50/90 border border-blue-200/90 hover:border-blue-300 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
+                          className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-blue-900 dark:text-blue-300 hover:text-blue-950 dark:hover:text-white bg-white dark:bg-[#17223b] hover:bg-blue-50/90 dark:hover:bg-[#1e2f52] border border-blue-200/90 dark:border-blue-900/60 hover:border-blue-300 dark:hover:border-blue-500/50 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
                           title="Editar este Evento"
                         >
-                          <Pencil size={16} strokeWidth={2.4} className="text-blue-600 group-hover:scale-115 transition-transform shrink-0" />
+                          <Pencil size={16} strokeWidth={2.4} className="text-blue-600 dark:text-blue-400 group-hover:scale-115 transition-transform shrink-0" />
                           <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5">
                             Editar
                           </span>
@@ -2779,10 +2797,10 @@ export default function EscalasMinisteriais({
                         <button
                           type="button"
                           onClick={excluirEventoAtual}
-                          className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-rose-900 hover:text-rose-950 bg-white hover:bg-rose-50/90 border border-rose-200/90 hover:border-rose-300 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
+                          className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-rose-900 dark:text-rose-300 hover:text-rose-950 dark:hover:text-white bg-white dark:bg-[#17223b] hover:bg-rose-50/90 dark:hover:bg-rose-950/40 border border-rose-200/90 dark:border-rose-900/60 hover:border-rose-300 dark:hover:border-rose-500/50 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
                           title="Excluir este Evento"
                         >
-                          <Trash2 size={16} strokeWidth={2.4} className="text-rose-600 group-hover:scale-115 transition-transform shrink-0" />
+                          <Trash2 size={16} strokeWidth={2.4} className="text-rose-600 dark:text-rose-400 group-hover:scale-115 transition-transform shrink-0" />
                           <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5">
                             Excluir
                           </span>
@@ -2865,7 +2883,8 @@ export default function EscalasMinisteriais({
                 {/* Escalas Agrupadas */}
                 <div className="space-y-6">
                   {Object.values(escalasAgrupadas).map((grupo) => {
-                    const corMin = grupo.cor_principal || '#3b82f6';
+                    const corMinOriginal = grupo.cor_principal || '#3b82f6';
+                    const corMin = isDark ? clarearCorParaModoEscuro(corMinOriginal) : corMinOriginal;
                     const iconeMin = grupo.icone || '🎵';
                     const totalItens = grupo.itens.length;
                     const confirmados = grupo.itens.filter(i => i.status === 'confirmado' || i.status === 'presente').length;
@@ -2873,17 +2892,19 @@ export default function EscalasMinisteriais({
                     return (
                       <div
                         key={grupo.nome}
-                        className="rounded-2xl border bg-white overflow-hidden shadow-xs hover:shadow-md transition-all duration-300"
+                        className="rounded-2xl border bg-white dark:bg-[#17223b] overflow-hidden shadow-xs hover:shadow-md transition-all duration-300"
                         style={{
-                          borderColor: `${corMin}30`
+                          borderColor: isDark ? `${corMin}50` : `${corMin}30`
                         }}
                       >
                         {/* Faixa Superior de Destaque / Header com Cor do Ministério */}
                         <div
                           className="px-3 py-2 sm:px-4 sm:py-2.5 border-b flex flex-col md:flex-row md:items-center justify-between gap-2 sm:gap-2.5"
                           style={{
-                            background: `linear-gradient(135deg, ${corMin}14 0%, ${corMin}05 100%)`,
-                            borderBottomColor: `${corMin}25`
+                            background: isDark
+                              ? `linear-gradient(135deg, ${corMin}25 0%, ${corMin}0a 100%)`
+                              : `linear-gradient(135deg, ${corMin}14 0%, ${corMin}05 100%)`,
+                            borderBottomColor: isDark ? `${corMin}45` : `${corMin}25`
                           }}
                         >
                           {/* Lado Esquerdo: Ícone + Nome do Ministério + Badge de Voluntários */}
@@ -2892,17 +2913,17 @@ export default function EscalasMinisteriais({
                             <div
                               className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 shadow-2xs border transition-transform duration-200 hover:scale-105"
                               style={{
-                                backgroundColor: `${corMin}20`,
-                                borderColor: `${corMin}45`,
+                                backgroundColor: isDark ? `${corMin}30` : `${corMin}20`,
+                                borderColor: isDark ? `${corMin}65` : `${corMin}45`,
                                 color: corMin
                               }}
                             >
-                              <MinistryIcon icone={iconeMin} size={16} className="shrink-0" style={{ color: corMin }} />
+                              <MinistryIcon icone={iconeMin} nome={grupo.nome} size={16} className="shrink-0" style={{ color: corMin }} />
                             </div>
 
                             {/* Nome do Ministério */}
                             <h4
-                              className="font-black text-xs sm:text-sm uppercase tracking-wider truncate flex-1 md:flex-initial min-w-0"
+                              className="font-black text-xs sm:text-sm uppercase tracking-wider truncate flex-1 md:flex-initial min-w-0 nome-ministerio-contraste"
                               style={{ color: corMin }}
                               title={grupo.nome}
                             >
@@ -2913,9 +2934,9 @@ export default function EscalasMinisteriais({
                             <span
                               className="text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 sm:px-2 rounded-full border shadow-2xs flex items-center gap-1 shrink-0"
                               style={{
-                                backgroundColor: `${corMin}18`,
+                                backgroundColor: isDark ? `${corMin}26` : `${corMin}18`,
                                 color: corMin,
-                                borderColor: `${corMin}35`
+                                borderColor: isDark ? `${corMin}55` : `${corMin}35`
                               }}
                             >
                               <span>👥</span>
@@ -2934,8 +2955,12 @@ export default function EscalasMinisteriais({
                             <button
                               type="button"
                               onClick={() => abrirModalEscala(grupo.id)}
-                              className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-white shadow-xs hover:shadow-md hover:brightness-110 active:scale-95 transition-all duration-200 cursor-pointer border border-white/25 w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0"
-                              style={{ backgroundColor: corMin }}
+                              className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl shadow-xs hover:shadow-md hover:brightness-110 active:scale-95 transition-all duration-200 cursor-pointer border w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0"
+                              style={{
+                                backgroundColor: isDark ? corMin : corMinOriginal,
+                                color: isDark ? '#090d16' : '#ffffff',
+                                borderColor: isDark ? `${corMin}80` : 'rgba(255,255,255,0.25)'
+                              }}
                               title="Escalar voluntário neste ministério"
                             >
                               <Plus size={17} strokeWidth={2.8} className="shrink-0 transition-transform duration-200 group-hover:scale-115" />
@@ -2987,8 +3012,8 @@ export default function EscalasMinisteriais({
                             <div
                               className="px-3 py-1.5 sm:px-4 border-b flex items-center justify-between gap-2 text-xs transition-colors min-w-0"
                               style={{
-                                backgroundColor: `${corMin}08`,
-                                borderBottomColor: `${corMin}18`
+                                backgroundColor: isDark ? `${corMin}16` : `${corMin}08`,
+                                borderBottomColor: isDark ? `${corMin}30` : `${corMin}18`
                               }}
                             >
                               <div className="flex items-center gap-1.5 shrink-0">
@@ -2997,11 +3022,11 @@ export default function EscalasMinisteriais({
                                   Fardamento:
                                 </span>
                               </div>
-                              <div className="flex items-center gap-1 bg-white/95 py-0.5 px-2 sm:px-2.5 rounded-lg border border-slate-200/80 shadow-2xs min-w-0 flex-1 md:flex-initial max-w-[200px] sm:max-w-xs">
+                              <div className="flex items-center gap-1 bg-white/95 dark:bg-[#111a30] py-0.5 px-2 sm:px-2.5 rounded-lg border border-slate-200/80 dark:border-[#2b3954] shadow-2xs min-w-0 flex-1 md:flex-initial max-w-[200px] sm:max-w-xs">
                                 <select
                                   value={eventoSelecionado?.fardamentos?.[grupo.id] || ''}
                                   onChange={e => handleMudarFardamentoDia(grupo.id, e.target.value)}
-                                  className="bg-transparent text-[10px] sm:text-[11px] font-bold text-slate-700 outline-none cursor-pointer border-none p-0 focus:ring-0 w-full min-w-0 truncate"
+                                  className="bg-transparent text-[10px] sm:text-[11px] font-bold text-slate-700 dark:text-slate-200 outline-none cursor-pointer border-none p-0 focus:ring-0 w-full min-w-0 truncate"
                                 >
                                   <option value="">Farda: Nenhuma</option>
                                   {opcoesFardamento.map(f => (
@@ -3014,7 +3039,7 @@ export default function EscalasMinisteriais({
                         })()}
 
                         {/* Grade de Voluntários */}
-                        <div className="p-3.5 sm:p-4 bg-slate-50/20">
+                        <div className="p-3.5 sm:p-4 bg-slate-50/20 dark:bg-transparent">
 
                           <div className={`grid gap-3 transition-all duration-300 ${colunaDireitaRetraida ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
                             {grupo.itens.map((item) => {
@@ -3053,12 +3078,12 @@ export default function EscalasMinisteriais({
                               );
 
                               const nomeSubstituto = item.substituto?.nome ||
-                                                     substitutoEscala?.pessoas?.nome ||
-                                                     'Voluntário Substituto';
+                                substitutoEscala?.pessoas?.nome ||
+                                'Voluntário Substituto';
 
                               const nomeSubstituindo = item.substituindo?.nome ||
-                                                       escalaOriginalSubstituida?.pessoas?.nome ||
-                                                       'Voluntário Ausente';
+                                escalaOriginalSubstituida?.pessoas?.nome ||
+                                'Voluntário Ausente';
 
                               const precisaSubstituto = !jaFoiSubstituido && !eSubstituto && Boolean(
                                 item.status === 'recusado' ||
@@ -3068,195 +3093,194 @@ export default function EscalasMinisteriais({
                               );
 
                               return (
-                              <div
-                                key={item.id}
-                                className="bg-white rounded-2xl border border-slate-200/70 overflow-hidden flex flex-col justify-between group relative hover:border-slate-300/90 hover:shadow-md transition-all duration-300 shadow-2xs"
-                              >
-                                {/* Corpo do Card: Destaque do Voluntário e Status */}
-                                <div className="p-3.5 flex-1 flex flex-col justify-between gap-2.5">
-                                  <div className="flex justify-between items-start gap-2">
-                                    <div className="min-w-0 flex-1">
-                                      <div className="flex items-center gap-1.5 flex-wrap">
-                                        <p className="text-sm font-black text-slate-900 tracking-tight truncate" title={item.pessoas?.nome}>
-                                          {item.pessoas?.nome}
+                                <div
+                                  key={item.id}
+                                  className="card-voluntario-item bg-white dark:bg-[#17223b] rounded-2xl border border-slate-200/70 dark:border-[#24334f] overflow-hidden flex flex-col justify-between group relative shadow-2xs"
+                                >
+                                  {/* Corpo do Card: Destaque do Voluntário e Status */}
+                                  <div className="p-3.5 flex-1 flex flex-col justify-between gap-2.5">
+                                    <div className="flex justify-between items-start gap-2">
+                                      <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <p className="text-sm font-black text-slate-900 tracking-tight truncate" title={item.pessoas?.nome}>
+                                            {item.pessoas?.nome}
+                                          </p>
+                                          {eSubstituto && (
+                                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200" title={`Substituindo ${nomeSubstituindo}`}>
+                                              Substituto
+                                            </span>
+                                          )}
+                                        </div>
+                                        <p className="text-[10px] sm:text-[11px] text-slate-500 font-semibold mt-0.5">
+                                          {item.ministerio_funcoes?.nome || 'Geral'}
                                         </p>
-                                        {eSubstituto && (
-                                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200" title={`Substituindo ${nomeSubstituindo}`}>
-                                            Substituto
-                                          </span>
+                                      </div>
+
+                                      <div className="flex items-center gap-1 shrink-0">
+                                        <button
+                                          type="button"
+                                          onClick={() => !isMembroNormal && abrirModalApontamento(item, grupo)}
+                                          className="cursor-pointer hover:opacity-85 transition active:scale-95 text-left"
+                                          title="Clique para apontar frequência"
+                                        >
+                                          {renderStatusBadge(item, jaFoiSubstituido, eSubstituto)}
+                                        </button>
+                                        {!isMembroNormal && !item.isPregadorManual && (
+                                          <button
+                                            type="button"
+                                            onClick={() => excluirEscala(item.id)}
+                                            className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all active:scale-90 cursor-pointer"
+                                            title="Remover da escala"
+                                          >
+                                            <X size={14} strokeWidth={2.5} />
+                                          </button>
                                         )}
                                       </div>
-                                      <p className="text-[10px] sm:text-[11px] text-slate-500 font-semibold mt-0.5">
-                                        {item.ministerio_funcoes?.nome || 'Geral'}
-                                      </p>
                                     </div>
 
-                                    <div className="flex items-center gap-1 shrink-0">
-                                      <button
-                                        type="button"
-                                        onClick={() => !isMembroNormal && abrirModalApontamento(item, grupo)}
-                                        className="cursor-pointer hover:opacity-85 transition active:scale-95 text-left"
-                                        title="Clique para apontar frequência"
-                                      >
-                                        {renderStatusBadge(item, jaFoiSubstituido, eSubstituto)}
-                                      </button>
-                                      {!isMembroNormal && !item.isPregadorManual && (
-                                        <button
-                                          type="button"
-                                          onClick={() => excluirEscala(item.id)}
-                                          className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all active:scale-90 cursor-pointer"
-                                          title="Remover da escala"
-                                        >
-                                          <X size={14} strokeWidth={2.5} />
-                                        </button>
-                                      )}
-                                    </div>
+                                    {/* Detalhe de Justificativa / Recusa / Negativação */}
+                                    {item.status === 'recusado' && (
+                                      <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
+                                        <span className="shrink-0 text-rose-600">🚫</span>
+                                        <span className="leading-snug">
+                                          <strong>Motivo da Recusa:</strong> {limparTextoJustificativa(item.justificativa) || 'Voluntário informou que não poderá comparecer.'}
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {((item.status === 'falta_justificada' || item.status === 'ausente_justificado') && item.justificativa) && (
+                                      <div className="text-[10px] text-amber-900 bg-amber-50/90 border border-amber-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
+                                        <span className="shrink-0 text-amber-600">💬</span>
+                                        <span className="italic leading-snug">
+                                          <strong>Justificativa:</strong> {limparTextoJustificativa(item.justificativa)}
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {(item.status === 'falta' || item.status === 'falta_injustificada' || item.status === 'ausente') && (
+                                      <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
+                                        <span className="shrink-0 text-rose-600">⚠️</span>
+                                        <span className="leading-snug">
+                                          <strong>Negativação:</strong> {limparTextoJustificativa(item.justificativa) || 'Não compareceu ao evento para cumprir a escala.'}
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {/* Info de Substituição: Já Substituído */}
+                                    {jaFoiSubstituido && (
+                                      <div className="text-[10px] text-indigo-950 bg-indigo-50/90 border border-indigo-200/80 px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-1.5 animate-in fade-in">
+                                        <span className="flex items-center gap-1.5 min-w-0">
+                                          <span className="text-xs shrink-0">🔄</span>
+                                          <span className="truncate">
+                                            <strong>Substituído(a) por:</strong> {nomeSubstituto}
+                                          </span>
+                                        </span>
+                                        {!isMembroNormal && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleCancelarSubstituicao(item)}
+                                            className="text-[9px] font-bold text-indigo-600 hover:text-rose-600 underline cursor-pointer shrink-0"
+                                            title="Desfazer substituição"
+                                          >
+                                            Desfazer
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+
+                                    {/* Info de Substituição: Atuando como Substituto */}
+                                    {eSubstituto && (
+                                      <div className="text-[10px] text-emerald-950 bg-emerald-50/90 border border-emerald-200/80 px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 animate-in fade-in">
+                                        <span className="text-xs shrink-0">🤝</span>
+                                        <span className="truncate">
+                                          <strong>Substituindo:</strong> {nomeSubstituindo}
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {/* Alerta de Necessidade de Substituto: Exibido APENAS enquanto NÃO houver substituição */}
+                                    {precisaSubstituto && (
+                                      <div className="text-[10px] text-amber-950 bg-amber-50/90 border border-amber-300/80 px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-1.5 animate-in fade-in">
+                                        <span className="flex items-center gap-1.5 font-bold">
+                                          <span className="text-amber-600">⚠️</span>
+                                          <span>Necessita de substituto</span>
+                                        </span>
+                                        {!isMembroNormal && (
+                                          <button
+                                            type="button"
+                                            onClick={() => abrirModalSubstituicao(item, grupo)}
+                                            className="text-[9px] font-black uppercase tracking-wider bg-amber-600 hover:bg-amber-700 text-white px-2 py-0.5 rounded-md transition shadow-2xs active:scale-95 cursor-pointer"
+                                          >
+                                            Substituir
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
 
-                                  {/* Detalhe de Justificativa / Recusa / Negativação */}
-                                  {item.status === 'recusado' && (
-                                    <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
-                                      <span className="shrink-0 text-rose-600">🚫</span>
-                                      <span className="leading-snug">
-                                        <strong>Motivo da Recusa:</strong> {limparTextoJustificativa(item.justificativa) || 'Voluntário informou que não poderá comparecer.'}
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {((item.status === 'falta_justificada' || item.status === 'ausente_justificado') && item.justificativa) && (
-                                    <div className="text-[10px] text-amber-900 bg-amber-50/90 border border-amber-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
-                                      <span className="shrink-0 text-amber-600">💬</span>
-                                      <span className="italic leading-snug">
-                                        <strong>Justificativa:</strong> {limparTextoJustificativa(item.justificativa)}
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {(item.status === 'falta' || item.status === 'falta_injustificada' || item.status === 'ausente') && (
-                                    <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
-                                      <span className="shrink-0 text-rose-600">⚠️</span>
-                                      <span className="leading-snug">
-                                        <strong>Negativação:</strong> {limparTextoJustificativa(item.justificativa) || 'Não compareceu ao evento para cumprir a escala.'}
-                                      </span>
-                                    </div>
-                                  )}
-
-                                  {/* Info de Substituição: Já Substituído */}
-                                  {jaFoiSubstituido && (
-                                    <div className="text-[10px] text-indigo-950 bg-indigo-50/90 border border-indigo-200/80 px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-1.5 animate-in fade-in">
-                                      <span className="flex items-center gap-1.5 min-w-0">
-                                        <span className="text-xs shrink-0">🔄</span>
-                                        <span className="truncate">
-                                          <strong>Substituído(a) por:</strong> {nomeSubstituto}
+                                  {/* Rodapé Gradiente com Botões de Ações Quadrados (Ícone Acima, Legenda Abaixo) */}
+                                  {!isMembroNormal && !item.isPregadorManual && (
+                                    <div
+                                      className="px-3 py-2 border-t flex items-center justify-end gap-1.5 sm:gap-2 transition-colors"
+                                      style={{
+                                        background: isDark
+                                          ? `linear-gradient(135deg, ${corMin}22 0%, ${corMin}08 100%)`
+                                          : `linear-gradient(135deg, ${corMin}16 0%, ${corMin}06 100%)`,
+                                        borderTopColor: isDark ? `${corMin}35` : `${corMin}25`
+                                      }}
+                                    >
+                                      {/* 1. Botão Quadrado APONTAR */}
+                                      <button
+                                        type="button"
+                                        onClick={() => abrirModalApontamento(item, grupo)}
+                                        className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-indigo-900 hover:text-indigo-950 bg-white hover:bg-indigo-50/90 border border-indigo-200/90 hover:border-indigo-300 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
+                                        title="Apontar presença, falta justificada ou negativação"
+                                      >
+                                        <CheckCircle size={16} strokeWidth={2.4} className="text-indigo-600 group-hover:scale-115 transition-transform shrink-0" />
+                                        <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5">
+                                          Apontar
                                         </span>
-                                      </span>
-                                      {!isMembroNormal && (
-                                        <button
-                                          type="button"
-                                          onClick={() => handleCancelarSubstituicao(item)}
-                                          className="text-[9px] font-bold text-indigo-600 hover:text-rose-600 underline cursor-pointer shrink-0"
-                                          title="Desfazer substituição"
-                                        >
-                                          Desfazer
-                                        </button>
-                                      )}
-                                    </div>
-                                  )}
+                                      </button>
 
-                                  {/* Info de Substituição: Atuando como Substituto */}
-                                  {eSubstituto && (
-                                    <div className="text-[10px] text-emerald-950 bg-emerald-50/90 border border-emerald-200/80 px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 animate-in fade-in">
-                                      <span className="text-xs shrink-0">🤝</span>
-                                      <span className="truncate">
-                                        <strong>Substituindo:</strong> {nomeSubstituindo}
-                                      </span>
-                                    </div>
-                                  )}
+                                      {/* 2. Botão Quadrado AVISAR (WhatsApp) */}
+                                      <button
+                                        type="button"
+                                        onClick={() => copiarWhatsAppVoluntario(item, grupo)}
+                                        className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-emerald-900 hover:text-emerald-950 bg-white hover:bg-emerald-50/90 border border-emerald-200/90 hover:border-emerald-300 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
+                                        title="Enviar mensagem de aviso individual via WhatsApp"
+                                      >
+                                        <Share2 size={16} strokeWidth={2.4} className="text-emerald-600 group-hover:scale-115 transition-transform shrink-0" />
+                                        <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5">
+                                          Avisar
+                                        </span>
+                                      </button>
 
-                                  {/* Alerta de Necessidade de Substituto: Exibido APENAS enquanto NÃO houver substituição */}
-                                  {precisaSubstituto && (
-                                    <div className="text-[10px] text-amber-950 bg-amber-50/90 border border-amber-300/80 px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-1.5 animate-in fade-in">
-                                      <span className="flex items-center gap-1.5 font-bold">
-                                        <span className="text-amber-600">⚠️</span>
-                                        <span>Necessita de substituto</span>
-                                      </span>
-                                      {!isMembroNormal && (
+                                      {/* 3. Botão Quadrado SUBSTITUIR: Removido após a substituição ser feita */}
+                                      {!jaFoiSubstituido && !eSubstituto && (
                                         <button
                                           type="button"
                                           onClick={() => abrirModalSubstituicao(item, grupo)}
-                                          className="text-[9px] font-black uppercase tracking-wider bg-amber-600 hover:bg-amber-700 text-white px-2 py-0.5 rounded-md transition shadow-2xs active:scale-95 cursor-pointer"
+                                          className={`group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95 ${precisaSubstituto
+                                              ? 'bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black border border-amber-400 shadow-xs shadow-amber-500/25 animate-pulse'
+                                              : 'bg-white hover:bg-amber-50/90 text-amber-900 hover:text-amber-950 border border-amber-200/90 hover:border-amber-300 shadow-2xs hover:shadow-xs'
+                                            }`}
+                                          title="Substituir este voluntário preservando o histórico"
                                         >
-                                          Substituir
+                                          <UserCheck
+                                            size={16}
+                                            strokeWidth={2.4}
+                                            className={`shrink-0 transition-transform group-hover:scale-115 ${precisaSubstituto ? 'text-white' : 'text-amber-600'
+                                              }`}
+                                          />
+                                          <span className={`text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5 ${precisaSubstituto ? 'text-white' : 'text-amber-900'
+                                            }`}>
+                                            Substituir
+                                          </span>
                                         </button>
                                       )}
                                     </div>
                                   )}
                                 </div>
-
-                                {/* Rodapé Gradiente com Botões de Ações Quadrados (Ícone Acima, Legenda Abaixo) */}
-                                {!isMembroNormal && !item.isPregadorManual && (
-                                  <div
-                                    className="px-3 py-2 border-t flex items-center justify-end gap-1.5 sm:gap-2 transition-colors"
-                                    style={{
-                                      background: `linear-gradient(135deg, ${corMin}16 0%, ${corMin}06 100%)`,
-                                      borderTopColor: `${corMin}25`
-                                    }}
-                                  >
-                                    {/* 1. Botão Quadrado APONTAR */}
-                                    <button
-                                      type="button"
-                                      onClick={() => abrirModalApontamento(item, grupo)}
-                                      className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-indigo-900 hover:text-indigo-950 bg-white hover:bg-indigo-50/90 border border-indigo-200/90 hover:border-indigo-300 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
-                                      title="Apontar presença, falta justificada ou negativação"
-                                    >
-                                      <CheckCircle size={16} strokeWidth={2.4} className="text-indigo-600 group-hover:scale-115 transition-transform shrink-0" />
-                                      <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5">
-                                        Apontar
-                                      </span>
-                                    </button>
-
-                                    {/* 2. Botão Quadrado AVISAR (WhatsApp) */}
-                                    <button
-                                      type="button"
-                                      onClick={() => copiarWhatsAppVoluntario(item, grupo)}
-                                      className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-emerald-900 hover:text-emerald-950 bg-white hover:bg-emerald-50/90 border border-emerald-200/90 hover:border-emerald-300 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
-                                      title="Enviar mensagem de aviso individual via WhatsApp"
-                                    >
-                                      <Share2 size={16} strokeWidth={2.4} className="text-emerald-600 group-hover:scale-115 transition-transform shrink-0" />
-                                      <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5">
-                                        Avisar
-                                      </span>
-                                    </button>
-
-                                    {/* 3. Botão Quadrado SUBSTITUIR: Removido após a substituição ser feita */}
-                                    {!jaFoiSubstituido && !eSubstituto && (
-                                      <button
-                                        type="button"
-                                        onClick={() => abrirModalSubstituicao(item, grupo)}
-                                        className={`group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95 ${
-                                          precisaSubstituto
-                                            ? 'bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black border border-amber-400 shadow-xs shadow-amber-500/25 animate-pulse'
-                                            : 'bg-white hover:bg-amber-50/90 text-amber-900 hover:text-amber-950 border border-amber-200/90 hover:border-amber-300 shadow-2xs hover:shadow-xs'
-                                        }`}
-                                        title="Substituir este voluntário preservando o histórico"
-                                      >
-                                        <UserCheck
-                                          size={16}
-                                          strokeWidth={2.4}
-                                          className={`shrink-0 transition-transform group-hover:scale-115 ${
-                                            precisaSubstituto ? 'text-white' : 'text-amber-600'
-                                          }`}
-                                        />
-                                        <span className={`text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5 ${
-                                          precisaSubstituto ? 'text-white' : 'text-amber-900'
-                                        }`}>
-                                          Substituir
-                                        </span>
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
                               );
                             })}
                           </div>
@@ -3377,20 +3401,25 @@ export default function EscalasMinisteriais({
 
       {/* Modal - Adicionar Escalado */}
       {modalEscala && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-none sm:rounded-2xl shadow-xl w-full h-full sm:h-auto sm:max-w-md sm:max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50 shrink-0">
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs flex items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#131d31] border border-slate-200/80 dark:border-[#2b3954] rounded-none sm:rounded-2xl shadow-2xl w-full h-full sm:h-auto sm:max-w-md sm:max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 text-slate-800 dark:text-slate-100">
+            <div className="flex justify-between items-center p-4 sm:p-5 border-b border-slate-100 dark:border-[#2b3954] bg-slate-50/90 dark:bg-[#17223b] shrink-0">
               <div>
-                <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+                <h3 className="text-sm sm:text-base font-black text-slate-800 dark:text-white uppercase tracking-wider">
                   Escalar Voluntários & Pregador
                 </h3>
                 {eventoSelecionado && (
-                  <p className="text-[10px] text-slate-500 font-bold truncate max-w-[280px]">
+                  <p className="text-xs text-slate-500 dark:text-slate-300 font-bold truncate max-w-[280px] sm:max-w-xs mt-0.5">
                     {eventoSelecionado.titulo} · {obterHoraExibicao(eventoSelecionado)}
                   </p>
                 )}
               </div>
-              <button type="button" onClick={fecharModalEscala} className="text-slate-400 hover:text-slate-600 cursor-pointer">
+              <button
+                type="button"
+                onClick={fecharModalEscala}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/80 transition cursor-pointer"
+                title="Fechar"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -3398,11 +3427,13 @@ export default function EscalasMinisteriais({
             <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto">
               {/* 1. Selecionar Ministério no TOPO do modal */}
               <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Ministério</label>
+                <label className="block text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest mb-1.5">
+                  Ministério
+                </label>
                 <select
                   value={novaEscala.ministerio_id}
                   onChange={(e) => handleSelecionarMinisterio(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white outline-none focus:border-blue-500 transition cursor-pointer font-bold text-slate-700"
+                  className="w-full border border-slate-200 dark:border-[#2b3954] rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-[#0b1329] outline-none focus:border-blue-500 dark:focus:border-blue-400 transition cursor-pointer font-bold text-slate-800 dark:text-slate-100 shadow-2xs"
                 >
                   <option value="">Selecione um ministério para escalar voluntários...</option>
                   {listaMinisterios.map(m => (
@@ -3417,16 +3448,16 @@ export default function EscalasMinisteriais({
                 if (!minSelObj || !isMinisterioCultos(minSelObj.nome)) return null;
 
                 return (
-                  <div className="bg-gradient-to-br from-blue-50/70 via-indigo-50/40 to-slate-50 border border-blue-200/90 rounded-2xl p-3.5 sm:p-4 space-y-2.5 shadow-xs animate-in fade-in duration-200">
+                  <div className="bg-gradient-to-br from-blue-50/80 via-indigo-50/40 to-slate-50 dark:from-[#17223b] dark:via-[#1a2948] dark:to-[#131d31] border border-blue-200/90 dark:border-blue-500/40 rounded-2xl p-4 space-y-3 shadow-xs animate-in fade-in duration-200">
                     <div className="flex items-center justify-between">
-                      <label className="block text-[10px] font-black text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+                      <label className="text-xs font-black text-blue-900 dark:text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
                         <span className="text-base">🎙️</span> Pregador do Culto
                       </label>
                       {pregadorModal && (
                         <button
                           type="button"
                           onClick={() => setPregadorModal('')}
-                          className="text-[9px] font-bold text-rose-600 hover:text-rose-800 transition cursor-pointer"
+                          className="text-[10px] font-bold text-rose-600 dark:text-rose-400 hover:text-rose-800 dark:hover:text-rose-300 transition cursor-pointer px-2 py-0.5 rounded-md hover:bg-rose-50 dark:hover:bg-rose-950/40"
                           title="Limpar pregador"
                         >
                           Limpar
@@ -3434,19 +3465,19 @@ export default function EscalasMinisteriais({
                       )}
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       <input
                         type="text"
                         value={pregadorModal}
                         onChange={(e) => setPregadorModal(e.target.value)}
                         placeholder="Digite o nome do pregador (ex: Pr. Marcos - Convidado)..."
-                        className="w-full border border-blue-200 rounded-xl px-3 py-2.5 text-xs bg-white outline-none focus:border-blue-500 transition font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-normal shadow-xs"
+                        className="w-full border border-blue-200 dark:border-[#2b3954] rounded-xl px-3 py-2.5 text-xs bg-white dark:bg-[#0b1329] outline-none focus:border-blue-500 dark:focus:border-blue-400 transition font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-400 shadow-xs"
                       />
 
                       {/* Seleção Rápida de Membro Cadastrado */}
                       {todasPessoasSistema.length > 0 && (
                         <div className="flex items-center gap-2 pt-0.5">
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider shrink-0">
+                          <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider shrink-0">
                             Ou selecione:
                           </span>
                           <select
@@ -3456,7 +3487,7 @@ export default function EscalasMinisteriais({
                                 setPregadorModal(e.target.value);
                               }
                             }}
-                            className="w-full border border-slate-200 rounded-lg px-2 py-1 text-[11px] bg-white outline-none focus:border-blue-500 transition cursor-pointer text-slate-600 font-medium"
+                            className="w-full border border-slate-200 dark:border-[#2b3954] rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-[#0b1329] outline-none focus:border-blue-500 dark:focus:border-blue-400 transition cursor-pointer text-slate-700 dark:text-slate-200 font-medium"
                           >
                             <option value="">— Membro cadastrado —</option>
                             {todasPessoasSistema.map(p => (
@@ -3467,14 +3498,14 @@ export default function EscalasMinisteriais({
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between text-[9px] text-blue-800/80 pt-0.5">
+                    <div className="flex items-center justify-between text-[11px] text-blue-800 dark:text-blue-300 font-medium pt-0.5">
                       <span>💡 Insira pregadores visitantes ou membros cadastrados.</span>
                     </div>
                   </div>
                 );
               })()}
 
-              <div className="space-y-4 pt-2 border-t border-slate-100">
+              <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-[#2b3954]">
                 {/* Seletor de Fardamento no Modal */}
                 {novaEscala.ministerio_id && (() => {
                   let minSelObj = listaMinisterios.find(m => String(m.id) === String(novaEscala.ministerio_id));
@@ -3496,21 +3527,21 @@ export default function EscalasMinisteriais({
                     : ["Farda Oficial", "Camisa Preta", "Camisa Branca", "Camisa Azul", "Social"];
 
                   return (
-                    <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-1">
-                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+                    <div className="bg-slate-50 dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] rounded-xl p-3.5 space-y-1.5">
+                      <label className="block text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest flex items-center gap-1.5">
                         <span>👕</span> Fardamento do Dia
                       </label>
                       <select
                         value={eventoSelecionado?.fardamentos?.[novaEscala.ministerio_id] || ''}
                         onChange={(e) => handleMudarFardamentoDia(novaEscala.ministerio_id, e.target.value)}
-                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm bg-white outline-none focus:border-blue-500 transition cursor-pointer font-bold text-slate-700"
+                        className="w-full border border-slate-200 dark:border-[#2b3954] rounded-xl px-3 py-2 text-sm bg-white dark:bg-[#0b1329] outline-none focus:border-blue-500 dark:focus:border-blue-400 transition cursor-pointer font-bold text-slate-800 dark:text-slate-100"
                       >
                         <option value="">Nenhum / Não especificado</option>
                         {opcoesFardamento.map(f => (
                           <option key={f} value={f}>{f}</option>
                         ))}
                       </select>
-                      <p className="text-[9px] text-slate-400">
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
                         Define a farda/vestimenta oficial para este ministério no dia do evento.
                       </p>
                     </div>
@@ -3519,8 +3550,8 @@ export default function EscalasMinisteriais({
 
                 {/* Lista de Funções para Escala Multifunção */}
                 <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                    <label className="block text-[11px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">
                       Funções da Equipe {novaEscala.ministerio_id ? `(${listaFuncoes.length})` : ''}
                     </label>
                     <button
@@ -3530,7 +3561,7 @@ export default function EscalasMinisteriais({
                       className="text-[10px] font-black uppercase tracking-wider text-white bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-400 hover:via-orange-400 hover:to-amber-500 border border-amber-300/40 shadow-sm shadow-amber-500/20 px-3 py-1.5 rounded-xl transition-all duration-200 cursor-pointer flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
                       title="Preencher automaticamente as funções usando histórico e disponibilidade"
                     >
-                      <Sparkles size={12} className="text-amber-100" />
+                      <Sparkles size={13} className="text-amber-100" />
                       <span>Sugerir com AutoEscala</span>
                     </button>
                   </div>
@@ -3551,17 +3582,17 @@ export default function EscalasMinisteriais({
                         const emOutrosEventos = todasEscalasVoluntario.filter(e => !e.is_mesmo_evento);
 
                         return (
-                          <div key={funcao.id} className="bg-slate-50 border border-slate-200/70 rounded-xl p-3 space-y-2 hover:border-blue-200 transition">
+                          <div key={funcao.id} className="bg-slate-50 dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] rounded-xl p-3.5 space-y-2.5 hover:border-blue-300 dark:hover:border-blue-500/50 transition shadow-2xs">
                             <div className="flex justify-between items-center">
-                              <span className="text-xs font-black text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
-                                <span className="text-blue-600">📌</span> {funcao.nome}
+                              <span className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5 uppercase tracking-wider">
+                                <span className="text-blue-600 dark:text-blue-400">📌</span> {funcao.nome}
                               </span>
                               {atribuicoesModal[funcao.id] ? (
-                                <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
-                                  ✓ Selecionado
+                                <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-1">
+                                  <span>✓</span> Selecionado
                                 </span>
                               ) : (
-                                <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                                <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 bg-slate-200/60 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
                                   Vago
                                 </span>
                               )}
@@ -3573,9 +3604,9 @@ export default function EscalasMinisteriais({
                                 const val = e.target.value;
                                 setAtribuicoesModal(prev => ({ ...prev, [funcao.id]: val }));
                               }}
-                              className={`w-full border rounded-xl px-3 py-2.5 text-xs bg-white outline-none transition cursor-pointer font-bold text-slate-700 ${noMesmoCulto.length > 0
-                                ? 'border-amber-400 focus:border-amber-500 bg-amber-50/20 ring-1 ring-amber-400/30'
-                                : 'border-slate-200 focus:border-blue-500'
+                              className={`w-full border rounded-xl px-3 py-2.5 text-xs bg-white dark:bg-[#0b1329] outline-none transition cursor-pointer font-bold text-slate-800 dark:text-slate-100 ${noMesmoCulto.length > 0
+                                ? 'border-amber-400 dark:border-amber-500 focus:border-amber-500 bg-amber-50/20 dark:bg-amber-950/30 ring-1 ring-amber-400/30'
+                                : 'border-slate-200 dark:border-[#2b3954] focus:border-blue-500 dark:focus:border-blue-400'
                                 }`}
                             >
                               <option value="">— Selecionar Voluntário —</option>
@@ -3592,20 +3623,20 @@ export default function EscalasMinisteriais({
 
                             {/* Detalhamento Visual das Outras Escalas do Voluntário Selecionado */}
                             {pIdSelecionado && (
-                              <div className="pt-0.5 space-y-1.5 animate-in fade-in duration-200">
+                              <div className="pt-1 space-y-2 animate-in fade-in duration-200">
                                 {/* Alerta de conflito / mesmo culto */}
                                 {noMesmoCulto.map(c => (
                                   <div
                                     key={c.id}
-                                    className="p-2.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 flex items-start gap-2 shadow-2xs"
+                                    className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 text-amber-950 dark:text-amber-200 flex items-start gap-2 shadow-2xs"
                                   >
-                                    <span className="text-sm shrink-0 leading-none mt-0.5">⚠️</span>
+                                    <span className="text-base shrink-0 leading-none mt-0.5">⚠️</span>
                                     <div className="min-w-0 flex-1 text-[11px] leading-snug">
-                                      <p className="font-black text-amber-900">
+                                      <p className="font-black text-amber-900 dark:text-amber-300">
                                         Já escalado neste mesmo culto!
                                       </p>
-                                      <p className="text-[10px] text-amber-800 mt-0.5 font-medium">
-                                        Função: <strong className="font-bold text-amber-950">{c.funcao_nome}</strong> no ministério <strong className="font-bold text-amber-950">{c.ministerio_nome}</strong>
+                                      <p className="text-[10px] text-amber-800 dark:text-amber-300/90 mt-0.5 font-medium">
+                                        Função: <strong className="font-black text-amber-950 dark:text-amber-100">{c.funcao_nome}</strong> no ministério <strong className="font-black text-amber-950 dark:text-amber-100">{c.ministerio_nome}</strong>
                                       </p>
                                     </div>
                                   </div>
@@ -3613,34 +3644,34 @@ export default function EscalasMinisteriais({
 
                                 {/* Lista de escalas em outros eventos do mês com Dia, Horário e Função */}
                                 {emOutrosEventos.length > 0 ? (
-                                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-50/70 via-blue-50/40 to-slate-50 border border-indigo-200/70 text-slate-800 space-y-1.5 shadow-2xs">
+                                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-50/80 via-blue-50/40 to-slate-50 dark:from-[#1a253c] dark:via-[#192237] dark:to-[#121929] border border-indigo-200/70 dark:border-indigo-800/50 text-slate-800 dark:text-slate-100 space-y-2 shadow-2xs">
                                     <div className="flex items-center justify-between">
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-indigo-900 flex items-center gap-1">
-                                        <span></span> Outras escalas no mês ({emOutrosEventos.length})
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-300 flex items-center gap-1">
+                                        <span>📅</span> Outras escalas no mês ({emOutrosEventos.length})
                                       </span>
                                     </div>
 
-                                    <div className="space-y-1 max-h-32 overflow-y-auto pr-0.5 custom-scrollbar">
+                                    <div className="space-y-1.5 max-h-32 overflow-y-auto pr-0.5 custom-scrollbar">
                                       {emOutrosEventos.map(esc => (
                                         <div
                                           key={esc.id}
-                                          className="bg-white border border-indigo-100 rounded-lg px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-1 shadow-2xs"
+                                          className="bg-white dark:bg-[#0b1329] border border-indigo-100 dark:border-indigo-900/60 rounded-lg px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-1.5 shadow-2xs"
                                         >
                                           <div className="flex items-center gap-1.5 min-w-0">
-                                            <span className="text-[11px] font-black text-slate-800 truncate">
+                                            <span className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate">
                                               {esc.data_formatada}
                                             </span>
                                             {esc.evento_titulo && (
-                                              <span className="text-[10px] text-slate-400 font-medium hidden sm:inline truncate max-w-[110px]">
+                                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium hidden sm:inline truncate max-w-[120px]">
                                                 · {esc.evento_titulo}
                                               </span>
                                             )}
                                           </div>
-                                          <div className="flex items-center gap-1 shrink-0">
-                                            <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                                          <div className="flex items-center gap-1.5 shrink-0">
+                                            <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60">
                                               {esc.funcao_nome}
                                             </span>
-                                            <span className="text-[9px] font-bold text-slate-500">
+                                            <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400">
                                               ({esc.ministerio_nome})
                                             </span>
                                           </div>
@@ -3649,8 +3680,8 @@ export default function EscalasMinisteriais({
                                     </div>
                                   </div>
                                 ) : noMesmoCulto.length === 0 ? (
-                                  <div className="px-2.5 py-1.5 rounded-xl bg-emerald-50/80 border border-emerald-200/70 text-[10px] text-emerald-800 flex items-center gap-1.5 shadow-2xs">
-                                    <span className="text-emerald-600 font-bold">✨</span>
+                                  <div className="px-2.5 py-2 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px] text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5 shadow-2xs">
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">✨</span>
                                     <span className="font-semibold">Voluntário disponível · Sem outras escalas registradas no mês</span>
                                   </div>
                                 ) : null}
@@ -3661,13 +3692,13 @@ export default function EscalasMinisteriais({
                       })}
 
                       {listaFuncoes.length === 0 && (
-                        <div className="py-8 text-center text-xs text-slate-400 italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 italic bg-slate-50 dark:bg-[#17223b] rounded-xl border border-dashed border-slate-200 dark:border-[#2b3954]">
                           Nenhuma função cadastrada para este ministério.
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="py-8 text-center text-xs text-slate-400 italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    <div className="py-8 text-center text-xs text-slate-500 dark:text-slate-400 italic bg-slate-50 dark:bg-[#17223b] rounded-xl border border-dashed border-slate-200 dark:border-[#2b3954]">
                       Selecione um ministério no menu suspenso acima para carregar os voluntários da equipe.
                     </div>
                   )}
@@ -3675,11 +3706,11 @@ export default function EscalasMinisteriais({
               </div>
             </div>
 
-            <div className="p-4 sm:p-6 border-t border-slate-100 bg-white/95 backdrop-blur-xs shrink-0 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] z-10">
+            <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-[#2b3954] bg-white/95 dark:bg-[#17223b] backdrop-blur-xs shrink-0 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.3)] z-10">
               <button
                 type="button"
                 onClick={fecharModalEscala}
-                className="w-full sm:flex-1 py-2.5 border border-slate-200 hover:border-slate-300 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all active:scale-95 cursor-pointer text-center"
+                className="w-full sm:flex-1 py-2.5 border border-slate-200 dark:border-[#2b3954] hover:border-slate-300 dark:hover:border-slate-600 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1c2b4a] transition-all active:scale-95 cursor-pointer text-center"
               >
                 Cancelar
               </button>
@@ -3692,8 +3723,8 @@ export default function EscalasMinisteriais({
                 {salvandoEscalasMultiplas
                   ? 'Salvando...'
                   : novaEscala.ministerio_id
-                    ? 'Salvar Escalas do Ministério'
-                    : 'Salvar Pregador do Evento'}
+                    ? 'Salvar Escala'
+                    : 'Salvar Pregador'}
               </button>
             </div>
           </div>
@@ -4896,11 +4927,10 @@ export default function EscalasMinisteriais({
                           key={cand.pessoa_id}
                           type="button"
                           onClick={() => setSubstitutoSelecionado(cand)}
-                          className={`w-full text-left p-2.5 rounded-xl border transition-all duration-200 flex items-center justify-between cursor-pointer ${
-                            isSel
+                          className={`w-full text-left p-2.5 rounded-xl border transition-all duration-200 flex items-center justify-between cursor-pointer ${isSel
                               ? 'bg-blue-50/80 border-blue-400 text-blue-900 shadow-2xs ring-1 ring-blue-300'
                               : 'bg-white border-slate-200/70 hover:border-slate-300 hover:bg-slate-50/60 text-slate-700'
-                          }`}
+                            }`}
                         >
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
@@ -4924,9 +4954,8 @@ export default function EscalasMinisteriais({
                                 ⚠️ Já escalado
                               </span>
                             ) : null}
-                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                              isSel ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300'
-                            }`}>
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSel ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300'
+                              }`}>
                               {isSel && <Check size={10} strokeWidth={3} />}
                             </div>
                           </div>
@@ -4945,11 +4974,10 @@ export default function EscalasMinisteriais({
                 <div className="grid grid-cols-2 gap-2">
                   <label
                     onClick={() => setStatusInicialSubstituto('pendente')}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${
-                      statusInicialSubstituto === 'pendente'
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${statusInicialSubstituto === 'pendente'
                         ? 'border-blue-500 bg-blue-50 text-blue-900 font-bold'
                         : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
@@ -4963,11 +4991,10 @@ export default function EscalasMinisteriais({
 
                   <label
                     onClick={() => setStatusInicialSubstituto('confirmado')}
-                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${
-                      statusInicialSubstituto === 'confirmado'
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${statusInicialSubstituto === 'confirmado'
                         ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold'
                         : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"

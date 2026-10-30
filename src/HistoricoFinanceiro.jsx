@@ -41,16 +41,16 @@ export default function HistoricoFinanceiro({ onVoltar }) {
       </div>
 
       <Card className="p-0">
-        <CardHeader titulo="Logs de Atividade" />
+        <CardHeader titulo="Logs de Atividade" className="dark:!bg-[#1c2b4a] dark:!border-[#2b3954]" />
         {erro && (
-          <div className="p-4 m-4 bg-rose-50 border border-rose-100 rounded-xl text-rose-700 text-xs font-semibold">
+          <div className="p-4 m-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-100 dark:border-rose-900/40 rounded-xl text-rose-700 dark:text-rose-300 text-xs font-semibold">
             {erro}
           </div>
         )}
         {carregando ? (
-          <div className="p-10 text-center text-sm text-slate-400">Carregando histórico...</div>
+          <div className="p-10 text-center text-sm text-slate-400 dark:text-slate-500">Carregando histórico...</div>
         ) : logs.length === 0 ? (
-          <div className="p-10 text-center text-sm text-slate-400">Nenhuma ação registrada ainda.</div>
+          <div className="p-10 text-center text-sm text-slate-400 dark:text-slate-500">Nenhuma ação registrada ainda.</div>
         ) : (
           <div className="overflow-x-auto">
             {/* TABELA - Visível apenas em Desktop */}
@@ -66,18 +66,18 @@ export default function HistoricoFinanceiro({ onVoltar }) {
               <tbody>
                 {logs.map((log) => (
                   <tr key={log.id}>
-                    <td className="whitespace-nowrap">
+                    <td className="whitespace-nowrap text-slate-600 dark:text-slate-300">
                       {new Date(log.created_at).toLocaleString('pt-BR')}
                     </td>
-                    <td className="font-semibold text-slate-700">
+                    <td className="font-semibold text-slate-700 dark:text-slate-200">
                       {log.usuario_email}
                     </td>
                     <td>
-                      <span className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-[10px] font-bold uppercase">
+                      <span className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-transparent dark:border-slate-700 text-[10px] font-bold uppercase">
                         {log.acao}
                       </span>
                     </td>
-                    <td className="text-slate-500 text-xs italic">
+                    <td className="text-slate-500 dark:text-slate-400 text-xs italic">
                       {log.detalhes}
                     </td>
                   </tr>
@@ -86,25 +86,25 @@ export default function HistoricoFinanceiro({ onVoltar }) {
             </table>
 
             {/* LISTA COMPACTA - Visível apenas em Mobile */}
-            <div className="md:hidden divide-y divide-slate-100">
+            <div className="md:hidden divide-y divide-slate-100 dark:divide-[#2b3954]">
               {logs.map((log) => (
-                <div key={log.id} className="p-4 space-y-2 hover:bg-slate-50 transition-colors">
+                <div key={log.id} className="p-4 space-y-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                   <div className="flex justify-between items-start">
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">
                         {new Date(log.created_at).toLocaleDateString('pt-BR')}
                       </span>
-                      <span className="text-[10px] font-bold text-slate-400">
+                      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400">
                         {new Date(log.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <span className="px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-[9px] font-black uppercase border border-slate-200">
+                    <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[9px] font-black uppercase border border-slate-200 dark:border-slate-700">
                       {log.acao}
                     </span>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-800 truncate">{log.usuario_email}</p>
-                    <p className="text-xs text-slate-500 italic mt-1 leading-relaxed">"{log.detalhes}"</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{log.usuario_email}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 italic mt-1 leading-relaxed">"{log.detalhes}"</p>
                   </div>
                 </div>
               ))}

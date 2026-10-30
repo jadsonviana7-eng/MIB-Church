@@ -146,11 +146,14 @@ export default function FuncoesMinisteriais({ ministerioId }) {
         </div>
 
         <button
+          type="button"
           onClick={abrirNovo}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-200 transition active:scale-95 cursor-pointer"
+          className="group relative overflow-hidden flex items-center gap-2 py-2 px-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-blue-600/25 hover:shadow-lg hover:shadow-blue-600/40 border border-blue-400/30 transition-all duration-200 active:scale-95 cursor-pointer"
         >
-          <Plus size={14} strokeWidth={3} />
-          Nova Função
+          <div className="w-4.5 h-4.5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+            <Plus size={13} strokeWidth={3} />
+          </div>
+          <span>Nova Função</span>
         </button>
       </div>
 

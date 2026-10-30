@@ -144,22 +144,22 @@ export default function GestaoMinisterial(props) {
   const IconeAbaAtual = abaAtual.icon;
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-6 modulo-gestao-ministerial">
       {/* ── CABEÇALHO DO MÓDULO (OCULTO NA ABA DASHBOARD) ── */}
       {aba !== 'dashboard' && (
         <>
-          <div className="hidden md:block animate-in fade-in duration-300">
-            <h1 className="text-2xl font-black text-slate-800 tracking-tight">
+          <div className={`hidden md:block animate-in fade-in duration-300 transition-all ${colunaRecolhida ? 'lg:pr-24' : 'lg:pr-72 xl:pr-80'}`}>
+            <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
               {abaAtual.titulo || abaAtual.label}
             </h1>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {abaAtual.desc}
             </p>
           </div>
 
           {/* ── CARD BRANCO DE TÍTULO NO MOBILE (MESMA LARGURA DOS ELEMENTOS DA PÁGINA) ── */}
-          <div className="md:hidden w-full mb-4 bg-white px-4 py-3.5 rounded-b-2xl sm:rounded-b-3xl rounded-t-none border border-t-0 border-slate-200/90 shadow-2xs flex items-center justify-center">
-            <h1 className="text-sm font-black uppercase tracking-wider text-slate-800 text-center truncate">
+          <div className="md:hidden w-full mb-4 bg-white dark:bg-[#17223b] px-4 py-3.5 rounded-b-2xl sm:rounded-b-3xl rounded-t-none border border-t-0 border-slate-200/90 dark:border-[#2b3954] shadow-2xs flex items-center justify-center">
+            <h1 className="text-sm font-black uppercase tracking-wider text-slate-800 dark:text-white text-center truncate">
               {abaAtual.titulo || abaAtual.label}
             </h1>
           </div>
@@ -169,7 +169,7 @@ export default function GestaoMinisterial(props) {
       {/* ── MENU DE ABAS NO TOPO NO MOBILE (BOTÕES QUADRADOS COM ÍCONES ACIMA E NOME ABAIXO) ── */}
       <div className="lg:hidden w-full">
         <div
-          className="grid gap-1 sm:gap-1.5 w-full bg-white p-1 rounded-2xl border border-slate-200/90 shadow-2xs"
+          className="grid gap-1 sm:gap-1.5 w-full bg-white dark:bg-[#17223b] p-1 rounded-2xl border border-slate-200/90 dark:border-[#2b3954] shadow-2xs"
           style={{ gridTemplateColumns: `repeat(${abas.length}, minmax(0, 1fr))` }}
         >
           {abas.map((a) => {
@@ -183,13 +183,13 @@ export default function GestaoMinisterial(props) {
                 className={`flex flex-col items-center justify-center py-2 px-0.5 rounded-xl transition-all duration-200 cursor-pointer active:scale-95 text-center min-w-0 ${ativo
                   ? 'bg-gradient-to-tr from-blue-700 via-indigo-700 to-blue-800 text-white shadow-md shadow-blue-700/25'
                   : a.id === 'repertorio'
-                    ? 'text-purple-700 hover:text-purple-900 bg-purple-50/70 border border-purple-200/60'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                    ? 'text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/40'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-[#1c2b4a]'
                 }`}
                 title={a.label}
               >
                 <Icon size={18} strokeWidth={ativo ? 2.5 : 2} className="shrink-0 mb-1" />
-                <span className={`text-[8.5px] uppercase tracking-tighter leading-tight truncate w-full text-center px-0.5 ${ativo ? 'font-black text-white' : 'font-bold text-slate-700'}`}>
+                <span className={`text-[8.5px] uppercase tracking-tighter leading-tight truncate w-full text-center px-0.5 ${ativo ? 'font-black text-white' : 'font-bold text-slate-700 dark:text-slate-300'}`}>
                   {a.label}
                 </span>
               </button>
@@ -250,14 +250,14 @@ export default function GestaoMinisterial(props) {
                 <button
                   type="button"
                   onClick={() => handleNavegarTab('config')}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200/90 shadow-xs text-xs font-bold transition active:scale-95 cursor-pointer group"
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-[#17223b] hover:bg-slate-50 dark:hover:bg-[#1c2b4a] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white border border-slate-200/90 dark:border-[#2b3954] shadow-xs text-xs font-bold transition active:scale-95 cursor-pointer group"
                   title="Voltar para os detalhes do Ministério de Louvor"
                 >
-                  <ChevronLeft size={16} strokeWidth={2.5} className="text-slate-400 group-hover:text-slate-700 transition" />
+                  <ChevronLeft size={16} strokeWidth={2.5} className="text-slate-400 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-white transition" />
                   <span>Voltar para Ministério de Louvor</span>
                 </button>
-                <div className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200/60 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xs">
-                  <Music size={13} className="text-purple-600" />
+                <div className="text-[11px] font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 border border-purple-200/60 dark:border-purple-800/50 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xs">
+                  <Music size={13} className="text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
 
@@ -273,48 +273,57 @@ export default function GestaoMinisterial(props) {
 
 
 
-        {/* ── COLUNA FIXA/STICKY À DIREITA (DESKTOP) ── */}
+        {/* ── PLACEHOLDER DE ESPAÇO PARA O MENU FIXO À DIREITA (DESKTOP) ── */}
+        <div
+          className={`hidden lg:block shrink-0 transition-all duration-300 pointer-events-none ${
+            colunaRecolhida ? 'lg:w-20' : 'lg:w-64 xl:w-72'
+          }`}
+          aria-hidden="true"
+        />
+
+        {/* ── MENU DE NAVEGAÇÃO FIXO À DIREITA SEM ROLAGEM (DESKTOP) ── */}
         <aside
-          className={`hidden lg:block shrink-0 transition-all duration-300 lg:sticky lg:top-4 z-20 ${colunaRecolhida ? 'lg:w-20' : 'lg:w-64 xl:w-72'
-            }`}
+          className={`hidden lg:block transition-all duration-300 fixed lg:top-20 lg:right-10 z-30 ${
+            colunaRecolhida ? 'lg:w-20' : 'lg:w-64 xl:w-72'
+          }`}
         >
-          <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/80 shadow-sm p-3.5 space-y-3">
+          <div className="bg-white/95 dark:bg-[#17223b]/95 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md p-3.5 space-y-3 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-none">
             {/* Header da Coluna Lateral */}
             {colunaRecolhida ? (
-              <div className="flex flex-col items-center pb-2 border-b border-slate-100 gap-2">
+              <div className="flex flex-col items-center pb-2 border-b border-slate-100 dark:border-[#2b3954] gap-2">
                 <div
-                  className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-sm shadow-xs border border-blue-100/60"
+                  className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold text-sm shadow-xs border border-blue-100/60 dark:border-blue-900/40"
                   title="Gestor Ministerial"
                 >
-                  <ShieldAlert size={20} className="text-blue-700" />
+                  <ShieldAlert size={20} className="text-blue-700 dark:text-blue-400" />
                 </div>
                 <button
                   type="button"
                   onClick={() => handleToggleColunaRecolhida(false)}
                   title="Expandir menu"
-                  className="p-1 rounded-lg text-slate-400 hover:text-blue-700 hover:bg-blue-50 transition cursor-pointer"
+                  className="p-1 rounded-lg text-slate-400 hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition cursor-pointer"
                 >
                   <ChevronLeft size={16} />
                 </button>
               </div>
             ) : (
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 px-1">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-[#2b3954] px-1">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-sm shadow-xs border border-blue-100/60 shrink-0">
-                    <ShieldAlert size={18} className="text-blue-700" />
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold text-sm shadow-xs border border-blue-100/60 dark:border-blue-900/40 shrink-0">
+                    <ShieldAlert size={18} className="text-blue-700 dark:text-blue-400" />
                   </div>
                   <div className="min-w-0">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 truncate">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white truncate">
                       Gestor Ministerial
                     </h3>
-                    <p className="text-[10px] text-slate-400 font-bold truncate">Menu de Navegação</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold truncate">Menu de Navegação</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleToggleColunaRecolhida(true)}
                   title="Recolher menu para ícones"
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer shrink-0"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1c2b4a] transition cursor-pointer shrink-0"
                 >
                   <ChevronRight size={16} />
                 </button>
@@ -336,8 +345,8 @@ export default function GestaoMinisterial(props) {
                       className={`w-full flex items-center justify-center p-3 rounded-2xl transition-all duration-200 group cursor-pointer active:scale-95 relative ${ativo
                         ? 'bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white shadow-lg shadow-blue-700/25 border border-blue-400/30'
                         : a.id === 'repertorio'
-                          ? 'text-purple-700 hover:text-purple-900 bg-purple-50/70 hover:bg-purple-100/80 border border-purple-200/80'
-                          : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
+                          ? 'text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100/80 dark:hover:bg-purple-900/50 border border-purple-200/80 dark:border-purple-800/40'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-[#1c2b4a] border border-transparent'
                         }`}
                     >
                       <Icon size={20} strokeWidth={ativo ? 2.5 : 2} />
@@ -361,26 +370,26 @@ export default function GestaoMinisterial(props) {
                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-left transition-all duration-200 group cursor-pointer active:scale-95 ${ativo
                         ? 'bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white shadow-lg shadow-blue-700/25 border border-blue-400/30'
                         : a.id === 'repertorio'
-                          ? 'text-purple-700 hover:text-purple-900 bg-purple-50/60 hover:bg-purple-100/70 border border-purple-200/70'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
+                          ? 'text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 bg-purple-50/60 dark:bg-purple-950/40 hover:bg-purple-100/70 dark:hover:bg-purple-900/50 border border-purple-200/70 dark:border-purple-800/40'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-[#1c2b4a] border border-transparent'
                         }`}
                     >
                       <span
                         className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center transition-all duration-200 ${ativo
                           ? 'bg-white/20 text-white shadow-inner'
                           : a.id === 'repertorio'
-                            ? 'bg-purple-100 text-purple-700 group-hover:bg-purple-200'
-                            : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-700'
+                            ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/50'
+                            : 'bg-slate-100 dark:bg-[#1c2b4a] text-slate-500 dark:text-slate-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/50 group-hover:text-blue-700 dark:group-hover:text-blue-300'
                           }`}
                       >
                         <Icon size={18} strokeWidth={ativo ? 2.5 : 2} />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className={`text-xs font-black uppercase tracking-wider leading-tight truncate ${ativo ? 'text-white' : a.id === 'repertorio' ? 'text-purple-900 font-bold' : 'text-slate-700 group-hover:text-slate-900'
+                        <p className={`text-xs font-black uppercase tracking-wider leading-tight truncate ${ativo ? 'text-white' : a.id === 'repertorio' ? 'text-purple-900 dark:text-purple-200 font-bold' : 'text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white'
                           }`}>
                           {a.label}
                         </p>
-                        <p className={`text-[10px] leading-tight truncate mt-0.5 font-medium ${ativo ? 'text-blue-100' : a.id === 'repertorio' ? 'text-purple-600/80 font-bold' : 'text-slate-400'
+                        <p className={`text-[10px] leading-tight truncate mt-0.5 font-medium ${ativo ? 'text-blue-100' : a.id === 'repertorio' ? 'text-purple-600/80 dark:text-purple-300/80 font-bold' : 'text-slate-400'
                           }`}>
                           {a.menuDesc || a.desc}
                         </p>
@@ -396,7 +405,7 @@ export default function GestaoMinisterial(props) {
 
             {/* Rodapé sutil com identificação */}
             {!colunaRecolhida && (
-              <div className="pt-2 px-1 border-t border-slate-100 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <div className="pt-2 px-1 border-t border-slate-100 dark:border-[#2b3954] flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 <span>MIB Church</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-500" title="Módulo Ativo" />
               </div>

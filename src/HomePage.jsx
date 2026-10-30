@@ -33,11 +33,20 @@ export default function HomePage({
   onVerReuniao = () => {},
   reunioesVistas = [],
   abaDashboard,
-  setAbaDashboard
+  setAbaDashboard,
+  abrirPessoasFiltradas = null
 }) {
   const [localAbaAtiva, setLocalAbaAtiva] = useState('visao_geral');
   const abaAtiva = abaDashboard !== undefined ? abaDashboard : localAbaAtiva;
   const setAbaAtiva = setAbaDashboard !== undefined ? setAbaDashboard : setLocalAbaAtiva;
+
+  const handleNavegarPessoas = useCallback((novosFiltros = {}) => {
+    if (abrirPessoasFiltradas) {
+      abrirPessoasFiltradas(novosFiltros);
+    } else if (onNavigate) {
+      onNavigate('pessoas', 'todos');
+    }
+  }, [abrirPessoasFiltradas, onNavigate]);
   
   // Estados para dados de aviso e igreja
   const [avisos, setAvisos] = useState([]);
@@ -163,6 +172,26 @@ export default function HomePage({
   const zonasDados = useMemo(() => agrupamentoPor(pessoasAtivas, (p) => nomeZona(zonas, p.zona_id)), [pessoasAtivas, zonas]);
   const faixasDados = useMemo(() => agrupamentoPor(pessoasAtivas, (p) => faixasEtarias.find((f) => f.id === faixaDaIdade(p.data_nascimento))?.curto || 'Não informada'), [pessoasAtivas]);
   const faixasCelulas = useMemo(() => agrupamentoPor(celulas, (c) => c.faixa_etaria || 'Não informada'), [celulas]);
+
+  const membrosCelulaDados = useMemo(() => {
+    return agrupamentoPor(pessoasAtivas, (p) => p.celula_id ? 'Em Célula' : 'Sem Célula');
+  }, [pessoasAtivas]);
+
+  const celulasPorZonaDados = useMemo(() => {
+    return agrupamentoPor(celulas, (c) => nomeZona(zonas, c.zona_id));
+  }, [celulas, zonas]);
+
+  const estadosCivisDados = useMemo(() => {
+    return agrupamentoPor(pessoasAtivas, (p) => p.estado_civil || 'Não informado');
+  }, [pessoasAtivas]);
+
+  const cargosDados = useMemo(() => {
+    return agrupamentoPor(pessoasAtivas, (p) => p.cargo || 'Membro');
+  }, [pessoasAtivas]);
+
+  const atuacoesDados = useMemo(() => {
+    return agrupamentoPor(pessoasAtivas, (p) => p.campo_atuacao || 'Geral');
+  }, [pessoasAtivas]);
 
   const aniversariantesMes = useMemo(() => {
     return pessoasAtivas
@@ -399,30 +428,37 @@ export default function HomePage({
               <CardMobileIndicador
                 label="Membros"
                 valor={totalPessoasAtivas}
-                detalhe="Ativos"
+                detalhe="Ativos (toque)"
                 icon={Users}
                 colorBg="bg-blue-600"
+                onClick={() => handleNavegarPessoas({})}
               />
               <CardMobileIndicador
                 label="Células"
                 valor={totalCelulasAtivas}
-                detalhe="Ativas"
+                detalhe="Ativas (toque)"
                 icon={Home}
                 colorBg="bg-emerald-600"
+                onClick={() => onNavigate('celulas', 'todas')}
               />
               <CardMobileIndicador
                 label="Convertidos"
                 valor={novosConvertidosMes}
-                detalhe="Este Mês"
+                detalhe="Este Mês (toque)"
                 icon={Sparkles}
                 colorBg="bg-purple-600"
+                onClick={() => {
+                  const mesAtual = meses[new Date().getMonth()];
+                  handleNavegarPessoas({ mesConversao: mesAtual, novoConvertido: true });
+                }}
               />
               <CardMobileIndicador
                 label="Batismo"
                 valor={`${taxaBatismo}%`}
-                detalhe={`${totalBatizados} bat.`}
+                detalhe={`${totalBatizados} bat. (toque)`}
                 icon={Award}
                 colorBg="bg-amber-500"
+                onClick={() => handleNavegarPessoas({ batizado: 'sim', relatorioCampo: 'Batismo', relatorioValor: 'Batizado' })}
               />
             </div>
 
@@ -592,41 +628,79 @@ export default function HomePage({
               <StatCard 
                 label="Células" 
                 valor={totalCelulasAtivas} 
-                detalhe="Ativas" 
+                detalhe="Ativas (toque)" 
+                onClick={() => onNavigate('celulas', 'todas')}
                 icone={<div className="p-1.5 rounded-lg bg-blue-50 border border-blue-100"><Home className="w-5 h-5 text-blue-600" /></div>}
                 className="p-3 flex-col"
               />
               <StatCard 
                 label="Reuniões" 
                 valor={totalReunioes} 
-                detalhe="Relatórios" 
+                detalhe="Relatórios (toque)" 
+                onClick={() => onNavigate('celulas', 'reunioes')}
                 icone={<div className="p-1.5 rounded-lg bg-purple-50 border border-purple-100"><BookOpen className="w-5 h-5 text-purple-600" /></div>}
                 className="p-3 flex-col"
               />
               <StatCard 
                 label="Média Vis." 
                 valor={mediaVisitantes} 
-                detalhe="Por Reunião" 
+                detalhe="Por Reunião (toque)" 
+                onClick={() => onNavigate('celulas', 'reunioes')}
                 icone={<div className="p-1.5 rounded-lg bg-pink-50 border border-pink-100"><Users className="w-5 h-5 text-pink-600" /></div>}
                 className="p-3 flex-col"
               />
               <StatCard 
                 label="Ofertas" 
                 valor={formatarBRL(ofertasCelulasMes)} 
-                detalhe="Nas Células" 
+                detalhe="Nas Células (toque)" 
+                onClick={() => onNavigate('financeiro', 'dashboard')}
                 icone={<div className="p-1.5 rounded-lg bg-emerald-50 border border-emerald-100"><Coins className="w-5 h-5 text-emerald-600" /></div>}
                 className="p-3 flex-col font-medium"
               />
             </div>
 
-            {/* Rosca Faixa Etária Celulas */}
-            <DoughnutCard titulo="Faixa etária das células" dados={faixasCelulas} />
+            {/* Roscas de Distribuição das Células Interativas */}
+            <DoughnutCard 
+              titulo="Faixa etária das células" 
+              dados={faixasCelulas} 
+              onSliceClick={(slice) => {
+                if (!slice || !slice.nome) return;
+                handleNavegarPessoas({
+                  celulaFaixaEtaria: slice.nome,
+                  relatorioCampo: 'Faixa etaria',
+                  relatorioValor: slice.nome
+                });
+              }}
+            />
+            <DoughnutCard 
+              titulo="Integração em Células" 
+              dados={membrosCelulaDados} 
+              onSliceClick={(slice) => {
+                if (!slice || !slice.nome) return;
+                handleNavegarPessoas({
+                  temCelula: slice.nome === 'Em Célula' ? 'sim' : 'nao'
+                });
+              }}
+            />
+            <DoughnutCard 
+              titulo="Células por Zona" 
+              dados={celulasPorZonaDados} 
+              onSliceClick={(slice) => {
+                if (!slice || !slice.nome) return;
+                const z = zonas.find(item => item.nome === slice.nome);
+                handleNavegarPessoas({
+                  zona: z ? z.id : '',
+                  relatorioCampo: 'Zona de moradia',
+                  relatorioValor: slice.nome
+                });
+              }}
+            />
 
             {/* Reuniões recentes adaptadas para mobile */}
             <div className="bg-white rounded-xl border border-slate-150 p-4 shadow-3xs space-y-3">
               <div className="border-b border-slate-50 pb-2">
                 <h4 className="font-bold text-slate-800 text-xs">Reuniões Recentes</h4>
-                <p className="text-[9px] text-slate-400">Toque para abrir o relatório</p>
+                <p className="text-[9px] text-slate-400">Toque para abrir o relatório ou toque em Membros para filtrar</p>
               </div>
 
               {relatoriosCelula.length === 0 ? (
@@ -659,11 +733,20 @@ export default function HomePage({
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-blue-50/60 border border-blue-100/60 shadow-3xs">
+                          <div 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNavegarPessoas({ celula: relatorio.celula_id, celulaNome: relatorio.celulas?.nome });
+                            }}
+                            className="flex flex-col items-center justify-center p-2 rounded-xl bg-blue-50/60 border border-blue-100/60 shadow-3xs cursor-pointer active:scale-95 transition-all"
+                            title="Toque para filtrar membros desta célula"
+                          >
                             <span className="text-base font-black text-blue-700 leading-none">
                               {relatorio.presencas_relatorio?.[0]?.count || 0}
                             </span>
-                            <span className="text-[9px] font-bold text-blue-500 uppercase mt-1.5">Membros</span>
+                            <span className="text-[9px] font-bold text-blue-500 uppercase mt-1.5 flex items-center gap-0.5">
+                              Membros <span className="text-[8px]">🔍</span>
+                            </span>
                           </div>
                           <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-purple-50/60 border border-purple-100/60 shadow-3xs">
                             <span className="text-base font-black text-purple-700 leading-none">
@@ -684,12 +767,41 @@ export default function HomePage({
         {/* ── ABA 3: CRESCIMENTO & DEMOGRAFIA (MOBILE) ── */}
         {abaAtiva === 'demografia' && (
           <div className="space-y-5">
-            <DoughnutCard titulo="Distribuição por Zona" dados={zonasDados} />
-            <DoughnutCard titulo="Faixa Etária (Membros)" dados={faixasDados} />
+            <DoughnutCard 
+              titulo="Distribuição por Zona" 
+              dados={zonasDados} 
+              onSliceClick={(slice) => {
+                if (!slice || !slice.nome) return;
+                const z = zonas.find(item => item.nome === slice.nome);
+                handleNavegarPessoas({
+                  zona: z ? z.id : '',
+                  relatorioCampo: 'Zona de moradia',
+                  relatorioValor: slice.nome
+                });
+              }}
+            />
+            <DoughnutCard 
+              titulo="Faixa Etária (Membros)" 
+              dados={faixasDados} 
+              onSliceClick={(slice) => {
+                if (!slice || !slice.nome) return;
+                const f = faixasEtarias.find(item => item.curto === slice.nome || item.nome === slice.nome || item.id === slice.nome);
+                handleNavegarPessoas({
+                  faixaEtaria: f ? f.id : '',
+                  relatorioCampo: 'Faixa etaria',
+                  relatorioValor: slice.nome
+                });
+              }}
+            />
             
             {/* Gênero e Batismo */}
             <div className="bg-white rounded-xl border border-slate-150 p-4 shadow-3xs space-y-4">
-              <h4 className="font-bold text-slate-855 text-xs border-b border-slate-50 pb-2">Perfil Demográfico</h4>
+              <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+                <h4 className="font-bold text-slate-855 text-xs">Perfil Demográfico</h4>
+                <span className="text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-200/60 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                  🔍 Toque p/ filtrar
+                </span>
+              </div>
               
               {/* Gênero */}
               <div className="space-y-3">
@@ -698,20 +810,32 @@ export default function HomePage({
                 </div>
                 <div className="flex h-4 overflow-hidden rounded-full bg-slate-100 p-0.5 border border-slate-200">
                   <div 
-                    className="rounded-full bg-linear-to-r from-blue-400 to-blue-600" 
+                    onClick={() => handleNavegarPessoas({ genero: 'Masculino', relatorioCampo: 'Sexo', relatorioValor: 'Masculino' })}
+                    className="rounded-full bg-linear-to-r from-blue-400 to-blue-600 cursor-pointer active:opacity-80 transition-all" 
                     style={{ width: `${generoStats.pctHomens}%` }} 
+                    title="Filtrar Homens"
                   />
                   <div 
-                    className="rounded-full bg-linear-to-r from-rose-400 to-rose-600 ml-0.5" 
+                    onClick={() => handleNavegarPessoas({ genero: 'Feminino', relatorioCampo: 'Sexo', relatorioValor: 'Feminino' })}
+                    className="rounded-full bg-linear-to-r from-rose-400 to-rose-600 ml-0.5 cursor-pointer active:opacity-80 transition-all" 
                     style={{ width: `${generoStats.pctMulheres}%` }} 
+                    title="Filtrar Mulheres"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                  <div className="py-2 bg-blue-50/50 border border-blue-100 rounded-xl">
+                  <div 
+                    onClick={() => handleNavegarPessoas({ genero: 'Masculino', relatorioCampo: 'Sexo', relatorioValor: 'Masculino' })}
+                    className="py-2 bg-blue-50/50 border border-blue-100 rounded-xl cursor-pointer active:scale-95 transition-all"
+                    title="Clique para ver membros masculinos"
+                  >
                     <span className="block text-base font-black text-blue-700">{generoStats.homens}</span>
                     <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Homens ({generoStats.pctHomens}%)</span>
                   </div>
-                  <div className="py-2 bg-rose-50/50 border border-rose-100 rounded-xl">
+                  <div 
+                    onClick={() => handleNavegarPessoas({ genero: 'Feminino', relatorioCampo: 'Sexo', relatorioValor: 'Feminino' })}
+                    className="py-2 bg-rose-50/50 border border-rose-100 rounded-xl cursor-pointer active:scale-95 transition-all"
+                    title="Clique para ver membros femininos"
+                  >
                     <span className="block text-base font-black text-rose-700">{generoStats.mulheres}</span>
                     <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Mulheres ({generoStats.pctMulheres}%)</span>
                   </div>
@@ -719,9 +843,16 @@ export default function HomePage({
               </div>
 
               {/* Batismo */}
-              <div className="border-t border-slate-50 pt-3">
+              <div 
+                onClick={() => handleNavegarPessoas({ batizado: 'sim', relatorioCampo: 'Batismo', relatorioValor: 'Batizado' })}
+                className="border-t border-slate-50 pt-3 cursor-pointer active:bg-amber-50/50 rounded-xl p-1.5 transition-all"
+                title="Clique para ver membros batizados nas águas"
+              >
                 <div className="flex justify-between items-center text-[10px] font-bold text-slate-450 uppercase tracking-wider mb-1.5">
-                  <span>Membros Batizados nas Águas</span>
+                  <span className="flex items-center gap-1.5">
+                    Membros Batizados nas Águas
+                    <span className="text-[8px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1 py-0.2 rounded">Filtrar</span>
+                  </span>
                   <span className="text-amber-600 font-extrabold">{taxaBatismo}%</span>
                 </div>
                 <div className="relative w-full h-2 rounded-full bg-slate-100 overflow-hidden border border-slate-200">
@@ -735,6 +866,46 @@ export default function HomePage({
                 </p>
               </div>
             </div>
+
+            {/* Demais gráficos demográficos adaptados para mobile */}
+            <DoughnutCard 
+              titulo="Estado Civil" 
+              dados={estadosCivisDados} 
+              onSliceClick={(slice) => {
+                if (!slice || !slice.nome) return;
+                handleNavegarPessoas({
+                  estadoCivil: slice.nome,
+                  relatorioCampo: 'Estado civil',
+                  relatorioValor: slice.nome
+                });
+              }}
+            />
+            <ColumnChart 
+              titulo="Cargos e Liderança" 
+              dados={cargosDados} 
+              hideLegend={true}
+              onBarClick={(entry) => {
+                if (!entry || !entry.name) return;
+                handleNavegarPessoas({
+                  cargo: entry.name,
+                  relatorioCampo: 'Cargos',
+                  relatorioValor: entry.name
+                });
+              }}
+            />
+            <ColumnChart 
+              titulo="Campos de Atuação" 
+              dados={atuacoesDados} 
+              hideLegend={true}
+              onBarClick={(entry) => {
+                if (!entry || !entry.name) return;
+                handleNavegarPessoas({
+                  atuacao: entry.name,
+                  relatorioCampo: 'Campo de Atuação',
+                  relatorioValor: entry.name
+                });
+              }}
+            />
           </div>
         )}
 
@@ -762,21 +933,24 @@ export default function HomePage({
                   <StatCard 
                     label="Receitas (Mês)" 
                     valor={formatarBRL(financeData.receitasMes)} 
-                    detalhe="Entradas" 
+                    detalhe="Entradas (toque)" 
+                    onClick={() => onNavigate('financeiro', 'transacoes')}
                     icone={<div className="p-1.5 rounded-lg bg-blue-50 border border-blue-100"><TrendingUp className="w-5 h-5 text-blue-600" /></div>}
                     className="p-3 flex-col"
                   />
                   <StatCard 
                     label="Despesas (Mês)" 
                     valor={formatarBRL(financeData.despesasMes)} 
-                    detalhe="Saídas" 
+                    detalhe="Saídas (toque)" 
+                    onClick={() => onNavigate('financeiro', 'transacoes')}
                     icone={<div className="p-1.5 rounded-lg bg-rose-50 border border-rose-100"><TrendingDown className="w-5 h-5 text-rose-600" /></div>}
                     className="p-3 flex-col"
                   />
                   <StatCard 
                     label="Balanço Mês" 
                     valor={formatarBRL(financeData.saldoMes)} 
-                    detalhe="Resultado" 
+                    detalhe="Resultado (toque)" 
+                    onClick={() => onNavigate('financeiro', 'dashboard')}
                     icone={<div className={`p-1.5 rounded-lg border ${financeData.saldoMes >= 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
                       {financeData.saldoMes >= 0 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
                     </div>}
@@ -785,7 +959,8 @@ export default function HomePage({
                   <StatCard 
                     label="Saldo Caixa" 
                     valor={formatarBRL(financeData.saldoTotal)} 
-                    detalhe="Disponível" 
+                    detalhe="Disponível (toque)" 
+                    onClick={() => onNavigate('financeiro', 'dashboard')}
                     icone={<div className="p-1.5 rounded-lg bg-amber-50 border border-amber-100"><Coins className="w-5 h-5 text-amber-600" /></div>}
                     className="p-3 flex-col font-medium"
                   />
@@ -793,13 +968,27 @@ export default function HomePage({
 
                 {/* Composed Chart compactado para Mobile */}
                 <div className="bg-white rounded-xl border border-slate-150 p-4 shadow-3xs">
-                  <div className="border-b border-slate-50 pb-2 mb-3">
-                    <h4 className="font-bold text-slate-800 text-xs">Fluxo de Caixa Mensal</h4>
-                    <p className="text-[9px] text-slate-400">Recomendação dos últimos 6 meses</p>
+                  <div className="flex items-center justify-between border-b border-slate-50 pb-2 mb-3">
+                    <div>
+                      <h4 className="font-bold text-slate-800 text-xs">Fluxo de Caixa Mensal</h4>
+                      <p className="text-[9px] text-slate-400">Últimos 6 meses (toque p/ transações)</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('financeiro', 'transacoes')}
+                      className="text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-lg cursor-pointer"
+                    >
+                      Ver transações
+                    </button>
                   </div>
                   <div className="w-full h-64 min-w-0">
                     <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
-                      <ComposedChart data={financeData.graficoData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }} style={{ outline: 'none' }}>
+                      <ComposedChart 
+                        data={financeData.graficoData} 
+                        margin={{ top: 10, right: 10, bottom: 0, left: -20 }} 
+                        style={{ outline: 'none', cursor: 'pointer' }}
+                        onClick={() => onNavigate('financeiro', 'transacoes')}
+                      >
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                         <XAxis dataKey="name" tick={{ fontSize: 8 }} axisLine={false} tickLine={false} />
                         <YAxis tick={{ fontSize: 8 }} axisLine={false} tickLine={false} />
@@ -814,8 +1003,22 @@ export default function HomePage({
                           }} 
                         />
                         <Legend wrapperStyle={{ fontSize: 9, pt: 5 }} />
-                        <Bar dataKey="Receitas" fill="#3b82f6" radius={[3, 3, 0, 0]} barSize={10} />
-                        <Bar dataKey="Despesas" fill="#f43f5e" radius={[3, 3, 0, 0]} barSize={10} />
+                        <Bar 
+                          dataKey="Receitas" 
+                          fill="#3b82f6" 
+                          radius={[3, 3, 0, 0]} 
+                          barSize={10} 
+                          cursor="pointer"
+                          onClick={() => onNavigate('financeiro', 'transacoes')}
+                        />
+                        <Bar 
+                          dataKey="Despesas" 
+                          fill="#f43f5e" 
+                          radius={[3, 3, 0, 0]} 
+                          barSize={10} 
+                          cursor="pointer"
+                          onClick={() => onNavigate('financeiro', 'transacoes')}
+                        />
                         <Line type="monotone" dataKey="Saldo" stroke="#eab308" strokeWidth={2.5} dot={{ r: 2.5, fill: '#eab308' }} />
                       </ComposedChart>
                     </ResponsiveContainer>
@@ -826,7 +1029,7 @@ export default function HomePage({
                 <div className="bg-white rounded-xl border border-slate-150 p-4 shadow-3xs space-y-3">
                   <div className="border-b border-slate-50 pb-2">
                     <h4 className="font-bold text-slate-800 text-xs">Últimos Lançamentos</h4>
-                    <p className="text-[9px] text-slate-400">Transações recentes liquidadas</p>
+                    <p className="text-[9px] text-slate-400">Transações recentes liquidadas (toque p/ abrir)</p>
                   </div>
 
                   {financeData.transacoesRecentes.length === 0 ? (
@@ -834,7 +1037,12 @@ export default function HomePage({
                   ) : (
                     <div className="space-y-2">
                       {financeData.transacoesRecentes.map((t) => (
-                        <div key={t.id} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                        <div 
+                          key={t.id} 
+                          onClick={() => onNavigate('financeiro', 'transacoes')}
+                          className="flex justify-between items-center p-3 bg-slate-50 border border-slate-100 rounded-xl cursor-pointer active:bg-slate-100 transition-colors"
+                          title="Ver no financeiro"
+                        >
                           <div className="min-w-0 pr-2">
                             <p className="font-bold text-slate-800 text-xs truncate max-w-[130px]">{t.descricao}</p>
                             <span className="text-[9px] text-slate-400 font-bold block mt-0.5">
@@ -891,9 +1099,12 @@ export default function HomePage({
   );
 }
 
-function CardMobileIndicador({ label, valor, detalhe, icon: Icon, colorBg = 'bg-blue-600' }) {
+function CardMobileIndicador({ label, valor, detalhe, icon: Icon, colorBg = 'bg-blue-600', onClick }) {
   return (
-    <div className="p-4 rounded-2xl bg-white border border-slate-100 shadow-3xs flex items-center gap-4 text-slate-800 animate-in fade-in slide-in-from-top-1 duration-300">
+    <div 
+      onClick={onClick}
+      className={`p-4 rounded-2xl bg-white border border-slate-100 shadow-3xs flex items-center gap-4 text-slate-800 animate-in fade-in slide-in-from-top-1 duration-300 ${onClick ? 'cursor-pointer active:scale-95 transition-all' : ''}`}
+    >
       <div className={`w-12 h-12 rounded-xl ${colorBg} flex items-center justify-center shrink-0 text-white shadow-xs`}>
         <Icon className="w-6.5 h-6.5 text-white" strokeWidth={1.8} />
       </div>

@@ -486,46 +486,46 @@ export default function DashboardLider({
 
       {/* QUICK ACTIONS SECTION */}
       <div>
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 px-2">Ações Rápidas da Célula</h3>
+        <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 px-2">Ações Rápidas da Célula</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <button
             onClick={() => setIsModalReuniaoAberto(true)}
-            className="group bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-blue-200 hover:shadow-md transition-all active:scale-95 cursor-pointer text-center"
+            className="group bg-white dark:bg-[#131d31] border border-slate-100 dark:border-[#24334f] rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-blue-200 dark:hover:border-blue-500/50 hover:shadow-md transition-all active:scale-95 cursor-pointer text-center"
           >
-            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-100/60 dark:border-blue-800/60 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Plus size={20} strokeWidth={2.5} />
             </div>
-            <span className="text-xs font-bold text-slate-700">Lançar Reunião</span>
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Lançar Reunião</span>
           </button>
 
           <button
             onClick={() => setIsModalVisitanteAberto(true)}
-            className="group bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-amber-200 hover:shadow-md transition-all active:scale-95 cursor-pointer text-center"
+            className="group bg-white dark:bg-[#131d31] border border-slate-100 dark:border-[#24334f] rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-amber-200 dark:hover:border-amber-500/50 hover:shadow-md transition-all active:scale-95 cursor-pointer text-center"
           >
-            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-100/60 dark:border-amber-800/60 flex items-center justify-center group-hover:scale-110 transition-transform">
               <UserPlus size={20} strokeWidth={2.5} />
             </div>
-            <span className="text-xs font-bold text-slate-700">Cadastrar Visitante</span>
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Cadastrar Visitante</span>
           </button>
 
           <button
             onClick={() => setIsModalParticipanteAberto(true)}
-            className="group bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-indigo-200 hover:shadow-md transition-all active:scale-95 cursor-pointer text-center"
+            className="group bg-white dark:bg-[#131d31] border border-slate-100 dark:border-[#24334f] rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-indigo-200 dark:hover:border-indigo-500/50 hover:shadow-md transition-all active:scale-95 cursor-pointer text-center"
           >
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100/60 dark:border-indigo-800/60 flex items-center justify-center group-hover:scale-110 transition-transform">
               <Users size={20} strokeWidth={2.5} />
             </div>
-            <span className="text-xs font-bold text-slate-700">Novo Participante</span>
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Novo Participante</span>
           </button>
 
           <button
             onClick={() => onNavigate('celulas')}
-            className="group bg-white border border-slate-100 rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-slate-200 hover:shadow-md transition-all active:scale-95 cursor-pointer text-center"
+            className="group bg-white dark:bg-[#131d31] border border-slate-100 dark:border-[#24334f] rounded-2xl p-4 flex flex-col items-center justify-center gap-2 hover:border-slate-200 dark:hover:border-slate-600 hover:shadow-md transition-all active:scale-95 cursor-pointer text-center"
           >
-            <div className="w-10 h-10 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-[#2b3954] flex items-center justify-center group-hover:scale-110 transition-transform">
               <ArrowRight size={20} strokeWidth={2.5} />
             </div>
-            <span className="text-xs font-bold text-slate-700">Minha Célula</span>
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Minha Célula</span>
           </button>
         </div>
       </div>

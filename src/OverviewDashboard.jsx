@@ -40,11 +40,20 @@ export default function OverviewDashboard({
   hasAccess = () => false,
   reunioesVistas = [],
   abaDashboard,
-  setAbaDashboard
+  setAbaDashboard,
+  abrirPessoasFiltradas = null
 }) {
   const [localAbaAtiva, setLocalAbaAtiva] = useState('visao_geral');
   const abaAtiva = abaDashboard !== undefined ? abaDashboard : localAbaAtiva;
   const setAbaAtiva = setAbaDashboard !== undefined ? setAbaDashboard : setLocalAbaAtiva;
+
+  const handleNavegarPessoas = useCallback((novosFiltros = {}) => {
+    if (abrirPessoasFiltradas) {
+      abrirPessoasFiltradas(novosFiltros);
+    } else if (onNavigate) {
+      onNavigate('pessoas', 'todos');
+    }
+  }, [abrirPessoasFiltradas, onNavigate]);
   
   // Estados para dados financeiros (carregados sob demanda com tratamento de erro/RLS)
   const [financeLoading, setFinanceLoading] = useState(false);
@@ -218,10 +227,32 @@ export default function OverviewDashboard({
     return membroLogado?.tipo_membro || 'Membro';
   }, [membroLogado]);
 
-  // 7. Dados Demográficos
+  // 7. Dados Demográficos e Células
   const zonasDados = useMemo(() => agrupamentoPor(pessoasAtivas, (p) => nomeZona(zonas, p.zona_id)), [pessoasAtivas, zonas]);
   const faixasDados = useMemo(() => agrupamentoPor(pessoasAtivas, (p) => faixasEtarias.find((f) => f.id === faixaDaIdade(p.data_nascimento))?.curto || 'Não informada'), [pessoasAtivas]);
   const faixasCelulas = useMemo(() => agrupamentoPor(celulas, (c) => c.faixa_etaria || 'Não informada'), [celulas]);
+  const celulasPorZonaDados = useMemo(() => agrupamentoPor(celulas, (c) => nomeZona(zonas, c.zona_id)), [celulas, zonas]);
+  const membrosCelulaDados = useMemo(() => {
+    const emCelula = pessoasAtivas.filter(p => !!p.celula_id).length;
+    const semCelula = pessoasAtivas.filter(p => !p.celula_id).length;
+    return {
+      'Em Célula': emCelula,
+      'Sem Célula': semCelula
+    };
+  }, [pessoasAtivas]);
+
+  const estadosCivisDados = useMemo(() => agrupamentoPor(pessoasAtivas, (p) => p.estado_civil || 'Não informado'), [pessoasAtivas]);
+  const cargosDados = useMemo(() => agrupamentoPor(pessoasAtivas, (p) => p.cargo || 'Membro'), [pessoasAtivas]);
+  const atuacoesDados = useMemo(() => {
+    const contagem = {};
+    pessoasAtivas.forEach(p => {
+      const at = p.atuacao ? p.atuacao.split(',').map(s => s.trim()).filter(Boolean) : ['Geral'];
+      at.forEach(campo => {
+        contagem[campo] = (contagem[campo] || 0) + 1;
+      });
+    });
+    return contagem;
+  }, [pessoasAtivas]);
 
   const aniversariantesMes = useMemo(() => {
     return pessoasAtivas
@@ -380,7 +411,7 @@ export default function OverviewDashboard({
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 relative ${abaAtiva === 'visao_geral' ? 'lg:pr-[272px] xl:pr-[328px]' : ''}`}>
       
       {/* 1. CABEÇALHO DE BOAS-VINDAS PREMIUM */}
       <div className="relative overflow-hidden rounded-b-3xl rounded-t-none bg-linear-to-r from-[#202046] via-[#2a2a6b] to-[#3b3b8c] p-6 sm:p-8 text-white shadow-xl animate-in fade-in duration-500">
@@ -517,7 +548,7 @@ export default function OverviewDashboard({
       )}
 
       {/* 3. MENU DE ABAS PREMIUM (TABS NAVIGATION) */}
-      <div className="flex bg-white/70 backdrop-blur-md p-1.5 rounded-2xl shadow-sm border border-slate-200/80 overflow-x-auto scrollbar-hide gap-1.5">
+      <div className="flex bg-white/70 dark:bg-slate-900/80 backdrop-blur-md p-1.5 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 overflow-x-auto scrollbar-hide gap-1.5">
         {[
           { id: 'visao_geral', label: 'Visão Geral', icon: <Users size={16} /> },
           { id: 'celulas', label: 'Células & Engajamento', icon: <Home size={16} /> },
@@ -529,8 +560,8 @@ export default function OverviewDashboard({
             onClick={() => setAbaAtiva(tab.id)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap cursor-pointer ${
               abaAtiva === tab.id 
-                ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-900/10' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-900/10 dark:bg-blue-600 dark:shadow-blue-900/30' 
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/80'
             }`}
           >
             {tab.icon}
@@ -540,10 +571,10 @@ export default function OverviewDashboard({
       </div>
 
       {/* 3. AÇÕES RÁPIDAS (LAUNCHPAD) */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-3 px-1">
           <Zap size={16} className="text-amber-500" />
-          <h3 className="text-xs font-black uppercase tracking-wider text-slate-600">Ações e Atalhos Rápidos</h3>
+          <h3 className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">Ações e Atalhos Rápidos</h3>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
@@ -555,10 +586,10 @@ export default function OverviewDashboard({
             <button
               key={idx}
               onClick={item.action}
-              className={`flex items-center justify-between p-3.5 rounded-xl border border-slate-100 bg-slate-50/50 text-left text-xs font-bold text-slate-600 shadow-2xs hover:shadow-sm cursor-pointer transition-all duration-200 active:scale-95 ${item.color}`}
+              className={`flex items-center justify-between px-3 py-2.5 sm:px-3.5 sm:py-3 rounded-xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-800/70 text-left text-xs font-bold text-slate-600 dark:text-slate-300 shadow-2xs hover:shadow-sm cursor-pointer transition-all duration-200 active:scale-95 ${item.color}`}
             >
-              <span className="truncate">{item.label}</span>
-              <div className="p-1.5 rounded-lg bg-white border border-slate-100 shadow-2xs shrink-0 ml-2">
+              <span className="truncate leading-tight">{item.label}</span>
+              <div className="p-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xs shrink-0 ml-1.5">
                 {item.icon}
               </div>
             </button>
@@ -583,26 +614,33 @@ export default function OverviewDashboard({
                 <StatCard 
                   label="Total de Pessoas" 
                   valor={totalPessoasAtivas} 
-                  detalhe="Membros Ativos" 
-                  icone={<div className="p-2 rounded-xl bg-blue-50 border border-blue-100"><Users className="w-6 h-6 text-blue-600" /></div>}
+                  detalhe="Membros Ativos (clique para ver)" 
+                  onClick={() => handleNavegarPessoas({})}
+                  icone={<div className="p-2 rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-800/60"><Users className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div>}
                 />
                 <StatCard 
                   label="Células" 
                   valor={totalCelulas} 
-                  detalhe="Ativas" 
-                  icone={<div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100"><Home className="w-6 h-6 text-emerald-600" /></div>}
+                  detalhe="Ativas (clique para ver)" 
+                  onClick={() => onNavigate('celulas', 'todas')}
+                  icone={<div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/60 dark:border-emerald-800/60"><Home className="w-6 h-6 text-emerald-600 dark:text-emerald-400" /></div>}
                 />
                 <StatCard 
                   label="Novos Convertidos" 
                   valor={novosConvertidosMes} 
-                  detalhe="Este Mês" 
-                  icone={<div className="p-2 rounded-xl bg-purple-50 border border-purple-100"><Sparkles className="w-6 h-6 text-purple-600" /></div>}
+                  detalhe="Este Mês (clique para ver)" 
+                  onClick={() => {
+                    const mesAtual = meses[new Date().getMonth()];
+                    handleNavegarPessoas({ mesConversao: mesAtual, novoConvertido: true });
+                  }}
+                  icone={<div className="p-2 rounded-xl bg-purple-50 border border-purple-100 dark:bg-purple-950/60 dark:border-purple-800/60"><Sparkles className="w-6 h-6 text-purple-600 dark:text-purple-400" /></div>}
                 />
                 <StatCard 
                   label="Taxa de Batismo" 
                   valor={`${taxaBatismo}%`} 
-                  detalhe={`${totalBatizados} batizados`} 
-                  icone={<div className="p-2 rounded-xl bg-amber-50 border border-amber-100"><Award className="w-6 h-6 text-amber-600" /></div>}
+                  detalhe={`${totalBatizados} batizados (clique para ver)`} 
+                  onClick={() => handleNavegarPessoas({ batizado: 'sim', relatorioCampo: 'Batismo', relatorioValor: 'Batizado' })}
+                  icone={<div className="p-2 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-950/60 dark:border-amber-800/60"><Award className="w-6 h-6 text-amber-600 dark:text-amber-400" /></div>}
                 />
               </div>
 
@@ -611,100 +649,127 @@ export default function OverviewDashboard({
                 <CardMobileIndicador
                   label="Total de Pessoas"
                   valor={totalPessoasAtivas}
-                  detalhe="Membros Ativos"
+                  detalhe="Membros Ativos (clique para ver)"
                   icon={Users}
                   colorBg="bg-blue-600"
+                  onClick={() => handleNavegarPessoas({})}
                 />
                 <CardMobileIndicador
                   label="Células"
                   valor={totalCelulas}
-                  detalhe="Ativas"
+                  detalhe="Ativas (clique para ver)"
                   icon={Home}
                   colorBg="bg-emerald-600"
+                  onClick={() => onNavigate('celulas', 'todas')}
                 />
                 <CardMobileIndicador
                   label="Novos Convertidos"
                   valor={novosConvertidosMes}
-                  detalhe="Este Mês"
+                  detalhe="Este Mês (clique para ver)"
                   icon={Sparkles}
                   colorBg="bg-purple-600"
+                  onClick={() => {
+                    const mesAtual = meses[new Date().getMonth()];
+                    handleNavegarPessoas({ mesConversao: mesAtual, novoConvertido: true });
+                  }}
                 />
                 <CardMobileIndicador
                   label="Taxa de Batismo"
                   valor={`${taxaBatismo}%`}
-                  detalhe={`${totalBatizados} batizados`}
+                  detalhe={`${totalBatizados} batizados (clique para ver)`}
                   icon={Award}
                   colorBg="bg-amber-500"
+                  onClick={() => handleNavegarPessoas({ batizado: 'sim', relatorioCampo: 'Batismo', relatorioValor: 'Batizado' })}
                 />
               </div>
 
-              {/* Flexbox Principal */}
-              <div className="flex flex-col lg:flex-row gap-6">
-                {/* Coluna da Esquerda: Gráficos */}
-                <div className="flex-1 min-w-0 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <CombinationCard 
-                      titulo="Novos convertidos" 
-                      dados={novosConvertidosTrend} 
-                      periodo={periodoConvertidos} 
-                      setPeriodo={setPeriodoConvertidos} 
-                    />
-                    <ColumnChart 
-                      titulo="Aniversariantes por mês" 
-                      dados={aniversariosDados} 
-                      hideLegend={true} 
-                    />
-                  </div>
-                </div>
+              {/* Gráficos da Visão Geral */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <CombinationCard 
+                  titulo="Novos convertidos" 
+                  dados={novosConvertidosTrend} 
+                  periodo={periodoConvertidos} 
+                  setPeriodo={setPeriodoConvertidos} 
+                  onBarClick={(entry) => {
+                    if (!entry || !entry.name) return;
+                    if (periodoConvertidos === 'ano') {
+                      handleNavegarPessoas({
+                        anoConversao: entry.name,
+                        relatorioCampo: 'Data de conversao',
+                        relatorioValor: entry.name
+                      });
+                    } else {
+                      handleNavegarPessoas({
+                        mesConversao: entry.name,
+                        novoConvertido: true
+                      });
+                    }
+                  }}
+                />
+                <ColumnChart 
+                  titulo="Aniversariantes por mês" 
+                  dados={aniversariosDados} 
+                  hideLegend={true} 
+                  onBarClick={(entry) => {
+                    if (!entry || !entry.name) return;
+                    handleNavegarPessoas({
+                      mesAniversario: entry.name,
+                      relatorioCampo: 'Aniversarios',
+                      relatorioValor: entry.name
+                    });
+                  }}
+                />
+              </div>
 
-                {/* Coluna da Direita: Sidebar */}
-                <div className="w-full lg:w-96 shrink-0 space-y-6">
-                  <PainelAprovacoes onVerDetalhes={onVerMembro} onAprovado={() => {}} />
-                  
-                  {/* Aniversariantes do Mês Estilizado */}
-                  <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                      <div className="flex items-center gap-2">
-                        <Smile className="text-amber-500" size={18} />
-                        <h4 className="font-bold text-slate-800 text-sm">Aniversariantes do Mês</h4>
-                      </div>
-                      <span className="text-[10px] font-black uppercase bg-amber-50 border border-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                        {aniversariantesMes.length} Membros
-                      </span>
+              {/* Coluna da Direita: Sidebar Fixa no Desktop */}
+              <aside 
+                className="w-full lg:w-[276px] xl:w-[324px] shrink-0 space-y-6 lg:fixed lg:right-1 xl:right-5 lg:top-16 lg:bottom-6 lg:overflow-y-auto z-20 transition-all duration-300 scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                aria-label="Painéis laterais de aprovações e aniversariantes"
+              >
+                <PainelAprovacoes onVerDetalhes={onVerMembro} onAprovado={() => {}} />
+                
+                {/* Aniversariantes do Mês Estilizado */}
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Smile className="text-amber-500" size={18} />
+                      <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Aniversariantes do Mês</h4>
                     </div>
+                    <span className="text-[10px] font-black uppercase bg-amber-50 dark:bg-amber-950/60 border border-amber-100 dark:border-amber-800/60 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">
+                      {aniversariantesMes.length} Membros
+                    </span>
+                  </div>
 
-                    {aniversariantesMes.length === 0 ? (
-                      <p className="text-center text-xs text-slate-400 italic py-4">Sem aniversariantes no mês atual.</p>
-                    ) : (
-                      <div className="space-y-2.5">
-                        {aniversariantesMes.map((pessoa) => (
-                          <div 
-                            key={pessoa.id} 
-                            onClick={() => onVerMembro(pessoa.id)}
-                            className="flex items-center justify-between p-2.5 rounded-xl border border-transparent hover:border-slate-100 hover:bg-slate-50 cursor-pointer transition-all duration-200"
-                          >
-                            <div className="flex items-center gap-3">
-                              <Avatar pessoa={pessoa} tamanho="w-9 h-9" />
-                              <div>
-                                <p className="font-bold text-slate-800 text-xs truncate max-w-[140px]">{pessoa.nome}</p>
-                                <p className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5">
-                                  {pessoa.celulas?.nome || 'Sem Célula'}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-1.5 shrink-0 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
-                              <span className="text-[11px] font-black text-slate-600">
-                                {new Date(`${pessoa.data_nascimento}T00:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                              </span>
+                  {aniversariantesMes.length === 0 ? (
+                    <p className="text-center text-xs text-slate-400 italic py-4">Sem aniversariantes no mês atual.</p>
+                  ) : (
+                    <div className="space-y-2.5">
+                      {aniversariantesMes.map((pessoa) => (
+                        <div 
+                          key={pessoa.id} 
+                          onClick={() => onVerMembro(pessoa.id)}
+                          className="flex items-center justify-between p-2.5 rounded-xl border border-transparent hover:border-slate-100 dark:hover:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-all duration-200"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar pessoa={pessoa} tamanho="w-9 h-9" />
+                            <div>
+                              <p className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate max-w-[140px]">{pessoa.nome}</p>
+                              <p className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5">
+                                {pessoa.celulas?.nome || 'Sem Célula'}
+                              </p>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
+                          <div className="flex items-center gap-1.5 shrink-0 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-lg">
+                            <span className="text-[11px] font-black text-slate-600 dark:text-slate-300">
+                              {new Date(`${pessoa.data_nascimento}T00:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
+              </aside>
             </div>
           )}
 
@@ -716,102 +781,149 @@ export default function OverviewDashboard({
                 <StatCard 
                   label="Total de Células" 
                   valor={totalCelulas} 
-                  detalhe="Grupos Ativos" 
-                  icone={<div className="p-2 rounded-xl bg-blue-50 border border-blue-100"><Home className="w-6 h-6 text-blue-600" /></div>}
+                  detalhe="Grupos Ativos (clique para ver)" 
+                  onClick={() => onNavigate('celulas', 'todas')}
+                  icone={<div className="p-2 rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-800/60"><Home className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div>}
                 />
                 <StatCard 
                   label="Reuniões Realizadas" 
                   valor={totalReunioes} 
-                  detalhe="Relatórios Entregues" 
-                  icone={<div className="p-2 rounded-xl bg-purple-50 border border-purple-100"><BookOpen className="w-6 h-6 text-purple-600" /></div>}
+                  detalhe="Relatórios Entregues (clique)" 
+                  onClick={() => onNavigate('celulas', 'reunioes')}
+                  icone={<div className="p-2 rounded-xl bg-purple-50 border border-purple-100 dark:bg-purple-950/60 dark:border-purple-800/60"><BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" /></div>}
                 />
                 <StatCard 
-                  label="Média de Visitantes" 
-                  valor={mediaVisitantes} 
-                  detalhe="Por Reunião" 
-                  icone={<div className="p-2 rounded-xl bg-pink-50 border border-pink-100"><Users className="w-6 h-6 text-pink-600" /></div>}
+                  label="Membros em Célula" 
+                  valor={membrosCelulaDados['Em Célula'] || 0} 
+                  detalhe="Integrados (clique para ver)" 
+                  onClick={() => handleNavegarPessoas({ temCelula: 'sim' })}
+                  icone={<div className="p-2 rounded-xl bg-pink-50 border border-pink-100 dark:bg-pink-950/60 dark:border-pink-800/60"><Users className="w-6 h-6 text-pink-600 dark:text-pink-400" /></div>}
                 />
                 <StatCard 
                   label="Ofertas Coletadas (Mês)" 
                   valor={formatarBRL(ofertasCelulasMes)} 
-                  detalhe="Soma de Células" 
-                  icone={<div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100"><Coins className="w-6 h-6 text-emerald-600" /></div>}
+                  detalhe="Soma de Células (clique)" 
+                  onClick={() => onNavigate('financeiro', 'dashboard')}
+                  icone={<div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/60 dark:border-emerald-800/60"><Coins className="w-6 h-6 text-emerald-600 dark:text-emerald-400" /></div>}
                 />
               </div>
 
-              {/* Layout da Aba Células */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* Coluna da Esquerda: Gráficos e Distribuição */}
-                <div className="lg:col-span-1 space-y-6">
-                  <DoughnutCard titulo="Faixa etária das células" dados={faixasCelulas} />
-                </div>
+              {/* Layout da Aba Células: Gráficos de Distribuição Interativos */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <DoughnutCard 
+                  titulo="Faixa etária das células" 
+                  dados={faixasCelulas} 
+                  onSliceClick={(slice) => {
+                    if (!slice || !slice.nome) return;
+                    handleNavegarPessoas({
+                      celulaFaixaEtaria: slice.nome,
+                      relatorioCampo: 'Faixa etaria',
+                      relatorioValor: slice.nome
+                    });
+                  }}
+                />
+                <DoughnutCard 
+                  titulo="Integração em Células" 
+                  dados={membrosCelulaDados} 
+                  onSliceClick={(slice) => {
+                    if (!slice || !slice.nome) return;
+                    handleNavegarPessoas({
+                      temCelula: slice.nome === 'Em Célula' ? 'sim' : 'nao'
+                    });
+                  }}
+                />
+                <DoughnutCard 
+                  titulo="Células por Zona" 
+                  dados={celulasPorZonaDados} 
+                  onSliceClick={(slice) => {
+                    if (!slice || !slice.nome) return;
+                    const z = zonas.find(item => item.nome === slice.nome);
+                    handleNavegarPessoas({
+                      zona: z ? z.id : '',
+                      relatorioCampo: 'Zona de moradia',
+                      relatorioValor: slice.nome
+                    });
+                  }}
+                />
+              </div>
 
-                {/* Coluna da Direita: Reuniões Recentes com Detalhes Ricos */}
-                <div className="lg:col-span-2 space-y-6 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div>
-                      <h4 className="font-bold text-slate-800 text-sm">Relatório Recente de Reuniões</h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Histórico recente de atividades de células</p>
-                    </div>
+              {/* Relatório Recente de Reuniões */}
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <div>
+                    <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Relatório Recente de Reuniões</h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Histórico recente de atividades de células (clique na célula para filtrar membros)</p>
                   </div>
-
-                  {relatoriosCelula.length === 0 ? (
-                    <p className="text-center text-xs text-slate-400 italic py-10">Nenhuma reunião registrada recentemente.</p>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse text-xs">
-                        <thead>
-                          <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                            <th className="py-2.5 px-3">Célula</th>
-                            <th className="py-2.5 px-3 text-center">Participantes</th>
-                            <th className="py-2.5 px-3 text-center">Visitantes</th>
-                            <th className="py-2.5 px-3 text-right">Data</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {relatoriosCelula.slice(0, 6).map((relatorio) => {
-                            const isUsuarioPastor = ['pastor', 'admin'].includes(membroLogado?.permissao);
-                            const isNovo = isUsuarioPastor && !reunioesVistas.includes(String(relatorio.id));
-
-                            return (
-                              <tr 
-                                key={relatorio.id} 
-                                onClick={() => onVerReuniao && onVerReuniao(relatorio.id)}
-                                className={`border-b border-slate-50 last:border-0 transition-colors cursor-pointer ${
-                                  isNovo 
-                                    ? 'bg-blue-50/30 hover:bg-blue-50/50' 
-                                    : 'hover:bg-slate-50/50'
-                                }`}
-                              >
-                                <td className="py-3 px-3 font-bold text-slate-800 flex items-center gap-2">
-                                  {isNovo && (
-                                    <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse shrink-0" title="Não visualizado" />
-                                  )}
-                                  <span>{relatorio.celulas?.nome || 'Célula'}</span>
-                                </td>
-                                <td className="py-3 px-3 text-center shrink-0">
-                                  <span className="inline-block px-3 py-1 rounded-lg font-black text-xs bg-blue-50 border border-blue-100 text-blue-700">
-                                    {relatorio.presencas_relatorio?.[0]?.count || 0}
-                                  </span>
-                                </td>
-                                <td className="py-3 px-3 text-center shrink-0">
-                                  <span className="inline-block px-3 py-1 rounded-lg font-black text-xs bg-purple-50 border border-purple-100 text-purple-700">
-                                    {Number(relatorio.visitantes_presentes || 0)}
-                                  </span>
-                                </td>
-                                <td className="py-3 px-3 text-right text-slate-500 font-medium">
-                                  {relatorio.data_reuniao ? new Date(`${relatorio.data_reuniao}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
                 </div>
 
+                {relatoriosCelula.length === 0 ? (
+                  <p className="text-center text-xs text-slate-400 italic py-10">Nenhuma reunião registrada recentemente.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+                          <th className="py-2.5 px-3">Célula</th>
+                          <th className="py-2.5 px-3 text-center">Participantes</th>
+                          <th className="py-2.5 px-3 text-center">Visitantes</th>
+                          <th className="py-2.5 px-3 text-right">Data</th>
+                          <th className="py-2.5 px-3 text-right">Membros</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {relatoriosCelula.slice(0, 6).map((relatorio) => {
+                          const isUsuarioPastor = ['pastor', 'admin'].includes(membroLogado?.permissao);
+                          const isNovo = isUsuarioPastor && !reunioesVistas.includes(String(relatorio.id));
+
+                          return (
+                            <tr 
+                              key={relatorio.id} 
+                              className={`border-b border-slate-50 dark:border-slate-800/50 last:border-0 transition-colors ${
+                                isNovo 
+                                  ? 'bg-blue-50/30 dark:bg-blue-950/20 hover:bg-blue-50/50' 
+                                  : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/50'
+                              }`}
+                            >
+                              <td 
+                                onClick={() => handleNavegarPessoas({ celula: relatorio.celula_id, celulaNome: relatorio.celulas?.nome })}
+                                className="py-3 px-3 font-bold text-slate-800 dark:text-slate-200 cursor-pointer hover:text-blue-600 flex items-center gap-2"
+                                title="Clique para filtrar pessoas desta célula"
+                              >
+                                {isNovo && (
+                                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse shrink-0" title="Não visualizado" />
+                                )}
+                                <span>{relatorio.celulas?.nome || 'Célula'}</span>
+                              </td>
+                              <td className="py-3 px-3 text-center shrink-0">
+                                <span className="inline-block px-3 py-1 rounded-lg font-black text-xs bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800/60 text-blue-700 dark:text-blue-400">
+                                  {relatorio.presencas_relatorio?.[0]?.count || 0}
+                                </span>
+                              </td>
+                              <td className="py-3 px-3 text-center shrink-0">
+                                <span className="inline-block px-3 py-1 rounded-lg font-black text-xs bg-purple-50 dark:bg-purple-950/60 border border-purple-100 dark:border-purple-800/60 text-purple-700 dark:text-purple-400">
+                                  {Number(relatorio.visitantes_presentes || 0)}
+                                </span>
+                              </td>
+                              <td className="py-3 px-3 text-right text-slate-500 font-medium">
+                                {relatorio.data_reuniao ? new Date(`${relatorio.data_reuniao}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
+                              </td>
+                              <td className="py-3 px-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleNavegarPessoas({ celula: relatorio.celula_id, celulaNome: relatorio.celulas?.nome })}
+                                  className="text-[10px] font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 px-2 py-1 rounded-lg cursor-pointer"
+                                  title="Filtrar pessoas desta célula"
+                                >
+                                  Ver pessoas
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -820,67 +932,160 @@ export default function OverviewDashboard({
           {abaAtiva === 'demografia' && (
             <div className="space-y-6">
               
-              {/* Gráficos Principais */}
+              {/* Gráficos Principais: Linha 1 */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 
                 {/* 1. Zona de Moradia */}
-                <DoughnutCard titulo="Distribuição por Zona" dados={zonasDados} />
+                <DoughnutCard 
+                  titulo="Distribuição por Zona" 
+                  dados={zonasDados} 
+                  onSliceClick={(slice) => {
+                    if (!slice || !slice.nome) return;
+                    const z = zonas.find(item => item.nome === slice.nome);
+                    handleNavegarPessoas({
+                      zona: z ? z.id : '',
+                      relatorioCampo: 'Zona de moradia',
+                      relatorioValor: slice.nome
+                    });
+                  }}
+                />
                 
                 {/* 2. Faixa Etária dos Membros */}
-                <DoughnutCard titulo="Faixa Etária (Membros)" dados={faixasDados} />
+                <DoughnutCard 
+                  titulo="Faixa Etária (Membros)" 
+                  dados={faixasDados} 
+                  onSliceClick={(slice) => {
+                    if (!slice || !slice.nome) return;
+                    const f = faixasEtarias.find(item => item.curto === slice.nome || item.nome === slice.nome || item.id === slice.nome);
+                    handleNavegarPessoas({
+                      faixaEtaria: f ? f.id : '',
+                      relatorioCampo: 'Faixa etaria',
+                      relatorioValor: slice.nome
+                    });
+                  }}
+                />
 
                 {/* 3. Proporção de Gênero Premium & Progresso de Batismo */}
-                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between min-h-[420px]">
+                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between min-h-[420px]">
                   <div>
-                    <h4 className="font-bold text-slate-800 text-sm border-b border-slate-100 pb-3">Perfil Demográfico</h4>
+                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Perfil Demográfico</h4>
+                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                        <span>🔍</span> Filtrar pessoas
+                      </span>
+                    </div>
                     
                     {/* Gênero */}
                     <div className="mt-5 space-y-4">
-                      <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider">
+                      <div className="flex justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         <span>Homens vs Mulheres</span>
+                        <span className="text-[10px] text-slate-400 font-normal lowercase">(clique para filtrar)</span>
                       </div>
-                      <div className="flex h-5 overflow-hidden rounded-full bg-slate-100 p-1 border border-slate-200">
+                      <div className="flex h-5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700">
                         <div 
-                          className="rounded-full bg-linear-to-r from-blue-400 to-blue-600 transition-all duration-500" 
+                          onClick={() => handleNavegarPessoas({ genero: 'Masculino', relatorioCampo: 'Sexo', relatorioValor: 'Masculino' })}
+                          className="rounded-full bg-linear-to-r from-blue-400 to-blue-600 cursor-pointer hover:opacity-90 transition-all duration-300" 
                           style={{ width: `${generoStats.pctHomens}%` }} 
+                          title="Filtrar Homens"
                         />
                         <div 
-                          className="rounded-full bg-linear-to-r from-rose-400 to-rose-600 transition-all duration-500 ml-1" 
+                          onClick={() => handleNavegarPessoas({ genero: 'Feminino', relatorioCampo: 'Sexo', relatorioValor: 'Feminino' })}
+                          className="rounded-full bg-linear-to-r from-rose-400 to-rose-600 cursor-pointer hover:opacity-90 transition-all duration-300 ml-1" 
                           style={{ width: `${generoStats.pctMulheres}%` }} 
+                          title="Filtrar Mulheres"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-4 text-center">
-                        <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-2xl">
-                          <span className="block text-2xl font-black text-blue-700">{generoStats.homens}</span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Homens ({generoStats.pctHomens}%)</span>
+                        <div 
+                          onClick={() => handleNavegarPessoas({ genero: 'Masculino', relatorioCampo: 'Sexo', relatorioValor: 'Masculino' })}
+                          className="p-3 bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-800/50 hover:border-blue-300 dark:hover:border-blue-600 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
+                          title="Clique para ver os membros masculinos"
+                        >
+                          <span className="block text-2xl font-black text-blue-700 dark:text-blue-400 group-hover:scale-105 transition-transform">{generoStats.homens}</span>
+                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">Homens ({generoStats.pctHomens}%)</span>
                         </div>
-                        <div className="p-3 bg-rose-50/50 border border-rose-100 rounded-2xl">
-                          <span className="block text-2xl font-black text-rose-700">{generoStats.mulheres}</span>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Mulheres ({generoStats.pctMulheres}%)</span>
+                        <div 
+                          onClick={() => handleNavegarPessoas({ genero: 'Feminino', relatorioCampo: 'Sexo', relatorioValor: 'Feminino' })}
+                          className="p-3 bg-rose-50/50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-800/50 hover:border-rose-300 dark:hover:border-rose-600 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
+                          title="Clique para ver os membros femininos"
+                        >
+                          <span className="block text-2xl font-black text-rose-700 dark:text-rose-400 group-hover:scale-105 transition-transform">{generoStats.mulheres}</span>
+                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">Mulheres ({generoStats.pctMulheres}%)</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Batismo de águas progresso */}
-                  <div className="border-t border-slate-100 pt-5 mt-5">
-                    <div className="flex justify-between items-center text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                      <span>Membros Batizados nas Águas</span>
-                      <span className="text-amber-600 font-extrabold">{taxaBatismo}%</span>
+                  <div 
+                    onClick={() => handleNavegarPessoas({ batizado: 'sim', relatorioCampo: 'Batismo', relatorioValor: 'Batizado' })}
+                    className="border-t border-slate-100 dark:border-slate-800 pt-5 mt-5 p-3 rounded-2xl hover:bg-amber-50/50 dark:hover:bg-amber-950/20 border border-transparent hover:border-amber-200 dark:hover:border-amber-800/60 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
+                    title="Clique para ver os membros batizados nas águas"
+                  >
+                    <div className="flex justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                      <span className="flex items-center gap-1.5">
+                        Membros Batizados nas Águas
+                        <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 px-1.5 py-0.5 rounded-md">
+                          Filtrar
+                        </span>
+                      </span>
+                      <span className="text-amber-600 dark:text-amber-400 font-extrabold">{taxaBatismo}%</span>
                     </div>
-                    <div className="relative w-full h-3 rounded-full bg-slate-100 overflow-hidden border border-slate-200">
+                    <div className="relative w-full h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700">
                       <div 
                         className="absolute top-0 left-0 h-full bg-linear-to-r from-amber-400 to-amber-600 rounded-full transition-all duration-500"
                         style={{ width: `${taxaBatismo}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-2 font-medium">
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2 font-medium">
                       Atualmente, {totalBatizados} de {totalPessoasAtivas} membros ativos já passaram pelo batismo nas águas.
                     </p>
                   </div>
                 </div>
-
               </div>
+
+              {/* Gráficos Demográficos: Linha 2 (Estado Civil, Cargos, Ministérios) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <DoughnutCard 
+                  titulo="Estado Civil" 
+                  dados={estadosCivisDados} 
+                  onSliceClick={(slice) => {
+                    if (!slice || !slice.nome) return;
+                    handleNavegarPessoas({
+                      estadoCivil: slice.nome,
+                      relatorioCampo: 'Estado civil',
+                      relatorioValor: slice.nome
+                    });
+                  }}
+                />
+                <ColumnChart 
+                  titulo="Cargos e Liderança" 
+                  dados={cargosDados} 
+                  hideLegend={true}
+                  onBarClick={(entry) => {
+                    if (!entry || !entry.name) return;
+                    handleNavegarPessoas({
+                      cargo: entry.name,
+                      relatorioCampo: 'Cargos',
+                      relatorioValor: entry.name
+                    });
+                  }}
+                />
+                <ColumnChart 
+                  titulo="Campos de Atuação" 
+                  dados={atuacoesDados} 
+                  hideLegend={true}
+                  onBarClick={(entry) => {
+                    if (!entry || !entry.name) return;
+                    handleNavegarPessoas({
+                      atuacao: entry.name,
+                      relatorioCampo: 'Campo de Atuação',
+                      relatorioValor: entry.name
+                    });
+                  }}
+                />
+              </div>
+
             </div>
           )}
 
@@ -911,22 +1116,25 @@ export default function OverviewDashboard({
                     <StatCard 
                       label="Receitas (Mês)" 
                       valor={formatarBRL(financeData.receitasMes)} 
-                      detalhe="Entradas do período" 
-                      icone={<div className="p-2 rounded-xl bg-blue-50 border border-blue-100"><TrendingUp className="w-6 h-6 text-blue-600" /></div>}
+                      detalhe="Entradas (clique para ver)" 
+                      onClick={() => onNavigate('financeiro', 'transacoes')}
+                      icone={<div className="p-2 rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-800/60"><TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div>}
                       className="flex-col"
                     />
                     <StatCard 
                       label="Despesas (Mês)" 
                       valor={formatarBRL(financeData.despesasMes)} 
-                      detalhe="Saídas do período" 
-                      icone={<div className="p-2 rounded-xl bg-rose-50 border border-rose-100"><TrendingDown className="w-6 h-6 text-rose-600" /></div>}
+                      detalhe="Saídas (clique para ver)" 
+                      onClick={() => onNavigate('financeiro', 'transacoes')}
+                      icone={<div className="p-2 rounded-xl bg-rose-50 border border-rose-100 dark:bg-rose-950/60 dark:border-rose-800/60"><TrendingDown className="w-6 h-6 text-rose-600 dark:text-rose-400" /></div>}
                       className="flex-col"
                     />
                     <StatCard 
                       label="Resultado do Mês" 
                       valor={formatarBRL(financeData.saldoMes)} 
-                      detalhe="Balanço mensal" 
-                      icone={<div className={`p-2 rounded-xl border ${financeData.saldoMes >= 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'}`}>
+                      detalhe="Balanço mensal (clique)" 
+                      onClick={() => onNavigate('financeiro', 'dashboard')}
+                      icone={<div className={`p-2 rounded-xl border ${financeData.saldoMes >= 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:border-emerald-800/60 dark:text-emerald-400' : 'bg-rose-50 border-rose-100 text-rose-600 dark:bg-rose-950/60 dark:border-rose-800/60 dark:text-rose-400'}`}>
                         {financeData.saldoMes >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
                       </div>}
                       className={`flex-col ${financeData.saldoMes >= 0 ? 'border-emerald-500/20' : 'border-rose-500/20'} animate-in fade-in duration-200`}
@@ -934,8 +1142,9 @@ export default function OverviewDashboard({
                     <StatCard 
                       label="Saldo Geral Caixa" 
                       valor={formatarBRL(financeData.saldoTotal)} 
-                      detalhe="Disponível em Contas" 
-                      icone={<div className="p-2 rounded-xl bg-amber-50 border border-amber-100"><Coins className="w-6 h-6 text-amber-600" /></div>}
+                      detalhe="Disponível em Contas (clique)" 
+                      onClick={() => onNavigate('financeiro', 'dashboard')}
+                      icone={<div className="p-2 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-950/60 dark:border-amber-800/60"><Coins className="w-6 h-6 text-amber-600 dark:text-amber-400" /></div>}
                       className="flex-col"
                     />
                   </div>
@@ -944,15 +1153,28 @@ export default function OverviewDashboard({
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
                     {/* Gráfico do Fluxo */}
-                    <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between">
-                      <div className="border-b border-slate-100 pb-3 mb-4">
-                        <h4 className="font-bold text-slate-800 text-sm">Fluxo de Caixa Mensal</h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Recomendação de entradas e saídas pagas nos últimos 6 meses</p>
+                    <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between">
+                      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
+                        <div>
+                          <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Fluxo de Caixa Mensal</h4>
+                          <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Entradas e saídas pagas nos últimos 6 meses (clique para ver transações)</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onNavigate('financeiro', 'transacoes')}
+                          className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all"
+                        >
+                          <span>🔍</span> Ver transações
+                        </button>
                       </div>
                       
                       <div className="w-full h-80 min-w-0">
                         <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
-                          <ComposedChart data={financeData.graficoData} style={{ outline: 'none' }}>
+                          <ComposedChart 
+                            data={financeData.graficoData} 
+                            style={{ outline: 'none', cursor: 'pointer' }}
+                            onClick={() => onNavigate('financeiro', 'transacoes')}
+                          >
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                             <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
@@ -971,13 +1193,17 @@ export default function OverviewDashboard({
                               dataKey="Receitas" 
                               fill="#3b82f6" 
                               radius={[4, 4, 0, 0]} 
-                              barSize={20} 
+                              barSize={20}
+                              cursor="pointer"
+                              onClick={() => onNavigate('financeiro', 'transacoes')}
                             />
                             <Bar 
                               dataKey="Despesas" 
                               fill="#f43f5e" 
                               radius={[4, 4, 0, 0]} 
                               barSize={20} 
+                              cursor="pointer"
+                              onClick={() => onNavigate('financeiro', 'transacoes')}
                             />
                             <Line 
                               type="monotone" 
@@ -992,10 +1218,10 @@ export default function OverviewDashboard({
                     </div>
 
                     {/* Últimos Lançamentos */}
-                    <div className="lg:col-span-1 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-                      <div className="border-b border-slate-100 pb-3">
-                        <h4 className="font-bold text-slate-800 text-sm">Últimos Lançamentos Pagos</h4>
-                        <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Transações liquidadas recentemente</p>
+                    <div className="lg:col-span-1 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4 lg:sticky lg:top-20 lg:self-start">
+                      <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">Últimos Lançamentos Pagos</h4>
+                        <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Transações liquidadas (toque para abrir)</p>
                       </div>
 
                       {financeData.transacoesRecentes.length === 0 ? (
@@ -1003,15 +1229,20 @@ export default function OverviewDashboard({
                       ) : (
                         <div className="space-y-3">
                           {financeData.transacoesRecentes.map((t) => (
-                            <div key={t.id} className="flex justify-between items-start p-2.5 rounded-xl border border-slate-50 hover:bg-slate-50/50 transition-colors">
+                            <div 
+                              key={t.id} 
+                              onClick={() => onNavigate('financeiro', 'transacoes')}
+                              className="flex justify-between items-start p-2.5 rounded-xl border border-slate-50 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                              title="Ver transação no Financeiro"
+                            >
                               <div className="min-w-0 pr-2">
-                                <p className="font-bold text-slate-800 text-xs truncate">{t.descricao}</p>
+                                <p className="font-bold text-slate-800 dark:text-slate-200 text-xs truncate">{t.descricao}</p>
                                 <span className="block text-[10px] text-slate-400 font-semibold mt-0.5 uppercase tracking-wide">
                                   {new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}
                                 </span>
                               </div>
                               <div className="text-right shrink-0">
-                                <span className={`block font-extrabold text-xs ${t.tipo === 'receita' ? 'text-blue-600' : 'text-red-600'}`}>
+                                <span className={`block font-extrabold text-xs ${t.tipo === 'receita' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}`}>
                                   {t.tipo === 'receita' ? '+' : '-'} {formatarBRL(t.valor)}
                                 </span>
                               </div>
@@ -1035,9 +1266,12 @@ export default function OverviewDashboard({
   );
 }
 
-function CardMobileIndicador({ label, valor, detalhe, icon: Icon, colorBg = 'bg-blue-600' }) {
+function CardMobileIndicador({ label, valor, detalhe, icon: Icon, colorBg = 'bg-blue-600', onClick = null }) {
   return (
-    <div className="p-5 rounded-3xl bg-white border border-slate-100 shadow-xs flex items-center gap-5 text-slate-850 animate-in fade-in slide-in-from-top-1 duration-300">
+    <div 
+      onClick={onClick}
+      className={`p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xs flex items-center gap-5 text-slate-850 animate-in fade-in slide-in-from-top-1 duration-300 ${onClick ? 'cursor-pointer active:scale-95 transition-all' : ''}`}
+    >
       <div className={`w-14 h-14 rounded-2xl ${colorBg} flex items-center justify-center shrink-0 text-white shadow-sm`}>
         <Icon className="w-8 h-8 text-white" strokeWidth={1.8} />
       </div>
@@ -1046,11 +1280,11 @@ function CardMobileIndicador({ label, valor, detalhe, icon: Icon, colorBg = 'bg-
           {label}
         </p>
         <div className="flex items-baseline gap-2 mt-2 leading-none">
-          <span className="text-3xl font-black text-slate-800 tracking-tight">
+          <span className="text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
             {valor}
           </span>
           {detalhe && (
-            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
               • {detalhe}
             </span>
           )}

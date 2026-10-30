@@ -10,28 +10,28 @@ import {
 } from 'lucide-react';
 
 const getIconForCourse = (nome) => {
-  const lower = nome.toLowerCase();
+  const lower = (nome || '').toLowerCase();
   if (lower.includes('líder') || lower.includes('liderança')) {
     return {
-      icon: <Flame size={32} className="text-amber-600 w-8 h-8 md:w-10 md:h-10" />,
-      bg: 'bg-amber-50 text-amber-600'
+      icon: <Flame size={32} className="text-amber-600 dark:text-amber-400 w-8 h-8 md:w-10 md:h-10" />,
+      bg: 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60'
     };
   }
   if (lower.includes('finanças') || lower.includes('mordomia') || lower.includes('dinheiro')) {
     return {
-      icon: <Coins size={32} className="text-emerald-600 w-8 h-8 md:w-10 md:h-10" />,
-      bg: 'bg-emerald-50 text-emerald-600'
+      icon: <Coins size={32} className="text-emerald-600 dark:text-emerald-400 w-8 h-8 md:w-10 md:h-10" />,
+      bg: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60'
     };
   }
   if (lower.includes('teologia') || lower.includes('bíblia') || lower.includes('ensino')) {
     return {
-      icon: <BookOpen size={32} className="text-teal-600 w-8 h-8 md:w-10 md:h-10" />,
-      bg: 'bg-teal-50 text-teal-600'
+      icon: <BookOpen size={32} className="text-teal-600 dark:text-teal-400 w-8 h-8 md:w-10 md:h-10" />,
+      bg: 'bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 border border-teal-200/60 dark:border-teal-800/60'
     };
   }
   return {
-    icon: <Award size={32} className="text-indigo-600 w-8 h-8 md:w-10 md:h-10" />,
-    bg: 'bg-indigo-50 text-indigo-600'
+    icon: <Award size={32} className="text-indigo-600 dark:text-indigo-400 w-8 h-8 md:w-10 md:h-10" />,
+    bg: 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200/60 dark:border-indigo-800/60'
   };
 };
 
@@ -769,8 +769,8 @@ export default function EscolasModulo({
         <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start">
           {/* PAINEL LATERAL DE CADASTRO */}
           {podeEditar && (
-            <Card className="p-0 overflow-hidden sticky top-24 !bg-[#202046] !border-none text-white shadow-xl">
-              <div className="hidden md:block bg-[#191938] border-b border-[#2e2e5e] p-4">
+            <Card className="p-0 overflow-hidden sticky top-24 !bg-[#202046] dark:!bg-[#17223b] !border-none dark:!border dark:!border-[#2b3954] text-white shadow-xl">
+              <div className="hidden md:block bg-[#191938] dark:bg-[#131d31] border-b border-[#2e2e5e] dark:border-[#2b3954] p-4">
                 <h3 className="text-base font-extrabold text-white tracking-tight">Novo Curso</h3>
               </div>
 
@@ -778,7 +778,7 @@ export default function EscolasModulo({
               <button
                 type="button"
                 onClick={() => setMostrarFormNovoCurso(v => !v)}
-                className="md:hidden w-full flex items-center justify-between p-4 font-extrabold text-sm text-white bg-[#191938] border-b border-[#2e2e5e] rounded-t-2xl cursor-pointer"
+                className="md:hidden w-full flex items-center justify-between p-4 font-extrabold text-sm text-white bg-[#191938] dark:bg-[#131d31] border-b border-[#2e2e5e] dark:border-[#2b3954] rounded-t-2xl cursor-pointer"
               >
                 <span>+ Criar Novo Curso</span>
                 <svg className={`w-4 h-4 transition-transform ${mostrarFormNovoCurso ? 'rotate-180' : ''} text-white/80`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -794,7 +794,7 @@ export default function EscolasModulo({
                       type="text" required placeholder="Ex: Escola de Líderes..."
                       value={nome}
                       onChange={e => setNome(e.target.value)}
-                      className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm focus:ring-2 focus:ring-teal-400 outline-none"
+                      className="w-full px-3 py-2 border-0 dark:border dark:border-[#2b3954] bg-[#2e2e5e] dark:bg-[#0b1329] text-white placeholder-slate-400 rounded-xl text-sm focus:ring-2 focus:ring-teal-400 outline-none"
                     />
                   </div>
 
@@ -804,19 +804,19 @@ export default function EscolasModulo({
                       type="date" required
                       value={dataCriacao}
                       onChange={e => setDataCriacao(e.target.value)}
-                      className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm focus:ring-2 focus:ring-teal-400 outline-none"
+                      className="w-full px-3 py-2 border-0 dark:border dark:border-[#2b3954] bg-[#2e2e5e] dark:bg-[#0b1329] text-white rounded-xl text-sm focus:ring-2 focus:ring-teal-400 outline-none"
                     />
                   </div>
 
                   <div>
                     <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Gestores</label>
-                    <div className="border border-[#2e2e5e] rounded-xl p-2 bg-[#191938] max-h-40 overflow-y-auto space-y-1">
+                    <div className="border border-[#2e2e5e] dark:border-[#2b3954] rounded-xl p-2 bg-[#191938] dark:bg-[#0b1329] max-h-40 overflow-y-auto space-y-1">
                       {pessoas.map(p => (
-                        <label key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-[#2e2e5e] p-1.5 rounded-lg transition">
+                        <label key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-[#2e2e5e] dark:hover:bg-[#1c2b4a] p-1.5 rounded-lg transition">
                           <input type="checkbox"
                             checked={gestoresIds.includes(p.id)}
                             onChange={() => toggleGestor(p.id)}
-                            className="rounded text-teal-500 focus:ring-teal-450 bg-[#2e2e5e] border-0"
+                            className="rounded text-teal-500 focus:ring-teal-450 bg-[#2e2e5e] dark:bg-[#1c2b4a] border-0"
                           />
                           <span className="text-xs text-slate-300 truncate">{p.nome}</span>
                         </label>
@@ -829,7 +829,7 @@ export default function EscolasModulo({
                     <textarea
                       rows="2" placeholder="Objetivos do curso..."
                       value={descricao} onChange={e => setDescricao(e.target.value)}
-                      className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm outline-none resize-none focus:ring-2 focus:ring-teal-400"
+                      className="w-full px-3 py-2 border-0 dark:border dark:border-[#2b3954] bg-[#2e2e5e] dark:bg-[#0b1329] text-white placeholder-slate-400 rounded-xl text-sm outline-none resize-none focus:ring-2 focus:ring-teal-400"
                     />
                   </div>
 
@@ -847,13 +847,13 @@ export default function EscolasModulo({
           {/* CARDS DE CURSOS */}
           <div className={`${!podeEditar ? 'col-span-full' : ''} space-y-4`}>
             <div className="hidden md:block">
-              <h3 className="text-base font-extrabold text-slate-800 tracking-tight">Cursos Cadastrados</h3>
+              <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Cursos Cadastrados</h3>
             </div>
 
             {carregando && escolas.length === 0 ? (
               <div className="p-10 text-center animate-pulse text-slate-400">Carregando cursos...</div>
             ) : escolas.length === 0 ? (
-              <div className="p-10 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-white italic">Nenhum curso cadastrado.</div>
+              <div className="p-10 text-center text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-[#24334f] rounded-2xl bg-white dark:bg-[#131d31] italic">Nenhum curso cadastrado.</div>
             ) : (
               <div className={`grid grid-cols-2 gap-4 ${podeEditar ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}`}>
                 {escolas.map(escola => {
@@ -868,14 +868,14 @@ export default function EscolasModulo({
                         setFiltroCursoTurmas(escola.id);
                         onNavigate('turmas');
                       }}
-                      className="flex flex-col items-center justify-between p-4 sm:p-6 rounded-2xl border border-slate-150 bg-white hover:bg-slate-50/50 hover:border-slate-350 hover:shadow-md hover:scale-[1.03] active:scale-97 transition-all duration-300 text-center w-full aspect-square group cursor-pointer relative"
+                      className="flex flex-col items-center justify-between p-4 sm:p-6 rounded-2xl border border-slate-150 dark:border-[#24334f] bg-white dark:bg-[#131d31] hover:bg-slate-50/50 dark:hover:bg-[#1c2b4a]/70 hover:border-slate-350 dark:hover:border-blue-500 hover:shadow-md hover:scale-[1.03] active:scale-97 transition-all duration-300 text-center w-full aspect-square group cursor-pointer relative"
                     >
                       {/* Edit Action (top-right absolute) */}
                       {podeEditar && (
                         <button
                           type="button"
                           onClick={e => { e.stopPropagation(); handleEditar(escola); }}
-                          className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
+                          className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-[#1c2b4a] transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
                           title="Editar Curso"
                         >
                           <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -889,7 +889,7 @@ export default function EscolasModulo({
                         <button
                           type="button"
                           onClick={e => { e.stopPropagation(); handleExcluir(escola.id); }}
-                          className="absolute bottom-2 right-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
+                          className="absolute bottom-2 right-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
                           title="Remover Curso"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -905,11 +905,11 @@ export default function EscolasModulo({
 
                       {/* Title and Highlighted Count */}
                       <div className="flex-1 flex flex-col justify-center my-2 md:my-3 w-full">
-                        <h4 className="text-xs md:text-sm lg:text-base font-bold text-slate-800 line-clamp-2 leading-snug px-1 mb-1" title={escola.nome}>
+                        <h4 className="text-xs md:text-sm lg:text-base font-bold text-slate-800 dark:text-slate-100 line-clamp-2 leading-snug px-1 mb-1" title={escola.nome}>
                           {escola.nome}
                         </h4>
                         <div className="flex items-baseline justify-center gap-1 md:gap-1.5 mt-0.5">
-                          <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 group-hover:text-indigo-700 transition-colors">
+                          <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-slate-800 dark:text-slate-100 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors">
                             {numTurmas}
                           </span>
                           <span className="text-[9px] md:text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -919,7 +919,7 @@ export default function EscolasModulo({
                       </div>
 
                       {/* Hover action indicator */}
-                      <span className="text-[9px] md:text-xs font-bold text-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 uppercase tracking-wider mb-1">
+                      <span className="text-[9px] md:text-xs font-bold text-indigo-700 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 uppercase tracking-wider mb-1">
                         Ver turmas →
                       </span>
                     </button>
@@ -984,12 +984,12 @@ export default function EscolasModulo({
           <div className="grid grid-cols-1 lg:grid-cols-[350px_1fr] gap-6 items-start">
 
             {/* PAINEL LATERAL DE CADASTRO */}
-            <Card className="p-0 overflow-hidden sticky top-24 col-span-full lg:col-span-1 !bg-[#202046] !border-none text-white shadow-xl">
+            <Card className="p-0 overflow-hidden sticky top-24 col-span-full lg:col-span-1 !bg-[#202046] dark:!bg-[#17223b] !border-none dark:!border dark:!border-[#2b3954] text-white shadow-xl">
               {/* Mobile: botão que expande o formulário (pushdown) */}
               <button
                 type="button"
                 onClick={() => setMostrarFormNovaTurma(v => !v)}
-                className="md:hidden w-full flex items-center justify-between p-4 font-extrabold text-sm text-white bg-[#191938] border-b border-[#2e2e5e] rounded-t-2xl cursor-pointer"
+                className="md:hidden w-full flex items-center justify-between p-4 font-extrabold text-sm text-white bg-[#191938] dark:bg-[#131d31] border-b border-[#2e2e5e] dark:border-[#2b3954] rounded-t-2xl cursor-pointer"
               >
                 <span>+ Adicionar Turma</span>
                 <svg className={`w-4 h-4 transition-transform ${mostrarFormNovaTurma ? 'rotate-180' : ''} text-white/80`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -998,7 +998,7 @@ export default function EscolasModulo({
               </button>
 
               <div className={`${mostrarFormNovaTurma ? 'block' : 'hidden'} md:block`}>
-                <div className="hidden md:block bg-[#191938] border-b border-[#2e2e5e] p-4">
+                <div className="hidden md:block bg-[#191938] dark:bg-[#131d31] border-b border-[#2e2e5e] dark:border-[#2b3954] p-4">
                   <h3 className="text-base font-extrabold text-white tracking-tight">Nova Turma</h3>
                 </div>
                 <form onSubmit={handleCriarTurma} className="p-5 space-y-4">
@@ -1006,10 +1006,10 @@ export default function EscolasModulo({
                     <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Curso / Escola</label>
                     <select
                       required value={turmaCursoId} onChange={e => setTurmaCursoId(e.target.value)}
-                      className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400"
+                      className="w-full px-3 py-2 border-0 dark:border dark:border-[#2b3954] bg-[#2e2e5e] dark:bg-[#0b1329] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400"
                     >
-                      <option value="" className="bg-[#202046] text-white">Selecione o curso...</option>
-                      {escolas.map(e => <option key={e.id} value={e.id} className="bg-[#202046] text-white">{e.nome}</option>)}
+                      <option value="" className="bg-[#202046] dark:bg-[#0b1329] text-white">Selecione o curso...</option>
+                      {escolas.map(e => <option key={e.id} value={e.id} className="bg-[#202046] dark:bg-[#0b1329] text-white">{e.nome}</option>)}
                     </select>
                   </div>
 
@@ -1018,27 +1018,27 @@ export default function EscolasModulo({
                     <input
                       type="text" required placeholder="Ex: Turma Alpha 2024..."
                       value={turmaNome} onChange={e => setTurmaNome(e.target.value)}
-                      className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400"
+                      className="w-full px-3 py-2 border-0 dark:border dark:border-[#2b3954] bg-[#2e2e5e] dark:bg-[#0b1329] text-white placeholder-slate-400 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Horário</label>
-                      <select value={turmaHorario} onChange={e => setTurmaHorario(e.target.value)} className="w-full px-2 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400">
-                        <option value="Manhã" className="bg-[#202046] text-white">Manhã</option>
-                        <option value="Tarde" className="bg-[#202046] text-white">Tarde</option>
-                        <option value="Noite" className="bg-[#202046] text-white">Noite</option>
-                        <option value="Não definido" className="bg-[#202046] text-white">Não definido</option>
+                      <select value={turmaHorario} onChange={e => setTurmaHorario(e.target.value)} className="w-full px-2 py-2 border-0 dark:border dark:border-[#2b3954] bg-[#2e2e5e] dark:bg-[#0b1329] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400">
+                        <option value="Manhã" className="bg-[#202046] dark:bg-[#0b1329] text-white">Manhã</option>
+                        <option value="Tarde" className="bg-[#202046] dark:bg-[#0b1329] text-white">Tarde</option>
+                        <option value="Noite" className="bg-[#202046] dark:bg-[#0b1329] text-white">Noite</option>
+                        <option value="Não definido" className="bg-[#202046] dark:bg-[#0b1329] text-white">Não definido</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Status</label>
-                      <select value={turmaStatus} onChange={e => setTurmaStatus(e.target.value)} className="w-full px-2 py-2 border-0 bg-[#2e2e5e] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400">
-                        <option value="Preparando turma" className="bg-[#202046] text-white">Preparando</option>
-                        <option value="Em andamento" className="bg-[#202046] text-white">Em andamento</option>
-                        <option value="Pausada" className="bg-[#202046] text-white">Pausada</option>
-                        <option value="Finalizada" className="bg-[#202046] text-white">Finalizada</option>
+                      <select value={turmaStatus} onChange={e => setTurmaStatus(e.target.value)} className="w-full px-2 py-2 border-0 dark:border dark:border-[#2b3954] bg-[#2e2e5e] dark:bg-[#0b1329] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400">
+                        <option value="Preparando turma" className="bg-[#202046] dark:bg-[#0b1329] text-white">Preparando</option>
+                        <option value="Em andamento" className="bg-[#202046] dark:bg-[#0b1329] text-white">Em andamento</option>
+                        <option value="Pausada" className="bg-[#202046] dark:bg-[#0b1329] text-white">Pausada</option>
+                        <option value="Finalizada" className="bg-[#202046] dark:bg-[#0b1329] text-white">Finalizada</option>
                       </select>
                     </div>
                   </div>
@@ -1048,7 +1048,7 @@ export default function EscolasModulo({
                     <textarea
                       rows="2" placeholder="Breve resumo da turma..."
                       value={turmaDescricao} onChange={e => setTurmaDescricao(e.target.value)}
-                      className="w-full px-3 py-2 border-0 bg-[#2e2e5e] text-white placeholder-slate-400 rounded-xl text-sm outline-none resize-none focus:ring-2 focus:ring-teal-400"
+                      className="w-full px-3 py-2 border-0 dark:border dark:border-[#2b3954] bg-[#2e2e5e] dark:bg-[#0b1329] text-white placeholder-slate-400 rounded-xl text-sm outline-none resize-none focus:ring-2 focus:ring-teal-400"
                     />
                   </div>
 
@@ -1062,13 +1062,13 @@ export default function EscolasModulo({
             {/* CARDS DE TURMAS */}
             <div className="space-y-4 col-span-full lg:col-span-1">
               <div className="flex items-center justify-between gap-3">
-                <h3 className="text-base font-extrabold text-slate-800 tracking-tight">
+                <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">
                   {filtroCursoTurmas ? `Turmas de ${escolas.find(e => e.id === filtroCursoTurmas)?.nome || 'Curso'}` : "Turmas Ativas"}
                 </h3>
                 {filtroCursoTurmas && (
                   <button
                     onClick={() => setFiltroCursoTurmas('')}
-                    className="px-3 py-1.5 text-xs font-bold text-[#055F6D] hover:text-[#044c57] bg-[#055F6D]/5 hover:bg-[#055F6D]/10 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                    className="px-3 py-1.5 text-xs font-bold text-[#055F6D] dark:text-teal-400 hover:text-[#044c57] dark:hover:text-teal-300 bg-[#055F6D]/5 dark:bg-teal-950/40 hover:bg-[#055F6D]/10 dark:hover:bg-teal-900/50 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
                   >
                     ← Ver Todas
                   </button>
@@ -1077,11 +1077,11 @@ export default function EscolasModulo({
 
               {/* Mobile filter clear indicator */}
               {filtroCursoTurmas && (
-                <div className="md:hidden p-3 bg-slate-50 border border-slate-150 rounded-xl flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-700">Filtrando: {escolas.find(e => e.id === filtroCursoTurmas)?.nome}</span>
+                <div className="md:hidden p-3 bg-slate-50 dark:bg-[#131d31] border border-slate-150 dark:border-[#24334f] rounded-xl flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Filtrando: {escolas.find(e => e.id === filtroCursoTurmas)?.nome}</span>
                   <button
                     onClick={() => setFiltroCursoTurmas('')}
-                    className="text-xs font-black text-[#055F6D] cursor-pointer"
+                    className="text-xs font-black text-[#055F6D] dark:text-teal-400 cursor-pointer"
                   >
                     Limpar
                   </button>
@@ -1089,7 +1089,7 @@ export default function EscolasModulo({
               )}
 
               {(filtroCursoTurmas ? turmas.filter(t => t.escola_id === filtroCursoTurmas) : turmas).length === 0 ? (
-                <div className="p-10 text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-white italic">Nenhuma turma cadastrada para este filtro.</div>
+                <div className="p-10 text-center text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-[#24334f] rounded-2xl bg-white dark:bg-[#131d31] italic">Nenhuma turma cadastrada para este filtro.</div>
               ) : (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {(filtroCursoTurmas ? turmas.filter(t => t.escola_id === filtroCursoTurmas) : turmas).map(t => {
@@ -1099,14 +1099,14 @@ export default function EscolasModulo({
                         key={t.id}
                         type="button"
                         onClick={() => handleAbrirTurma(t.id)}
-                        className="flex flex-col items-center justify-between p-4 sm:p-6 rounded-2xl border border-slate-150 bg-white hover:bg-slate-50/50 hover:border-slate-350 hover:shadow-md hover:scale-[1.03] active:scale-97 transition-all duration-300 text-center w-full aspect-square group cursor-pointer relative"
+                        className="flex flex-col items-center justify-between p-4 sm:p-6 rounded-2xl border border-slate-150 dark:border-[#24334f] bg-white dark:bg-[#131d31] hover:bg-slate-50/50 dark:hover:bg-[#1c2b4a]/70 hover:border-slate-350 dark:hover:border-blue-500 hover:shadow-md hover:scale-[1.03] active:scale-97 transition-all duration-300 text-center w-full aspect-square group cursor-pointer relative"
                       >
                         {/* Edit Action (top-right absolute) */}
                         {podeEditar && (
                           <button
                             type="button"
                             onClick={e => { e.stopPropagation(); handleEditarTurma(t); }}
-                            className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
+                            className="absolute top-2 right-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-[#1c2b4a] transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
                             title="Editar Turma"
                           >
                             <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -1120,7 +1120,7 @@ export default function EscolasModulo({
                           <button
                             type="button"
                             onClick={e => { e.stopPropagation(); handleExcluirTurma(t.id); }}
-                            className="absolute bottom-2 right-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
+                            className="absolute bottom-2 right-2 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition p-1.5 md:p-2 rounded-lg cursor-pointer opacity-80 group-hover:opacity-100 z-10"
                             title="Remover Turma"
                           >
                             <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -1136,19 +1136,19 @@ export default function EscolasModulo({
 
                         {/* Title and Highlighted Status/Schedule */}
                         <div className="flex-1 flex flex-col justify-center my-2 md:my-3 w-full">
-                          <h4 className="text-xs md:text-sm lg:text-base font-bold text-slate-800 line-clamp-2 leading-snug px-1 mb-1" title={t.nome}>
+                          <h4 className="text-xs md:text-sm lg:text-base font-bold text-slate-800 dark:text-slate-100 line-clamp-2 leading-snug px-1 mb-1" title={t.nome}>
                             {t.nome}
                           </h4>
-                          <p className="text-[10px] md:text-xs text-[#202046]/80 font-semibold truncate px-2 mb-1.5">
+                          <p className="text-[10px] md:text-xs text-[#202046]/80 dark:text-slate-300 font-semibold truncate px-2 mb-1.5">
                             {t.escolas?.nome || 'Sem curso'}
                           </p>
                           <div className="flex flex-wrap items-center justify-center gap-1.5">
-                            <span className="text-[9px] md:text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200 uppercase tracking-wide">
+                            <span className="text-[9px] md:text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-[#0b1329] px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-[#2b3954] uppercase tracking-wide">
                               {t.horario}
                             </span>
-                            <span className={`text-[9px] md:text-xs font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wide ${t.status === 'Em andamento' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                              t.status === 'Finalizada' ? 'bg-slate-50 text-slate-500 border-slate-200' :
-                                'bg-amber-50 text-amber-600 border-amber-100'
+                            <span className={`text-[9px] md:text-xs font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wide ${t.status === 'Em andamento' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 border-emerald-100 dark:border-emerald-800' :
+                              t.status === 'Finalizada' ? 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700' :
+                                'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 border-amber-100 dark:border-amber-800'
                               }`}>
                               {t.status}
                             </span>
@@ -1156,7 +1156,7 @@ export default function EscolasModulo({
                         </div>
 
                         {/* Hover action indicator */}
-                        <span className="text-[9px] font-bold text-indigo-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300 uppercase tracking-wider mb-1">
+                        <span className="text-[9px] font-bold text-indigo-700 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 uppercase tracking-wider mb-1">
                           Gerenciar Turma →
                         </span>
                       </button>
@@ -1172,7 +1172,7 @@ export default function EscolasModulo({
       {submenu === 'disciplinas' && (
         <Card className="p-6">
           <div className="hidden md:block"><CardHeader titulo="Gestão de Disciplinas" /></div>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Cadastre e organize as disciplinas oferecidas pelas escolas da igreja.
           </p>
           {/* Conteúdo específico para Disciplinas */}
@@ -1182,7 +1182,7 @@ export default function EscolasModulo({
       {submenu === 'professores' && (
         <Card className="p-6">
           <div className="hidden md:block"><CardHeader titulo="Cadastro de Professores" /></div>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Gerencie os professores, seus dados e as disciplinas que lecionam.
           </p>
           {/* Conteúdo específico para Professores */}
@@ -1192,7 +1192,7 @@ export default function EscolasModulo({
       {submenu === 'alunos' && (
         <Card className="p-6">
           <div className="hidden md:block"><CardHeader titulo="Cadastro de Alunos" /></div>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Mantenha o registro dos alunos, suas turmas e histórico.
           </p>
           {/* Conteúdo específico para Alunos */}
@@ -1202,7 +1202,7 @@ export default function EscolasModulo({
       {submenu === 'aulas' && (
         <Card className="p-6">
           <div className="hidden md:block"><CardHeader titulo="Programação de Aulas" /></div>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Organize o calendário e a programação das aulas.
           </p>
           {/* Conteúdo específico para Aulas */}
@@ -1256,7 +1256,7 @@ export default function EscolasModulo({
             onUpdateStatusAluno={handleUpdateStatusAluno}
           />
         ) : turmaSelecionadaId ? (
-          <div className="p-10 text-center animate-pulse text-slate-400">Buscando caderneta da turma...</div>
+          <div className="p-10 text-center animate-pulse text-slate-400 dark:text-slate-500">Buscando caderneta da turma...</div>
         ) : (
           <PainelCentralAvaliacoes
             turmas={turmas}
@@ -1274,7 +1274,7 @@ export default function EscolasModulo({
       {submenu === 'inscricoes' && (
         <Card className="p-6">
           <div className="hidden md:block"><CardHeader titulo="Formulários de Inscrição Pública" /></div>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             Crie e gerencie formulários de inscrição para novos alunos.
           </p>
           {/* Conteúdo específico para Inscrições Públicas */}
@@ -1284,13 +1284,13 @@ export default function EscolasModulo({
       {/* Modal de Edição (Apenas Edição) */}
       {isModalEdicaoAberto && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-2 py-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+          <div className="bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 dark:border-[#2b3954] flex justify-between items-center bg-slate-50 dark:bg-[#131d31] shrink-0">
               <div>
-                <h3 className="font-bold text-slate-800 text-lg">Editar Curso</h3>
-                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Módulo de Educação</p>
+                <h3 className="font-bold text-slate-800 dark:text-white text-lg">Editar Curso</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-tight">Módulo de Educação</p>
               </div>
-              <button onClick={() => setIsModalEdicaoAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 hover:text-rose-500 transition cursor-pointer">✕</button>
+              <button onClick={() => setIsModalEdicaoAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-[#1c2b4a] border border-slate-200 dark:border-[#2b3954] text-slate-400 dark:text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleUpdate} className="flex flex-col flex-1 overflow-hidden">
@@ -1301,7 +1301,7 @@ export default function EscolasModulo({
                     type="text" required
                     value={editNome}
                     onChange={e => setEditNome(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#202046]/20 outline-none"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
                   />
                 </div>
 
@@ -1311,21 +1311,21 @@ export default function EscolasModulo({
                     type="date" required
                     value={editDataCriacao}
                     onChange={e => setEditDataCriacao(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl text-sm outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Gestores</label>
-                  <div className="border border-slate-200 rounded-xl p-2 bg-slate-50 max-h-40 overflow-y-auto space-y-1">
+                  <div className="border border-slate-200 dark:border-[#2b3954] rounded-xl p-2 bg-slate-50 dark:bg-[#0b1329] max-h-40 overflow-y-auto space-y-1">
                     {pessoas.map(p => (
-                      <label key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-white p-1.5 rounded-lg transition">
+                      <label key={p.id} className="flex items-center gap-2 cursor-pointer hover:bg-white dark:hover:bg-[#17223b] p-1.5 rounded-lg transition">
                         <input type="checkbox"
                           checked={editGestoresIds.includes(p.id)}
                           onChange={() => toggleGestorEdit(p.id)}
-                          className="rounded text-[#055F6D] focus:ring-[#055F6D]"
+                          className="rounded text-blue-600 focus:ring-blue-500"
                         />
-                        <span className="text-xs text-slate-600 truncate">{p.nome}</span>
+                        <span className="text-xs text-slate-600 dark:text-slate-300 truncate">{p.nome}</span>
                       </label>
                     ))}
                   </div>
@@ -1336,16 +1336,16 @@ export default function EscolasModulo({
                   <textarea
                     rows="3"
                     value={editDescricao} onChange={e => setEditDescricao(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none resize-none"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl text-sm outline-none resize-none"
                   />
                 </div>
               </div>
 
-              <div className="p-6 border-t border-slate-100 bg-slate-50 flex gap-3 shrink-0">
-                <button type="button" onClick={() => setIsModalEdicaoAberto(false)} className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 rounded-2xl text-xs font-bold hover:bg-slate-50 transition cursor-pointer">
+              <div className="p-6 border-t border-slate-100 dark:border-[#2b3954] bg-slate-50 dark:bg-[#131d31] flex gap-3 shrink-0">
+                <button type="button" onClick={() => setIsModalEdicaoAberto(false)} className="flex-1 px-4 py-3 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-200 rounded-2xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-[#24334f] transition cursor-pointer">
                   Cancelar
                 </button>
-                <button type="submit" disabled={carregando} className="flex-1 px-4 py-3 bg-[#202046] text-white rounded-2xl text-xs font-bold hover:opacity-90 transition shadow-lg shadow-teal-100 cursor-pointer">
+                <button type="submit" disabled={carregando} className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-bold transition shadow-lg shadow-blue-500/25 border border-blue-400/30 cursor-pointer">
                   {carregando ? 'Salvando...' : '💾 Salvar Alterações'}
                 </button>
               </div>
@@ -1357,13 +1357,13 @@ export default function EscolasModulo({
       {/* Modal de Edição Turma */}
       {isModalEdicaoTurmaAberto && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center px-2 py-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+          <div className="bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 dark:border-[#2b3954] flex justify-between items-center bg-slate-50 dark:bg-[#131d31] shrink-0">
               <div>
-                <h3 className="font-bold text-slate-800 text-lg">Editar Turma</h3>
-                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-tight">Gestão Acadêmica</p>
+                <h3 className="font-bold text-slate-800 dark:text-white text-lg">Editar Turma</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold tracking-tight">Gestão Acadêmica</p>
               </div>
-              <button onClick={() => setIsModalEdicaoTurmaAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 hover:text-rose-500 transition cursor-pointer">✕</button>
+              <button onClick={() => setIsModalEdicaoTurmaAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-[#1c2b4a] border border-slate-200 dark:border-[#2b3954] text-slate-400 dark:text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer">✕</button>
             </div>
 
             <form onSubmit={handleUpdateTurma} className="flex flex-col flex-1 overflow-hidden">
@@ -1372,9 +1372,9 @@ export default function EscolasModulo({
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Curso / Escola</label>
                   <select
                     required value={editTurmaCursoId} onChange={e => setEditTurmaCursoId(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl text-sm bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 outline-none"
                   >
-                    {escolas.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+                    {escolas.map(e => <option key={e.id} value={e.id} className="dark:bg-[#0b1329]">{e.nome}</option>)}
                   </select>
                 </div>
 
@@ -1383,27 +1383,27 @@ export default function EscolasModulo({
                   <input
                     type="text" required
                     value={editTurmaNome} onChange={e => setEditTurmaNome(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl text-sm outline-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Horário</label>
-                    <select value={editTurmaHorario} onChange={e => setEditTurmaHorario(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white">
-                      <option value="Manhã">Manhã</option>
-                      <option value="Tarde">Tarde</option>
-                      <option value="Noite">Noite</option>
-                      <option value="Não definido">Não definido</option>
+                    <select value={editTurmaHorario} onChange={e => setEditTurmaHorario(e.target.value)} className="w-full px-2 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl text-sm bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100">
+                      <option value="Manhã" className="dark:bg-[#0b1329]">Manhã</option>
+                      <option value="Tarde" className="dark:bg-[#0b1329]">Tarde</option>
+                      <option value="Noite" className="dark:bg-[#0b1329]">Noite</option>
+                      <option value="Não definido" className="dark:bg-[#0b1329]">Não definido</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Status</label>
-                    <select value={editTurmaStatus} onChange={e => setEditTurmaStatus(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white">
-                      <option value="Preparando turma">Preparando</option>
-                      <option value="Em andamento">Em andamento</option>
-                      <option value="Pausada">Pausada</option>
-                      <option value="Finalizada">Finalizada</option>
+                    <select value={editTurmaStatus} onChange={e => setEditTurmaStatus(e.target.value)} className="w-full px-2 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl text-sm bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100">
+                      <option value="Preparando turma" className="dark:bg-[#0b1329]">Preparando</option>
+                      <option value="Em andamento" className="dark:bg-[#0b1329]">Em andamento</option>
+                      <option value="Pausada" className="dark:bg-[#0b1329]">Pausada</option>
+                      <option value="Finalizada" className="dark:bg-[#0b1329]">Finalizada</option>
                     </select>
                   </div>
                 </div>
@@ -1413,16 +1413,16 @@ export default function EscolasModulo({
                   <textarea
                     rows="3"
                     value={editTurmaDescricao} onChange={e => setEditTurmaDescricao(e.target.value)}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none resize-none"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl text-sm outline-none resize-none"
                   />
                 </div>
               </div>
 
-              <div className="p-6 border-t border-slate-100 bg-slate-50 flex gap-3 shrink-0">
-                <button type="button" onClick={() => setIsModalEdicaoTurmaAberto(false)} className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 rounded-2xl text-xs font-bold hover:bg-slate-50 transition cursor-pointer">
+              <div className="p-6 border-t border-slate-100 dark:border-[#2b3954] bg-slate-50 dark:bg-[#131d31] flex gap-3 shrink-0">
+                <button type="button" onClick={() => setIsModalEdicaoTurmaAberto(false)} className="flex-1 px-4 py-3 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-200 rounded-2xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-[#24334f] transition cursor-pointer">
                   Cancelar
                 </button>
-                <button type="submit" disabled={carregando} className="flex-1 px-4 py-3 bg-[#202046] text-white rounded-2xl text-xs font-bold hover:opacity-90 transition shadow-lg shadow-teal-100 cursor-pointer">
+                <button type="submit" disabled={carregando} className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-bold transition shadow-lg shadow-blue-500/25 border border-blue-400/30 cursor-pointer">
                   {carregando ? 'Salvando...' : '💾 Salvar Alterações'}
                 </button>
               </div>
@@ -1436,23 +1436,23 @@ export default function EscolasModulo({
         <ModalWrapper titulo="Adicionar Alunos" onFechar={() => setIsModalAddAlunosAberto(false)}>
           <div className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
             {pessoas.filter(p => !alunosTurma.some(a => a.alunos?.pessoa_id === p.id)).map(p => (
-              <label key={p.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer transition">
+              <label key={p.id} className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-[#24334f] bg-white dark:bg-[#131d31] hover:bg-slate-50 dark:hover:bg-[#1c2b4a] cursor-pointer transition">
                 <input
                   type="checkbox"
                   checked={selectedMembrosParaAdicionar.includes(p.id)}
                   onChange={() => handleToggleMembroLista(p.id)}
-                  className="rounded text-[#202046] focus:ring-[#202046]"
+                  className="rounded text-blue-600 focus:ring-blue-500"
                 />
                 <div className="flex items-center gap-2">
                   <Avatar pessoa={p} tamanho="w-8 h-8" />
-                  <span className="text-sm font-bold text-slate-700">{p.nome}</span>
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{p.nome}</span>
                 </div>
               </label>
             ))}
           </div>
-          <div className="p-5 border-t bg-slate-50 flex gap-3">
-            <button onClick={() => setIsModalAddAlunosAberto(false)} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold cursor-pointer">Cancelar</button>
-            <button onClick={() => handleAddAlunos(selectedMembrosParaAdicionar)} disabled={isAddingAlunos || selectedMembrosParaAdicionar.length === 0} className="flex-1 py-2.5 rounded-xl bg-[#202046] text-white text-xs font-bold disabled:opacity-50 cursor-pointer">
+          <div className="p-5 border-t border-slate-100 dark:border-[#2b3954] bg-slate-50 dark:bg-[#131d31] flex gap-3">
+            <button onClick={() => setIsModalAddAlunosAberto(false)} className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#1c2b4a] text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-[#24334f] cursor-pointer">Cancelar</button>
+            <button onClick={() => handleAddAlunos(selectedMembrosParaAdicionar)} disabled={isAddingAlunos || selectedMembrosParaAdicionar.length === 0} className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold disabled:opacity-50 shadow-md shadow-blue-500/25 border border-blue-400/30 cursor-pointer">
               {isAddingAlunos ? 'Adicionando...' : `Adicionar Selecionados (${selectedMembrosParaAdicionar.length})`}
             </button>
           </div>
@@ -1465,18 +1465,18 @@ export default function EscolasModulo({
           <form onSubmit={handleAddDisciplina} className="p-5 space-y-4">
             <div>
               <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Nome da Disciplina</label>
-              <input type="text" required value={novaDisciplinaNome} onChange={e => setNovaDisciplinaNome(e.target.value)} className="w-full px-3 py-2 border rounded-xl outline-none" placeholder="Ex: Antigo Testamento I" />
+              <input type="text" required value={novaDisciplinaNome} onChange={e => setNovaDisciplinaNome(e.target.value)} className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl outline-none" placeholder="Ex: Antigo Testamento I" />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Professor</label>
-              <select required value={novaDisciplinaProfId} onChange={e => setNovaDisciplinaProfId(e.target.value)} className="w-full px-3 py-2 border rounded-xl bg-white">
-                <option value="">Selecione o professor...</option>
-                {pessoas.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+              <select required value={novaDisciplinaProfId} onChange={e => setNovaDisciplinaProfId(e.target.value)} className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 outline-none">
+                <option value="" className="dark:bg-[#0b1329]">Selecione o professor...</option>
+                {pessoas.map(p => <option key={p.id} value={p.id} className="dark:bg-[#0b1329]">{p.nome}</option>)}
               </select>
             </div>
             <div className="flex gap-3 pt-2">
-              <button type="button" onClick={() => setIsModalAddDisciplinaAberto(false)} className="flex-1 py-2.5 rounded-xl border text-xs font-bold cursor-pointer">Cancelar</button>
-              <button type="submit" className="flex-1 py-2.5 rounded-xl bg-[#202046] text-white text-xs font-bold cursor-pointer">Salvar Disciplina</button>
+              <button type="button" onClick={() => setIsModalAddDisciplinaAberto(false)} className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#1c2b4a] text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-[#24334f] cursor-pointer">Cancelar</button>
+              <button type="submit" className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md shadow-blue-500/25 border border-blue-400/30 cursor-pointer">Salvar Disciplina</button>
             </div>
           </form>
         </ModalWrapper>
@@ -1490,37 +1490,37 @@ export default function EscolasModulo({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Data</label>
-                  <input type="date" required value={novaAulaData} onChange={e => setNovaAulaData(e.target.value)} className="w-full px-3 py-2 border rounded-xl" />
+                  <input type="date" required value={novaAulaData} onChange={e => setNovaAulaData(e.target.value)} className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl outline-none" />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Disciplina</label>
-                  <select required value={novaAulaDiscId} onChange={e => setNovaAulaDiscId(e.target.value)} className="w-full px-3 py-2 border rounded-xl bg-white">
-                    <option value="">Selecione...</option>
-                    {disciplinasTurma.map(d => <option key={d.id} value={d.id}>{d.disciplinas?.nome}</option>)}
+                  <select required value={novaAulaDiscId} onChange={e => setNovaAulaDiscId(e.target.value)} className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 outline-none">
+                    <option value="" className="dark:bg-[#0b1329]">Selecione...</option>
+                    {disciplinasTurma.map(d => <option key={d.id} value={d.id} className="dark:bg-[#0b1329]">{d.disciplinas?.nome}</option>)}
                   </select>
                 </div>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Assunto da Aula</label>
-                <input type="text" required value={novaAulaAssunto} onChange={e => setNovaAulaAssunto(e.target.value)} className="w-full px-3 py-2 border rounded-xl" placeholder="Ex: Introdução ao Pentateuco" />
+                <input type="text" required value={novaAulaAssunto} onChange={e => setNovaAulaAssunto(e.target.value)} className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl outline-none" placeholder="Ex: Introdução ao Pentateuco" />
               </div>
 
               <div>
                 <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Observações</label>
-                <textarea rows="2" value={novaAulaDesc} onChange={e => setNovaAulaDesc(e.target.value)} className="w-full px-3 py-2 border rounded-xl resize-none" placeholder="Relato do professor sobre a aula ministrada..." />
+                <textarea rows="2" value={novaAulaDesc} onChange={e => setNovaAulaDesc(e.target.value)} className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl resize-none outline-none" placeholder="Relato do professor sobre a aula ministrada..." />
               </div>
 
-              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-150 space-y-3">
+              <div className="bg-slate-50 dark:bg-[#131d31]/80 p-3.5 rounded-2xl border border-slate-150 dark:border-[#24334f] space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider">Chamada / Presença</h4>
-                    <p className="text-[11px] text-slate-400">Controle de presença dos alunos ativos</p>
+                    <h4 className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider">Chamada / Presença</h4>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-400">Controle de presença dos alunos ativos</p>
                   </div>
                   <div className="flex items-center gap-1.5 self-start sm:self-auto flex-wrap">
                     <button
                       type="button"
                       onClick={() => handleMarcarTodos(true, true)}
-                      className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                      className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 rounded-lg text-[10px] font-bold transition cursor-pointer"
                       title="Marcar todos os alunos ativos como presentes"
                     >
                       ✓ Todos Presentes
@@ -1528,7 +1528,7 @@ export default function EscolasModulo({
                     <button
                       type="button"
                       onClick={() => handleMarcarTodos(false, false)}
-                      className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                      className="px-2.5 py-1 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60 rounded-lg text-[10px] font-bold transition cursor-pointer"
                       title="Marcar todos como ausentes"
                     >
                       ✕ Todos Ausentes
@@ -1543,18 +1543,18 @@ export default function EscolasModulo({
                   const ausentesCount = alunosAtivosParaChamada.length - presentesCount;
 
                   return (
-                    <div className="grid grid-cols-3 gap-2 bg-white p-2.5 rounded-xl border border-slate-150 text-center">
+                    <div className="grid grid-cols-3 gap-2 bg-white dark:bg-[#0b1329] p-2.5 rounded-xl border border-slate-150 dark:border-[#24334f] text-center">
                       <div>
                         <span className="block text-[8px] font-bold text-slate-400 uppercase">Alunos Ativos</span>
-                        <span className="text-xs font-black text-slate-700">{alunosAtivosParaChamada.length}</span>
+                        <span className="text-xs font-black text-slate-700 dark:text-slate-100">{alunosAtivosParaChamada.length}</span>
                       </div>
                       <div>
-                        <span className="block text-[8px] font-bold text-emerald-600 uppercase">Presentes</span>
-                        <span className="text-xs font-black text-emerald-600">{presentesCount}</span>
+                        <span className="block text-[8px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Presentes</span>
+                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">{presentesCount}</span>
                       </div>
                       <div>
-                        <span className="block text-[8px] font-bold text-amber-600 uppercase">Ausentes</span>
-                        <span className="text-xs font-black text-amber-600">{ausentesCount}</span>
+                        <span className="block text-[8px] font-bold text-amber-600 dark:text-amber-400 uppercase">Ausentes</span>
+                        <span className="text-xs font-black text-amber-600 dark:text-amber-400">{ausentesCount}</span>
                       </div>
                     </div>
                   );
@@ -1567,12 +1567,12 @@ export default function EscolasModulo({
                     return (
                       <div
                         key={a.aluno_id}
-                        className="flex items-center justify-between p-2.5 rounded-xl border bg-white border-slate-150 transition select-none hover:bg-slate-50/50"
+                        className="flex items-center justify-between p-2.5 rounded-xl border bg-white dark:bg-[#17223b] border-slate-150 dark:border-[#24334f] transition select-none hover:bg-slate-50/50 dark:hover:bg-[#1c2b4a]"
                       >
                         <div className="flex items-center gap-2 min-w-0 pr-2">
                           <Avatar pessoa={a.alunos?.pessoas} tamanho="w-7 h-7" />
                           <div className="truncate">
-                            <span className="text-xs font-bold text-slate-700 block truncate">
+                            <span className="text-xs font-bold text-slate-700 dark:text-slate-200 block truncate">
                               {a.alunos?.pessoas?.nome}
                             </span>
                           </div>
@@ -1604,9 +1604,9 @@ export default function EscolasModulo({
                 </div>
               </div>
             </div>
-            <div className="p-5 border-t bg-slate-50 flex gap-3 shrink-0">
-              <button type="button" onClick={() => setIsModalAddAulaAberto(false)} className="flex-1 py-3 rounded-xl border border-slate-200 text-xs font-bold cursor-pointer">Cancelar</button>
-              <button type="submit" className="flex-1 py-3 rounded-xl bg-[#202046] text-white text-xs font-bold shadow-lg cursor-pointer">Finalizar e Salvar Aula</button>
+            <div className="p-5 border-t border-slate-100 dark:border-[#2b3954] bg-slate-50 dark:bg-[#131d31] flex gap-3 shrink-0">
+              <button type="button" onClick={() => setIsModalAddAulaAberto(false)} className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#1c2b4a] text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-[#24334f] cursor-pointer">Cancelar</button>
+              <button type="submit" className="flex-1 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-blue-500/25 border border-blue-400/30 cursor-pointer">Finalizar e Salvar Aula</button>
             </div>
           </form>
         </ModalWrapper>
@@ -1969,21 +1969,21 @@ function DetalhesDaTurma({
     <div className="space-y-4">
       {/* BARRA SUPERIOR QUANDO EM MODO EXPANDIDO OU NA CADERNETA */}
       {(abaAtiva === 'avaliacoes' || painelLateralOculto) && (
-        <div className="bg-white px-3.5 py-2.5 rounded-2xl border border-slate-200 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+        <div className="bg-white dark:bg-[#131d31] px-3.5 py-2.5 rounded-2xl border border-slate-200 dark:border-[#24334f] flex flex-wrap items-center justify-between gap-2 shadow-2xs">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onVoltar}
-              className="px-2.5 py-1 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition flex items-center gap-1.5 cursor-pointer"
+              className="px-2.5 py-1 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-[#1c2b4a] hover:bg-slate-200 dark:hover:bg-[#24334f] rounded-lg transition flex items-center gap-1.5 cursor-pointer"
               title="Voltar para a Lista de Turmas"
             >
               <span>← Turmas</span>
             </button>
-            <div className="h-4 w-[1px] bg-slate-200 mx-1"></div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{turma.escolas?.nome || 'Escola'}</span>
-            <span className="text-slate-300 font-bold">•</span>
-            <span className="text-xs font-black text-slate-800">{turma.nome}</span>
-            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 ml-1">
+            <div className="h-4 w-[1px] bg-slate-200 dark:bg-[#2b3954] mx-1"></div>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wide">{turma.escolas?.nome || 'Escola'}</span>
+            <span className="text-slate-300 dark:text-slate-600 font-bold">•</span>
+            <span className="text-xs font-black text-slate-800 dark:text-white">{turma.nome}</span>
+            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 ml-1">
               {alunos.filter(isAlunoAtivo).length} Alunos
             </span>
           </div>
@@ -1992,7 +1992,7 @@ function DetalhesDaTurma({
             <button
               type="button"
               onClick={() => setPainelLateralOculto(!painelLateralOculto)}
-              className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 transition cursor-pointer"
+              className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-slate-200 dark:border-[#2b3954] bg-slate-50 dark:bg-[#1c2b4a] hover:bg-slate-100 dark:hover:bg-[#24334f] text-slate-600 dark:text-slate-200 transition cursor-pointer"
             >
               {painelLateralOculto ? "📋 Mostrar Detalhes da Turma" : "↔️ Visualização Expandida (100%)"}
             </button>
@@ -2008,7 +2008,7 @@ function DetalhesDaTurma({
 
         {/* PAINEL LATERAL DE INFORMAÇÕES */}
         {!(abaAtiva === 'avaliacoes' || painelLateralOculto) && (
-          <Card className="hidden sm:block p-4 sm:p-5 border-t-4 border-t-[#202046] lg:sticky lg:top-24">
+          <Card className="hidden sm:block p-4 sm:p-5 border-t-4 border-t-[#202046] dark:border-t-blue-500 lg:sticky lg:top-24">
             <InfoTurma turma={turma} alunos={alunos} onVoltar={onVoltar} />
           </Card>
         )}
@@ -2032,7 +2032,7 @@ function DetalhesDaTurma({
             {
               id: 'alunos',
               label: 'Alunos',
-              cor: '#202046',
+              cor: '#3b82f6',
               badge: alunos.length,
               icon: (
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -2076,7 +2076,7 @@ function DetalhesDaTurma({
             {
               id: 'avaliacoes',
               label: 'Caderneta de Notas',
-              cor: '#7c3aed',
+              cor: '#8b5cf6',
               badge: metricasCaderneta.totalNotasPreenchidas > 0 ? `${metricasCaderneta.totalNotasPreenchidas}` : null,
               icon: (
                 <Award className="w-3.5 h-3.5" strokeWidth={1.8} />
@@ -2085,7 +2085,7 @@ function DetalhesDaTurma({
           ];
 
           return (
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 bg-slate-50/60 px-2 pt-2 gap-2 sm:gap-3 rounded-t-2xl">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-[#24334f] bg-slate-50/60 dark:bg-[#131d31]/80 px-2 pt-2 gap-2 sm:gap-3 rounded-t-2xl">
               <div className="flex w-full sm:w-auto overflow-x-auto gap-1 scrollbar-hide -mx-2 px-2 sm:mx-0 sm:px-0">
                 {tabConfig.map((tab) => {
                   const isAtivo = abaAtiva === tab.id;
@@ -2096,8 +2096,8 @@ function DetalhesDaTurma({
                       onClick={() => setAbaAtiva(tab.id)}
                       className={`flex flex-1 sm:flex-none items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2 rounded-t-xl text-[11px] font-black whitespace-nowrap transition-all shrink-0 border-b-2 cursor-pointer ${tab.mobileOnly ? 'sm:hidden' : ''
                         } ${isAtivo
-                          ? 'bg-white text-slate-900 shadow-sm'
-                          : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-white/60'
+                          ? 'bg-white dark:bg-[#17223b] text-slate-900 dark:text-white shadow-sm'
+                          : 'text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/60 dark:hover:bg-[#17223b]/60'
                         }`}
                       style={{ borderBottomColor: isAtivo ? tab.cor : 'transparent' }}
                       title={tab.label}
@@ -2106,12 +2106,10 @@ function DetalhesDaTurma({
                       <span className="hidden sm:inline">{tab.label}</span>
                       {tab.badge !== null && (
                         <span
-                          className="hidden sm:inline text-[9px] font-black px-1.5 py-0.5 rounded-full ml-0.5"
-                          style={
-                            isAtivo
-                              ? { backgroundColor: tab.cor, color: 'white' }
-                              : { backgroundColor: '#e2e8f0', color: '#94a3b8' }
-                          }
+                          className={`hidden sm:inline text-[9px] font-black px-1.5 py-0.5 rounded-full ml-0.5 ${
+                            isAtivo ? 'text-white' : 'bg-slate-200 dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-300'
+                          }`}
+                          style={isAtivo ? { backgroundColor: tab.cor } : {}}
                         >
                           {tab.badge}
                         </span>
@@ -2124,13 +2122,13 @@ function DetalhesDaTurma({
               {/* Ações Rápidas */}
               <div className="pb-2 sm:pb-0 px-1 sm:pr-2 shrink-0 flex items-center gap-2">
                 {abaAtiva === 'alunos' && (
-                  <button onClick={onAddAlunos} className="w-full sm:w-auto px-4 py-1.5 bg-[#202046] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">+ Adicionar Alunos</button>
+                  <button onClick={onAddAlunos} className="w-full sm:w-auto px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-[10px] font-black uppercase transition cursor-pointer shadow-md shadow-blue-500/25 border border-blue-400/30">+ Adicionar Alunos</button>
                 )}
                 {abaAtiva === 'disciplinas' && (
-                  <button onClick={onAddDisciplina} className="w-full sm:w-auto px-4 py-1.5 bg-[#6366f1] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">+ Incluir Disciplina</button>
+                  <button onClick={onAddDisciplina} className="w-full sm:w-auto px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-[10px] font-black uppercase transition cursor-pointer shadow-md shadow-indigo-500/25 border border-indigo-400/30">+ Incluir Disciplina</button>
                 )}
                 {abaAtiva === 'aulas' && (
-                  <button onClick={onAddAula} className="w-full sm:w-auto px-4 py-1.5 bg-[#f59e0b] text-white rounded-xl text-[10px] font-black uppercase hover:opacity-90 transition cursor-pointer shadow-sm">📅 Lançar Aula / Presença</button>
+                  <button onClick={onAddAula} className="w-full sm:w-auto px-4 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-xl text-[10px] font-black uppercase transition cursor-pointer shadow-md shadow-amber-500/25 border border-amber-400/30">📅 Lançar Aula / Presença</button>
                 )}
                 {abaAtiva === 'avaliacoes' && (
                   <div className="flex items-center gap-1.5 w-full sm:w-auto flex-wrap">
@@ -2140,7 +2138,7 @@ function DetalhesDaTurma({
                         setIsModalNovaAvaliacaoAberto(true);
                       }}
                       disabled={disciplinas.length === 0}
-                      className="px-3 py-1.5 bg-[#7c3aed] text-white rounded-xl text-[10px] font-black uppercase hover:bg-[#6d28d9] transition cursor-pointer shadow-sm flex items-center justify-center gap-1 disabled:opacity-50"
+                      className="px-3 py-1.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white rounded-xl text-[10px] font-black uppercase transition cursor-pointer shadow-md shadow-purple-500/25 border border-purple-400/30 flex items-center justify-center gap-1 disabled:opacity-50"
                       title="Adicionar uma nova avaliação/prova à turma"
                     >
                       <Sparkles size={13} />
@@ -2166,30 +2164,30 @@ function DetalhesDaTurma({
               <table className="table-mib">
                 <thead><tr><th>Aluno</th><th>Status na Turma</th><th className="hidden sm:table-cell">Matrícula</th><th className="text-right pr-2 sm:pr-6">Ações</th></tr></thead>
                 <tbody>
-                  {alunos.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhum aluno matriculado nesta turma.</td></tr> :
+                  {alunos.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 dark:text-slate-500 italic">Nenhum aluno matriculado nesta turma.</td></tr> :
                     alunos.map(a => (
-                      <tr key={a.id} onClick={() => onVerAluno(a.alunos?.pessoa_id)} className="cursor-pointer hover:bg-slate-50 transition">
-                        <td><div className="flex items-center gap-2"><Avatar pessoa={a.alunos?.pessoas} tamanho="w-8 h-8" /><span className="text-sm text-slate-700">{a.alunos?.pessoas?.nome}</span></div></td>
+                      <tr key={a.id} onClick={() => onVerAluno(a.alunos?.pessoa_id)} className="cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1c2b4a]/50 transition">
+                        <td><div className="flex items-center gap-2"><Avatar pessoa={a.alunos?.pessoas} tamanho="w-8 h-8" /><span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{a.alunos?.pessoas?.nome}</span></div></td>
                         <td>
                           <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
                             isAlunoAtivo(a)
-                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800/60'
                               : isAlunoDesistente(a)
-                              ? 'bg-rose-50 text-rose-600 border-rose-100'
-                              : 'bg-slate-100 text-slate-500 border-slate-200'
+                              ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-800/60'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700'
                           }`}>
                             {a.status || 'ativo'}
                           </span>
                         </td>
-                        <td className="font-mono text-xs text-slate-400 hidden sm:table-cell">{a.alunos?.matricula || '---'}</td>
+                        <td className="font-mono text-xs text-slate-400 dark:text-slate-500 hidden sm:table-cell">{a.alunos?.matricula || '---'}</td>
                         <td className="text-right pr-2 sm:pr-6">
                           <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
                             <button
                               onClick={() => onUpdateStatusAluno(a.id, isAlunoAtivo(a) ? 'desistente' : 'ativo')}
                               className={`transition p-1.5 rounded-lg cursor-pointer ${
                                 isAlunoAtivo(a)
-                                  ? 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
-                                  : 'text-slate-400 hover:text-emerald-500 hover:bg-emerald-50'
+                                  ? 'text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40'
+                                  : 'text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
                               }`}
                               title={isAlunoAtivo(a) ? 'Marcar como Desistente' : 'Reativar Aluno'}
                             >
@@ -2228,21 +2226,21 @@ function DetalhesDaTurma({
                 </thead>
                 <tbody>
                   {disciplinas.length === 0 ? (
-                    <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhuma disciplina vinculada.</td></tr>
+                    <tr><td colSpan="4" className="p-10 text-center text-slate-400 dark:text-slate-500 italic">Nenhuma disciplina vinculada.</td></tr>
                   ) : (
                     disciplinas.map(d => {
                       const items = getItemsDoModulo(d.id);
                       return (
-                        <tr key={d.id}>
-                          <td><span className="font-bold text-sm text-slate-700">{d.disciplinas?.nome}</span></td>
-                          <td><span className="text-xs font-bold text-[#202046]">{d.professores?.pessoas?.nome || 'Sem professor'}</span></td>
+                        <tr key={d.id} className="hover:bg-slate-50 dark:hover:bg-[#1c2b4a]/50 transition">
+                          <td><span className="font-bold text-sm text-slate-700 dark:text-slate-200">{d.disciplinas?.nome}</span></td>
+                          <td><span className="text-xs font-bold text-blue-600 dark:text-blue-400">{d.professores?.pessoas?.nome || 'Sem professor'}</span></td>
                           <td>
                             <div className="flex items-center gap-1.5 flex-wrap">
                               {items.length === 0 ? (
-                                <span className="text-[10px] text-slate-400 italic">1 avaliação padrão</span>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 italic">1 avaliação padrão</span>
                               ) : (
                                 items.map(it => (
-                                  <span key={it.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-200">
+                                  <span key={it.id} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-50 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/60">
                                     {it.nome} {it.peso && it.peso !== 1 ? `(p:${it.peso})` : ''}
                                   </span>
                                 ))
@@ -2257,12 +2255,12 @@ function DetalhesDaTurma({
                                   setModuloAlvoNovaAvaliacao(d.id);
                                   setIsModalNovaAvaliacaoAberto(true);
                                 }}
-                                className="text-violet-600 hover:text-violet-800 transition p-1.5 rounded-lg hover:bg-violet-50 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                                className="text-violet-600 dark:text-violet-400 hover:text-violet-800 dark:hover:text-violet-300 transition p-1.5 rounded-lg hover:bg-violet-50 dark:hover:bg-violet-950/40 text-xs font-bold flex items-center gap-1 cursor-pointer"
                                 title="Adicionar Avaliação a esta Disciplina"
                               >
                                 <span>+ Avaliação</span>
                               </button>
-                              <button onClick={() => onEditDisciplina(d)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Disciplina">
+                              <button onClick={() => onEditDisciplina(d)} className="text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#1c2b4a] cursor-pointer" title="Editar Disciplina">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                               </button>
                             </div>
@@ -2290,7 +2288,7 @@ function DetalhesDaTurma({
                   </tr>
                 </thead>
                 <tbody>
-                  {aulas.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 italic">Nenhuma aula registrada ainda.</td></tr> :
+                  {aulas.length === 0 ? <tr><td colSpan="4" className="p-10 text-center text-slate-400 dark:text-slate-500 italic">Nenhuma aula registrada ainda.</td></tr> :
                     aulas.map(aula => {
                       let pObj = aula.presencas || {};
                       if (typeof pObj === 'string') { try { pObj = JSON.parse(pObj); } catch (e) { pObj = {}; } }
@@ -2302,27 +2300,27 @@ function DetalhesDaTurma({
                       const totalAtivos = alunosAtivos.length;
 
                       return (
-                        <tr key={aula.id}>
-                          <td className="font-bold text-slate-700 text-sm">
+                        <tr key={aula.id} className="hover:bg-slate-50 dark:hover:bg-[#1c2b4a]/50 transition">
+                          <td className="font-bold text-slate-700 dark:text-slate-200 text-sm">
                             {new Date(aula.data_aula).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                             {aula.conteudo_proposto && (
                               <div className="sm:hidden mt-1">
-                                <span className="block text-xs text-slate-500">{aula.conteudo_proposto}</span>
+                                <span className="block text-xs text-slate-500 dark:text-slate-400">{aula.conteudo_proposto}</span>
                               </div>
                             )}
                           </td>
-                          <td className="text-xs text-slate-500 hidden sm:table-cell">{aula.conteudo_proposto}</td>
+                          <td className="text-xs text-slate-500 dark:text-slate-400 hidden sm:table-cell">{aula.conteudo_proposto}</td>
                           <td className="text-center">
-                            <span className="text-[13px] font-black text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 uppercase tracking-tighter" title={`${presentesCount} presentes de ${totalAtivos} alunos ativos`}>
-                              {presentesCount} <span className="text-[10px] text-slate-400 font-bold">/ {totalAtivos}</span>
+                            <span className="text-[13px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-full border border-emerald-100 dark:border-emerald-800/60 uppercase tracking-tighter" title={`${presentesCount} presentes de ${totalAtivos} alunos ativos`}>
+                              {presentesCount} <span className="text-[10px] text-slate-400 dark:text-slate-400 font-bold">/ {totalAtivos}</span>
                             </span>
                           </td>
                           <td className="text-right pr-2 sm:pr-6">
                             <div className="flex items-center justify-end gap-2 sm:gap-4">
-                              <button onClick={() => onEditAula(aula)} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Aula">
+                              <button onClick={() => onEditAula(aula)} className="text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 transition p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#1c2b4a] cursor-pointer" title="Editar Aula">
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                               </button>
-                              <button onClick={() => onExcluirAula(aula.id)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Remover Aula">
+                              <button onClick={() => onExcluirAula(aula.id)} className="text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 transition p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer" title="Remover Aula">
                                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                               </button>
                             </div>
@@ -2340,30 +2338,30 @@ function DetalhesDaTurma({
         {abaAtiva === 'frequencias' && (
           <div className="space-y-6">
             {/* PAINEL DE FILTROS DA FREQUÊNCIA */}
-            <Card className="p-4 bg-slate-50 border-slate-200">
+            <Card className="p-4 bg-slate-50 dark:bg-[#131d31] border-slate-200 dark:border-[#24334f]">
               <div className="flex flex-wrap items-end gap-3 sm:gap-4">
                 <div className="flex-1 min-w-[120px] sm:min-w-[150px]">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Mês</label>
-                  <select value={mesFrequencia} onChange={e => setMesFrequencia(e.target.value)} className="w-full px-3 py-2 border rounded-xl bg-white text-sm">
-                    {mesesNomes.map((m, i) => <option key={i} value={i}>{m}</option>)}
+                  <select value={mesFrequencia} onChange={e => setMesFrequencia(e.target.value)} className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 text-sm outline-none">
+                    {mesesNomes.map((m, i) => <option key={i} value={i} className="dark:bg-[#0b1329]">{m}</option>)}
                   </select>
                 </div>
                 <div className="flex-1 min-w-[90px] sm:min-w-[120px]">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Ano</label>
-                  <select value={anoFrequencia} onChange={e => setAnoFrequencia(e.target.value)} className="w-full px-3 py-2 border rounded-xl bg-white text-sm">
-                    {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+                  <select value={anoFrequencia} onChange={e => setAnoFrequencia(e.target.value)} className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 text-sm outline-none">
+                    {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y} className="dark:bg-[#0b1329]">{y}</option>)}
                   </select>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                  <button onClick={gerarRelatorioFrequencia} className="px-6 py-2 bg-[#202046] text-white rounded-xl text-xs font-bold hover:opacity-90 transition w-full sm:w-auto">
+                  <button onClick={gerarRelatorioFrequencia} className="px-6 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-md shadow-blue-500/25 border border-blue-400/30 w-full sm:w-auto cursor-pointer">
                     Gerar Frequência
                   </button>
-                  <div className="flex items-center justify-between sm:justify-start gap-3 bg-white px-3 py-2 rounded-xl border border-slate-200 shadow-sm h-[38px]">
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-tighter">Exibir dias vazios</span>
+                  <div className="flex items-center justify-between sm:justify-start gap-3 bg-white dark:bg-[#0b1329] px-3 py-2 rounded-xl border border-slate-200 dark:border-[#2b3954] shadow-sm h-[38px]">
+                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-tighter">Exibir dias vazios</span>
                     <button
                       type="button"
                       onClick={() => setEsconderDiasSemRegistro(!esconderDiasSemRegistro)}
-                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${!esconderDiasSemRegistro ? 'bg-[#202046]' : 'bg-slate-200'}`}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${!esconderDiasSemRegistro ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'}`}
                     >
                       <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${!esconderDiasSemRegistro ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
@@ -2378,21 +2376,21 @@ function DetalhesDaTurma({
                 <div className="overflow-x-auto">
                   <table className="table-mib">
                     <thead>
-                      <tr className="bg-slate-50">
-                        <th className="sticky left-0 bg-slate-50 z-10 min-w-[120px] sm:min-w-[160px]">Aluno</th>
+                      <tr className="bg-slate-50 dark:bg-[#0b1329]">
+                        <th className="sticky left-0 bg-slate-50 dark:bg-[#0b1329] text-slate-700 dark:text-slate-300 z-10 min-w-[120px] sm:min-w-[160px] border-r border-slate-200 dark:border-[#24334f]">Aluno</th>
                         {(esconderDiasSemRegistro ? relatorioFrequencia.diasComAula : Array.from({ length: 31 }, (_, i) => i + 1)).map(dia => (
-                          <th key={dia} className="text-center w-7 sm:w-8 min-w-[28px] sm:min-w-[32px] px-0.5 sm:px-1">{dia}</th>
+                          <th key={dia} className="text-center w-7 sm:w-8 min-w-[28px] sm:min-w-[32px] px-0.5 sm:px-1 text-slate-600 dark:text-slate-300">{dia}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {relatorioFrequencia.dados.map((row, idx) => (
-                        <tr key={idx}>
-                          <td className="sticky left-0 bg-white z-10 font-medium text-slate-700 text-xs border-r min-w-[120px] sm:min-w-[160px] truncate">
+                        <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-[#1c2b4a]/50 transition">
+                          <td className="sticky left-0 bg-white dark:bg-[#131d31] z-10 font-medium text-slate-700 dark:text-slate-200 text-xs border-r border-slate-200 dark:border-[#24334f] min-w-[120px] sm:min-w-[160px] truncate">
                             <div className="flex items-center justify-between gap-1.5 pr-1">
                               <span className="truncate">{row.nome}</span>
                               {row.status === 'desistente' && (
-                                <span className="text-[8px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1 py-0.2 rounded shrink-0">
+                                <span className="text-[8px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 px-1 py-0.2 rounded shrink-0">
                                   Desistente
                                 </span>
                               )}
@@ -2402,9 +2400,9 @@ function DetalhesDaTurma({
                             const status = row.presencas[dia];
                             return (
                               <td key={dia} className="text-center p-0">
-                                <span className={`inline-block w-full py-2 text-[10px] font-semibold ${status === 'P' ? 'text-emerald-600 bg-emerald-50/50' :
-                                  status === 'F' ? 'text-rose-600 bg-rose-50/50' :
-                                    'text-slate-200'
+                                <span className={`inline-block w-full py-2 text-[10px] font-semibold ${status === 'P' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/40' :
+                                  status === 'F' ? 'text-rose-600 dark:text-rose-400 bg-rose-50/50 dark:bg-rose-950/40' :
+                                    'text-slate-300 dark:text-slate-600'
                                   }`}>
                                   {status || '-'}
                                 </span>
@@ -2418,7 +2416,7 @@ function DetalhesDaTurma({
                 </div>
               </Card>
             ) : (
-              <div className="p-12 text-center border-2 border-dashed border-slate-100 rounded-3xl text-slate-300 italic text-sm">
+              <div className="p-12 text-center border-2 border-dashed border-slate-200 dark:border-[#24334f] rounded-3xl text-slate-400 dark:text-slate-500 italic text-sm">
                 Selecione o período e clique em "Gerar Frequência" para visualizar o mapa de presença.
               </div>
             )}
@@ -2430,19 +2428,21 @@ function DetalhesDaTurma({
           <div className="space-y-3.5 animate-in fade-in duration-200 w-full min-w-0">
             {/* TOPO: INDICADORES E RESUMO DA CADERNETA */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-              <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600 shrink-0">
+              <div className="bg-white dark:bg-[#131d31] p-2.5 sm:p-3 rounded-xl border border-slate-200 dark:border-[#24334f] shadow-2xs flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-950/40 border border-violet-100 dark:border-violet-800/50 flex items-center justify-center text-violet-600 dark:text-violet-400 shrink-0">
                   <Award size={18} />
                 </div>
                 <div className="min-w-0">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block truncate">Média Geral</span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-base sm:text-lg font-black text-slate-800">
+                    <span className="text-base sm:text-lg font-black text-slate-800 dark:text-white">
                       {metricasCaderneta.mediaGeral !== null ? metricasCaderneta.mediaGeral : '---'}
                     </span>
                     {metricasCaderneta.mediaGeral !== null && (
                       <span className={`text-[8px] font-bold px-1 rounded ${
-                        metricasCaderneta.mediaGeral >= 7 ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                        metricasCaderneta.mediaGeral >= 7
+                          ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400'
                       }`}>
                         {metricasCaderneta.mediaGeral >= 7 ? 'Bom' : 'Atenção'}
                       </span>
@@ -2451,14 +2451,14 @@ function DetalhesDaTurma({
                 </div>
               </div>
 
-              <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+              <div className="bg-white dark:bg-[#131d31] p-2.5 sm:p-3 rounded-xl border border-slate-200 dark:border-[#24334f] shadow-2xs flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-800/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
                   <CheckCircle2 size={18} />
                 </div>
                 <div className="min-w-0">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block truncate">Aprovados (≥ 7.0)</span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-base sm:text-lg font-black text-emerald-600">
+                    <span className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400">
                       {metricasCaderneta.aprovados}
                     </span>
                     <span className="text-[9px] text-slate-400 font-bold">alunos</span>
@@ -2466,14 +2466,14 @@ function DetalhesDaTurma({
                 </div>
               </div>
 
-              <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+              <div className="bg-white dark:bg-[#131d31] p-2.5 sm:p-3 rounded-xl border border-slate-200 dark:border-[#24334f] shadow-2xs flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-800/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
                   <AlertCircle size={18} />
                 </div>
                 <div className="min-w-0">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block truncate">Abaixo da Média</span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-base sm:text-lg font-black text-amber-600">
+                    <span className="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400">
                       {metricasCaderneta.atencao}
                     </span>
                     <span className="text-[9px] text-slate-400 font-bold">alunos</span>
@@ -2481,18 +2481,18 @@ function DetalhesDaTurma({
                 </div>
               </div>
 
-              <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+              <div className="bg-white dark:bg-[#131d31] p-2.5 sm:p-3 rounded-xl border border-slate-200 dark:border-[#24334f] shadow-2xs flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-800/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
                   <FileSpreadsheet size={18} />
                 </div>
                 <div className="min-w-0">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block truncate">Lançamentos</span>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-base sm:text-lg font-black text-slate-800">
+                    <span className="text-base sm:text-lg font-black text-slate-800 dark:text-white">
                       {metricasCaderneta.totalNotasPreenchidas}
                     </span>
                     <span className="text-[9px] text-slate-400 font-bold">/ {metricasCaderneta.totalNotasPossiveis}</span>
-                    <span className="text-[9px] font-bold text-blue-600 ml-0.5">({metricasCaderneta.pctPreenchimento}%)</span>
+                    <span className="text-[9px] font-bold text-blue-600 dark:text-blue-400 ml-0.5">({metricasCaderneta.pctPreenchimento}%)</span>
                   </div>
                 </div>
               </div>
@@ -2512,7 +2512,7 @@ function DetalhesDaTurma({
             )}
 
             {/* BARRA DE FERRAMENTAS E CONTROLES DA CADERNETA */}
-            <div className="p-2.5 bg-white border border-slate-200 rounded-xl shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
+            <div className="p-2.5 bg-white dark:bg-[#131d31] border border-slate-200 dark:border-[#24334f] rounded-xl shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
               {/* Filtros e Busca */}
               <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                 <div className="relative flex-1 min-w-[150px]">
@@ -2522,14 +2522,14 @@ function DetalhesDaTurma({
                     placeholder="Buscar aluno..."
                     value={filtroBuscaCaderneta}
                     onChange={e => setFiltroBuscaCaderneta(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-violet-400 focus:bg-white"
+                    className="w-full pl-8 pr-3 py-1 text-xs bg-slate-50 dark:bg-[#0b1329] border border-slate-200 dark:border-[#2b3954] text-slate-800 dark:text-slate-100 placeholder:text-slate-400 rounded-lg outline-none focus:ring-1 focus:ring-violet-400 focus:bg-white dark:focus:bg-[#0b1329]"
                   />
                   {filtroBuscaCaderneta && (
-                    <button onClick={() => setFiltroBuscaCaderneta('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs">✕</button>
+                    <button onClick={() => setFiltroBuscaCaderneta('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs">✕</button>
                   )}
                 </div>
 
-                <div className="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5">
+                <div className="flex items-center bg-slate-100 dark:bg-[#0b1329] border border-slate-200 dark:border-[#2b3954] rounded-lg p-0.5">
                   {[
                     { id: 'ativos', label: 'Ativos' },
                     { id: 'todos', label: 'Todos' },
@@ -2541,8 +2541,8 @@ function DetalhesDaTurma({
                       onClick={() => setFiltroStatusCaderneta(f.id)}
                       className={`px-2.5 py-0.5 text-[10px] font-bold rounded-md transition cursor-pointer ${
                         filtroStatusCaderneta === f.id
-                          ? 'bg-white text-[#202046] shadow-2xs'
-                          : 'text-slate-500 hover:text-slate-800'
+                          ? 'bg-white dark:bg-[#1c2b4a] text-blue-600 dark:text-white shadow-2xs'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                       }`}
                     >
                       {f.label}
@@ -2561,7 +2561,7 @@ function DetalhesDaTurma({
                     setIsModalNovaAvaliacaoAberto(true);
                   }}
                   disabled={disciplinas.length === 0}
-                  className="px-2.5 py-1 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-2xs"
+                  className="px-2.5 py-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-md shadow-violet-500/25 border border-violet-400/30"
                   title="Criar nova prova, trabalho ou avaliação para um módulo"
                 >
                   <Sparkles size={13} />
@@ -2573,10 +2573,10 @@ function DetalhesDaTurma({
                   type="button"
                   onClick={() => setIsModalGerenciarAvaliacoesAberto(true)}
                   disabled={disciplinas.length === 0}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  className="px-2.5 py-1 bg-white dark:bg-[#1c2b4a] hover:bg-slate-50 dark:hover:bg-[#24334f] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-[#2b3954] rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
                   title="Gerenciar, editar pesos ou excluir avaliações da turma"
                 >
-                  <BookOpen size={13} className="text-slate-500" />
+                  <BookOpen size={13} className="text-slate-500 dark:text-slate-400" />
                   <span className="hidden sm:inline">Gerenciar</span>
                 </button>
 
@@ -2585,7 +2585,7 @@ function DetalhesDaTurma({
                   type="button"
                   onClick={() => setIsModalLoteAberto(true)}
                   disabled={disciplinas.length === 0}
-                  className="px-2.5 py-1 bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  className="px-2.5 py-1 bg-violet-50 dark:bg-violet-950/40 hover:bg-violet-100 dark:hover:bg-violet-900/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/60 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
                   title="Lançamento Rápido em Lote por Módulo/Avaliação"
                 >
                   <span>⚡ Lançar Notas</span>
@@ -2595,10 +2595,10 @@ function DetalhesDaTurma({
                 <button
                   type="button"
                   onClick={() => setIsModalImprimirAberto(true)}
-                  className="px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                  className="px-2.5 py-1 bg-white dark:bg-[#1c2b4a] hover:bg-slate-50 dark:hover:bg-[#24334f] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-[#2b3954] rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                   title="Visualizar e Imprimir Boletim Geral da Turma"
                 >
-                  <Printer size={13} className="text-slate-500" />
+                  <Printer size={13} className="text-slate-500 dark:text-slate-400" />
                   <span className="hidden sm:inline">Imprimir</span>
                 </button>
 
@@ -2609,8 +2609,8 @@ function DetalhesDaTurma({
                   disabled={salvandoNotas || !alteracoesPendentes}
                   className={`px-3 py-1 rounded-lg text-xs font-black uppercase transition flex items-center gap-1.5 cursor-pointer shadow-xs ${
                     alteracoesPendentes
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white animate-pulse'
-                      : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md shadow-emerald-500/25 border border-emerald-400/30 animate-pulse'
+                      : 'bg-slate-100 dark:bg-[#1c2b4a] text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-[#2b3954] cursor-not-allowed'
                   }`}
                 >
                   <Save size={13} />
@@ -2621,18 +2621,18 @@ function DetalhesDaTurma({
 
             {/* SE NÃO HOUVER DISCIPLINAS CADASTRADAS */}
             {disciplinas.length === 0 ? (
-              <div className="p-8 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white space-y-2">
-                <div className="w-10 h-10 mx-auto rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+              <div className="p-8 text-center border-2 border-dashed border-slate-200 dark:border-[#24334f] rounded-2xl bg-white dark:bg-[#131d31] space-y-2">
+                <div className="w-10 h-10 mx-auto rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-800/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                   <BookOpen size={20} />
                 </div>
-                <h4 className="text-sm font-bold text-slate-800">Nenhuma disciplina/módulo vinculado a esta turma</h4>
-                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                <h4 className="text-sm font-bold text-slate-800 dark:text-white">Nenhuma disciplina/módulo vinculado a esta turma</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                   Adicione os módulos da turma para registrar e organizar as avaliações na caderneta.
                 </p>
                 <div className="pt-1">
                   <button
                     onClick={onAddDisciplina}
-                    className="px-4 py-1.5 bg-[#6366f1] hover:bg-[#4f46e5] text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer"
+                    className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-lg text-xs font-bold transition shadow-xs cursor-pointer border border-indigo-400/30"
                   >
                     + Incluir Módulo / Disciplina
                   </button>
@@ -2640,14 +2640,14 @@ function DetalhesDaTurma({
               </div>
             ) : (
               /* TABELA / MATRIZ DE NOTAS COM SUPORTE A MÚLTIPLAS AVALIAÇÕES POR MÓDULO */
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs w-full">
+              <div className="bg-white dark:bg-[#131d31] rounded-xl border border-slate-200 dark:border-[#24334f] overflow-hidden shadow-2xs w-full">
                 <div className="overflow-x-auto w-full">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
                       {/* LINHA 1 DO CABEÇALHO: MÓDULOS AGRUPADOS */}
-                      <tr className="bg-slate-50/95 border-b border-slate-200 text-slate-500 font-black uppercase text-[10px]">
+                      <tr className="bg-slate-50/95 dark:bg-[#0b1329] border-b border-slate-200 dark:border-[#24334f] text-slate-500 dark:text-slate-400 font-black uppercase text-[10px]">
                         {/* Coluna Aluno */}
-                        <th rowSpan={2} className="sticky left-0 bg-slate-50 z-20 w-[170px] sm:w-[200px] min-w-[140px] max-w-[200px] p-2 border-r border-slate-150 align-middle">
+                        <th rowSpan={2} className="sticky left-0 bg-slate-50 dark:bg-[#0b1329] text-slate-700 dark:text-slate-300 z-20 w-[170px] sm:w-[200px] min-w-[140px] max-w-[200px] p-2 border-r border-slate-150 dark:border-[#24334f] align-middle">
                           Aluno ({alunosFiltradosCaderneta.length})
                         </th>
 
@@ -2661,15 +2661,15 @@ function DetalhesDaTurma({
                             <th
                               key={disc.id}
                               colSpan={colSpan}
-                              className="text-center p-1.5 border-r border-slate-200 bg-slate-50/80"
+                              className="text-center p-1.5 border-r border-slate-200 dark:border-[#24334f] bg-slate-50/80 dark:bg-[#0e172a]"
                             >
                               <div className="flex items-center justify-between gap-1 px-1">
                                 <div className="text-left truncate min-w-0 flex-1">
-                                  <span className="font-extrabold text-slate-800 text-[11px] block truncate" title={disc.disciplinas?.nome}>
+                                  <span className="font-extrabold text-slate-800 dark:text-white text-[11px] block truncate" title={disc.disciplinas?.nome}>
                                     {disc.disciplinas?.nome}
                                   </span>
                                   {disc.professores?.pessoas?.nome && (
-                                    <span className="text-[8px] font-semibold text-slate-400 block truncate">
+                                    <span className="text-[8px] font-semibold text-slate-400 dark:text-slate-400 block truncate">
                                       Prof: {disc.professores.pessoas.nome.split(' ')[0]}
                                     </span>
                                   )}
@@ -2677,7 +2677,7 @@ function DetalhesDaTurma({
 
                                 <div className="flex items-center gap-1 shrink-0">
                                   {mediaTurmaMod !== null && (
-                                    <span className="text-[8px] font-black px-1 py-0.2 rounded bg-violet-100 text-violet-800" title={`Média da Turma no Módulo: ${mediaTurmaMod}`}>
+                                    <span className="text-[8px] font-black px-1 py-0.2 rounded bg-violet-100 dark:bg-violet-950/60 text-violet-800 dark:text-violet-300" title={`Média da Turma no Módulo: ${mediaTurmaMod}`}>
                                       Méd: {mediaTurmaMod}
                                     </span>
                                   )}
@@ -2687,7 +2687,7 @@ function DetalhesDaTurma({
                                       setModuloAlvoNovaAvaliacao(disc.id);
                                       setIsModalNovaAvaliacaoAberto(true);
                                     }}
-                                    className="w-4 h-4 rounded-full bg-violet-100 hover:bg-violet-200 text-violet-700 flex items-center justify-center text-[10px] font-black transition cursor-pointer"
+                                    className="w-4 h-4 rounded-full bg-violet-100 dark:bg-violet-900/50 hover:bg-violet-200 dark:hover:bg-violet-800/60 text-violet-700 dark:text-violet-300 flex items-center justify-center text-[10px] font-black transition cursor-pointer"
                                     title={`Adicionar nova avaliação para ${disc.disciplinas?.nome}`}
                                   >
                                     +
@@ -2698,29 +2698,29 @@ function DetalhesDaTurma({
                           );
                         })}
 
-                        <th rowSpan={2} className="text-center w-14 min-w-[50px] p-1.5 bg-slate-100/80 text-slate-800 font-black border-r border-slate-150 align-middle">
+                        <th rowSpan={2} className="text-center w-14 min-w-[50px] p-1.5 bg-slate-100/80 dark:bg-[#17223b] text-slate-800 dark:text-slate-200 font-black border-r border-slate-150 dark:border-[#24334f] align-middle">
                           Média Final
                         </th>
-                        <th rowSpan={2} className="text-center w-12 min-w-[45px] p-1.5 text-slate-700 font-black border-r border-slate-100 align-middle">
+                        <th rowSpan={2} className="text-center w-12 min-w-[45px] p-1.5 text-slate-700 dark:text-slate-300 font-black border-r border-slate-100 dark:border-[#24334f] align-middle">
                           Freq
                         </th>
-                        <th rowSpan={2} className="text-center w-20 min-w-[65px] p-1.5 align-middle">
+                        <th rowSpan={2} className="text-center w-20 min-w-[65px] p-1.5 text-slate-700 dark:text-slate-300 align-middle">
                           Status
                         </th>
                         <th rowSpan={2} className="text-center w-8 min-w-[32px] p-1 pr-2 align-middle">
-                          <FileSpreadsheet size={13} className="mx-auto text-slate-400" />
+                          <FileSpreadsheet size={13} className="mx-auto text-slate-400 dark:text-slate-400" />
                         </th>
                       </tr>
 
                       {/* LINHA 2 DO CABEÇALHO: SUBCATEGORIAS DE CADA AVALIAÇÃO */}
-                      <tr className="bg-slate-100/70 border-b border-slate-200 text-[9px] font-extrabold text-slate-600">
+                      <tr className="bg-slate-100/70 dark:bg-[#0b1329]/90 border-b border-slate-200 dark:border-[#24334f] text-[9px] font-extrabold text-slate-600 dark:text-slate-300">
                         {disciplinas.map(disc => {
                           const items = getItemsDoModulo(disc.id);
 
                           if (items.length === 0) {
                             return (
-                              <th key={`single_${disc.id}`} className="text-center py-1 px-1 border-r border-slate-150 w-20 min-w-[68px] max-w-[95px]">
-                                <span className="text-[9px] text-slate-500 font-bold">Nota Única</span>
+                              <th key={`single_${disc.id}`} className="text-center py-1 px-1 border-r border-slate-150 dark:border-[#24334f] w-20 min-w-[68px] max-w-[95px]">
+                                <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold">Nota Única</span>
                               </th>
                             );
                           }
@@ -2732,19 +2732,19 @@ function DetalhesDaTurma({
                                 return (
                                   <th
                                     key={it.id}
-                                    className="text-center py-1 px-1 border-r border-slate-150 min-w-[55px] max-w-[85px] group/itemhead relative"
+                                    className="text-center py-1 px-1 border-r border-slate-150 dark:border-[#24334f] min-w-[55px] max-w-[85px] group/itemhead relative"
                                   >
                                     <div className="flex flex-col items-center">
-                                      <span className="font-bold text-slate-700 truncate max-w-[75px]" title={`${it.nome} ${it.peso && it.peso !== 1 ? `(Peso ${it.peso})` : ''}`}>
+                                      <span className="font-bold text-slate-700 dark:text-slate-200 truncate max-w-[75px]" title={`${it.nome} ${it.peso && it.peso !== 1 ? `(Peso ${it.peso})` : ''}`}>
                                         {it.nome}
                                       </span>
                                       {it.peso && it.peso !== 1 && (
-                                        <span className="text-[7px] text-violet-600 font-bold leading-none">
+                                        <span className="text-[7px] text-violet-600 dark:text-violet-400 font-bold leading-none">
                                           p:{it.peso}
                                         </span>
                                       )}
                                       {mediaItem !== null && (
-                                        <span className="text-[7px] text-slate-400 font-bold leading-none mt-0.5">
+                                        <span className="text-[7px] text-slate-400 dark:text-slate-500 font-bold leading-none mt-0.5">
                                           x̄:{mediaItem}
                                         </span>
                                       )}
@@ -2753,7 +2753,7 @@ function DetalhesDaTurma({
                                 );
                               })}
                               {items.length > 1 && (
-                                <th className="text-center py-1 px-1 border-r border-slate-200 bg-violet-50/60 text-violet-900 font-black min-w-[48px] max-w-[60px]">
+                                <th className="text-center py-1 px-1 border-r border-slate-200 dark:border-[#24334f] bg-violet-50/60 dark:bg-violet-950/40 text-violet-900 dark:text-violet-300 font-black min-w-[48px] max-w-[60px]">
                                   Méd. Mód
                                 </th>
                               )}
@@ -2763,10 +2763,10 @@ function DetalhesDaTurma({
                       </tr>
                     </thead>
 
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-slate-100 dark:divide-[#24334f]">
                       {alunosFiltradosCaderneta.length === 0 ? (
                         <tr>
-                          <td colSpan={50} className="p-8 text-center text-slate-400 italic">
+                          <td colSpan={50} className="p-8 text-center text-slate-400 dark:text-slate-500 italic">
                             Nenhum aluno encontrado para os filtros selecionados.
                           </td>
                         </tr>
@@ -2777,26 +2777,26 @@ function DetalhesDaTurma({
                           const desistente = isAlunoDesistente(a);
 
                           return (
-                            <tr key={a.id} className="hover:bg-slate-50/80 transition">
+                            <tr key={a.id} className="hover:bg-slate-50/80 dark:hover:bg-[#1c2b4a]/40 transition">
                               {/* Célula do Aluno */}
-                              <td className="sticky left-0 bg-white z-10 border-r border-slate-150 w-[170px] sm:w-[200px] min-w-[140px] max-w-[200px] p-1.5 sm:p-2">
+                              <td className="sticky left-0 bg-white dark:bg-[#131d31] z-10 border-r border-slate-150 dark:border-[#24334f] w-[170px] sm:w-[200px] min-w-[140px] max-w-[200px] p-1.5 sm:p-2">
                                 <div className="flex items-center gap-1.5">
                                   <Avatar pessoa={a.alunos?.pessoas} tamanho="w-6 h-6 shrink-0" />
                                   <div className="min-w-0 pr-0.5 truncate">
                                     <span
                                       onClick={() => onVerAluno(a.alunos?.pessoa_id)}
-                                      className="font-bold text-xs text-slate-800 hover:text-indigo-600 cursor-pointer block truncate"
+                                      className="font-bold text-xs text-slate-800 dark:text-slate-200 hover:text-blue-500 dark:hover:text-blue-400 cursor-pointer block truncate"
                                       title={a.alunos?.pessoas?.nome}
                                     >
                                       {a.alunos?.pessoas?.nome}
                                     </span>
                                     <div className="flex items-center gap-1 leading-none mt-0.5">
                                       {desistente ? (
-                                        <span className="text-[7px] font-black text-rose-600 bg-rose-50 border border-rose-200 px-1 py-0.2 rounded shrink-0">
+                                        <span className="text-[7px] font-black text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 px-1 py-0.2 rounded shrink-0">
                                           Desistente
                                         </span>
                                       ) : a.alunos?.matricula ? (
-                                        <span className="font-mono text-[8px] text-slate-400 truncate">{a.alunos?.matricula}</span>
+                                        <span className="font-mono text-[8px] text-slate-400 dark:text-slate-500 truncate">{a.alunos?.matricula}</span>
                                       ) : null}
                                     </div>
                                   </div>
@@ -2815,15 +2815,15 @@ function DetalhesDaTurma({
                                   const obs = observacoesLocais[key] || '';
                                   const notaNum = notaRaw !== '' ? parseFloat(String(notaRaw).replace(',', '.')) : null;
 
-                                  let estiloNota = 'bg-white border-slate-200 text-slate-700 focus:border-violet-500';
+                                  let estiloNota = 'bg-white dark:bg-[#0b1329] border-slate-200 dark:border-[#2b3954] text-slate-700 dark:text-slate-200 focus:border-violet-500';
                                   if (notaNum !== null && !isNaN(notaNum)) {
-                                    if (notaNum >= 7.0) estiloNota = 'bg-emerald-50 border-emerald-300 text-emerald-800 font-extrabold focus:border-emerald-500';
-                                    else if (notaNum >= 5.0) estiloNota = 'bg-amber-50 border-amber-300 text-amber-800 font-extrabold focus:border-amber-500';
-                                    else estiloNota = 'bg-rose-50 border-rose-300 text-rose-800 font-extrabold focus:border-rose-500';
+                                    if (notaNum >= 7.0) estiloNota = 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700/60 text-emerald-800 dark:text-emerald-300 font-extrabold focus:border-emerald-500';
+                                    else if (notaNum >= 5.0) estiloNota = 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-300 font-extrabold focus:border-amber-500';
+                                    else estiloNota = 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-700/60 text-rose-800 dark:text-rose-300 font-extrabold focus:border-rose-500';
                                   }
 
                                   return (
-                                    <td key={disc.id} className="text-center p-1 border-r border-slate-100">
+                                    <td key={disc.id} className="text-center p-1 border-r border-slate-100 dark:border-[#24334f]">
                                       <div className="relative inline-flex items-center justify-center">
                                         <input
                                           type="text"
@@ -2856,7 +2856,7 @@ function DetalhesDaTurma({
                                             obs: obs
                                           })}
                                           className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[7px] transition cursor-pointer ${
-                                            obs ? 'bg-violet-600 text-white shadow-2xs' : 'opacity-0 group-hover:opacity-100 hover:bg-slate-200 text-slate-400'
+                                            obs ? 'bg-violet-600 text-white shadow-2xs' : 'opacity-0 group-hover:opacity-100 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400'
                                           }`}
                                           title={obs ? `Observação: "${obs}"` : 'Adicionar observação'}
                                         >
@@ -2876,15 +2876,15 @@ function DetalhesDaTurma({
                                       const obs = observacoesLocais[key] || '';
                                       const notaNum = notaRaw !== '' ? parseFloat(String(notaRaw).replace(',', '.')) : null;
 
-                                      let estiloNota = 'bg-white border-slate-200 text-slate-700 focus:border-violet-500';
+                                      let estiloNota = 'bg-white dark:bg-[#0b1329] border-slate-200 dark:border-[#2b3954] text-slate-700 dark:text-slate-200 focus:border-violet-500';
                                       if (notaNum !== null && !isNaN(notaNum)) {
-                                        if (notaNum >= 7.0) estiloNota = 'bg-emerald-50 border-emerald-300 text-emerald-800 font-extrabold focus:border-emerald-500';
-                                        else if (notaNum >= 5.0) estiloNota = 'bg-amber-50 border-amber-300 text-amber-800 font-extrabold focus:border-amber-500';
-                                        else estiloNota = 'bg-rose-50 border-rose-300 text-rose-800 font-extrabold focus:border-rose-500';
+                                        if (notaNum >= 7.0) estiloNota = 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700/60 text-emerald-800 dark:text-emerald-300 font-extrabold focus:border-emerald-500';
+                                        else if (notaNum >= 5.0) estiloNota = 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700/60 text-amber-800 dark:text-amber-300 font-extrabold focus:border-amber-500';
+                                        else estiloNota = 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-700/60 text-rose-800 dark:text-rose-300 font-extrabold focus:border-rose-500';
                                       }
 
                                       return (
-                                        <td key={it.id} className="text-center p-1 border-r border-slate-100">
+                                        <td key={it.id} className="text-center p-1 border-r border-slate-100 dark:border-[#24334f]">
                                           <div className="relative inline-flex items-center justify-center">
                                             <input
                                               type="text"
@@ -2916,7 +2916,7 @@ function DetalhesDaTurma({
                                                 obs: obs
                                               })}
                                               className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-[7px] transition cursor-pointer ${
-                                                obs ? 'bg-violet-600 text-white shadow-2xs' : 'opacity-0 group-hover:opacity-100 hover:bg-slate-200 text-slate-400'
+                                                obs ? 'bg-violet-600 text-white shadow-2xs' : 'opacity-0 group-hover:opacity-100 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400'
                                               }`}
                                               title={obs ? `Observação: "${obs}"` : 'Adicionar observação'}
                                             >
@@ -2929,17 +2929,17 @@ function DetalhesDaTurma({
 
                                     {/* Média do Módulo */}
                                     {items.length > 1 && (
-                                      <td className="text-center bg-violet-50/30 p-1 border-r border-slate-200 font-bold">
+                                      <td className="text-center bg-violet-50/30 dark:bg-violet-950/20 p-1 border-r border-slate-200 dark:border-[#24334f] font-bold">
                                         {mediaMod !== null ? (
                                           <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-black ${
-                                            mediaMod >= 7.0 ? 'bg-emerald-100/90 text-emerald-800' :
-                                            mediaMod >= 5.0 ? 'bg-amber-100/90 text-amber-800' :
-                                            'bg-rose-100/90 text-rose-800'
+                                            mediaMod >= 7.0 ? 'bg-emerald-100/90 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' :
+                                            mediaMod >= 5.0 ? 'bg-amber-100/90 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300' :
+                                            'bg-rose-100/90 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300'
                                           }`}>
                                             {mediaMod.toFixed(1)}
                                           </span>
                                         ) : (
-                                          <span className="text-[10px] text-slate-300 font-bold">---</span>
+                                          <span className="text-[10px] text-slate-300 dark:text-slate-600 font-bold">---</span>
                                         )}
                                       </td>
                                     )}
@@ -2948,24 +2948,24 @@ function DetalhesDaTurma({
                               })}
 
                               {/* Média Geral Final */}
-                              <td className="text-center bg-slate-50/70 p-1 border-r border-slate-150">
+                              <td className="text-center bg-slate-50/70 dark:bg-[#17223b] p-1 border-r border-slate-150 dark:border-[#24334f]">
                                 {mediaGeralAluno !== null ? (
                                   <span className={`inline-block px-1.5 py-0.5 rounded-md text-[11px] font-black ${
-                                    mediaGeralAluno >= 7.0 ? 'bg-emerald-100 text-emerald-800 shadow-2xs' :
-                                    mediaGeralAluno >= 5.0 ? 'bg-amber-100 text-amber-800 shadow-2xs' :
-                                    'bg-rose-100 text-rose-800 shadow-2xs'
+                                    mediaGeralAluno >= 7.0 ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 shadow-2xs' :
+                                    mediaGeralAluno >= 5.0 ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 shadow-2xs' :
+                                    'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 shadow-2xs'
                                   }`}>
                                     {mediaGeralAluno.toFixed(1)}
                                   </span>
                                 ) : (
-                                  <span className="text-[10px] text-slate-300 font-bold">---</span>
+                                  <span className="text-[10px] text-slate-300 dark:text-slate-600 font-bold">---</span>
                                 )}
                               </td>
 
                               {/* Frequência */}
-                              <td className="text-center p-1 border-r border-slate-100">
+                              <td className="text-center p-1 border-r border-slate-100 dark:border-[#24334f]">
                                 <span className={`text-[11px] font-black ${
-                                  freq >= 75 ? 'text-emerald-600' : 'text-rose-600'
+                                  freq >= 75 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                                 }`}>
                                   {freq}%
                                 </span>
@@ -2974,23 +2974,23 @@ function DetalhesDaTurma({
                               {/* Situação */}
                               <td className="text-center p-1">
                                 {desistente ? (
-                                  <span className="px-1.5 py-0.2 text-[8px] font-bold rounded bg-rose-50 text-rose-600 border border-rose-200">
+                                  <span className="px-1.5 py-0.2 text-[8px] font-bold rounded bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60">
                                     Desistente
                                   </span>
                                 ) : mediaGeralAluno === null ? (
-                                  <span className="px-1.5 py-0.2 text-[8px] font-bold rounded bg-slate-100 text-slate-400">
+                                  <span className="px-1.5 py-0.2 text-[8px] font-bold rounded bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-400">
                                     Pendente
                                   </span>
                                 ) : mediaGeralAluno >= 7.0 ? (
-                                  <span className="px-1.5 py-0.2 text-[8px] font-black rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <span className="px-1.5 py-0.2 text-[8px] font-black rounded bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60">
                                     ✓ Aprovado
                                   </span>
                                 ) : mediaGeralAluno >= 5.0 ? (
-                                  <span className="px-1.5 py-0.2 text-[8px] font-black rounded bg-amber-50 text-amber-700 border border-amber-200">
+                                  <span className="px-1.5 py-0.2 text-[8px] font-black rounded bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60">
                                     Atenção
                                   </span>
                                 ) : (
-                                  <span className="px-1.5 py-0.2 text-[8px] font-black rounded bg-rose-50 text-rose-700 border border-rose-200">
+                                  <span className="px-1.5 py-0.2 text-[8px] font-black rounded bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60">
                                     Reprovado
                                   </span>
                                 )}
@@ -3001,7 +3001,7 @@ function DetalhesDaTurma({
                                 <button
                                   type="button"
                                   onClick={() => onVerAluno(a.alunos?.pessoa_id)}
-                                  className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition cursor-pointer"
+                                  className="p-1 text-slate-400 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded transition cursor-pointer"
                                   title="Abrir Ficha Individual do Aluno"
                                 >
                                   <FileSpreadsheet size={14} />
@@ -3016,13 +3016,13 @@ function DetalhesDaTurma({
                 </div>
 
                 {/* Rodapé da tabela com orientações rápidas */}
-                <div className="px-3 py-2 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-[10px] text-slate-500">
+                <div className="px-3 py-2 bg-slate-50 dark:bg-[#0b1329] border-t border-slate-200 dark:border-[#24334f] flex flex-col sm:flex-row items-center justify-between gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ≥ 7.0 (Aprovado)</span>
                     <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> 5.0 - 6.9 (Atenção)</span>
                     <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span> &lt; 5.0 (Reprovado)</span>
                   </div>
-                  <span className="font-bold text-slate-400">
+                  <span className="font-bold text-slate-400 dark:text-slate-500">
                     * Cada avaliação calcula a média do seu módulo ponderada pelo peso e gera a média geral da turma.
                   </span>
                 </div>
@@ -3106,9 +3106,9 @@ function DetalhesDaTurma({
           onFechar={() => setModalObs({ ...modalObs, aberto: false })}
         >
           <div className="p-5 space-y-4">
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div className="bg-slate-50 dark:bg-[#0b1329] p-3 rounded-xl border border-slate-200 dark:border-[#2b3954]">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Aluno</span>
-              <span className="text-sm font-black text-slate-800">{modalObs.alunoNome}</span>
+              <span className="text-sm font-black text-slate-800 dark:text-white">{modalObs.alunoNome}</span>
             </div>
 
             <div>
@@ -3120,7 +3120,7 @@ function DetalhesDaTurma({
                 placeholder="Ex: Entregou trabalho complementar; Prova de 2ª chamada realizada em data tal..."
                 value={modalObs.obs}
                 onChange={e => setModalObs({ ...modalObs, obs: e.target.value })}
-                className="w-full px-3 py-2.5 text-xs border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-violet-400 resize-none"
+                className="w-full px-3 py-2.5 text-xs border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-violet-400 resize-none"
               />
             </div>
 
@@ -3128,7 +3128,7 @@ function DetalhesDaTurma({
               <button
                 type="button"
                 onClick={() => setModalObs({ ...modalObs, aberto: false })}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-[#24334f] cursor-pointer"
               >
                 Cancelar
               </button>
@@ -3140,7 +3140,7 @@ function DetalhesDaTurma({
                   setAlteracoesPendentes(true);
                   setModalObs({ ...modalObs, aberto: false });
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-[#7c3aed] text-white text-xs font-bold shadow-md shadow-violet-900/10 cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-xs font-bold shadow-md shadow-violet-500/25 border border-violet-400/30 cursor-pointer"
               >
                 Salvar Observação
               </button>
@@ -3214,12 +3214,12 @@ function ModalNovaAvaliacao({ turma, disciplinas = [], avaliacoesItens = [], mod
           <select
             value={discId}
             onChange={e => setDiscId(e.target.value)}
-            className="w-full px-3 py-2 text-xs font-bold border border-slate-200 rounded-xl bg-white outline-none focus:ring-2 focus:ring-violet-400"
+            className="w-full px-3 py-2 text-xs font-bold border border-slate-200 dark:border-[#2b3954] rounded-xl bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-violet-400"
           >
             {disciplinas.map(d => {
               const count = (avaliacoesItens || []).filter(it => it.turma_disciplina_id === d.id).length;
               return (
-                <option key={d.id} value={d.id}>
+                <option key={d.id} value={d.id} className="dark:bg-[#0b1329]">
                   {d.disciplinas?.nome} ({count} {count === 1 ? 'avaliação' : 'avaliações'})
                 </option>
               );
@@ -3241,7 +3241,7 @@ function ModalNovaAvaliacao({ turma, disciplinas = [], avaliacoesItens = [], mod
                 key={i}
                 type="button"
                 onClick={() => setNome(sug)}
-                className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 hover:bg-violet-100 hover:text-violet-700 text-slate-600 transition cursor-pointer"
+                className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-100 dark:bg-[#1c2b4a] hover:bg-violet-100 dark:hover:bg-violet-950/50 hover:text-violet-700 dark:hover:text-violet-300 text-slate-600 dark:text-slate-300 transition cursor-pointer"
               >
                 + {sug}
               </button>
@@ -3254,7 +3254,7 @@ function ModalNovaAvaliacao({ turma, disciplinas = [], avaliacoesItens = [], mod
             placeholder="Ex: Avaliação 1, Prova Teórica, Trabalho em Grupo..."
             value={nome}
             onChange={e => setNome(e.target.value)}
-            className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-violet-400"
+            className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-violet-400"
           />
         </div>
 
@@ -3269,7 +3269,7 @@ function ModalNovaAvaliacao({ turma, disciplinas = [], avaliacoesItens = [], mod
               placeholder="1.0"
               value={peso}
               onChange={e => setPeso(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-violet-400"
+              className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-violet-400"
             />
           </div>
 
@@ -3281,12 +3281,12 @@ function ModalNovaAvaliacao({ turma, disciplinas = [], avaliacoesItens = [], mod
               type="date"
               value={dataAvaliacao}
               onChange={e => setDataAvaliacao(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-violet-400"
+              className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-violet-400"
             />
           </div>
         </div>
 
-        <div className="p-3 bg-violet-50 rounded-xl border border-violet-100 text-[11px] text-violet-800 flex items-start gap-2">
+        <div className="p-3 bg-violet-50 dark:bg-violet-950/40 rounded-xl border border-violet-100 dark:border-violet-800/50 text-[11px] text-violet-800 dark:text-violet-300 flex items-start gap-2">
           <span className="text-base leading-none">💡</span>
           <span>
             Ao adicionar esta avaliação, a caderneta exibirá uma nova coluna sob o módulo <strong>{discSelecionada?.disciplinas?.nome}</strong> e recalculará as médias automaticamente.
@@ -3297,14 +3297,14 @@ function ModalNovaAvaliacao({ turma, disciplinas = [], avaliacoesItens = [], mod
           <button
             type="button"
             onClick={onFechar}
-            className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 cursor-pointer"
+            className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-[#24334f] cursor-pointer"
           >
             Cancelar
           </button>
           <button
             type="submit"
             disabled={salvando}
-            className="flex-1 py-2.5 rounded-xl bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs font-bold shadow-md shadow-violet-900/10 cursor-pointer disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-xs font-bold shadow-md shadow-violet-500/25 border border-violet-400/30 cursor-pointer disabled:opacity-50"
           >
             {salvando ? 'Criando...' : 'Adicionar Avaliação'}
           </button>
@@ -3338,7 +3338,7 @@ function ModalGerenciarAvaliacoes({ turma, disciplinas = [], avaliacoesItens = [
   return (
     <ModalWrapper titulo={`Avaliações da Turma: ${turma?.nome}`} onFechar={onFechar}>
       <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Gerencie a estrutura de provas e notas de cada módulo. Você pode renomear, alterar pesos ou remover avaliações.
         </p>
 
@@ -3347,11 +3347,11 @@ function ModalGerenciarAvaliacoes({ turma, disciplinas = [], avaliacoesItens = [
             const items = (avaliacoesItens || []).filter(it => it.turma_disciplina_id === d.id);
 
             return (
-              <div key={d.id} className="border border-slate-200 rounded-2xl p-3.5 bg-slate-50/50 space-y-2.5">
+              <div key={d.id} className="border border-slate-200 dark:border-[#24334f] rounded-2xl p-3.5 bg-slate-50/50 dark:bg-[#131d31]/60 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-extrabold text-xs text-slate-800">{d.disciplinas?.nome}</h4>
-                    <span className="text-[10px] text-slate-400">
+                    <h4 className="font-extrabold text-xs text-slate-800 dark:text-white">{d.disciplinas?.nome}</h4>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-400">
                       {items.length} {items.length === 1 ? 'avaliação configurada' : 'avaliações configuradas'}
                     </span>
                   </div>
@@ -3359,14 +3359,14 @@ function ModalGerenciarAvaliacoes({ turma, disciplinas = [], avaliacoesItens = [
                   <button
                     type="button"
                     onClick={() => onAdicionarItem(d.id)}
-                    className="px-2.5 py-1 bg-violet-100 hover:bg-violet-200 text-violet-800 text-[10px] font-bold rounded-lg transition cursor-pointer"
+                    className="px-2.5 py-1 bg-violet-100 dark:bg-violet-950/50 hover:bg-violet-200 dark:hover:bg-violet-900/60 text-violet-800 dark:text-violet-300 text-[10px] font-bold rounded-lg transition cursor-pointer"
                   >
                     + Nova Avaliação
                   </button>
                 </div>
 
                 {items.length === 0 ? (
-                  <div className="p-3 bg-white rounded-xl border border-dashed border-slate-200 text-center text-[11px] text-slate-400 italic">
+                  <div className="p-3 bg-white dark:bg-[#0b1329] rounded-xl border border-dashed border-slate-200 dark:border-[#2b3954] text-center text-[11px] text-slate-400 dark:text-slate-500 italic">
                     Utilizando avaliação padrão única (1 nota geral).
                   </div>
                 ) : (
@@ -3376,12 +3376,12 @@ function ModalGerenciarAvaliacoes({ turma, disciplinas = [], avaliacoesItens = [
 
                       if (isEditing) {
                         return (
-                          <div key={it.id} className="p-2 bg-white rounded-xl border border-violet-300 shadow-2xs flex items-center gap-2">
+                          <div key={it.id} className="p-2 bg-white dark:bg-[#0b1329] rounded-xl border border-violet-300 dark:border-violet-600 shadow-2xs flex items-center gap-2">
                             <input
                               type="text"
                               value={editNome}
                               onChange={e => setEditNome(e.target.value)}
-                              className="flex-1 px-2 py-1 text-xs font-bold border border-slate-200 rounded-lg outline-none"
+                              className="flex-1 px-2 py-1 text-xs font-bold border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#131d31] text-slate-800 dark:text-slate-100 rounded-lg outline-none"
                               placeholder="Nome da avaliação"
                             />
                             <div className="flex items-center gap-1">
@@ -3391,20 +3391,20 @@ function ModalGerenciarAvaliacoes({ turma, disciplinas = [], avaliacoesItens = [
                                 inputMode="decimal"
                                 value={editPeso}
                                 onChange={e => setEditPeso(e.target.value)}
-                                className="w-12 px-1 py-1 text-xs text-center font-bold border border-slate-200 rounded-lg outline-none"
+                                className="w-12 px-1 py-1 text-xs text-center font-bold border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#131d31] text-slate-800 dark:text-slate-100 rounded-lg outline-none"
                               />
                             </div>
                             <button
                               type="button"
                               onClick={() => handleSalvarEdicao(it.id)}
-                              className="px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold rounded-lg cursor-pointer"
+                              className="px-2 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[10px] font-bold rounded-lg cursor-pointer"
                             >
                               Salvar
                             </button>
                             <button
                               type="button"
                               onClick={() => setEditandoId(null)}
-                              className="px-2 py-1 bg-slate-200 text-slate-600 text-[10px] font-bold rounded-lg cursor-pointer"
+                              className="px-2 py-1 bg-slate-200 dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-300 text-[10px] font-bold rounded-lg cursor-pointer"
                             >
                               ✕
                             </button>
@@ -3413,11 +3413,11 @@ function ModalGerenciarAvaliacoes({ turma, disciplinas = [], avaliacoesItens = [
                       }
 
                       return (
-                        <div key={it.id} className="p-2 bg-white rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                        <div key={it.id} className="p-2 bg-white dark:bg-[#17223b] rounded-xl border border-slate-200 dark:border-[#24334f] flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <span className="w-2 h-2 rounded-full bg-violet-500 shrink-0"></span>
-                            <span className="text-xs font-bold text-slate-800 truncate">{it.nome}</span>
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                            <span className="text-xs font-bold text-slate-800 dark:text-white truncate">{it.nome}</span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-[#131d31] text-slate-600 dark:text-slate-300">
                               Peso: {it.peso || 1.0}
                             </span>
                           </div>
@@ -3426,7 +3426,7 @@ function ModalGerenciarAvaliacoes({ turma, disciplinas = [], avaliacoesItens = [
                             <button
                               type="button"
                               onClick={() => handleIniciarEdicao(it)}
-                              className="p-1 text-slate-400 hover:text-slate-700 rounded transition cursor-pointer"
+                              className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded transition cursor-pointer"
                               title="Editar nome ou peso"
                             >
                               ✏️
@@ -3454,7 +3454,7 @@ function ModalGerenciarAvaliacoes({ turma, disciplinas = [], avaliacoesItens = [
           <button
             type="button"
             onClick={onFechar}
-            className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+            className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-[#1c2b4a] hover:bg-slate-200 dark:hover:bg-[#24334f] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-[#2b3954] text-xs font-bold cursor-pointer"
           >
             Concluir
           </button>
@@ -3533,16 +3533,16 @@ function ModalLancarNotasDisciplina({ turma, disciplinas = [], avaliacoesItens =
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
+      <div className="bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="p-5 border-b border-slate-100 dark:border-[#2b3954] flex justify-between items-center bg-slate-50 dark:bg-[#131d31] shrink-0">
           <div>
-            <h3 className="font-black text-slate-800 text-base uppercase tracking-tight flex items-center gap-2">
-              <Sparkles size={16} className="text-violet-600" />
+            <h3 className="font-black text-slate-800 dark:text-white text-base uppercase tracking-tight flex items-center gap-2">
+              <Sparkles size={16} className="text-violet-600 dark:text-violet-400" />
               <span>Lançamento em Lote por Módulo / Avaliação</span>
             </h3>
-            <p className="text-xs text-slate-500 font-medium">Turma: {turma?.nome}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Turma: {turma?.nome}</p>
           </div>
-          <button onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border text-slate-400 hover:text-rose-500 transition cursor-pointer">✕</button>
+          <button onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-[#1c2b4a] border border-slate-200 dark:border-[#2b3954] text-slate-400 dark:text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer">✕</button>
         </div>
 
         <form onSubmit={handleSalvar} className="flex flex-col flex-1 overflow-hidden">
@@ -3556,10 +3556,10 @@ function ModalLancarNotasDisciplina({ turma, disciplinas = [], avaliacoesItens =
                 <select
                   value={targetId}
                   onChange={e => setTargetId(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-bold border border-slate-200 rounded-xl bg-white outline-none focus:ring-2 focus:ring-violet-400"
+                  className="w-full px-3 py-2 text-xs font-bold border border-slate-200 dark:border-[#2b3954] rounded-xl bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-violet-400"
                 >
                   {alvos.map(alvo => (
-                    <option key={alvo.id} value={alvo.id}>
+                    <option key={alvo.id} value={alvo.id} className="dark:bg-[#0b1329]">
                       {alvo.nome}
                     </option>
                   ))}
@@ -3578,12 +3578,12 @@ function ModalLancarNotasDisciplina({ turma, disciplinas = [], avaliacoesItens =
                     placeholder="Ex: 10.0 ou 8.5"
                     value={notaPadrao}
                     onChange={e => setNotaPadrao(e.target.value)}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl outline-none"
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleAplicarPadrao}
-                    className="px-3 py-2 bg-violet-100 hover:bg-violet-200 text-violet-800 text-[11px] font-bold rounded-xl whitespace-nowrap cursor-pointer transition"
+                    className="px-3 py-2 bg-violet-100 dark:bg-violet-950/50 hover:bg-violet-200 dark:hover:bg-violet-900/60 text-violet-800 dark:text-violet-300 text-[11px] font-bold rounded-xl whitespace-nowrap cursor-pointer transition"
                   >
                     Aplicar
                   </button>
@@ -3592,8 +3592,8 @@ function ModalLancarNotasDisciplina({ turma, disciplinas = [], avaliacoesItens =
             </div>
 
             {/* Lista de Alunos da Turma para Lançamento */}
-            <div className="border border-slate-200 rounded-2xl overflow-hidden">
-              <div className="bg-slate-50 p-2.5 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-600">
+            <div className="border border-slate-200 dark:border-[#24334f] rounded-2xl overflow-hidden">
+              <div className="bg-slate-50 dark:bg-[#0b1329] p-2.5 border-b border-slate-200 dark:border-[#24334f] flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-300">
                 <span>Aluno</span>
                 <div className="flex items-center gap-6 pr-2">
                   <span className="w-16 text-center">Nota (0-10)</span>
@@ -3601,17 +3601,17 @@ function ModalLancarNotasDisciplina({ turma, disciplinas = [], avaliacoesItens =
                 </div>
               </div>
 
-              <div className="divide-y divide-slate-100 max-h-[45vh] overflow-y-auto p-1">
+              <div className="divide-y divide-slate-100 dark:divide-[#24334f] max-h-[45vh] overflow-y-auto p-1">
                 {alunos.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-slate-400 italic">Nenhum aluno ativo nesta turma.</div>
+                  <div className="p-8 text-center text-xs text-slate-400 dark:text-slate-500 italic">Nenhum aluno ativo nesta turma.</div>
                 ) : (
                   alunos.map(a => {
                     const alunoData = notasTemp[a.aluno_id] || { nota: '', obs: '' };
                     return (
-                      <div key={a.aluno_id} className="p-2 flex items-center justify-between gap-2 hover:bg-slate-50 transition rounded-xl">
+                      <div key={a.aluno_id} className="p-2 flex items-center justify-between gap-2 hover:bg-slate-50 dark:hover:bg-[#1c2b4a]/50 transition rounded-xl">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <Avatar pessoa={a.alunos?.pessoas} tamanho="w-7 h-7 shrink-0" />
-                          <span className="text-xs font-bold text-slate-800 truncate" title={a.alunos?.pessoas?.nome}>
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate" title={a.alunos?.pessoas?.nome}>
                             {a.alunos?.pessoas?.nome}
                           </span>
                         </div>
@@ -3629,7 +3629,7 @@ function ModalLancarNotasDisciplina({ turma, disciplinas = [], avaliacoesItens =
                                 [a.aluno_id]: { ...(prev[a.aluno_id] || {}), nota: val }
                               }));
                             }}
-                            className="w-16 h-8 text-center text-xs font-bold border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+                            className="w-16 h-8 text-center text-xs font-bold border border-slate-200 dark:border-[#2b3954] rounded-lg outline-none focus:ring-2 focus:ring-violet-400 bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100"
                           />
 
                           <input
@@ -3643,7 +3643,7 @@ function ModalLancarNotasDisciplina({ turma, disciplinas = [], avaliacoesItens =
                                 [a.aluno_id]: { ...(prev[a.aluno_id] || {}), obs: obsVal }
                               }));
                             }}
-                            className="w-36 sm:w-56 h-8 px-2 text-xs border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+                            className="w-36 sm:w-56 h-8 px-2 text-xs border border-slate-200 dark:border-[#2b3954] rounded-lg outline-none focus:ring-2 focus:ring-violet-400 bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100"
                           />
                         </div>
                       </div>
@@ -3654,17 +3654,17 @@ function ModalLancarNotasDisciplina({ turma, disciplinas = [], avaliacoesItens =
             </div>
           </div>
 
-          <div className="p-4 border-t bg-slate-50 flex gap-3 shrink-0">
+          <div className="p-4 border-t border-slate-100 dark:border-[#2b3954] bg-slate-50 dark:bg-[#131d31] flex gap-3 shrink-0">
             <button
               type="button"
               onClick={onFechar}
-              className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 cursor-pointer"
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-[#24334f] cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 py-2.5 rounded-xl bg-[#7c3aed] hover:bg-[#6d28d9] text-white text-xs font-bold shadow-md shadow-violet-900/10 cursor-pointer"
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white text-xs font-bold shadow-md shadow-violet-500/25 border border-violet-400/30 cursor-pointer"
             >
               Confirmar Lançamento
             </button>
@@ -3683,63 +3683,63 @@ function ModalImprimirCaderneta({ turma, disciplinas = [], avaliacoesItens = [],
 
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        <div className="p-4 border-b border-slate-150 flex justify-between items-center bg-slate-50 print:hidden">
+      <div className="bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+        <div className="p-4 border-b border-slate-150 dark:border-[#2b3954] flex justify-between items-center bg-slate-50 dark:bg-[#131d31] print:hidden">
           <div>
-            <h3 className="font-black text-slate-800 text-sm uppercase">Caderneta e Boletim da Turma</h3>
-            <p className="text-xs text-slate-500">Visualização de impressão formatada</p>
+            <h3 className="font-black text-slate-800 dark:text-white text-sm uppercase">Caderneta e Boletim da Turma</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Visualização de impressão formatada</p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-4 py-2 bg-[#202046] hover:bg-[#191938] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-blue-500/25 border border-blue-400/30"
             >
               <Printer size={14} />
               <span>Imprimir / Salvar PDF</span>
             </button>
-            <button onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border text-slate-400 hover:text-rose-500 transition cursor-pointer">✕</button>
+            <button onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-[#1c2b4a] border border-slate-200 dark:border-[#2b3954] text-slate-400 dark:text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer">✕</button>
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 space-y-6 print:p-0">
+        <div className="p-6 overflow-y-auto flex-1 space-y-6 print:p-0 bg-white dark:bg-[#131d31] print:bg-white text-slate-900 dark:text-slate-100 print:text-black">
           {/* Cabeçalho do Boletim */}
-          <div className="border-b-2 border-slate-800 pb-4 flex items-start justify-between">
+          <div className="border-b-2 border-slate-800 dark:border-slate-700 print:border-black pb-4 flex items-start justify-between">
             <div>
-              <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">MIB Church - Educação Cristã</h2>
-              <p className="text-sm font-bold text-slate-700 mt-0.5">{turma?.escolas?.nome || 'Escola Bíblica'}</p>
-              <p className="text-xs text-slate-500">Turma: {turma?.nome} • Ano Letivo: {turma?.ano_letivo || new Date().getFullYear()} • Horário: {turma?.horario || 'Geral'}</p>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white print:text-black uppercase tracking-tight">MIB Church - Educação Cristã</h2>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-300 print:text-black mt-0.5">{turma?.escolas?.nome || 'Escola Bíblica'}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 print:text-slate-700">Turma: {turma?.nome} • Ano Letivo: {turma?.ano_letivo || new Date().getFullYear()} • Horário: {turma?.horario || 'Geral'}</p>
             </div>
-            <div className="text-right text-xs text-slate-400">
+            <div className="text-right text-xs text-slate-400 print:text-slate-700">
               <span>Data de Emissão:</span>
-              <span className="block font-bold text-slate-700">{new Date().toLocaleDateString('pt-BR')}</span>
+              <span className="block font-bold text-slate-700 dark:text-slate-300 print:text-black">{new Date().toLocaleDateString('pt-BR')}</span>
             </div>
           </div>
 
           {/* Tabela de Notas e Médias */}
-          <div className="border border-slate-300 rounded-xl overflow-hidden">
+          <div className="border border-slate-300 dark:border-[#24334f] print:border-black rounded-xl overflow-hidden">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-100 border-b border-slate-300 text-slate-800 font-extrabold">
-                  <th className="p-2 border-r border-slate-300">Nº</th>
-                  <th className="p-2 border-r border-slate-300 min-w-[160px]">Aluno</th>
+                <tr className="bg-slate-100 dark:bg-[#0b1329] print:bg-slate-100 border-b border-slate-300 dark:border-[#24334f] print:border-black text-slate-800 dark:text-slate-200 print:text-black font-extrabold">
+                  <th className="p-2 border-r border-slate-300 dark:border-[#24334f] print:border-black">Nº</th>
+                  <th className="p-2 border-r border-slate-300 dark:border-[#24334f] print:border-black min-w-[160px]">Aluno</th>
                   {disciplinas.map(d => (
-                    <th key={d.id} className="p-2 text-center border-r border-slate-300">
+                    <th key={d.id} className="p-2 text-center border-r border-slate-300 dark:border-[#24334f] print:border-black">
                       {d.disciplinas?.nome}
                     </th>
                   ))}
-                  <th className="p-2 text-center border-r border-slate-300 bg-slate-200">Média Final</th>
-                  <th className="p-2 text-center border-r border-slate-300">Freq.</th>
+                  <th className="p-2 text-center border-r border-slate-300 dark:border-[#24334f] print:border-black bg-slate-200 dark:bg-[#17223b] print:bg-slate-200">Média Final</th>
+                  <th className="p-2 text-center border-r border-slate-300 dark:border-[#24334f] print:border-black">Freq.</th>
                   <th className="p-2 text-center">Situação</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y divide-slate-200 dark:divide-[#24334f] print:divide-slate-300">
                 {alunos.map((a, idx) => {
                   const media = calcularMediaAluno ? calcularMediaAluno(a.aluno_id) : null;
                   const freq = calcularFrequenciaAluno ? calcularFrequenciaAluno(a.aluno_id, a.alunos?.pessoa_id, a.id) : 100;
                   return (
-                    <tr key={a.id} className="hover:bg-slate-50">
-                      <td className="p-2 font-mono text-slate-400 border-r border-slate-200">{idx + 1}</td>
-                      <td className="p-2 font-bold text-slate-800 border-r border-slate-200">{a.alunos?.pessoas?.nome}</td>
+                    <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-[#1c2b4a]/30 print:hover:bg-transparent">
+                      <td className="p-2 font-mono text-slate-400 dark:text-slate-500 print:text-black border-r border-slate-200 dark:border-[#24334f] print:border-black">{idx + 1}</td>
+                      <td className="p-2 font-bold text-slate-800 dark:text-slate-200 print:text-black border-r border-slate-200 dark:border-[#24334f] print:border-black">{a.alunos?.pessoas?.nome}</td>
                       {disciplinas.map(d => {
                         const items = (avaliacoesItens || []).filter(it => it.turma_disciplina_id === d.id);
                         let notaExibida = '-';
@@ -3752,24 +3752,24 @@ function ModalImprimirCaderneta({ turma, disciplinas = [], avaliacoesItens = [],
                           notaExibida = notaVal !== '' ? notaVal : '-';
                         }
                         return (
-                          <td key={d.id} className="p-2 text-center border-r border-slate-200 font-mono font-bold">
+                          <td key={d.id} className="p-2 text-center border-r border-slate-200 dark:border-[#24334f] print:border-black font-mono font-bold">
                             {notaExibida}
                           </td>
                         );
                       })}
-                      <td className="p-2 text-center font-black border-r border-slate-200 bg-slate-50 text-violet-950">
+                      <td className="p-2 text-center font-black border-r border-slate-200 dark:border-[#24334f] print:border-black bg-slate-50 dark:bg-[#17223b] print:bg-slate-50 text-violet-950 dark:text-violet-300 print:text-black">
                         {media !== null ? media.toFixed(1) : '-'}
                       </td>
-                      <td className="p-2 text-center font-semibold border-r border-slate-200">{freq}%</td>
+                      <td className="p-2 text-center font-semibold border-r border-slate-200 dark:border-[#24334f] print:border-black">{freq}%</td>
                       <td className="p-2 text-center font-bold">
                         {media === null ? (
                           <span className="text-slate-400">Pendente</span>
                         ) : media >= 7.0 ? (
-                          <span className="text-emerald-700">Aprovado</span>
+                          <span className="text-emerald-700 dark:text-emerald-400 print:text-emerald-800">Aprovado</span>
                         ) : media >= 5.0 ? (
-                          <span className="text-amber-700">Recuperação</span>
+                          <span className="text-amber-700 dark:text-amber-400 print:text-amber-800">Recuperação</span>
                         ) : (
-                          <span className="text-rose-700">Reprovado</span>
+                          <span className="text-rose-700 dark:text-rose-400 print:text-rose-800">Reprovado</span>
                         )}
                       </td>
                     </tr>
@@ -3780,12 +3780,12 @@ function ModalImprimirCaderneta({ turma, disciplinas = [], avaliacoesItens = [],
           </div>
 
           {/* Campo de Assinaturas */}
-          <div className="pt-10 grid grid-cols-2 gap-10 text-center text-xs text-slate-600">
+          <div className="pt-10 grid grid-cols-2 gap-10 text-center text-xs text-slate-600 dark:text-slate-400 print:text-black">
             <div>
-              <div className="border-t border-slate-400 pt-2 font-bold">Coordenação Pedagógica / Direção</div>
+              <div className="border-t border-slate-400 dark:border-slate-600 print:border-black pt-2 font-bold">Coordenação Pedagógica / Direção</div>
             </div>
             <div>
-              <div className="border-t border-slate-400 pt-2 font-bold">Professor(es) Responsável(is)</div>
+              <div className="border-t border-slate-400 dark:border-slate-600 print:border-black pt-2 font-bold">Professor(es) Responsável(is)</div>
             </div>
           </div>
         </div>
@@ -3801,13 +3801,13 @@ function PainelCentralAvaliacoes({ turmas = [], escolas = [], filtroCursoTurmas,
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* CABEÇALHO DO PAINEL */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-150 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-[#131d31] p-5 rounded-2xl border border-slate-200 dark:border-[#24334f] shadow-xs">
         <div>
-          <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
-            <Award className="text-violet-600" size={20} />
+          <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
+            <Award className="text-violet-600 dark:text-violet-400" size={20} />
             <span>Central de Avaliações & Cadernetas de Notas</span>
           </h3>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
             Selecione uma turma abaixo para lançar notas de disciplinas ou visualizar o boletim consolidado.
           </p>
         </div>
@@ -3818,10 +3818,10 @@ function PainelCentralAvaliacoes({ turmas = [], escolas = [], filtroCursoTurmas,
             <select
               value={filtroCursoTurmas || ''}
               onChange={e => setFiltroCursoTurmas(e.target.value || null)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+              className="px-3 py-2 bg-slate-50 dark:bg-[#0b1329] border border-slate-200 dark:border-[#2b3954] rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 outline-none"
             >
-              <option value="">Todos os Cursos</option>
-              {escolas.map(e => <option key={e.id} value={e.id}>{e.nome}</option>)}
+              <option value="" className="dark:bg-[#0b1329]">Todos os Cursos</option>
+              {escolas.map(e => <option key={e.id} value={e.id} className="dark:bg-[#0b1329]">{e.nome}</option>)}
             </select>
           </div>
         )}
@@ -3829,7 +3829,7 @@ function PainelCentralAvaliacoes({ turmas = [], escolas = [], filtroCursoTurmas,
 
       {/* GRID DE CARDS DAS TURMAS */}
       {turmasFiltradas.length === 0 ? (
-        <div className="p-12 text-center border-2 border-dashed border-slate-200 rounded-3xl bg-white text-slate-400 italic text-sm">
+        <div className="p-12 text-center border-2 border-dashed border-slate-200 dark:border-[#24334f] rounded-3xl bg-white dark:bg-[#131d31] text-slate-400 dark:text-slate-500 italic text-sm">
           Nenhuma turma cadastrada encontrada.
         </div>
       ) : (
@@ -3839,25 +3839,25 @@ function PainelCentralAvaliacoes({ turmas = [], escolas = [], filtroCursoTurmas,
             return (
               <div
                 key={t.id}
-                className="bg-white rounded-2xl border border-slate-150 p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 hover:border-violet-200 group"
+                className="bg-white dark:bg-[#131d31] rounded-2xl border border-slate-200 dark:border-[#24334f] p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 hover:border-violet-300 dark:hover:border-violet-500/50 group"
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${iconInfo.bg}`}>
                     {iconInfo.icon}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
                       {t.escolas?.nome || 'Curso'}
                     </span>
-                    <h4 className="font-extrabold text-slate-800 text-sm sm:text-base leading-snug truncate" title={t.nome}>
+                    <h4 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm sm:text-base leading-snug truncate" title={t.nome}>
                       {t.nome}
                     </h4>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[9px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                      <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-[#1c2b4a] px-2 py-0.5 rounded-md">
                         {t.horario || 'Horário Geral'}
                       </span>
                       <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${
-                        t.status === 'Em andamento' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500'
+                        t.status === 'Em andamento' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-[#1c2b4a] text-slate-500 dark:text-slate-400'
                       }`}>
                         {t.status}
                       </span>
@@ -3865,14 +3865,14 @@ function PainelCentralAvaliacoes({ turmas = [], escolas = [], filtroCursoTurmas,
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs text-slate-500 font-medium">
-                    Ano: <strong className="text-slate-700">{t.ano_letivo || new Date().getFullYear()}</strong>
+                <div className="pt-3 border-t border-slate-100 dark:border-[#24334f] flex items-center justify-between">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                    Ano: <strong className="text-slate-700 dark:text-slate-200">{t.ano_letivo || new Date().getFullYear()}</strong>
                   </span>
                   <button
                     type="button"
                     onClick={() => onAbrirCadernetaTurma(t.id)}
-                    className="px-4 py-2 bg-[#202046] group-hover:bg-[#7c3aed] text-white rounded-xl text-xs font-black uppercase transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-sm shadow-violet-950/10"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-sm shadow-blue-500/20 border border-blue-400/30"
                   >
                     <span>Abrir Caderneta</span>
                     <span>→</span>
@@ -4240,23 +4240,23 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
   return (
     <div className="space-y-6">
       {/* CABEÇALHO DO DASHBOARD COM O INTERRUPTOR DE MODO DEMO */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-xl border border-slate-100 shadow-3xs !rounded-t-none">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white dark:bg-[#131d31] p-4 rounded-xl border border-slate-200 dark:border-[#24334f] shadow-3xs !rounded-t-none">
         <div>
-          <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
+          <h3 className="font-extrabold text-slate-800 dark:text-slate-100 text-base flex items-center gap-2">
             <span>Painel de Inteligência Acadêmica MIB</span>
             {modoDemo && (
-              <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider bg-orange-100 text-orange-700 border border-orange-200 rounded-md">
+              <span className="px-2 py-0.5 text-[8px] font-black uppercase tracking-wider bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/40 rounded-md">
                 Demonstração
               </span>
             )}
           </h3>
-          <p className="text-xs text-slate-500 font-medium">Acompanhe a frequência, notas, destaques e tendências vocacionais dos alunos.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Acompanhe a frequência, notas, destaques e tendências vocacionais dos alunos.</p>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-center bg-slate-50 border border-slate-200/60 px-3 py-1.5 rounded-lg">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Modo Demo</span>
+        <div className="flex items-center gap-2 self-start sm:self-center bg-slate-50 dark:bg-[#0b1329] border border-slate-200/60 dark:border-[#2b3954] px-3 py-1.5 rounded-lg">
+          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tight">Modo Demo</span>
           <button
             onClick={() => setModoDemo(v => !v)}
-            className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-300 cursor-pointer ${modoDemo ? 'bg-[#1e3a8a]' : 'bg-slate-350'}`}
+            className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-300 cursor-pointer ${modoDemo ? 'bg-gradient-to-r from-blue-600 to-indigo-600' : 'bg-slate-300 dark:bg-slate-700'}`}
           >
             <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${modoDemo ? 'translate-x-4' : 'translate-x-0'}`} />
           </button>
@@ -4264,7 +4264,7 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
       </div>
 
       {/* MENU DE ABAS INTERNAS DO DASHBOARD */}
-      <div className="grid grid-cols-2 md:flex bg-white/80 backdrop-blur-md p-1 rounded-xl shadow-3xs border border-slate-200/80 gap-1 w-full !rounded-t-none">
+      <div className="grid grid-cols-2 md:flex bg-white/80 dark:bg-[#131d31]/80 backdrop-blur-md p-1 rounded-xl shadow-3xs border border-slate-200/80 dark:border-[#24334f] gap-1 w-full !rounded-t-none">
         {[
           { id: 'geral', label: 'Indicadores Gerais', icon: <Activity size={14} /> },
           { id: 'faltas', label: 'Frequência & Faltas', icon: <AlertCircle size={14} /> },
@@ -4275,8 +4275,8 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
             key={tab.id}
             onClick={() => setAbaAtivaDashboard(tab.id)}
             className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-205 cursor-pointer whitespace-nowrap md:flex-1 ${abaAtivaDashboard === tab.id
-              ? 'bg-[#1e3a8a] text-white shadow-xs'
-              : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100/50 dark:hover:bg-[#1c2b4a]/50'
               }`}
           >
             {tab.icon}
@@ -4356,10 +4356,10 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
                   <tbody>
                     {(escolas.length > 0 ? escolas : [{ id: 1, nome: 'Escola de Líderes' }, { id: 2, nome: 'Maturidade Cristã' }, { id: 3, nome: 'Escola de Teologia' }]).map(e => (
                       <tr key={e.id}>
-                        <td className="font-bold text-slate-700">{e.nome}</td>
-                        <td className="text-slate-500">{turmas.filter(t => t.escola_id === e.id).length || 1} turmas</td>
+                        <td className="font-bold text-slate-700 dark:text-slate-200">{e.nome}</td>
+                        <td className="text-slate-500 dark:text-slate-400">{turmas.filter(t => t.escola_id === e.id).length || 1} turmas</td>
                         <td>
-                          <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 font-black text-xs">
+                          <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-black text-xs border border-blue-200/50 dark:border-blue-800/40">
                             {activeStats.matriculasPorCurso[e.nome] || 0}
                           </span>
                         </td>
@@ -4370,12 +4370,12 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
               </div>
             </Card>
 
-            <Card className="p-6 bg-gradient-to-br from-[#202046] to-[#0891b2] text-white !rounded-t-none border-none">
+            <Card className="p-6 bg-gradient-to-br from-[#1a233b] to-[#0e7490] text-white !rounded-t-none border border-[#24334f]">
               <h4 className="font-black uppercase tracking-widest text-[10px] opacity-70 mb-4">Dica de Gestão Escolar</h4>
               <p className="text-xs leading-relaxed font-medium">
                 Acompanhe com atenção as abas de <strong>Frequência & Faltas</strong> e de <strong>Aptidões</strong> para atuar precocemente em alunos ausentes ou indicar aqueles que estão maduros para assumir papéis ministeriais ativos.
               </p>
-              <button onClick={() => onNavigate('turmas')} className="mt-6 w-full py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold transition">Ver Detalhes das Turmas</button>
+              <button onClick={() => onNavigate('turmas')} className="mt-6 w-full py-2 bg-white/20 hover:bg-white/30 dark:bg-white/10 dark:hover:bg-white/20 rounded-xl text-xs font-bold transition">Ver Detalhes das Turmas</button>
             </Card>
           </div>
         </div>
@@ -4387,61 +4387,61 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
             {/* CARD DE MEDIDOR DE FREQUÊNCIA */}
             <Card className="p-6 text-center flex flex-col items-center justify-center !rounded-t-none">
-              <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">Frequência Escolar Geral</span>
+              <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-4">Frequência Escolar Geral</span>
               <div className="relative w-36 h-36 flex items-center justify-center">
                 {/* SVG simplificado de Progresso Circular */}
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                  <circle cx="50" cy="50" r="42" stroke="#e2e8f0" strokeWidth="8" fill="transparent" />
+                  <circle cx="50" cy="50" r="42" stroke="currentColor" className="text-slate-200 dark:text-[#24334f]" strokeWidth="8" fill="transparent" />
                   <circle
-                    cx="50" cy="50" r="42" stroke="#1e3a8a" strokeWidth="8" fill="transparent"
+                    cx="50" cy="50" r="42" stroke="#2563eb" strokeWidth="8" fill="transparent"
                     strokeDasharray={263.8}
                     strokeDashoffset={263.8 - (263.8 * activeStats.frequenciaGeral) / 100}
                     strokeLinecap="round"
                   />
                 </svg>
                 <div className="absolute flex flex-col items-center">
-                  <span className="text-3xl font-black text-slate-800">{activeStats.frequenciaGeral}%</span>
-                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">Assiduidade</span>
+                  <span className="text-3xl font-black text-slate-800 dark:text-slate-100">{activeStats.frequenciaGeral}%</span>
+                  <span className="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight mt-0.5">Assiduidade</span>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-500 font-medium mt-4 leading-relaxed">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-4 leading-relaxed">
                 Média de comparecimento dos alunos ativos em relação a todas as aulas registradas.
               </p>
             </Card>
 
             {/* LISTA DE ALUNOS EM RISCO */}
             <Card className="p-0 !rounded-t-none">
-              <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div className="p-5 border-b border-slate-100 dark:border-[#24334f] flex items-center justify-between">
                 <div>
-                  <h4 className="font-extrabold text-slate-800 text-sm">Alunos em Alerta de Evasão</h4>
-                  <p className="text-[10px] text-slate-500 font-medium">Estudantes com 2 ou mais faltas consecutivas ou frequência abaixo de 75%.</p>
+                  <h4 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">Alunos em Alerta de Evasão</h4>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Estudantes com 2 ou mais faltas consecutivas ou frequência abaixo de 75%.</p>
                 </div>
-                <span className="px-2.5 py-1 text-[10px] font-black bg-rose-50 text-rose-600 rounded-full border border-rose-100">
+                <span className="px-2.5 py-1 text-[10px] font-black bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-full border border-rose-100 dark:border-rose-900/40">
                   {activeStats.alunosEmRisco.length} Alertas
                 </span>
               </div>
 
               {activeStats.alunosEmRisco.length === 0 ? (
-                <div className="p-10 text-center text-xs text-slate-400 italic">Nenhum aluno em situação de risco de frequência. Parabéns!</div>
+                <div className="p-10 text-center text-xs text-slate-400 dark:text-slate-500 italic">Nenhum aluno em situação de risco de frequência. Parabéns!</div>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-[#24334f]">
                   {activeStats.alunosEmRisco.map((aluno, i) => (
-                    <div key={i} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 transition">
+                    <div key={i} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 dark:hover:bg-[#17223b]/50 transition">
                       <div className="flex items-center gap-3">
-                        <Avatar nome={aluno.nome} foto={aluno.foto} size="w-10 h-10 border border-slate-150" />
+                        <Avatar nome={aluno.nome} foto={aluno.foto} size="w-10 h-10 border border-slate-150 dark:border-[#24334f]" />
                         <div>
-                          <span className="font-bold text-slate-800 text-xs block">{aluno.nome}</span>
-                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight block mt-0.5">{aluno.curso}</span>
-                          <p className="text-[10px] text-slate-500 font-medium mt-1 text-left">{aluno.motivo}</p>
+                          <span className="font-bold text-slate-800 dark:text-slate-100 text-xs block">{aluno.nome}</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tight block mt-0.5">{aluno.curso}</span>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1 text-left">{aluno.motivo}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4 self-end sm:self-center">
                         <div className="text-right">
-                          <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-tight">Frequência</span>
-                          <span className={`text-xs font-black ${aluno.freq < 70 ? 'text-rose-600' : 'text-amber-600'}`}>{aluno.freq}%</span>
+                          <span className="block text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight">Frequência</span>
+                          <span className={`text-xs font-black ${aluno.freq < 70 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}>{aluno.freq}%</span>
                         </div>
-                        <div className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-center min-w-[70px] border border-rose-100/60">
-                          <span className="block text-[8px] font-extrabold uppercase tracking-tight leading-none text-rose-500">Ausências</span>
+                        <div className="px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-center min-w-[70px] border border-rose-100/60 dark:border-rose-900/40">
+                          <span className="block text-[8px] font-extrabold uppercase tracking-tight leading-none text-rose-500 dark:text-rose-400">Ausências</span>
                           <span className="text-sm font-black leading-none mt-1 block">{aluno.faltas} faltas</span>
                         </div>
                       </div>
@@ -4460,33 +4460,33 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
             {/* PAINEL DE ALUNOS DESTAQUE */}
             <Card className="p-0 !rounded-t-none">
-              <div className="p-5 border-b border-slate-100">
-                <h4 className="font-extrabold text-slate-800 text-sm">Quadro de Honra (Destaques Acadêmicos)</h4>
-                <p className="text-[10px] text-slate-500 font-medium">Alunos com as melhores médias acumuladas em avaliações e frequência exemplar.</p>
+              <div className="p-5 border-b border-slate-100 dark:border-[#24334f]">
+                <h4 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">Quadro de Honra (Destaques Acadêmicos)</h4>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Alunos com as melhores médias acumuladas em avaliações e frequência exemplar.</p>
               </div>
 
               {activeStats.destaquesAlunos.length === 0 ? (
-                <div className="p-10 text-center text-xs text-slate-400 italic">Nenhum registro de avaliações encontrado no momento.</div>
+                <div className="p-10 text-center text-xs text-slate-400 dark:text-slate-500 italic">Nenhum registro de avaliações encontrado no momento.</div>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-slate-100 dark:divide-[#24334f]">
                   {activeStats.destaquesAlunos.map((aluno, i) => (
-                    <div key={i} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/50 transition">
+                    <div key={i} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50/50 dark:hover:bg-[#17223b]/50 transition">
                       <div className="flex items-center gap-3">
-                        <div className="text-slate-400 font-bold text-xs w-5 text-center">
+                        <div className="text-slate-400 dark:text-slate-500 font-bold text-xs w-5 text-center">
                           {i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}º`}
                         </div>
-                        <Avatar nome={aluno.nome} foto={aluno.foto} size="w-10 h-10 border border-slate-150" />
+                        <Avatar nome={aluno.nome} foto={aluno.foto} size="w-10 h-10 border border-slate-150 dark:border-[#24334f]" />
                         <div>
-                          <span className="font-bold text-slate-800 text-xs block">{aluno.nome}</span>
-                          <span className="text-[9px] text-slate-400 font-bold block">{aluno.curso}</span>
+                          <span className="font-bold text-slate-800 dark:text-slate-100 text-xs block">{aluno.nome}</span>
+                          <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold block">{aluno.curso}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <span className="block text-[8px] font-bold text-slate-400 uppercase">Frequência</span>
-                          <span className="text-[10px] font-extrabold text-slate-600">{aluno.frequencia || 100}%</span>
+                          <span className="block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase">Frequência</span>
+                          <span className="text-[10px] font-extrabold text-slate-600 dark:text-slate-300">{aluno.frequencia || 100}%</span>
                         </div>
-                        <div className="px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-100/60 text-indigo-700 text-center min-w-[64px]">
+                        <div className="px-3 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100/60 dark:border-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-center min-w-[64px]">
                           <span className="block text-[8px] font-black uppercase leading-none">Média</span>
                           <span className="text-sm font-black leading-none mt-1 block">{aluno.media}</span>
                         </div>
@@ -4503,31 +4503,31 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
 
           {/* MELHORES AVALIAÇÕES RECENTES */}
           <Card className="p-0 !rounded-t-none">
-            <div className="p-5 border-b border-slate-100">
-              <h4 className="font-extrabold text-slate-800 text-sm">Melhores Resultados em Avaliações Recentes</h4>
-              <p className="text-[10px] text-slate-500 font-medium">Notas máximas ou de destaque nas provas e trabalhos de disciplinas ativas.</p>
+            <div className="p-5 border-b border-slate-100 dark:border-[#24334f]">
+              <h4 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">Melhores Resultados em Avaliações Recentes</h4>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Notas máximas ou de destaque nas provas e trabalhos de disciplinas ativas.</p>
             </div>
 
             {activeStats.melhoresNotas.length === 0 ? (
-              <div className="p-10 text-center text-xs text-slate-400 italic">Sem notas registradas recentemente.</div>
+              <div className="p-10 text-center text-xs text-slate-400 dark:text-slate-500 italic">Sem notas registradas recentemente.</div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+              <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-[#24334f]">
                 {activeStats.melhoresNotas.map((nota, i) => (
-                  <div key={i} className="p-5 flex flex-col justify-between space-y-3 hover:bg-slate-50/30 transition">
+                  <div key={i} className="p-5 flex flex-col justify-between space-y-3 hover:bg-slate-50/30 dark:hover:bg-[#17223b]/30 transition">
                     <div className="flex justify-between items-start gap-2">
                       <div>
-                        <span className="font-bold text-slate-800 text-xs block">{nota.nome}</span>
-                        <span className="text-[9px] text-slate-400 font-bold block">{nota.curso}</span>
+                        <span className="font-bold text-slate-800 dark:text-slate-100 text-xs block">{nota.nome}</span>
+                        <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold block">{nota.curso}</span>
                       </div>
-                      <span className="px-2.5 py-1 text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg">
+                      <span className="px-2.5 py-1 text-xs font-black bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800/40 rounded-lg">
                         {nota.nota}
                       </span>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-100/50 px-2 py-0.5 rounded-md inline-block uppercase tracking-tight">
+                      <span className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100/50 dark:border-indigo-800/40 px-2 py-0.5 rounded-md inline-block uppercase tracking-tight">
                         {nota.disciplina}
                       </span>
-                      <p className="text-[10px] text-slate-500 font-medium leading-relaxed italic text-left">
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed italic text-left">
                         "{nota.observacao}"
                       </p>
                     </div>
@@ -4544,29 +4544,29 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
         <div className="space-y-6 animate-in fade-in duration-300">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {activeStats.tendenciasMinisterio.map((tendencia, idx) => (
-              <Card key={idx} className="p-0 border border-slate-150 !rounded-t-none flex flex-col justify-between">
+              <Card key={idx} className="p-0 border border-slate-200 dark:border-[#24334f] !rounded-t-none flex flex-col justify-between">
                 <div>
-                  <div className="p-4 border-b border-slate-100 flex items-center gap-2">
-                    <div className={`p-2 rounded-xl bg-slate-50 border border-slate-200/50`}>
+                  <div className="p-4 border-b border-slate-100 dark:border-[#24334f] flex items-center gap-2">
+                    <div className={`p-2 rounded-xl bg-slate-50 dark:bg-[#0b1329] border border-slate-200/50 dark:border-[#2b3954]`}>
                       {tendencia.icon}
                     </div>
                     <div>
-                      <h4 className="font-extrabold text-slate-800 text-sm">{tendencia.categoria}</h4>
-                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Perfil Recomendado MIB</p>
+                      <h4 className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">{tendencia.categoria}</h4>
+                      <p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">Perfil Recomendado MIB</p>
                     </div>
                   </div>
 
-                  <div className="divide-y divide-slate-150/50">
+                  <div className="divide-y divide-slate-150/50 dark:divide-[#24334f]/50">
                     {tendencia.alunos.map((aluno, aIdx) => (
-                      <div key={aIdx} className="p-4 flex justify-between items-start gap-4 hover:bg-slate-50/30 transition">
+                      <div key={aIdx} className="p-4 flex justify-between items-start gap-4 hover:bg-slate-50/30 dark:hover:bg-[#17223b]/30 transition">
                         <div className="space-y-1.5">
-                          <span className="font-bold text-slate-850 text-xs block text-left">{aluno.nome}</span>
-                          <p className="text-[10px] text-slate-500 font-medium leading-relaxed text-left">
+                          <span className="font-bold text-slate-800 dark:text-slate-100 text-xs block text-left">{aluno.nome}</span>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed text-left">
                             {aluno.justificativa}
                           </p>
                         </div>
-                        <div className="shrink-0 text-center bg-blue-50/50 border border-blue-100/60 text-blue-700 px-2 py-1.5 rounded-xl min-w-[58px]">
-                          <span className="block text-[8px] font-black uppercase leading-none text-blue-600">Afinidade</span>
+                        <div className="shrink-0 text-center bg-blue-50/50 dark:bg-blue-950/40 border border-blue-100/60 dark:border-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-1.5 rounded-xl min-w-[58px]">
+                          <span className="block text-[8px] font-black uppercase leading-none text-blue-600 dark:text-blue-400">Afinidade</span>
                           <span className="text-xs font-black leading-none mt-1 block">{aluno.compatibilidade}%</span>
                         </div>
                       </div>
@@ -4574,8 +4574,8 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
                   </div>
                 </div>
 
-                <div className="p-3 bg-slate-50 border-t border-slate-100 text-center shrink-0">
-                  <span className="text-[9px] text-slate-400 font-bold">
+                <div className="p-3 bg-slate-50 dark:bg-[#0b1329] border-t border-slate-100 dark:border-[#24334f] text-center shrink-0">
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold">
                     Potenciais líderes para o respectivo ministério com base em avaliações e dedicação acadêmica.
                   </span>
                 </div>
@@ -4584,18 +4584,18 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
           </div>
 
           {/* PAINEL VOCACIONAL DE ENVIADOS */}
-          <Card className="p-6 bg-slate-900 border-none text-white !rounded-t-none">
+          <Card className="p-6 bg-slate-900 dark:bg-[#0b1329] border border-slate-800 dark:border-[#24334f] text-white !rounded-t-none">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="space-y-2">
-                <span className="text-[#0891b2] text-[10px] font-black uppercase tracking-widest block">Direcionamento Vocacional</span>
+                <span className="text-[#0891b2] dark:text-cyan-400 text-[10px] font-black uppercase tracking-widest block">Direcionamento Vocacional</span>
                 <h4 className="text-lg font-black leading-tight text-left">Indicação de Novos Líderes de Célula</h4>
-                <p className="text-xs text-slate-400 leading-relaxed font-medium max-w-2xl text-left">
+                <p className="text-xs text-slate-400 dark:text-slate-300 leading-relaxed font-medium max-w-2xl text-left">
                   O sistema cruza dados de conclusão do curso <strong>Escola de Líderes</strong> com as notas médias superiores a 9.0 e assiduidade completa. Alunos com estes requisitos são indicados automaticamente ao conselho pastoral para liderar novas células.
                 </p>
               </div>
               <button
                 onClick={() => onNavigate('alunos')}
-                className="shrink-0 px-5 py-3 bg-[#0891b2] hover:bg-[#06b6d4] text-white rounded-2xl text-xs font-bold transition shadow-lg shadow-cyan-950 cursor-pointer"
+                className="shrink-0 px-5 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-2xl text-xs font-bold transition shadow-lg shadow-cyan-950/20 border border-cyan-400/30 cursor-pointer"
               >
                 🎓 Acessar Fichas dos Alunos
               </button>
@@ -4610,39 +4610,39 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
 function InfoTurma({ turma, alunos, onVoltar }) {
   return (
     <div className="space-y-6">
-      <button onClick={onVoltar} className="hidden sm:block text-[10px] font-black text-[#202046] uppercase hover:underline cursor-pointer">← Voltar para Lista</button>
+      <button onClick={onVoltar} className="hidden sm:block text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase hover:underline cursor-pointer">← Voltar para Lista</button>
 
       <div>
-        <h2 className="text-2xl font-black text-slate-800 leading-tight">{turma?.nome || 'Turma'}</h2>
-        <p className="text-sm text-slate-500 font-medium mt-1">{turma?.escolas?.nome}</p>
+        <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100 leading-tight">{turma?.nome || 'Turma'}</h2>
+        <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mt-1">{turma?.escolas?.nome}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-100">
+      <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-100 dark:border-[#24334f]">
         <div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ano Letivo</p>
-          <p className="text-sm font-bold text-slate-700">{turma?.ano_letivo || '---'}</p>
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Ano Letivo</p>
+          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{turma?.ano_letivo || '---'}</p>
         </div>
         <div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Horário</p>
-          <p className="text-sm font-bold text-slate-700">{turma?.horario || 'Não definido'}</p>
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Horário</p>
+          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{turma?.horario || 'Não definido'}</p>
         </div>
       </div>
 
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
-          <span className="text-xs font-bold text-[#202046] px-2.5 py-1 bg-teal-50 rounded-full border border-teal-100 inline-block">{turma?.status}</span>
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Status</p>
+          <span className="text-xs font-bold text-teal-700 dark:text-teal-300 px-2.5 py-1 bg-teal-50 dark:bg-teal-950/40 rounded-full border border-teal-100 dark:border-teal-800/40 inline-block">{turma?.status}</span>
         </div>
         <div className="text-right">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Alunos</p>
-          <p className="text-2xl font-black text-slate-800 leading-none">{alunos?.length || 0}</p>
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Alunos</p>
+          <p className="text-2xl font-black text-slate-800 dark:text-slate-100 leading-none">{alunos?.length || 0}</p>
         </div>
       </div>
 
       {turma?.descricao && (
-        <div className="pt-4 border-t border-slate-100">
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Sobre a Turma</p>
-          <p className="text-xs text-slate-600 leading-relaxed italic">{turma?.descricao}</p>
+        <div className="pt-4 border-t border-slate-100 dark:border-[#24334f]">
+          <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">Sobre a Turma</p>
+          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed italic">{turma?.descricao}</p>
         </div>
       )}
     </div>
@@ -4652,10 +4652,10 @@ function InfoTurma({ turma, alunos, onVoltar }) {
 function ModalWrapper({ titulo, children, onFechar }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh] self-end sm:self-center">
-        <div className="p-4 sm:p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 shrink-0">
-          <h3 className="font-black text-slate-800 text-lg uppercase tracking-tight">{titulo}</h3>
-          <button onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border text-slate-400 hover:text-rose-500 transition cursor-pointer">✕</button>
+      <div className="bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] rounded-t-3xl sm:rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh] self-end sm:self-center">
+        <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-[#2b3954] flex justify-between items-center bg-slate-50 dark:bg-[#131d31] shrink-0">
+          <h3 className="font-black text-slate-800 dark:text-slate-100 text-lg uppercase tracking-tight">{titulo}</h3>
+          <button onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-[#1c2b4a] border border-slate-200 dark:border-[#2b3954] text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer">✕</button>
         </div>
         {children}
       </div>

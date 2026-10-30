@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
-import { PageHeader } from './ui';
 import { registrarLogFinanceiro } from './financeiroUtils';
 
 // ─── Ícones inline ──────────────────────────────────────────────────────────
@@ -50,23 +49,28 @@ function EmptyState({ tipo, podeEditar, onNova }) {
   const isReceita = tipo === 'receita';
   return (
     <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-4 ${isReceita ? 'bg-emerald-50' : 'bg-rose-50'}`}>
+      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mb-4 ${isReceita ? 'bg-emerald-50 dark:bg-emerald-950/40' : 'bg-rose-50 dark:bg-rose-950/40'}`}>
         {isReceita ? '💰' : '💸'}
       </div>
-      <p className="text-sm font-bold text-slate-600 mb-1">
+      <p className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-1">
         Nenhuma categoria de {isReceita ? 'receita' : 'despesa'}
       </p>
-      <p className="text-xs text-slate-400 mb-4">
+      <p className="text-xs text-slate-400 dark:text-slate-400 mb-4">
         Crie categorias para organizar suas {isReceita ? 'entradas' : 'saídas'} financeiras.
       </p>
       {podeEditar && (
         <button
           type="button"
           onClick={() => onNova(tipo)}
-          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition active:scale-95 shadow-sm
-            ${isReceita ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' : 'bg-rose-600 hover:bg-rose-700 shadow-rose-100'}`}
+          className={`group relative overflow-hidden inline-flex items-center gap-2 py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-white border transition-all duration-200 active:scale-95 cursor-pointer
+            ${isReceita
+              ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 border-emerald-400/30 shadow-md shadow-emerald-600/25 hover:shadow-lg hover:shadow-emerald-600/40'
+              : 'bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:via-red-500 hover:to-rose-600 border-rose-400/30 shadow-md shadow-rose-600/25 hover:shadow-lg hover:shadow-rose-600/40'}`}
         >
-          <IconPlus size={14} /> Criar primeira categoria
+          <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+            <IconPlus size={13} />
+          </div>
+          <span>Criar primeira categoria</span>
         </button>
       )}
     </div>
@@ -79,22 +83,22 @@ function CategoriaCard({ cat, onEdit, onDelete, podeEditar }) {
   return (
     <div className={`group flex items-center gap-3 px-4 py-3 rounded-xl border transition-all
       ${isReceita
-        ? 'border-emerald-100 bg-emerald-50/40 hover:border-emerald-200 hover:bg-emerald-50'
-        : 'border-rose-100 bg-rose-50/30 hover:border-rose-200 hover:bg-rose-50'}`}
+        ? 'border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/30 hover:border-emerald-200 dark:hover:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50'
+        : 'border-rose-100 dark:border-rose-900/40 bg-rose-50/30 dark:bg-rose-950/30 hover:border-rose-200 dark:hover:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/50'}`}
     >
       {/* ícone */}
       <span className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
-        ${isReceita ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+        ${isReceita ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300' : 'bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-300'}`}>
         <IconTag />
       </span>
 
       {/* nome + descrição */}
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-bold truncate ${isReceita ? 'text-emerald-800' : 'text-rose-800'}`}>
+        <p className={`text-sm font-bold truncate ${isReceita ? 'text-emerald-800 dark:text-emerald-300' : 'text-rose-800 dark:text-rose-300'}`}>
           {cat.nome}
         </p>
         {cat.descricao && (
-          <p className="text-[11px] text-slate-400 truncate mt-0.5">{cat.descricao}</p>
+          <p className="text-[11px] text-slate-400 dark:text-slate-400 truncate mt-0.5">{cat.descricao}</p>
         )}
       </div>
 
@@ -105,7 +109,7 @@ function CategoriaCard({ cat, onEdit, onDelete, podeEditar }) {
             type="button"
             onClick={() => onEdit(cat)}
             title="Editar"
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 dark:hover:text-blue-400 transition cursor-pointer"
           >
             <IconPencil />
           </button>
@@ -113,7 +117,7 @@ function CategoriaCard({ cat, onEdit, onDelete, podeEditar }) {
             type="button"
             onClick={() => onDelete(cat.id)}
             title="Excluir"
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-slate-800 dark:hover:text-rose-400 transition cursor-pointer"
           >
             <IconTrash />
           </button>
@@ -127,10 +131,10 @@ function CategoriaCard({ cat, onEdit, onDelete, podeEditar }) {
 function SecaoLista({ titulo, tipo, lista, onEdit, onDelete, podeEditar, onNova }) {
   const isReceita = tipo === 'receita';
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-[#17223b] rounded-2xl border border-slate-100 dark:border-[#2b3954] shadow-sm overflow-hidden">
       {/* cabeçalho */}
       <div className={`px-5 py-4 flex items-center justify-between border-b
-        ${isReceita ? 'border-emerald-100 bg-gradient-to-r from-emerald-600 to-emerald-500' : 'border-rose-100 bg-gradient-to-r from-rose-600 to-rose-500'}`}>
+        ${isReceita ? 'border-emerald-100 dark:border-emerald-950 bg-gradient-to-r from-emerald-600 to-emerald-500' : 'border-rose-100 dark:border-rose-950 bg-gradient-to-r from-rose-600 to-rose-500'}`}>
         <div className="flex items-center gap-2">
           <span className="text-white text-base">
             {isReceita ? <IconArrowUp /> : <IconArrowDown />}
@@ -212,32 +216,32 @@ function ModalCategoria({ aberto, editando, tipoInicial, onFechar, onSalvo, usua
   return (
     /* backdrop */
     <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={(e) => { if (e.target === e.currentTarget) onFechar(); }}
     >
       {/* sheet */}
-      <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
+      <div className="bg-white dark:bg-[#17223b] w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden border border-transparent dark:border-[#2b3954] animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
 
         {/* handle mobile */}
         <div className="sm:hidden flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-slate-200" />
+          <div className="w-10 h-1 rounded-full bg-slate-200 dark:bg-slate-700" />
         </div>
 
         {/* header */}
         <div className={`px-6 py-4 flex items-center justify-between border-b
-          ${isReceita ? 'border-emerald-100 bg-emerald-50' : 'border-rose-100 bg-rose-50'}`}>
+          ${isReceita ? 'border-emerald-100 dark:border-emerald-950 bg-emerald-50 dark:bg-emerald-950/60' : 'border-rose-100 dark:border-rose-950 bg-rose-50 dark:bg-rose-950/60'}`}>
           <div>
-            <h3 className="text-base font-black text-slate-800">
+            <h3 className="text-base font-black text-slate-800 dark:text-slate-100">
               {editando ? 'Editar Categoria' : 'Nova Categoria'}
             </h3>
-            <p className={`text-[11px] font-bold mt-0.5 ${isReceita ? 'text-emerald-600' : 'text-rose-600'}`}>
+            <p className={`text-[11px] font-bold mt-0.5 ${isReceita ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
               {isReceita ? '↑ Receita (Entrada)' : '↓ Despesa (Saída)'}
             </p>
           </div>
           <button
             type="button"
             onClick={onFechar}
-            className="w-8 h-8 rounded-full bg-white border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-700 transition cursor-pointer"
+            className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
           >
             <IconX />
           </button>
@@ -247,14 +251,14 @@ function ModalCategoria({ aberto, editando, tipoInicial, onFechar, onSalvo, usua
         <form onSubmit={handleSalvar} className="p-6 space-y-4">
 
           {/* tipo — pill toggle */}
-          <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+          <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
             <button
               type="button"
               onClick={() => setTipo('receita')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-black transition-all
                 ${tipo === 'receita'
                   ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
-                  : 'text-slate-500 hover:text-emerald-600'}`}
+                  : 'text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'}`}
             >
               <IconArrowUp /> Receita
             </button>
@@ -264,7 +268,7 @@ function ModalCategoria({ aberto, editando, tipoInicial, onFechar, onSalvo, usua
               className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-black transition-all
                 ${tipo === 'despesa'
                   ? 'bg-rose-600 text-white shadow-md shadow-rose-200'
-                  : 'text-slate-500 hover:text-rose-600'}`}
+                  : 'text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400'}`}
             >
               <IconArrowDown /> Despesa
             </button>
@@ -272,7 +276,7 @@ function ModalCategoria({ aberto, editando, tipoInicial, onFechar, onSalvo, usua
 
           {/* nome */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">
               Nome <span className="text-rose-500">*</span>
             </label>
             <input
@@ -282,22 +286,22 @@ function ModalCategoria({ aberto, editando, tipoInicial, onFechar, onSalvo, usua
               placeholder={isReceita ? 'Ex: Dízimos, Ofertas, Doações...' : 'Ex: Aluguel, Energia, Eventos...'}
               value={nome}
               onChange={e => setNome(e.target.value)}
-              className={`w-full px-4 py-3 border rounded-xl text-sm font-medium bg-white outline-none transition
-                focus:ring-2 ${isReceita ? 'border-slate-200 focus:border-emerald-400 focus:ring-emerald-100' : 'border-slate-200 focus:border-rose-400 focus:ring-rose-100'}`}
+              className={`w-full px-4 py-3 border rounded-xl text-sm font-medium bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none transition
+                focus:ring-2 ${isReceita ? 'border-slate-200 dark:border-slate-700 focus:border-emerald-400 focus:ring-emerald-100 dark:focus:ring-emerald-900/40' : 'border-slate-200 dark:border-slate-700 focus:border-rose-400 focus:ring-rose-100 dark:focus:ring-rose-900/40'}`}
             />
           </div>
 
           {/* descrição */}
           <div>
-            <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-              Descrição <span className="text-slate-300">(opcional)</span>
+            <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+              Descrição <span className="text-slate-300 dark:text-slate-500">(opcional)</span>
             </label>
             <input
               type="text"
               placeholder="Finalidade ou observação..."
               value={descricao}
               onChange={e => setDescricao(e.target.value)}
-              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-medium bg-white outline-none transition focus:ring-2 focus:border-slate-300 focus:ring-slate-100"
+              className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none transition focus:ring-2 focus:border-slate-300 dark:focus:border-slate-600 focus:ring-slate-100 dark:focus:ring-slate-800"
             />
           </div>
 
@@ -306,7 +310,7 @@ function ModalCategoria({ aberto, editando, tipoInicial, onFechar, onSalvo, usua
             <button
               type="button"
               onClick={onFechar}
-              className="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition cursor-pointer"
+              className="flex-1 py-3 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-500 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
             >
               Cancelar
             </button>
@@ -370,10 +374,10 @@ function FormularioLateral({ editando, onCancelarEdicao, onSalvo, usuarioLogado 
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden sticky top-4">
+    <div className="bg-white dark:bg-[#17223b] rounded-2xl border border-slate-100 dark:border-[#2b3954] shadow-sm overflow-hidden sticky top-4">
       {/* cabeçalho colorido por tipo */}
       <div className={`px-5 py-4 border-b transition-colors duration-300
-        ${isReceita ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 border-emerald-500' : 'bg-gradient-to-r from-rose-600 to-rose-500 border-rose-500'}`}>
+        ${isReceita ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 border-emerald-500 dark:border-emerald-600' : 'bg-gradient-to-r from-rose-600 to-rose-500 border-rose-500 dark:border-rose-600'}`}>
         <h3 className="text-sm font-black text-white tracking-wide uppercase">
           {editando ? '✏️ Editando categoria' : '+ Nova Categoria'}
         </h3>
@@ -384,42 +388,42 @@ function FormularioLateral({ editando, onCancelarEdicao, onSalvo, usuarioLogado 
 
       <form onSubmit={handleSalvar} className="p-5 space-y-4">
         {/* tipo — pill toggle */}
-        <div className="flex gap-1.5 p-1 bg-slate-100 rounded-xl">
+        <div className="flex gap-1.5 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl">
           <button type="button" onClick={() => setTipo('receita')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-black transition-all
-              ${tipo === 'receita' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200' : 'text-slate-500 hover:text-emerald-600'}`}>
+              ${tipo === 'receita' ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200' : 'text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400'}`}>
             <IconArrowUp /> Receita
           </button>
           <button type="button" onClick={() => setTipo('despesa')}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-black transition-all
-              ${tipo === 'despesa' ? 'bg-rose-600 text-white shadow-md shadow-rose-200' : 'text-slate-500 hover:text-rose-600'}`}>
+              ${tipo === 'despesa' ? 'bg-rose-600 text-white shadow-md shadow-rose-200' : 'text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400'}`}>
             <IconArrowDown /> Despesa
           </button>
         </div>
 
         {/* nome */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+          <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">
             Nome <span className="text-rose-500">*</span>
           </label>
           <input
             type="text" required
             placeholder={isReceita ? 'Ex: Dízimos, Doações...' : 'Ex: Aluguel, Eventos...'}
             value={nome} onChange={e => setNome(e.target.value)}
-            className={`w-full px-3 py-2.5 border rounded-xl text-sm font-medium bg-white outline-none transition
-              focus:ring-2 ${isReceita ? 'border-slate-200 focus:border-emerald-400 focus:ring-emerald-100' : 'border-slate-200 focus:border-rose-400 focus:ring-rose-100'}`}
+            className={`w-full px-3 py-2.5 border rounded-xl text-sm font-medium bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none transition
+              focus:ring-2 ${isReceita ? 'border-slate-200 dark:border-slate-700 focus:border-emerald-400 focus:ring-emerald-100 dark:focus:ring-emerald-900/40' : 'border-slate-200 dark:border-slate-700 focus:border-rose-400 focus:ring-rose-100 dark:focus:ring-rose-900/40'}`}
           />
         </div>
 
         {/* descrição */}
         <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-            Descrição <span className="text-slate-300 normal-case">(opcional)</span>
+          <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+            Descrição <span className="text-slate-300 dark:text-slate-500 normal-case">(opcional)</span>
           </label>
           <input
             type="text" placeholder="Finalidade ou observação..."
             value={descricao} onChange={e => setDescricao(e.target.value)}
-            className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm font-medium bg-white outline-none focus:ring-2 focus:ring-slate-100 transition"
+            className="w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-slate-100 dark:focus:ring-slate-800 transition"
           />
         </div>
 
@@ -433,7 +437,7 @@ function FormularioLateral({ editando, onCancelarEdicao, onSalvo, usuarioLogado 
           {editando && (
             <button type="button"
               onClick={() => { onCancelarEdicao(); setNome(''); setDescricao(''); setTipo('receita'); }}
-              className="w-full py-2 text-xs font-bold text-slate-400 hover:text-slate-600 transition cursor-pointer">
+              className="w-full py-2 text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition cursor-pointer">
               Cancelar edição
             </button>
           )}
@@ -510,13 +514,6 @@ export default function CategoriasFinanceiras({ usuarioLogado, membroLogado, has
 
   return (
     <div className="space-y-4">
-      <div className="print:hidden mx-[3px] sm:mx-0">
-        <PageHeader
-          titulo="Categorias Financeiras"
-          breadcrumb={['Resumo', 'Categorias']}
-          onNavigate={onVoltar}
-        />
-      </div>
 
       {/* ── DESKTOP ─────────────────────────────────────────────────────────── */}
       <div className={`hidden md:grid gap-6 items-start ${podeEditar ? 'grid-cols-[300px_1fr]' : 'grid-cols-1'}`}>
@@ -554,10 +551,10 @@ export default function CategoriasFinanceiras({ usuarioLogado, membroLogado, has
       </div>
 
       {/* ── MOBILE ──────────────────────────────────────────────────────────── */}
-      <div className="md:hidden space-y-4">
+      <div className="md:hidden space-y-4 pb-20">
 
         {/* pill seletor de aba */}
-        <div className="flex gap-2 p-1.5 bg-white rounded-2xl border border-slate-100 shadow-sm">
+        <div className="flex gap-2 p-1.5 bg-white dark:bg-[#17223b] rounded-2xl border border-slate-100 dark:border-[#2b3954] shadow-sm">
           {[
             { id: 'receita', label: 'Receitas', count: receitas.length },
             { id: 'despesa', label: 'Despesas', count: despesas.length },
@@ -569,14 +566,14 @@ export default function CategoriasFinanceiras({ usuarioLogado, membroLogado, has
               className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all
                 ${abaMobile === id
                   ? id === 'receita'
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-100'
-                    : 'bg-rose-600 text-white shadow-lg shadow-rose-100'
-                  : 'text-slate-400 hover:text-slate-600'}`}
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-100 dark:shadow-none'
+                    : 'bg-rose-600 text-white shadow-lg shadow-rose-100 dark:shadow-none'
+                  : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
             >
               {id === 'receita' ? <IconArrowUp /> : <IconArrowDown />}
               {label}
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black
-                ${abaMobile === id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                ${abaMobile === id ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
                 {count}
               </span>
             </button>
@@ -584,7 +581,7 @@ export default function CategoriasFinanceiras({ usuarioLogado, membroLogado, has
         </div>
 
         {/* lista da aba ativa */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-[#17223b] rounded-2xl border border-slate-100 dark:border-[#2b3954] shadow-sm overflow-hidden">
           {carregando ? (
             <div className="py-16 text-center text-sm text-slate-400">Carregando...</div>
           ) : (
@@ -611,13 +608,15 @@ export default function CategoriasFinanceiras({ usuarioLogado, membroLogado, has
         <button
           type="button"
           onClick={() => abrirNovaMobile()}
-          className={`md:hidden fixed bottom-6 right-5 z-50 flex items-center gap-2 px-5 py-3.5 rounded-2xl shadow-xl font-black text-sm text-white transition-all active:scale-95
+          className={`md:hidden fixed bottom-20 right-5 z-50 group overflow-hidden flex items-center gap-2 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-wider text-white border transition-all duration-200 active:scale-95 cursor-pointer
             ${abaMobile === 'receita'
-              ? 'bg-emerald-600 shadow-emerald-200 hover:bg-emerald-700'
-              : 'bg-rose-600 shadow-rose-200 hover:bg-rose-700'}`}
+              ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 border-emerald-400/30 shadow-xl shadow-emerald-600/30 hover:shadow-emerald-600/45'
+              : 'bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:via-red-500 hover:to-rose-600 border-rose-400/30 shadow-xl shadow-rose-600/30 hover:shadow-rose-600/45'}`}
         >
-          <IconPlus size={18} />
-          Nova Categoria
+          <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+            <IconPlus size={13} />
+          </div>
+          <span>Nova Categoria</span>
         </button>
       )}
 

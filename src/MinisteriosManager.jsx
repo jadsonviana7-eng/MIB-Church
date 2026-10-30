@@ -11,7 +11,7 @@ export default function MinisteriosManager() {
   const [form, setForm] = useState({
     nome: '',
     descricao: '',
-    icone: '🙏',
+    icone: 'HelpingHand',
     cor_principal: '#2563eb',
     ativo: true
   });
@@ -60,7 +60,7 @@ export default function MinisteriosManager() {
     setForm({
       nome: '',
       descricao: '',
-      icone: '🙏',
+      icone: 'HelpingHand',
       cor_principal: '#2563eb',
       ativo: true
     });
@@ -73,7 +73,7 @@ export default function MinisteriosManager() {
     setForm({
       nome: ministerio.nome,
       descricao: ministerio.descricao || '',
-      icone: ministerio.icone || '🙏',
+      icone: ministerio.icone || 'HelpingHand',
       cor_principal:
         ministerio.cor_principal || '#2563eb',
       ativo: ministerio.ativo

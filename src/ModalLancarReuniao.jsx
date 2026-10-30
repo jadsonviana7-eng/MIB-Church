@@ -208,71 +208,97 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm sm:p-4">
-      <div className="bg-white shadow-xl w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-xl sm:rounded-[32px] flex flex-col overflow-hidden">
-        <div className="card-header flex justify-between items-center">
-          <h4 className="font-semibold text-[var(--text-heading)]">{tituloModal}</h4>
-          <button type="button" onClick={onFechar} className="text-[var(--text-muted)] font-bold cursor-pointer">✕</button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm sm:p-4">
+      <div className="bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] shadow-2xl w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-xl sm:rounded-[32px] flex flex-col overflow-hidden text-slate-800 dark:text-slate-100">
+        <div className="flex justify-between items-center p-4 sm:p-5 border-b border-slate-100 dark:border-[#2b3954] bg-slate-50 dark:bg-[#131d31]">
+          <h4 className="font-bold text-slate-800 dark:text-slate-100 text-base sm:text-lg">{tituloModal}</h4>
+          <button type="button" onClick={onFechar} className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-[#1c2b4a] border border-slate-200 dark:border-[#2b3954] text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer">✕</button>
         </div>
         <form onSubmit={handleSalvar} className="flex flex-col flex-1 overflow-hidden">
           <div className="p-5 overflow-y-auto space-y-4 flex-1">
-            <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-100 shadow-sm mb-2">
+            <div className="flex items-center gap-3 bg-slate-50 dark:bg-[#131d31] p-3 rounded-2xl border border-slate-200 dark:border-[#24334f] shadow-sm mb-2">
               <AvatarCelula celula={celulaAtiva} tamanho="w-12 h-12" />
               <div className="min-w-0">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Célula Selecionada</label>
-                <h3 className="text-sm sm:text-base font-black text-[#055F6D] truncate leading-tight">{celulaAtiva?.nome || 'Célula não identificada'}</h3>
+                <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">Célula Selecionada</label>
+                <h3 className="text-sm sm:text-base font-black text-[#055F6D] dark:text-cyan-400 truncate leading-tight">{celulaAtiva?.nome || 'Célula não identificada'}</h3>
               </div>
             </div>
 
             <div className="space-y-3">
               {/* Tema - No topo no mobile para ganhar espaço */}
               <div className="sm:hidden">
-                <label className="block text-xs font-medium mb-1">Tema / Assunto da Reunião</label>
-                <input type="text" value={temaMinistrado} onChange={(e) => setTemaMinistrado(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" placeholder="O que foi ensinado?" />
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tema / Assunto da Reunião</label>
+                <input
+                  type="text"
+                  value={temaMinistrado}
+                  onChange={(e) => setTemaMinistrado(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0b1329] border border-slate-200 dark:border-[#2b3954] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/40 transition"
+                  placeholder="O que foi ensinado?"
+                />
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="hidden sm:block">
-                  <label className="block text-xs font-medium mb-1">Tema</label>
-                  <input type="text" value={temaMinistrado} onChange={(e) => setTemaMinistrado(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm" />
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tema</label>
+                  <input
+                    type="text"
+                    value={temaMinistrado}
+                    onChange={(e) => setTemaMinistrado(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0b1329] border border-slate-200 dark:border-[#2b3954] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/40 transition"
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1">Data</label>
-                  <input type="date" value={dataReuniao} onChange={(e) => setDataReuniao(e.target.value)} required className="w-full px-3 py-2 border rounded-xl text-sm cursor-pointer" />
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Data</label>
+                  <input
+                    type="date"
+                    value={dataReuniao}
+                    onChange={(e) => setDataReuniao(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0b1329] border border-slate-200 dark:border-[#2b3954] text-slate-800 dark:text-slate-100 rounded-xl text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/40 transition dark:[color-scheme:dark]"
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium mb-1">Oferta (R$)</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Oferta (R$)</label>
                   <div className="relative">
-                    <input type="text" value={oferta} onChange={(e) => setOferta(mascaraMoeda(e.target.value))} placeholder="R$ 0,00" className="w-full px-3 py-2 border rounded-xl text-sm" />
+                    <input
+                      type="text"
+                      value={oferta}
+                      onChange={(e) => setOferta(mascaraMoeda(e.target.value))}
+                      placeholder="R$ 0,00"
+                      className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0b1329] border border-slate-200 dark:border-[#2b3954] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/40 transition"
+                    />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-[var(--surface-muted)] p-3 rounded-xl border space-y-3">
-              <label className="text-xs font-medium">Visitantes ({nomesVisitantes.length})</label>
+            <div className="bg-slate-50 dark:bg-[#131d31] p-3.5 rounded-2xl border border-slate-200 dark:border-[#24334f] space-y-3">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">Visitantes ({nomesVisitantes.length})</label>
 
               {visitantesCadastrados.length > 0 && (
                 <div className="space-y-1">
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cadastrados na célula</span>
-                  <div className="max-h-36 overflow-y-auto space-y-1 border border-slate-100 rounded-xl p-1.5 bg-white">
+                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Cadastrados na célula</span>
+                  <div className="max-h-36 overflow-y-auto space-y-1 border border-slate-200 dark:border-[#24334f] rounded-xl p-1.5 bg-white dark:bg-[#0b1329]">
                     {visitantesCadastrados.map((v) => {
                       const selecionado = visitantesCadastradosSelecionados.includes(v.id);
                       return (
                         <div
                           key={v.id}
                           onClick={() => toggleVisitanteCadastrado(v)}
-                          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition select-none ${selecionado ? 'bg-amber-50 border border-amber-200' : 'hover:bg-slate-50 border border-transparent'
-                            }`}
+                          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition select-none ${
+                            selecionado
+                              ? 'bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60'
+                              : 'hover:bg-slate-50 dark:hover:bg-[#1c2b4a]/60 border border-transparent'
+                          }`}
                         >
                           <div className="min-w-0">
-                            <span className="text-xs font-semibold text-slate-700 block truncate">{v.nome}</span>
+                            <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 block truncate">{v.nome}</span>
                           </div>
                           <input
                             type="checkbox"
                             checked={selecionado}
                             readOnly
-                            className="w-4 h-4 rounded border-slate-300 text-amber-500 cursor-pointer shrink-0 ml-2"
+                            className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-[#17223b] text-amber-500 focus:ring-amber-500/20 cursor-pointer shrink-0 ml-2"
                           />
                         </div>
                       );
@@ -282,7 +308,7 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
               )}
 
               <div>
-                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Outros visitantes (nome avulso)</span>
+                <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Outros visitantes (nome avulso)</span>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -290,18 +316,24 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
                     onChange={(e) => setNovoVisitante(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdicionarVisitante(); } }}
                     placeholder="Nome(s) (use vírgula para separar)"
-                    className="flex-1 px-3 py-1.5 border rounded-xl text-xs bg-white"
+                    className="flex-1 px-3 py-1.5 border border-slate-200 dark:border-[#2b3954] rounded-xl text-xs bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   />
-                  <button type="button" onClick={handleAdicionarVisitante} className="btn-primary text-xs px-3 rounded-xl cursor-pointer">+</button>
+                  <button
+                    type="button"
+                    onClick={handleAdicionarVisitante}
+                    className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl cursor-pointer shadow-sm shadow-blue-500/20 border border-blue-400/30 transition"
+                  >
+                    +
+                  </button>
                 </div>
               </div>
 
               {nomesVisitantes.length > 0 && (
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1.5">
                   {nomesVisitantes.map((n, i) => (
-                    <span key={i} className="text-[11px] bg-white border px-2 py-0.5 rounded-lg">
-                      {n}{' '}
-                      <button type="button" onClick={() => removerNomeVisitante(i)} className="cursor-pointer">×</button>
+                    <span key={i} className="text-[11px] font-medium bg-white dark:bg-[#1c2b4a] border border-slate-200 dark:border-[#2b3954] text-slate-700 dark:text-slate-200 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-2xs">
+                      <span>{n}</span>
+                      <button type="button" onClick={() => removerNomeVisitante(i)} className="text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 font-bold cursor-pointer">×</button>
                     </span>
                   ))}
                 </div>
@@ -309,25 +341,26 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
             </div>
 
             {membros.length > 0 && (
-              <div className="space-y-2 sm:space-y-0"> {/* Remove space-y no mobile para que os itens individuais gerenciem o espaçamento */}
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Chamada da Célula</label>
-                <div className="sm:border sm:border-slate-100 sm:rounded-2xl sm:p-2 sm:bg-slate-50/30 sm:space-y-1"> {/* Reverte para o estilo de contêiner no desktop */}
+              <div className="space-y-2 sm:space-y-0">
+                <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">Chamada da Célula</label>
+                <div className="sm:border sm:border-slate-200 sm:dark:border-[#24334f] sm:rounded-2xl sm:p-2 sm:bg-slate-50/50 sm:dark:bg-[#131d31] sm:space-y-1">
                   {membros.map((m) => (
-                    <div key={m.id}
+                    <div
+                      key={m.id}
                       onClick={() => setPresencas((p) => ({ ...p, [m.id]: !p[m.id] }))}
-                      className="mb-1 bg-white border border-slate-100 rounded-xl p-3 shadow-sm
+                      className="mb-1 bg-white dark:bg-[#131d31] border border-slate-200 dark:border-[#24334f] rounded-xl p-3 shadow-2xs
                                  flex items-center justify-between cursor-pointer transition active:scale-[0.98] select-none
-                                 sm:mb-0 sm:bg-transparent sm:border-transparent sm:shadow-none sm:p-2 sm:hover:bg-white sm:hover:shadow-sm sm:hover:border-slate-100"
+                                 sm:mb-0 sm:bg-transparent sm:dark:bg-transparent sm:border-transparent sm:dark:border-transparent sm:shadow-none sm:p-2 sm:hover:bg-white sm:dark:hover:bg-[#1c2b4a] sm:hover:shadow-sm sm:hover:border-slate-200 sm:dark:hover:border-[#2b3954]"
                     >
                       <div className="flex items-center gap-3">
                         <Avatar pessoa={m} tamanho="w-8 h-8" />
-                        <span className="text-sm font-bold text-slate-700">{m.nome}</span>
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{m.nome}</span>
                       </div>
                       <input
                         type="checkbox"
                         checked={!!presencas[m.id]}
                         readOnly
-                        className="w-5 h-5 rounded-md border-slate-300 text-[#055F6D] focus:ring-[#055F6D]/20 cursor-pointer"
+                        className="w-5 h-5 rounded-md border-slate-300 dark:border-slate-600 bg-white dark:bg-[#0b1329] text-[#055F6D] dark:text-cyan-500 focus:ring-cyan-500/20 cursor-pointer"
                       />
                     </div>
                   ))}
@@ -336,13 +369,29 @@ export default function ModalLancarReuniao({ celulas, pessoas, celulaInicial = '
             )}
 
             <div>
-              <label className="block text-xs font-medium mb-1">Observações</label>
-              <textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} className="w-full px-3 py-2 border rounded-xl text-sm" />
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Observações</label>
+              <textarea
+                value={obs}
+                onChange={(e) => setObs(e.target.value)}
+                rows={2}
+                className="w-full px-3 py-2 bg-slate-50 dark:bg-[#0b1329] border border-slate-200 dark:border-[#2b3954] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-500/40 transition"
+                placeholder="Anotações gerais do encontro..."
+              />
             </div>
           </div>
-          <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-end gap-2 shrink-0">
-            <button type="button" onClick={onFechar} className="px-4 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-600 font-semibold hover:bg-slate-100 transition cursor-pointer">Cancelar</button>
-            <button type="submit" disabled={enviando} className="btn-primary text-xs font-semibold px-5 py-2 rounded-xl disabled:opacity-50 transition shadow-sm cursor-pointer">
+          <div className="px-6 py-4 border-t border-slate-100 dark:border-[#2b3954] bg-slate-50/60 dark:bg-[#131d31] flex items-center justify-end gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={onFechar}
+              className="px-4 py-2 text-xs border border-slate-200 dark:border-[#2b3954] rounded-xl bg-white dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-[#24334f] transition cursor-pointer"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={enviando}
+              className="px-5 py-2 text-xs font-bold rounded-xl disabled:opacity-50 transition shadow-sm cursor-pointer bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/20 border border-emerald-400/30"
+            >
               {enviando ? 'Salvando...' : botaoTexto}
             </button>
           </div>

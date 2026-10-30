@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Check } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import { PageHeader, Card, CardHeader, SelectFiltro } from './ui';
 import { registrarLogFinanceiro } from './financeiroUtils';
@@ -123,20 +124,20 @@ export default function TransacoesFinanceiras({
   const mesNome = viewDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
 
   const CalendarPopup = () => (
-    <div className="absolute top-full right-0 mt-2 z-[100] bg-white border border-slate-200 shadow-2xl rounded-2xl p-4 w-72 animate-in fade-in zoom-in duration-200">
+    <div className="absolute top-full right-0 mt-2 z-[100] bg-white dark:bg-[#17223b] border border-slate-200 dark:border-[#2b3954] shadow-2xl rounded-2xl p-4 w-72 animate-in fade-in zoom-in duration-200">
       <div className="flex items-center justify-between mb-4">
         <button
           type="button" // Adicionado type="button" para evitar submit de formulário
           onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
-          className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"
+          className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 dark:text-slate-300"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </button>
-        <span className="text-sm font-normal text-slate-700">{mesNome}</span>
+        <span className="text-sm font-normal text-slate-700 dark:text-slate-200">{mesNome}</span>
         <button
           type="button" // Adicionado type="button"
           onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}
-          className="p-1 hover:bg-slate-100 rounded-lg text-slate-400"
+          className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 dark:text-slate-300"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
         </button>
@@ -163,9 +164,9 @@ export default function TransacoesFinanceiras({
               onClick={() => handleSelecionarDia(dia)}
               className={`
                 h-9 w-9 text-sm font-normal rounded-lg transition-all border border-transparent
-                ${isInicio || isFim ? 'bg-[#1e3a8a] text-white shadow-md !font-bold' :
-                  isRange ? 'bg-blue-50 text-[#2563eb]' :
-                    isHoje ? 'text-[#2563eb] border border-blue-200' : 'text-slate-600 hover:bg-slate-50'}
+                ${isInicio || isFim ? 'bg-[#1e3a8a] dark:bg-blue-600 text-white shadow-md !font-bold' :
+                  isRange ? 'bg-blue-50 dark:bg-blue-950/60 text-[#2563eb] dark:text-blue-300' :
+                    isHoje ? 'text-[#2563eb] dark:text-blue-400 border border-blue-200 dark:border-blue-700' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}
               `}
             >
               {dia.getDate()}
@@ -406,13 +407,13 @@ export default function TransacoesFinanceiras({
                 placeholder="Nome do contribuinte ou descrição..."
                 value={buscaNome}
                 onChange={(e) => setBuscaNome(e.target.value)}
-                className="w-full pl-9 pr-8 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10 transition-all shadow-sm h-[42px]"
+                className="w-full pl-9 pr-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#1e3a8a] dark:focus:border-blue-500 focus:ring-2 focus:ring-[#1e3a8a]/10 transition-all shadow-sm h-[42px]"
               />
               {buscaNome && (
                 <button
                   type="button"
                   onClick={() => setBuscaNome('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full cursor-pointer text-xs font-bold flex items-center justify-center"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full cursor-pointer text-xs font-bold flex items-center justify-center"
                   title="Limpar busca"
                 >
                   ✕
@@ -424,14 +425,14 @@ export default function TransacoesFinanceiras({
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Data da Movimentação</label>
             <div
               onClick={() => setCalendarioAberto(!calendarioAberto)}
-              className={`flex items-center gap-3 px-3 h-[42px] bg-white border rounded-xl cursor-pointer transition-all shadow-sm group ${calendarioAberto ? 'border-[#1e3a8a] ring-2 ring-[#1e3a8a]/10' : 'border-slate-200 hover:border-slate-300'}`}
+              className={`flex items-center gap-3 px-3 h-[42px] bg-white dark:bg-slate-900 border rounded-xl cursor-pointer transition-all shadow-sm group ${calendarioAberto ? 'border-[#1e3a8a] dark:border-blue-500 ring-2 ring-[#1e3a8a]/10' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}
             >
               <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <div className="flex items-center gap-1.5 text-sm font-normal text-slate-700 tracking-tight">
+              <div className="flex items-center gap-1.5 text-sm font-normal text-slate-700 dark:text-slate-200 tracking-tight">
                 <span>{formatarDataExibicao(dataInicioFiltro)}</span>
-                <span className="text-slate-300 font-medium">→</span>
+                <span className="text-slate-300 dark:text-slate-600 font-medium">→</span>
                 <span>{formatarDataExibicao(dataFimFiltro)}</span>
               </div>
             </div>
@@ -460,16 +461,22 @@ export default function TransacoesFinanceiras({
               <button
                 type="button"
                 onClick={() => abrirModal('receita')}
-                className="flex-1 md:min-w-[140px] justify-center px-8 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition shadow-sm flex items-center gap-2"
+                className="group relative overflow-hidden flex-1 md:min-w-[140px] justify-center px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 text-white text-xs font-black uppercase tracking-wider border border-emerald-400/30 shadow-md shadow-emerald-600/20 hover:shadow-lg hover:shadow-emerald-600/35 transition-all duration-200 active:scale-95 cursor-pointer flex items-center gap-2"
               >
-                <span className="text-base font-bold">+</span> Receita
+                <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                  <span className="text-sm font-black leading-none">+</span>
+                </div>
+                <span>Receita</span>
               </button>
               <button
                 type="button"
                 onClick={() => abrirModal('despesa')}
-                className="flex-1 md:min-w-[140px] justify-center px-8 py-2 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition shadow-sm flex items-center gap-2"
+                className="group relative overflow-hidden flex-1 md:min-w-[140px] justify-center px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:via-red-500 hover:to-rose-600 text-white text-xs font-black uppercase tracking-wider border border-rose-400/30 shadow-md shadow-rose-600/20 hover:shadow-lg hover:shadow-rose-600/35 transition-all duration-200 active:scale-95 cursor-pointer flex items-center gap-2"
               >
-                <span className="text-base font-bold">+</span> Despesa
+                <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                  <span className="text-sm font-black leading-none">+</span>
+                </div>
+                <span>Despesa</span>
               </button>
             </div>
           )}
@@ -478,11 +485,11 @@ export default function TransacoesFinanceiras({
 
       {/* Drawer de Filtros para Mobile */}
       <div className={`${filtrosMobileAberto ? 'fixed inset-0 z-[60] flex items-end justify-center sm:items-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm' : 'hidden'} md:hidden transition-all`}>
-        <div className={`${filtrosMobileAberto ? 'bg-white rounded-t-[32px] sm:rounded-3xl w-full max-w-md animate-in slide-in-from-bottom duration-300' : ''} overflow-hidden`}>
+        <div className={`${filtrosMobileAberto ? 'bg-white dark:bg-[#17223b] border border-slate-200 dark:border-[#2b3954] rounded-t-[32px] sm:rounded-3xl w-full max-w-md animate-in slide-in-from-bottom duration-300' : ''} overflow-hidden`}>
           {filtrosMobileAberto && (
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <h4 className="font-bold text-slate-800 text-sm uppercase tracking-wider">Filtrar Transações</h4>
-              <button onClick={() => setFiltrosMobileAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400">✕</button>
+            <div className="p-5 border-b border-slate-100 dark:border-[#2b3954] flex items-center justify-between bg-slate-50/50 dark:bg-[#1c2b4a]">
+              <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm uppercase tracking-wider">Filtrar Transações</h4>
+              <button onClick={() => setFiltrosMobileAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-300">✕</button>
             </div>
           )}
           <div className="p-6 space-y-5 overflow-y-auto max-h-[70vh]">
@@ -498,13 +505,13 @@ export default function TransacoesFinanceiras({
                   placeholder="Nome do contribuinte ou descrição..."
                   value={buscaNome}
                   onChange={(e) => setBuscaNome(e.target.value)}
-                  className="w-full pl-9 pr-8 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10 transition-all shadow-sm h-[42px]"
+                  className="w-full pl-9 pr-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#1e3a8a] dark:focus:border-blue-500 focus:ring-2 focus:ring-[#1e3a8a]/10 transition-all shadow-sm h-[42px]"
                 />
                 {buscaNome && (
                   <button
                     type="button"
                     onClick={() => setBuscaNome('')}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-full cursor-pointer text-xs font-bold flex items-center justify-center"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-full cursor-pointer text-xs font-bold flex items-center justify-center"
                     title="Limpar busca"
                   >
                     ✕
@@ -517,14 +524,14 @@ export default function TransacoesFinanceiras({
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5 pl-1">Período</label>
               <div
                 onClick={() => setCalendarioAberto(!calendarioAberto)}
-                className={`flex items-center gap-3 px-3 py-2.5 bg-white border rounded-xl cursor-pointer transition-all shadow-sm group ${calendarioAberto ? 'border-[#1e3a8a] ring-2 ring-[#1e3a8a]/10' : 'border-slate-200 hover:border-slate-300'}`}
+                className={`flex items-center gap-3 px-3 py-2.5 bg-white dark:bg-slate-900 border rounded-xl cursor-pointer transition-all shadow-sm group ${calendarioAberto ? 'border-[#1e3a8a] dark:border-blue-500 ring-2 ring-[#1e3a8a]/10' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}
               >
                 <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <div className="flex items-center gap-1.5 text-sm font-normal text-slate-700 tracking-tight">
+                <div className="flex items-center gap-1.5 text-sm font-normal text-slate-700 dark:text-slate-200 tracking-tight">
                   <span>{formatarDataExibicao(dataInicioFiltro)}</span>
-                  <span className="text-slate-300 font-medium">→</span>
+                  <span className="text-slate-300 dark:text-slate-600 font-medium">→</span>
                   <span>{formatarExibicao(dataFimFiltro)}</span>
                 </div>
               </div>
@@ -536,7 +543,7 @@ export default function TransacoesFinanceiras({
             <SelectFiltro label="Conta" valor={contaFiltro} onChange={setContaFiltro} opcoes={contasDisponiveis.map(c => ({ valor: c.id, label: c.nome }))} />
             <SelectFiltro label="Categoria" valor={categoriaFiltro} onChange={setCategoriaFiltro} opcoes={categoriasFiltradas.map(c => ({ valor: c.id, label: c.nome }))} />
 
-            <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-100">
+            <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-100 dark:border-[#2b3954]">
               <BtnAtalho label="Hoje" onClick={() => setPeriodoRapido('hoje')} />
               <BtnAtalho label="7 Dias" onClick={() => setPeriodoRapido('7dias')} />
               <BtnAtalho label="Mês Atual" onClick={() => setPeriodoRapido('mes_atual')} />
@@ -545,7 +552,7 @@ export default function TransacoesFinanceiras({
 
             <button
               onClick={() => setFiltrosMobileAberto(false)}
-              className="w-full py-4 bg-[#1e3a8a] text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl mt-4 active:scale-[0.98] transition-all"
+              className="w-full py-4 bg-[#1e3a8a] dark:bg-blue-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl mt-4 active:scale-[0.98] transition-all"
             >
               Aplicar Filtros
             </button>
@@ -564,7 +571,7 @@ export default function TransacoesFinanceiras({
             placeholder="Pesquisar por nome..."
             value={buscaNome}
             onChange={(e) => setBuscaNome(e.target.value)}
-            className="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10 transition-all shadow-sm h-[42px]"
+            className="w-full pl-10 pr-9 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-[#1e3a8a] dark:focus:border-blue-500 focus:ring-2 focus:ring-[#1e3a8a]/10 transition-all shadow-sm h-[42px]"
           />
           {buscaNome && (
             <button
@@ -580,47 +587,47 @@ export default function TransacoesFinanceiras({
       </div>
 
       {/* Sumário de Transações (Baseado no filtro atual) */}
-      <div className="bg-white md:bg-transparent p-[5px] md:p-0 rounded-[16px] md:rounded-none border border-slate-100 md:border-none shadow-sm md:shadow-none mt-[-19px] md:mt-0">
+      <div className="bg-white dark:bg-[#17223b] md:bg-transparent dark:md:bg-transparent p-[5px] md:p-0 rounded-[16px] md:rounded-none border border-slate-100 dark:border-[#2b3954] md:border-none shadow-sm md:shadow-none mt-[-19px] md:mt-0">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-1 md:gap-4">
           {/* Total Recebido */}
-          <div className="flex items-center gap-4 p-1 md:p-5 md:bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm">
+          <div className="flex items-center gap-4 p-1 md:p-5 md:bg-white dark:md:bg-[#17223b] md:rounded-2xl md:border md:border-slate-200 dark:md:border-[#2b3954] md:shadow-sm">
             <img src="https://raw.githubusercontent.com/jadsonviana7-eng/Icones/refs/heads/main/Recebido.svg" alt="Recebido" className="w-10 h-10 shrink-0" />
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Total Recebido</p>
-              <p className="text-xl md:text-2xl font-black text-emerald-600 leading-tight">R$ {resumoMensal.recebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-xl md:text-2xl font-black text-emerald-600 dark:text-emerald-400 leading-tight">R$ {resumoMensal.recebido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
 
-          <div className="md:hidden border-t border-slate-50 my-0.5 mx-2" />
+          <div className="md:hidden border-t border-slate-50 dark:border-slate-800 my-0.5 mx-2" />
 
           {/* Total Pago */}
-          <div className="flex items-center gap-4 p-1 md:p-5 md:bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm">
+          <div className="flex items-center gap-4 p-1 md:p-5 md:bg-white dark:md:bg-[#17223b] md:rounded-2xl md:border md:border-slate-200 dark:md:border-[#2b3954] md:shadow-sm">
             <img src="https://raw.githubusercontent.com/jadsonviana7-eng/Icones/refs/heads/main/pago.svg" alt="Pago" className="w-10 h-10 shrink-0" />
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Total Pago</p>
-              <p className="text-xl md:text-2xl font-black text-rose-600 leading-tight">R$ {resumoMensal.pago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-xl md:text-2xl font-black text-rose-600 dark:text-rose-400 leading-tight">R$ {resumoMensal.pago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
 
-          <div className="md:hidden border-t border-slate-50 my-0.5 mx-2" />
+          <div className="md:hidden border-t border-slate-50 dark:border-slate-800 my-0.5 mx-2" />
 
           {/* Total a Pagar */}
-          <div className="flex items-center gap-4 p-1 md:p-5 md:bg-white md:rounded-2xl md:border md:border-slate-200 md:shadow-sm">
+          <div className="flex items-center gap-4 p-1 md:p-5 md:bg-white dark:md:bg-[#17223b] md:rounded-2xl md:border md:border-slate-200 dark:md:border-[#2b3954] md:shadow-sm">
             <img src="https://raw.githubusercontent.com/jadsonviana7-eng/Icones/refs/heads/main/a%20pagar.svg" alt="A Pagar" className="w-10 h-10 shrink-0" />
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Total a Pagar</p>
-              <p className="text-xl md:text-2xl font-black text-amber-500 leading-tight">R$ {resumoMensal.aPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-xl md:text-2xl font-black text-amber-500 dark:text-amber-400 leading-tight">R$ {resumoMensal.aPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Seletor de Período Mobile - Navegação Mês a Mês */}
-      <div className="sm:hidden flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm mt-[-18px] mb-2">
+      <div className="sm:hidden flex items-center justify-between bg-white dark:bg-[#17223b] p-4 rounded-2xl border border-slate-200 dark:border-[#2b3954] shadow-sm mt-[-18px] mb-2">
         <button
           type="button"
           onClick={() => mudarMesMobile(-1)}
-          className="p-2 bg-slate-50 rounded-xl border border-slate-100 text-slate-600 active:scale-90 transition-transform cursor-pointer"
+          className="p-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-transform cursor-pointer"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -629,13 +636,13 @@ export default function TransacoesFinanceiras({
 
         <div className="text-center">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Mês de Referência</p>
-          <p className="text-sm font-black text-[#1e3a8a] capitalize">{labelPeriodoMobile}</p>
+          <p className="text-sm font-black text-[#1e3a8a] dark:text-blue-400 capitalize">{labelPeriodoMobile}</p>
         </div>
 
         <button
           type="button"
           onClick={() => mudarMesMobile(1)}
-          className="p-2 bg-slate-50 rounded-xl border border-slate-100 text-slate-600 active:scale-90 transition-transform cursor-pointer"
+          className="p-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 text-slate-600 dark:text-slate-300 active:scale-90 transition-transform cursor-pointer"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -701,31 +708,31 @@ export default function TransacoesFinanceiras({
                 {transacoesFiltradas.map(t => {
                   const tipoNormalizado = t.tipo?.toLowerCase();
                   return (
-                    <tr key={t.id} onClick={() => podeEditar && abrirModal(tipoNormalizado, t)} className={`${podeEditar ? 'cursor-pointer hover:bg-slate-50' : ''} transition`}>
+                    <tr key={t.id} onClick={() => podeEditar && abrirModal(tipoNormalizado, t)} className={`${podeEditar ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60' : ''} transition`}>
                       <td>{t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
-                      <td className="text-slate-600 font-normal">
+                      <td className="text-slate-600 dark:text-slate-300 font-normal">
                         <div>{t.descricao}</div>
                         {t.quantidade && t.valor_unitario && (
-                          <div className="text-[11px] text-amber-600 font-semibold mt-0.5">
+                          <div className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
                             {t.quantidade} un × R$ {Number(t.valor_unitario).toFixed(2)}
                           </div>
                         )}
                       </td>
-                      <td className="font-medium text-slate-900">{t.contribuinte || '—'}</td>
+                      <td className="font-medium text-slate-900 dark:text-slate-100">{t.contribuinte || '—'}</td>
                       <td>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tipoNormalizado === 'receita' ? 'bg-emerald-100 text-emerald-800' :
-                          tipoNormalizado === 'despesa' ? 'bg-red-100 text-red-800' :
-                            'bg-blue-100 text-blue-800'
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tipoNormalizado === 'receita' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' :
+                          tipoNormalizado === 'despesa' ? 'bg-red-100 dark:bg-rose-950/60 text-red-800 dark:text-rose-300' :
+                            'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300'
                           }`}>
                           {t.tipo}
                         </span>
                       </td>
-                      <td>{t.categoria}</td>
-                      <td>{t.conta}</td>
+                      <td className="text-slate-700 dark:text-slate-300">{t.categoria}</td>
+                      <td className="text-slate-700 dark:text-slate-300">{t.conta}</td>
                       <td>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${t.status?.toLowerCase() === 'pago' ? 'bg-emerald-100 text-emerald-800' :
-                            t.status?.toLowerCase() === 'pendente' ? 'bg-amber-100 text-amber-800' :
-                              'bg-red-100 text-red-800'
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${t.status?.toLowerCase() === 'pago' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' :
+                            t.status?.toLowerCase() === 'pendente' ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300' :
+                              'bg-red-100 dark:bg-rose-950/60 text-red-800 dark:text-rose-300'
                           }`}>
                           {t.status}
                         </span>
@@ -734,22 +741,22 @@ export default function TransacoesFinanceiras({
                         <div className="flex items-center justify-end gap-2">
                           {podeEditar ? (
                             <> {/* Botões de editar e excluir ficam no modal, mas o ícone de editar na tabela ainda é útil */}
-                              <span className={`font-bold mr-2 ${tipoNormalizado === 'receita' ? 'text-emerald-600' : tipoNormalizado === 'despesa' ? 'text-red-600' : 'text-slate-900'}`}>
+                              <span className={`font-bold mr-2 ${tipoNormalizado === 'receita' ? 'text-emerald-600 dark:text-emerald-400' : tipoNormalizado === 'despesa' ? 'text-red-600 dark:text-rose-400' : 'text-slate-900 dark:text-slate-100'}`}>
                                 {t.valor.toFixed(2)}
                               </span>
-                              <button onClick={(e) => { e.stopPropagation(); abrirModal(tipoNormalizado, t); }} className="text-[#202046] hover:text-[#2F2F80] transition p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer" title="Editar Lançamento">
+                              <button onClick={(e) => { e.stopPropagation(); abrirModal(tipoNormalizado, t); }} className="text-[#202046] dark:text-slate-300 hover:text-[#2F2F80] dark:hover:text-blue-400 transition p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer" title="Editar Lançamento">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                 </svg>
                               </button>
-                              <button onClick={(e) => handleQuickDelete(e, t)} className="text-rose-500 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-rose-50 cursor-pointer" title="Excluir Lançamento">
+                              <button onClick={(e) => handleQuickDelete(e, t)} className="text-rose-500 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 transition p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer" title="Excluir Lançamento">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                               </button>
                             </>
                           ) : (
-                            <span className={`font-bold ${tipoNormalizado === 'receita' ? 'text-emerald-600' : tipoNormalizado === 'despesa' ? 'text-red-600' : 'text-slate-900'}`}>
+                            <span className={`font-bold ${tipoNormalizado === 'receita' ? 'text-emerald-600 dark:text-emerald-400' : tipoNormalizado === 'despesa' ? 'text-red-600 dark:text-rose-400' : 'text-slate-900 dark:text-slate-100'}`}>
                               {t.valor.toFixed(2)}
                             </span>
                           )}
@@ -764,18 +771,18 @@ export default function TransacoesFinanceiras({
         )}
 
         {/* Lista Compacta para Telas Pequenas */}
-        <div className="sm:hidden divide-y divide-slate-100/50 border-y border-slate-100/50">
+        <div className="sm:hidden divide-y divide-slate-100/50 dark:divide-slate-800 border-y border-slate-100/50 dark:border-slate-800">
           {carregando ? (
             <div className="p-10 text-center text-sm text-slate-400">Carregando transações...</div>
           ) : transacoesFiltradas.length === 0 ? (
             <div className="p-10 text-center text-sm text-slate-400">
               {buscaNome.trim() ? (
                 <div className="space-y-2">
-                  <p className="font-semibold text-slate-600">Nenhuma transação encontrada para "{buscaNome}".</p>
+                  <p className="font-semibold text-slate-600 dark:text-slate-300">Nenhuma transação encontrada para "{buscaNome}".</p>
                   <button
                     type="button"
                     onClick={() => setBuscaNome('')}
-                    className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-100 transition cursor-pointer"
+                    className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-900/60 transition cursor-pointer"
                   >
                     Limpar filtro
                   </button>
@@ -787,13 +794,13 @@ export default function TransacoesFinanceiras({
           ) : (
             transacoesFiltradas.map((t, idx) => {
               const tipoNormalizado = t.tipo?.toLowerCase();
-              const valorColor = tipoNormalizado === 'receita' ? 'text-emerald-600' : 'text-red-600';
+              const valorColor = tipoNormalizado === 'receita' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-rose-400';
               const statusNormalizado = t.status?.toLowerCase();
-              const statusColor = statusNormalizado === 'pago' ? 'text-emerald-700' : statusNormalizado === 'pendente' ? 'text-amber-700' : 'text-red-700';
-              const statusBg = statusNormalizado === 'pago' ? 'bg-emerald-50' : statusNormalizado === 'pendente' ? 'bg-amber-50' : 'bg-red-50';
+              const statusColor = statusNormalizado === 'pago' ? 'text-emerald-700 dark:text-emerald-300' : statusNormalizado === 'pendente' ? 'text-amber-700 dark:text-amber-300' : 'text-red-700 dark:text-rose-300';
+              const statusBg = statusNormalizado === 'pago' ? 'bg-emerald-50 dark:bg-emerald-950/60' : statusNormalizado === 'pendente' ? 'bg-amber-50 dark:bg-amber-950/60' : 'bg-red-50 dark:bg-rose-950/60';
 
               // Alternância de tom de fundo
-              const bgRow = idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40';
+              const bgRow = idx % 2 === 0 ? 'bg-white dark:bg-[#17223b]' : 'bg-slate-50/40 dark:bg-[#151e34]';
 
               // Borda lateral para representar Receita vs Despesa
               const borderType =
@@ -805,7 +812,7 @@ export default function TransacoesFinanceiras({
                 <div
                   key={t.id}
                   onClick={() => podeEditar && abrirModal(tipoNormalizado, t)}
-                  className={`${podeEditar ? 'cursor-pointer hover:bg-slate-100/50' : ''} p-4 flex items-center justify-between transition active:scale-[0.98] ${bgRow} ${borderType}`}
+                  className={`${podeEditar ? 'cursor-pointer hover:bg-slate-100/50 dark:hover:bg-slate-800/60' : ''} p-4 flex items-center justify-between transition active:scale-[0.98] ${bgRow} ${borderType}`}
                 >
                   <div className="flex flex-col flex-1 min-w-0 pr-2">
                     {/* Metadados: Data e Conta */}
@@ -813,29 +820,29 @@ export default function TransacoesFinanceiras({
                       <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
                         {t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
                       </span>
-                      <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${tipoNormalizado === 'receita' ? 'bg-emerald-100 text-emerald-800' :
-                          tipoNormalizado === 'despesa' ? 'bg-red-100 text-red-800' :
-                            'bg-blue-100 text-blue-800'
+                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${tipoNormalizado === 'receita' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' :
+                          tipoNormalizado === 'despesa' ? 'bg-red-100 dark:bg-rose-950/60 text-red-800 dark:text-rose-300' :
+                            'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300'
                         }`}>
                         {t.tipo}
                       </span>
-                      <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                      <span className="text-[9px] font-black bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                      <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                      <span className="text-[9px] font-black bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300 px-1.5 py-0.5 rounded uppercase tracking-wider">
                         {t.conta || 'Principal'}
                       </span>
                     </div>
 
                     {/* Descrição principal */}
-                    <p className="text-sm font-extrabold text-slate-800 leading-tight mt-1 truncate">{t.descricao}</p>
+                    <p className="text-sm font-extrabold text-slate-800 dark:text-slate-100 leading-tight mt-1 truncate">{t.descricao}</p>
                     {t.quantidade && t.valor_unitario && (
-                      <p className="text-[10px] text-amber-600 font-bold mt-0.5">
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">
                         {t.quantidade} un × R$ {Number(t.valor_unitario).toFixed(2)}
                       </p>
                     )}
 
                     {/* Informação adicional (Doador/Categoria) */}
-                    <p className="text-[11px] text-slate-500 mt-1 truncate">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
                       {tipoNormalizado === 'receita' ? (
                         `Contribuinte: ${t.contribuinte || '—'}`
                       ) : (
@@ -862,8 +869,22 @@ export default function TransacoesFinanceiras({
         {/* Botão flutuante para adicionar transação em mobile */}
         {podeEditar && (
           <div className="fixed bottom-20 right-6 z-50 flex gap-3 md:hidden">
-            <button type="button" onClick={() => abrirModal('receita')} className="w-14 h-14 rounded-full bg-emerald-600 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all" title="Nova Receita">+</button>
-            <button type="button" onClick={() => abrirModal('despesa')} className="w-14 h-14 rounded-full bg-rose-600 text-white shadow-xl flex items-center justify-center text-2xl active:scale-95 transition-all" title="Nova Despesa">—</button>
+            <button
+              type="button"
+              onClick={() => abrirModal('receita')}
+              className="w-13 h-13 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-lg shadow-emerald-700/30 border border-emerald-400/30 flex items-center justify-center text-xl font-bold active:scale-95 transition-all"
+              title="Nova Receita"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={() => abrirModal('despesa')}
+              className="w-13 h-13 rounded-full bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-lg shadow-rose-700/30 border border-rose-400/30 flex items-center justify-center text-xl font-bold active:scale-95 transition-all"
+              title="Nova Despesa"
+            >
+              —
+            </button>
           </div>
         )}
       </Card>
@@ -1071,23 +1092,27 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
       onSucesso();
     } catch (err) {
       console.error('Erro ao salvar transação:', err);
-      alert('Erro ao salvar transação: ' + err.message);
+      alert('Erro ao salvar: ' + (err.message || 'Verifique sua conexão ou permissões.'));
     } finally {
       setEnviando(false);
     }
   }
 
-  // Definição das variáveis de estilo dinâmico que estavam causando erros de referência
-  const corBtnSalvar = 'bg-emerald-600 hover:bg-emerald-700'; // Sempre verde para salvar
-  const corShadowSalvar = 'shadow-emerald-200';
-  const corHeader = tipo === 'receita' ? 'bg-emerald-50/30' : 'bg-rose-50/30';
+  // Estilos dinâmicos modernos para botões de confirmação de receita e despesa
+  const isReceita = tipo === 'receita';
+  const gradienteBtnSalvar = isReceita
+    ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 border-emerald-400/30 shadow-emerald-600/25 hover:shadow-emerald-600/40'
+    : 'bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:via-red-500 hover:to-rose-600 border-rose-400/30 shadow-rose-600/25 hover:shadow-rose-600/40';
+  const corHeader = isReceita
+    ? 'bg-emerald-50/40 dark:bg-emerald-950/40 border-b border-emerald-100 dark:border-emerald-900/40'
+    : 'bg-rose-50/40 dark:bg-rose-950/40 border-b border-rose-100 dark:border-rose-900/40';
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200 sm:p-4">
-      <div className="bg-white rounded-none sm:rounded-3xl border-none sm:border sm:border-slate-200 shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[95vh]">
-        <div className={`p-3 sm:p-4 border-b border-slate-100 flex items-center justify-between ${corHeader}`}>
+      <div className="bg-white dark:bg-[#17223b] rounded-none sm:rounded-3xl border-none sm:border sm:border-slate-200 dark:sm:border-[#2b3954] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-full sm:h-auto sm:max-h-[95vh]">
+        <div className={`p-3 sm:p-4 flex items-center justify-between ${corHeader}`}>
           <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
-            <h3 className="font-bold text-slate-900 text-sm sm:text-base uppercase tracking-tight">{transacaoParaEditar ? 'Editar' : 'Nova'} {tipo}</h3>
+            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base uppercase tracking-tight">{transacaoParaEditar ? 'Editar' : 'Nova'} {tipo}</h3>
             {tipo === 'despesa' && !transacaoParaEditar && (
               <button
                 type="button"
@@ -1095,62 +1120,62 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
                 className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold shadow-sm transition active:scale-95 cursor-pointer"
                 title="Escanear QR Code, colar link da SEFAZ ou importar arquivo XML"
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                 </svg>
                 <span>Ler Nota Fiscal (QR Code)</span>
               </button>
             )}
           </div>
-          <button type="button" onClick={onFechar} className="text-slate-400 hover:text-slate-600 font-bold p-2 text-xl">✕</button>
+          <button type="button" onClick={onFechar} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-bold p-2 text-xl">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 sm:space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
             <div className="sm:col-span-3">
-              <label className="block text-sm font-bold text-slate-500 mb-1">Data</label>
-              <input type="date" required value={data} onChange={e => setData(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#2563eb]/20 outline-none" />
+              <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Data</label>
+              <input type="date" required value={data} onChange={e => setData(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-normal text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-[#2563eb]/20 outline-none" />
             </div>
             <div className="sm:col-span-6">
-              <label className="block text-sm font-bold text-slate-500 mb-1">Descrição</label>
-              <input type="text" required placeholder="Ex: Oferta de domingo, Manutenção..." value={descricao} onChange={e => setDescricao(e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#202046]/20 outline-none" />
+              <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Descrição</label>
+              <input type="text" required placeholder="Ex: Oferta de domingo, Manutenção..." value={descricao} onChange={e => setDescricao(e.target.value)} className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-normal text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-[#202046]/20 outline-none" />
             </div>
             <div className="sm:col-span-3">
-              <label className="block text-sm font-bold text-slate-500 mb-1">Valor (R$)</label>
-              <input type="text" required placeholder="R$ 0,00" value={valor} onChange={e => setValor(mascaraMoeda(e.target.value))} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:ring-2 focus:ring-[#202046]/20 outline-none" />
+              <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Valor (R$)</label>
+              <input type="text" required placeholder="R$ 0,00" value={valor} onChange={e => setValor(mascaraMoeda(e.target.value))} className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-[#202046]/20 outline-none" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
             <div className="sm:col-span-4">
-              <label className="block text-sm font-bold text-slate-500 mb-1">{tipo === 'despesa' ? 'Pago à' : 'Membro'}</label>
-              <select value={pessoaId} onChange={e => setPessoaId(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm font-normal bg-white outline-none">
+              <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">{tipo === 'despesa' ? 'Pago à' : 'Membro'}</label>
+              <select value={pessoaId} onChange={e => setPessoaId(e.target.value)} className="w-full px-2 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-normal bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none">
                 <option value="">Selecione um membro (opcional)</option>
                 {pessoas.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
               </select>
             </div>
             <div className="sm:col-span-3">
-              <label className="block text-sm font-bold text-slate-500 mb-1">Categoria</label>
-              <select required value={categoriaId} onChange={e => setCategoriaId(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm font-normal bg-white outline-none">
+              <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Categoria</label>
+              <select required value={categoriaId} onChange={e => setCategoriaId(e.target.value)} className="w-full px-2 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-normal bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none">
                 <option value="">Selecione...</option>
                 {categorias.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
             </div>
             <div className="sm:col-span-3">
-              <label className="block text-sm font-bold text-slate-500 mb-1">Conta / Caixa</label>
-              <select required value={contaId} onChange={e => setContaId(e.target.value)} className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm font-normal bg-white outline-none">
+              <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Conta / Caixa</label>
+              <select required value={contaId} onChange={e => setContaId(e.target.value)} className="w-full px-2 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-normal bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 outline-none">
                 <option value="">Selecione...</option>
                 {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-sm font-bold text-slate-500 mb-1">Status</label>
+              <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Status</label>
               <button
                 type="button"
                 onClick={() => setStatus(status === 'pago' ? 'pendente' : 'pago')}
                 className={`w-full py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition flex items-center justify-center gap-2 shadow-xs ${status === 'pago'
-                  ? `bg-emerald-600 border-emerald-600 text-white shadow-emerald-200` // Verde para Pago
-                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100 hover:text-slate-600' // Discreto para Pendente
+                  ? `bg-emerald-600 border-emerald-600 text-white shadow-emerald-200`
+                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-600 dark:hover:text-slate-100'
                   }`}
               >
                 {status === 'pago' ? '✓' : '○'} {labelStatus}
@@ -1160,22 +1185,22 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
 
           {/* Campos dinâmicos: Quantidade e Valor Unitário para Produtos de Limpeza e Consumo */}
           {ehLimpezaOuConsumo && (
-            <div className="p-3.5 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-2.5 animate-in fade-in duration-200">
+            <div className="p-3.5 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-2xl space-y-2.5 animate-in fade-in duration-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                  <span className="text-xs font-black text-amber-900 uppercase tracking-wider">
+                  <span className="text-xs font-black text-amber-900 dark:text-amber-200 uppercase tracking-wider">
                     Detalhamento do Item ({categoriaSelecionada?.nome})
                   </span>
                 </div>
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-100/90 px-2 py-0.5 rounded-md">
+                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-900/60 px-2 py-0.5 rounded-md">
                   Calcula o Valor Total automaticamente
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-amber-900 mb-1">
+                  <label className="block text-xs font-bold text-amber-900 dark:text-amber-200 mb-1">
                     Quantidade
                   </label>
                   <input
@@ -1185,11 +1210,11 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
                     placeholder="Ex: 5"
                     value={quantidade}
                     onChange={e => handleQuantidadeChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-amber-300 rounded-xl text-sm font-bold text-slate-800 bg-white focus:ring-2 focus:ring-amber-500/20 outline-none"
+                    className="w-full px-3 py-2 border border-amber-300 dark:border-amber-700/60 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-amber-500/20 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-amber-900 mb-1">
+                  <label className="block text-xs font-bold text-amber-900 dark:text-amber-200 mb-1">
                     Valor Unitário (R$)
                   </label>
                   <input
@@ -1197,7 +1222,7 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
                     placeholder="R$ 0,00"
                     value={valorUnitario}
                     onChange={e => handleValorUnitarioChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-amber-300 rounded-xl text-sm font-bold text-slate-800 bg-white focus:ring-2 focus:ring-amber-500/20 outline-none"
+                    className="w-full px-3 py-2 border border-amber-300 dark:border-amber-700/60 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-amber-500/20 outline-none"
                   />
                 </div>
               </div>
@@ -1207,22 +1232,22 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
           {/* Anotações Internas e Tipo de Lançamento */}
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
             <div className={!transacaoParaEditar ? "sm:col-span-7" : "sm:col-span-12"}>
-              <label className="block text-sm font-bold text-slate-500 mb-1">Anotações Internas</label>
+              <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Anotações Internas</label>
               <textarea
                 rows="1"
                 value={anotacoes}
                 onChange={e => setAnotacoes(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#2563eb]/20 outline-none resize-none"
+                className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 rounded-xl text-sm font-normal focus:ring-2 focus:ring-[#2563eb]/20 outline-none resize-none"
                 placeholder="Detalhes adicionais sobre este lançamento..."
               />
             </div>
             {!transacaoParaEditar && (
               <div className="sm:col-span-5">
-                <label className="block text-sm font-bold text-slate-500 mb-1">Tipo de Lançamento</label>
+                <label className="block text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Tipo de Lançamento</label>
                 <select
                   value={tipoLancamento}
                   onChange={e => setTipoLancamento(e.target.value)}
-                  className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm font-normal bg-white focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
+                  className="w-full px-2 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-normal bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-[#2563eb]/20 outline-none"
                 >
                   <option value="unico">Lançamento Único</option>
                   <option value="repetido">Repetido / Fixo</option>
@@ -1232,14 +1257,14 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
           </div>
 
           {!transacaoParaEditar && tipoLancamento === 'repetido' && (
-            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3 animate-in fade-in duration-200">
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-3 animate-in fade-in duration-200">
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <div>
-                  <label className="block text-xs sm:text-sm font-bold text-slate-500 mb-1">Dia Venc.</label>
+                  <label className="block text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Dia Venc.</label>
                   <select
                     value={diaVencimento}
                     onChange={e => setDiaVencimento(parseInt(e.target.value))}
-                    className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                    className="w-full px-2 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none"
                   >
                     {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
                       <option key={d} value={d}>{d}</option>
@@ -1247,11 +1272,11 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm font-bold text-slate-500 mb-1">Frequência</label>
+                  <label className="block text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Frequência</label>
                   <select
                     value={frequencia}
                     onChange={e => setFrequencia(e.target.value)}
-                    className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                    className="w-full px-2 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none"
                   >
                     <option value="semanal">Semanal</option>
                     <option value="mensal">Mensal</option>
@@ -1259,11 +1284,11 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs sm:text-sm font-bold text-slate-500 mb-1">Repetições</label>
+                  <label className="block text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Repetições</label>
                   <select
                     value={repeticoes}
                     onChange={e => setRepeticoes(parseInt(e.target.value))}
-                    className="w-full px-2 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none"
+                    className="w-full px-2 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 outline-none"
                   >
                     {Array.from({ length: 35 }, (_, i) => i + 2).map(n => (
                       <option key={n} value={n}>{n}x</option>
@@ -1274,40 +1299,51 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
             </div>
           )}
 
-          <div className="pt-1 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-end gap-3">
+          <div className="pt-1 border-t border-slate-100 dark:border-[#2b3954] flex flex-col sm:flex-row items-center justify-end gap-3">
             {transacaoParaEditar && (
               <button
                 type="button"
                 onClick={handleExcluir}
                 disabled={enviando}
                 className="
-                  fixed bottom-6 left-6 w-14 h-14 rounded-full bg-white border border-rose-100 shadow-2xl z-[120] 
+                  fixed bottom-6 left-6 w-14 h-14 rounded-full bg-white dark:bg-slate-900 border border-rose-100 dark:border-rose-950/80 shadow-2xl z-[120] 
                   sm:static sm:w-auto sm:h-auto sm:p-2 sm:rounded-xl sm:bg-transparent sm:border-transparent sm:shadow-none
-                  text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition sm:mr-auto order-3 sm:order-first 
+                  text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition sm:mr-auto order-3 sm:order-first 
                   flex items-center justify-center gap-0
                 "
               >
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
                 <span className="hidden sm:inline">Excluir Registro</span>
               </button>
             )}
 
-            <button type="button" onClick={onFechar} className="w-full sm:w-auto px-5 py-2 text-sm font-bold text-slate-400 hover:text-slate-600 transition order-2 sm:order-1">Cancelar</button>
+            <button
+              type="button"
+              onClick={onFechar}
+              className="w-full sm:w-auto px-5 py-2.5 border border-slate-200 dark:border-[#2b3954] hover:border-slate-300 dark:hover:border-slate-600 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1c2b4a] transition-all active:scale-95 cursor-pointer text-center order-2 sm:order-1"
+            >
+              Cancelar
+            </button>
             <button
               type="submit"
               disabled={enviando}
-              className={`fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-[120] 
-                sm:static sm:w-auto sm:h-auto sm:px-10 sm:py-2.5 sm:rounded-2xl sm:shadow-lg
-                ${corBtnSalvar} text-white text-sm font-bold transition ${corShadowSalvar} disabled:opacity-50 order-1 sm:order-1
+              className={`group relative overflow-hidden fixed bottom-6 right-6 w-14 h-14 rounded-full flex items-center justify-center shadow-2xl z-[120] 
+                sm:static sm:w-auto sm:h-auto sm:px-6 sm:py-2.5 sm:rounded-xl sm:shadow-md hover:sm:shadow-lg
+                ${gradienteBtnSalvar} text-white text-xs font-black uppercase tracking-wider border transition-all duration-200 active:scale-95 cursor-pointer disabled:opacity-50 order-1 sm:order-1
               `}
             >
               {enviando ? (
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                <div className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                  <span className="hidden sm:inline">Salvando...</span>
+                </div>
               ) : (
                 <>
-                  <span className="sm:hidden text-2xl leading-none">✓</span>
+                  <div className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                    <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+                  </div>
                   <span className="hidden sm:inline">{transacaoParaEditar ? 'Salvar Alterações' : `Confirmar ${tipo}`}</span>
                 </>
               )}
@@ -1333,7 +1369,7 @@ function BtnAtalho({ label, onClick, destaque }) {
       onClick={onClick}
       className={`px-5 py-1.5 rounded-lg text-sm font-normal transition ${destaque
         ? 'bg-[#1e3a8a] text-white hover:bg-[#1e40af]'
-        : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600 border border-slate-200'
+        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200 dark:border-slate-700'
         }`}
     >
       {label}

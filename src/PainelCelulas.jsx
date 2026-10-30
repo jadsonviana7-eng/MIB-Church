@@ -205,68 +205,76 @@ export default function PainelCelulas({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <Card 
           onClick={() => onNavigate('lista')}
-          className="relative overflow-hidden bg-gradient-to-br from-[#eff6ff] to-white border border-blue-100/80 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm hover:shadow-md hover:scale-[1.01] hover:border-blue-300 transition duration-200 cursor-pointer"
+          className="group relative overflow-hidden bg-gradient-to-br from-[#eff6ff] to-white dark:from-[#131d31] dark:to-[#17223b] border border-blue-100/80 dark:border-[#24334f] rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm hover:shadow-md hover:scale-[1.01] hover:border-blue-300 dark:hover:border-blue-500/60 transition duration-200 cursor-pointer"
         >
           <div className="flex justify-between items-start">
             <div className="space-y-0.5 sm:space-y-1 min-w-0">
-              <span className="text-[9px] sm:text-[10px] font-black uppercase text-blue-600/80 tracking-wider block truncate">Células Ativas</span>
-              <h2 className="text-2xl sm:text-3xl font-black text-blue-950 mt-1">{totalCelulasAtivas}</h2>
+              <span className="text-[9px] sm:text-[10px] font-black uppercase text-blue-600/80 dark:text-blue-400 tracking-wider block truncate">Células Ativas</span>
+              <h2 className="text-2xl sm:text-3xl font-black text-blue-950 dark:text-blue-100 mt-1">{totalCelulasAtivas}</h2>
             </div>
-            <div className="p-2 sm:p-3 bg-blue-500 text-white rounded-xl sm:rounded-2xl shadow-md shadow-blue-100 shrink-0">
-              <Network size={16} className="sm:w-5 sm:h-5" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-600/25 border border-blue-400/30 transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-blue-600/35">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl bg-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                <Network className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" strokeWidth={2.5} />
+              </div>
             </div>
           </div>
-          <div className="mt-3 sm:mt-4 flex items-center text-[8px] sm:text-[10px] font-bold text-blue-500 uppercase tracking-wide gap-1">
+          <div className="mt-3 sm:mt-4 flex items-center text-[8px] sm:text-[10px] font-bold text-blue-500 dark:text-blue-400 uppercase tracking-wide gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             Operação Normal
           </div>
         </Card>
 
-        <Card className="relative overflow-hidden bg-gradient-to-br from-[#ecfdf5] to-white border border-emerald-100/80 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm hover:shadow-md transition duration-200">
+        <Card className="group relative overflow-hidden bg-gradient-to-br from-[#ecfdf5] to-white dark:from-[#102324] dark:to-[#17223b] border border-emerald-100/80 dark:border-[#24334f] rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm hover:shadow-md transition duration-200">
           <div className="flex justify-between items-start">
             <div className="space-y-0.5 sm:space-y-1 min-w-0">
-              <span className="text-[9px] sm:text-[10px] font-black uppercase text-emerald-600/80 tracking-wider block truncate">Pessoas</span>
-              <h2 className="text-2xl sm:text-3xl font-black text-emerald-950 mt-1">{totalMembrosEmCelulas}</h2>
+              <span className="text-[9px] sm:text-[10px] font-black uppercase text-emerald-600/80 dark:text-emerald-400 tracking-wider block truncate">Pessoas</span>
+              <h2 className="text-2xl sm:text-3xl font-black text-emerald-950 dark:text-emerald-100 mt-1">{totalMembrosEmCelulas}</h2>
             </div>
-            <div className="p-2 sm:p-3 bg-emerald-500 text-white rounded-xl sm:rounded-2xl shadow-md shadow-emerald-100 shrink-0">
-              <Users size={16} className="sm:w-5 sm:h-5" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/25 border border-emerald-400/30 transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-emerald-600/35">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl bg-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                <Users className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" strokeWidth={2.5} />
+              </div>
             </div>
           </div>
-          <div className="mt-3 sm:mt-4 text-[8px] sm:text-[10px] font-bold text-emerald-500 uppercase tracking-wide block truncate">
+          <div className="mt-3 sm:mt-4 text-[8px] sm:text-[10px] font-bold text-emerald-500 dark:text-emerald-400 uppercase tracking-wide block truncate">
             Membros ativos
           </div>
         </Card>
 
-        <Card className="relative overflow-hidden bg-gradient-to-br from-[#fff5f5] to-white border border-rose-100/80 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm hover:shadow-md transition duration-200">
+        <Card className="group relative overflow-hidden bg-gradient-to-br from-[#fff5f5] to-white dark:from-[#261521] dark:to-[#17223b] border border-rose-100/80 dark:border-[#24334f] rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm hover:shadow-md transition duration-200">
           <div className="flex justify-between items-start">
             <div className="space-y-0.5 sm:space-y-1 min-w-0">
-              <span className="text-[9px] sm:text-[10px] font-black uppercase text-rose-500/80 tracking-wider block truncate">Ausentes</span>
-              <h2 className="text-2xl sm:text-3xl font-black text-rose-600 mt-1">
+              <span className="text-[9px] sm:text-[10px] font-black uppercase text-rose-500/80 dark:text-rose-400 tracking-wider block truncate">Ausentes</span>
+              <h2 className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400 mt-1">
                 {carregandoPresencas ? '...' : membrosAusentes.length}
               </h2>
             </div>
-            <div className="p-2 sm:p-3 bg-rose-500 text-white rounded-xl sm:rounded-2xl shadow-md shadow-rose-100 shrink-0">
-              <AlertTriangle size={16} className="sm:w-5 sm:h-5" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-rose-600/25 border border-rose-400/30 transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-rose-600/35">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl bg-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                <AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" strokeWidth={2.5} />
+              </div>
             </div>
           </div>
-          <div className="mt-3 sm:mt-4 text-[8px] sm:text-[10px] font-bold text-rose-500 uppercase tracking-wide flex items-center gap-1 block truncate">
+          <div className="mt-3 sm:mt-4 text-[8px] sm:text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-wide flex items-center gap-1 block truncate">
             ⚠️ Sem presença 30d
           </div>
         </Card>
 
-        <Card className="relative overflow-hidden bg-gradient-to-br from-[#fffbeb] to-white border border-amber-100/80 rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm hover:shadow-md transition duration-200">
+        <Card className="group relative overflow-hidden bg-gradient-to-br from-[#fffbeb] to-white dark:from-[#261f18] dark:to-[#17223b] border border-amber-100/80 dark:border-[#24334f] rounded-2xl sm:rounded-[28px] p-4 sm:p-6 shadow-sm hover:shadow-md transition duration-200">
           <div className="flex justify-between items-start">
             <div className="space-y-0.5 sm:space-y-1 min-w-0">
-              <span className="text-[9px] sm:text-[10px] font-black uppercase text-amber-600/80 tracking-wider block truncate">Ofertas</span>
-              <h2 className="text-sm sm:text-2xl font-black text-amber-950 mt-1.5 truncate">
+              <span className="text-[9px] sm:text-[10px] font-black uppercase text-amber-600/80 dark:text-amber-400 tracking-wider block truncate">Ofertas</span>
+              <h2 className="text-sm sm:text-2xl font-black text-amber-950 dark:text-amber-100 mt-1.5 truncate">
                 R$ {totalOfertasAcumulado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </h2>
             </div>
-            <div className="p-2 sm:p-3 bg-amber-500 text-white rounded-xl sm:rounded-2xl shadow-md shadow-amber-100 shrink-0">
-              <DollarSign size={16} className="sm:w-5 sm:h-5" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/25 border border-amber-300/40 transition-all duration-200 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-amber-500/35">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl bg-white/20 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+                <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" strokeWidth={2.5} />
+              </div>
             </div>
           </div>
-          <div className="mt-3 sm:mt-4 text-[8px] sm:text-[10px] font-bold text-amber-500 uppercase tracking-wide block truncate">
+          <div className="mt-3 sm:mt-4 text-[8px] sm:text-[10px] font-bold text-amber-500 dark:text-amber-400 uppercase tracking-wide block truncate">
             Recursos declarados
           </div>
         </Card>
@@ -275,13 +283,15 @@ export default function PainelCelulas({
       {/* Row 2: Leaderboard (Células que mais ganham) & Zonas */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Leaderboard */}
-        <Card className="lg:col-span-7 bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-6">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-gradient-to-tr from-amber-400 to-yellow-500 text-white rounded-xl shadow-md">
-              <Trophy size={18} />
+        <Card className="lg:col-span-7 bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] rounded-[28px] p-6 shadow-sm space-y-6">
+          <div className="flex items-center gap-3 border-b border-slate-100 dark:border-[#2b3954] pb-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-amber-500/25 border border-amber-300/40">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-white/20 flex items-center justify-center shrink-0 shadow-inner">
+                <Trophy size={15} className="text-white" />
+              </div>
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Destaques e Crescimento</h3>
+              <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-100 uppercase tracking-wider">Destaques e Crescimento</h3>
               <p className="text-[10px] text-slate-400 font-medium">As células que mais prosperam no módulo</p>
             </div>
           </div>
@@ -289,7 +299,7 @@ export default function PainelCelulas({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Mais ofertas */}
             <div className="space-y-3">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+              <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1">
                 <DollarSign size={12} className="text-emerald-500" /> Célula que mais arrecada (Ofertas)
               </h4>
               <div className="space-y-2">
@@ -300,16 +310,16 @@ export default function PainelCelulas({
                     <div
                       key={c.id}
                       onClick={() => setCelulaSelecionadaId(c.id)}
-                      className="flex items-center justify-between p-3 rounded-2xl border border-slate-50 hover:border-slate-100 bg-slate-50/30 hover:bg-slate-50 transition cursor-pointer"
+                      className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 dark:border-[#24334f] hover:border-slate-200 dark:hover:border-blue-500/40 bg-slate-50/50 dark:bg-[#131d31] hover:bg-slate-100/70 dark:hover:bg-[#1c2b4a] transition cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5">
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] ${i === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] ${i === 0 ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                           }`}>
                           {i + 1}
                         </span>
-                        <span className="font-bold text-slate-700 text-xs">{c.nome}</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-200 text-xs">{c.nome}</span>
                       </div>
-                      <span className="font-black text-emerald-600 text-xs">
+                      <span className="font-black text-emerald-600 dark:text-emerald-400 text-xs">
                         R$ {c.totalOfertas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
@@ -320,7 +330,7 @@ export default function PainelCelulas({
 
             {/* Mais visitantes */}
             <div className="space-y-3">
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+              <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1">
                 <Sparkles size={12} className="text-blue-500" /> Célula com mais Visitantes (Vidas)
               </h4>
               <div className="space-y-2">
@@ -331,16 +341,16 @@ export default function PainelCelulas({
                     <div
                       key={c.id}
                       onClick={() => setCelulaSelecionadaId(c.id)}
-                      className="flex items-center justify-between p-3 rounded-2xl border border-slate-50 hover:border-slate-100 bg-slate-50/30 hover:bg-slate-50 transition cursor-pointer"
+                      className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 dark:border-[#24334f] hover:border-slate-200 dark:hover:border-blue-500/40 bg-slate-50/50 dark:bg-[#131d31] hover:bg-slate-100/70 dark:hover:bg-[#1c2b4a] transition cursor-pointer"
                     >
                       <div className="flex items-center gap-2.5">
-                        <span className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] ${i === 0 ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600'
+                        <span className={`w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] ${i === 0 ? 'bg-blue-100 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                           }`}>
                           {i + 1}
                         </span>
-                        <span className="font-bold text-slate-700 text-xs">{c.nome}</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-200 text-xs">{c.nome}</span>
                       </div>
-                      <span className="font-black text-blue-600 text-xs">
+                      <span className="font-black text-blue-600 dark:text-blue-400 text-xs">
                         {c.totalVisitantes} {c.totalVisitantes === 1 ? 'visitante' : 'visitantes'}
                       </span>
                     </div>
@@ -352,13 +362,15 @@ export default function PainelCelulas({
         </Card>
 
         {/* Zonas */}
-        <Card className="lg:col-span-5 bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-              <MapPin size={18} />
+        <Card className="lg:col-span-5 bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] rounded-[28px] p-6 shadow-sm space-y-4">
+          <div className="flex items-center gap-3 border-b border-slate-100 dark:border-[#2b3954] pb-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-600/25 border border-blue-400/30">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-white/20 flex items-center justify-center shrink-0 shadow-inner">
+                <MapPin size={15} className="text-white" />
+              </div>
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Distribuição por Zonas</h3>
+              <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-100 uppercase tracking-wider">Distribuição por Zonas</h3>
               <p className="text-[10px] text-slate-400 font-medium">Localização geográfica das células</p>
             </div>
           </div>
@@ -370,12 +382,12 @@ export default function PainelCelulas({
               celulasPorZona.map((z, i) => (
                 <div key={i} className="space-y-1">
                   <div className="flex justify-between items-center text-xs font-bold">
-                    <span className="text-slate-700">{z.nome}</span>
-                    <span className="text-slate-500">{z.qtd} ({z.pct.toFixed(0)}%)</span>
+                    <span className="text-slate-700 dark:text-slate-200">{z.nome}</span>
+                    <span className="text-slate-500 dark:text-slate-400">{z.qtd} ({z.pct.toFixed(0)}%)</span>
                   </div>
-                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-blue-600 rounded-full transition-all duration-500"
+                      className="h-full bg-blue-600 dark:bg-blue-500 rounded-full transition-all duration-500"
                       style={{ width: `${z.pct}%` }}
                     />
                   </div>
@@ -389,13 +401,15 @@ export default function PainelCelulas({
       {/* Row 3: Gerações (Hierarquia de células) & Ausentes */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Gerações */}
-        <Card className="lg:col-span-6 bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-violet-50 text-violet-600 rounded-xl">
-              <GitBranch size={18} />
+        <Card className="lg:col-span-6 bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] rounded-[28px] p-6 shadow-sm space-y-4">
+          <div className="flex items-center gap-3 border-b border-slate-100 dark:border-[#2b3954] pb-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-violet-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-purple-600/25 border border-purple-400/30">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-white/20 flex items-center justify-center shrink-0 shadow-inner">
+                <GitBranch size={15} className="text-white" />
+              </div>
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Células por Gerações</h3>
+              <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-100 uppercase tracking-wider">Células por Gerações</h3>
               <p className="text-[10px] text-slate-400 font-medium">Árvore de multiplicação e discipulado</p>
             </div>
           </div>
@@ -405,11 +419,11 @@ export default function PainelCelulas({
               <p className="text-xs text-slate-400 italic">Nenhuma geração mapeada.</p>
             ) : (
               celulasPorGeracao.map((g) => (
-                <div key={g.geracao} className="space-y-2 border-l-2 border-slate-100 pl-4 relative">
+                <div key={g.geracao} className="space-y-2 border-l-2 border-slate-100 dark:border-[#24334f] pl-4 relative">
                   {/* Ponto indicador de geração */}
                   <span className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-violet-500" />
 
-                  <h4 className="text-[10px] font-black text-violet-700 uppercase tracking-wider">
+                  <h4 className="text-[10px] font-black text-violet-700 dark:text-violet-400 uppercase tracking-wider">
                     {g.geracao}ª Geração {g.geracao === 1 ? '(Raiz / Matriz)' : `(Filhas)`}
                   </h4>
 
@@ -418,7 +432,7 @@ export default function PainelCelulas({
                       <span
                         key={c.id}
                         onClick={() => setCelulaSelecionadaId(c.id)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/60 rounded-xl text-[11px] font-bold text-slate-700 cursor-pointer transition"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 dark:bg-[#131d31] hover:bg-slate-100 dark:hover:bg-[#1c2b4a] border border-slate-200/60 dark:border-[#24334f] rounded-xl text-[11px] font-bold text-slate-700 dark:text-slate-200 cursor-pointer transition"
                       >
                         {c.nome}
                         <ChevronRight size={10} className="text-slate-400" />
@@ -432,13 +446,15 @@ export default function PainelCelulas({
         </Card>
 
         {/* Ausentes */}
-        <Card className="lg:col-span-6 bg-white border border-slate-100 rounded-[28px] p-6 shadow-sm space-y-4">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
-              <AlertTriangle size={18} />
+        <Card className="lg:col-span-6 bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] rounded-[28px] p-6 shadow-sm space-y-4">
+          <div className="flex items-center gap-3 border-b border-slate-100 dark:border-[#2b3954] pb-3">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 text-white flex items-center justify-center shrink-0 shadow-md shadow-rose-600/25 border border-rose-400/30">
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-white/20 flex items-center justify-center shrink-0 shadow-inner">
+                <AlertTriangle size={15} className="text-white" />
+              </div>
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Ausências Recentes (Membros)</h3>
+              <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-100 uppercase tracking-wider">Ausências Recentes (Membros)</h3>
               <p className="text-[10px] text-slate-400 font-medium">Pessoas que necessitam de contato e apoio pastoral</p>
             </div>
           </div>
@@ -447,33 +463,34 @@ export default function PainelCelulas({
             {carregandoPresencas ? (
               <p className="text-xs text-slate-400 italic">Carregando dados de chamada...</p>
             ) : membrosAusentes.length === 0 ? (
-              <p className="text-xs text-emerald-600 font-bold bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center">
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 rounded-xl p-3 text-center">
                 🎉 Nenhum membro com ausência crítica nos últimos 30 dias!
               </p>
             ) : (
               membrosAusentes.map((m) => (
                 <div
                   key={m.id}
-                  className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 bg-slate-50/20 hover:bg-slate-50/50 transition"
+                  className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 dark:border-[#24334f] bg-slate-50/50 dark:bg-[#131d31] hover:bg-slate-100/70 dark:hover:bg-[#1c2b4a] transition"
                 >
                   <div className="flex items-center gap-3">
                     <Avatar pessoa={m} tamanho="w-9 h-9" />
                     <div>
-                      <h4 className="font-bold text-slate-800 text-xs">{m.nome}</h4>
+                      <h4 className="font-bold text-slate-800 dark:text-slate-100 text-xs">{m.nome}</h4>
                       <p className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5">
-                        {m.celulaNome} · Última vez em: <span className="text-rose-500">{m.ultimaPresencaFormatada}</span>
+                        {m.celulaNome} · Última vez em: <span className="text-rose-500 dark:text-rose-400">{m.ultimaPresencaFormatada}</span>
                       </p>
                     </div>
                   </div>
 
                   {m.telefone && (
                     <button
+                      type="button"
                       onClick={() => enviarMensagemWhatsApp(m)}
                       title="Enviar mensagem amigável no WhatsApp"
-                      className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-xl transition cursor-pointer flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider"
+                      className="group relative overflow-hidden px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl shadow-xs shadow-emerald-700/20 hover:shadow-md hover:shadow-emerald-700/30 border border-emerald-400/30 transition-all duration-200 active:scale-95 cursor-pointer flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider"
                     >
-                      <MessageCircle size={14} />
-                      Cuidar
+                      <MessageCircle size={14} className="group-hover:scale-110 transition-transform" />
+                      <span>Cuidar</span>
                     </button>
                   )}
                 </div>

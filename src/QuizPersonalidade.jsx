@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
@@ -118,10 +118,58 @@ const options = [
 ];
 
 export const profiles = {
-  colerico:   { title: "Colérico",   icon: IconFire,   color: "#dc2626", bg: "#fef2f2", border: "#fecaca", strengths: ["Liderança", "Determinação", "Coragem", "Iniciativa"], weaknesses: ["Impaciência", "Autoritarismo", "Dificuldade em ouvir"], ministry: ["Supervisor", "Líder de célula", "Coordenador", "Gestão ministerial"] },
-  melancolico:{ title: "Melancólico",icon: IconDetail, color: "#7c3aed", bg: "#f5f3ff", border: "#ddd6fe", strengths: ["Organização", "Planejamento", "Excelência", "Responsabilidade"], weaknesses: ["Perfeccionismo", "Autocrítica excessiva", "Rigidez"], ministry: ["Secretaria", "Ensino", "Intercessão", "Administração"] },
-  sanguineo:  { title: "Sanguíneo",  icon: IconSun,    color: "#d97706", bg: "#fffbeb", border: "#fde68a", strengths: ["Comunicação", "Entusiasmo", "Relacionamento", "Motivação"], weaknesses: ["Distração", "Impulsividade", "Inconstância"], ministry: ["Evangelismo", "Recepção", "Eventos", "Consolidação"] },
-  fleumatico: { title: "Fleumático", icon: IconWater,  color: "#0891b2", bg: "#ecfeff", border: "#a5f3fc", strengths: ["Paciência", "Equilíbrio", "Empatia", "Confiabilidade"], weaknesses: ["Passividade", "Indecisão", "Resistência a mudanças"], ministry: ["Acompanhamento", "Discipulado", "Cuidado pastoral", "Conselhamento"] },
+  colerico: {
+    title: "Colérico",
+    icon: IconFire,
+    color: "#dc2626",
+    colorDark: "#f87171",
+    bgLight: "#fef2f2",
+    bgDark: "rgba(220, 38, 38, 0.12)",
+    borderLight: "#fecaca",
+    borderDark: "rgba(220, 38, 38, 0.35)",
+    strengths: ["Liderança", "Determinação", "Coragem", "Iniciativa"],
+    weaknesses: ["Impaciência", "Autoritarismo", "Dificuldade em ouvir"],
+    ministry: ["Supervisor", "Líder de célula", "Coordenador", "Gestão ministerial"]
+  },
+  melancolico: {
+    title: "Melancólico",
+    icon: IconDetail,
+    color: "#7c3aed",
+    colorDark: "#c084fc",
+    bgLight: "#f5f3ff",
+    bgDark: "rgba(124, 58, 237, 0.12)",
+    borderLight: "#ddd6fe",
+    borderDark: "rgba(124, 58, 237, 0.35)",
+    strengths: ["Organização", "Planejamento", "Excelência", "Responsabilidade"],
+    weaknesses: ["Perfeccionismo", "Autocrítica excessiva", "Rigidez"],
+    ministry: ["Secretaria", "Ensino", "Intercessão", "Administração"]
+  },
+  sanguineo: {
+    title: "Sanguíneo",
+    icon: IconSun,
+    color: "#d97706",
+    colorDark: "#fbbf24",
+    bgLight: "#fffbeb",
+    bgDark: "rgba(217, 119, 6, 0.12)",
+    borderLight: "#fde68a",
+    borderDark: "rgba(217, 119, 6, 0.35)",
+    strengths: ["Comunicação", "Entusiasmo", "Relacionamento", "Motivação"],
+    weaknesses: ["Distração", "Impulsividade", "Inconstância"],
+    ministry: ["Evangelismo", "Recepção", "Eventos", "Consolidação"]
+  },
+  fleumatico: {
+    title: "Fleumático",
+    icon: IconWater,
+    color: "#0891b2",
+    colorDark: "#22d3ee",
+    bgLight: "#ecfeff",
+    bgDark: "rgba(8, 145, 178, 0.12)",
+    borderLight: "#a5f3fc",
+    borderDark: "rgba(8, 145, 178, 0.35)",
+    strengths: ["Paciência", "Equilíbrio", "Empatia", "Confiabilidade"],
+    weaknesses: ["Passividade", "Indecisão", "Resistência a mudanças"],
+    ministry: ["Acompanhamento", "Discipulado", "Cuidado pastoral", "Conselhamento"]
+  },
 };
 
 const chartColors = {
@@ -129,6 +177,13 @@ const chartColors = {
   melancolico: "#7c3aed",
   sanguineo: "#d97706",
   fleumatico: "#0891b2",
+};
+
+const chartColorsDark = {
+  colerico: "#f87171",
+  melancolico: "#c084fc",
+  sanguineo: "#fbbf24",
+  fleumatico: "#22d3ee",
 };
 
 const temperamentLabels = {
@@ -144,32 +199,19 @@ function OptionPill({ value, label, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '5px',
-        padding: '5px 12px',
-        borderRadius: '999px',
-        fontSize: '11px',
-        fontWeight: selected ? '700' : '500',
-        border: selected ? '1.5px solid #1e3a8a' : '1px solid #e2e8f0',
-        background: selected ? '#1e3a8a' : '#f8fafc',
-        color: selected ? '#fff' : '#64748b',
-        cursor: 'pointer',
-        transition: 'all 0.15s ease',
-        letterSpacing: '0.01em',
-        whiteSpace: 'nowrap',
-      }}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] transition-all cursor-pointer whitespace-nowrap active:scale-95 ${
+        selected
+          ? 'font-bold bg-blue-700 dark:bg-blue-600 text-white border border-blue-700 dark:border-blue-500 shadow-sm'
+          : 'font-medium bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'
+      }`}
     >
-      <span style={{
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        border: selected ? '2px solid rgba(255,255,255,0.6)' : '1.5px solid #cbd5e1',
-        background: selected ? '#fff' : 'transparent',
-        flexShrink: 0,
-        transition: 'all 0.15s',
-      }} />
+      <span
+        className={`w-2 h-2 rounded-full shrink-0 transition-all ${
+          selected
+            ? 'bg-white border-2 border-white/60'
+            : 'bg-transparent border border-slate-400 dark:border-slate-500'
+        }`}
+      />
       {label}
     </button>
   );
@@ -177,27 +219,18 @@ function OptionPill({ value, label, selected, onClick }) {
 
 function QuestionCard({ question, answer, onChange }) {
   return (
-    <div style={{
-      background: '#fff',
-      border: answer ? '1.5px solid #c7d2fe' : '1px solid #f1f5f9',
-      borderRadius: 14,
-      padding: '16px 18px',
-      transition: 'border-color 0.2s, box-shadow 0.2s',
-      boxShadow: answer ? '0 2px 8px rgba(30,58,138,0.06)' : 'none',
-    }}>
-      <p style={{
-        fontSize: 13,
-        fontWeight: 600,
-        color: '#334155',
-        margin: '0 0 12px 0',
-        lineHeight: 1.55,
-        display: 'flex',
-        gap: 8,
-      }}>
-        <span style={{ color: '#94a3b8', fontWeight: 400, flexShrink: 0 }}>#{question.id}</span>
-        {question.text}
+    <div
+      className={`rounded-2xl p-4 sm:p-5 transition-all duration-200 border ${
+        answer
+          ? 'bg-white dark:bg-slate-900 border-blue-200 dark:border-blue-900/60 shadow-xs ring-1 ring-blue-500/10 dark:ring-blue-500/20'
+          : 'bg-white dark:bg-slate-900/70 border-slate-150 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-700'
+      }`}
+    >
+      <p className="text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-200 mb-3 leading-relaxed flex items-start gap-2">
+        <span className="text-slate-400 dark:text-slate-500 font-mono text-[11px] shrink-0 mt-0.5">#{question.id}</span>
+        <span className="flex-1">{question.text}</span>
       </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      <div className="flex flex-wrap gap-1.5 sm:gap-2">
         {options.map(opt => (
           <OptionPill
             key={opt.value}
@@ -212,71 +245,87 @@ function QuestionCard({ question, answer, onChange }) {
   );
 }
 
-function ResultProfileCard({ item, rank }) {
+function ResultProfileCard({ item, rank, isDark }) {
   const profile = profiles[item.key];
   const Icon = profile.icon;
   const isPrimary = rank === 0;
 
+  const activeColor = isDark ? profile.colorDark : profile.color;
+  const cardBg = isPrimary 
+    ? (isDark ? profile.bgDark : profile.bgLight)
+    : (isDark ? '#0b1329' : '#f8fafc');
+  const cardBorder = isPrimary
+    ? (isDark ? profile.borderDark : profile.borderLight)
+    : (isDark ? '#1e293b' : '#e2e8f0');
+
   return (
-    <div style={{
-      background: isPrimary ? profile.bg : '#f8fafc',
-      border: `${isPrimary ? 2 : 1}px solid ${isPrimary ? profile.border : '#e2e8f0'}`,
-      borderRadius: 16,
-      padding: '18px 20px',
-      position: 'relative',
-      overflow: 'hidden',
-    }}>
+    <div
+      className="rounded-2xl p-4 sm:p-5 relative overflow-hidden transition-all duration-200"
+      style={{
+        background: cardBg,
+        border: `${isPrimary ? 2 : 1}px solid ${cardBorder}`,
+      }}
+    >
       {isPrimary && (
-        <span style={{
-          position: 'absolute', top: 12, right: 14,
-          fontSize: 10, fontWeight: 700, letterSpacing: '0.08em',
-          color: profile.color, background: '#fff',
-          border: `1px solid ${profile.border}`,
-          borderRadius: 999, padding: '3px 10px',
-        }}>DOMINANTE</span>
+        <span
+          className="absolute top-3 right-3 text-[10px] font-black tracking-wider uppercase rounded-full px-2.5 py-0.5 shadow-xs"
+          style={{
+            color: activeColor,
+            background: isDark ? '#17223b' : '#ffffff',
+            border: `1px solid ${cardBorder}`,
+          }}
+        >
+          DOMINANTE
+        </span>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: 9,
-          background: '#fff',
-          border: `1.5px solid ${profile.border}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: profile.color,
-        }}>
+      <div className="flex items-center gap-3 mb-3">
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-xs"
+          style={{
+            background: isDark ? '#17223b' : '#ffffff',
+            border: `1.5px solid ${cardBorder}`,
+            color: activeColor,
+          }}
+        >
           <Icon />
         </div>
         <div>
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#1e293b' }}>{profile.title}</p>
-          <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: profile.color }}>{item.valor}%</p>
+          <p className="text-sm font-bold text-slate-800 dark:text-slate-100 m-0 leading-tight">
+            {profile.title}
+          </p>
+          <p className="text-xl font-extrabold m-0 leading-tight" style={{ color: activeColor }}>
+            {item.valor}%
+          </p>
         </div>
       </div>
 
-      {/* progress bar */}
-      <div style={{ height: 5, background: '#e2e8f0', borderRadius: 99, marginBottom: 14, overflow: 'hidden' }}>
-        <div style={{
-          height: '100%',
-          width: `${item.valor}%`,
-          background: profile.color,
-          borderRadius: 99,
-          transition: 'width 0.8s ease',
-        }} />
+      {/* Barra de progresso */}
+      <div className="h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mb-3.5 overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-700"
+          style={{
+            width: `${item.valor}%`,
+            background: activeColor,
+          }}
+        />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <div>
-          <p style={{ margin: '0 0 4px', fontSize: 9, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <IconStar /> Pontos fortes
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+        <div className="bg-white/60 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-150/60 dark:border-slate-800/60">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+            <IconStar /> <span>Pontos fortes</span>
           </p>
-          <p style={{ margin: 0, fontSize: 11, color: '#475569', lineHeight: 1.6 }}>
+          <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed font-medium m-0">
             {profile.strengths.join(' · ')}
           </p>
         </div>
-        <div>
-          <p style={{ margin: '0 0 4px', fontSize: 9, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <IconCross /> Ministérios
+
+        <div className="bg-white/60 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-150/60 dark:border-slate-800/60">
+          <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 mb-1 flex items-center gap-1.5">
+            <IconCross /> <span>Ministérios</span>
           </p>
-          <p style={{ margin: 0, fontSize: 11, color: '#475569', fontWeight: 600, lineHeight: 1.6 }}>
+          <p className="text-[11px] text-slate-700 dark:text-slate-200 font-bold leading-relaxed m-0">
             {profile.ministry.join(' · ')}
           </p>
         </div>
@@ -292,6 +341,30 @@ export default function QuizPersonalidade({ usuarioLogado }) {
   const [salvando, setSalvando] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Monitoramento do tema escuro
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof document !== 'undefined') {
+      return document.documentElement.classList.contains('dark');
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const checkTheme = () => {
+      if (typeof document !== 'undefined') {
+        setIsDark(document.documentElement.classList.contains('dark'));
+      }
+    };
+    checkTheme();
+    window.addEventListener('mib-theme-changed', checkTheme);
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => {
+      window.removeEventListener('mib-theme-changed', checkTheme);
+      observer.disconnect();
+    };
+  }, []);
 
   const handleAnswer = (qId, value) => {
     setAnswers(prev => ({ ...prev, [qId]: value }));
@@ -378,100 +451,81 @@ export default function QuizPersonalidade({ usuarioLogado }) {
   // ── RESULT VIEW ────────────────────────────────────────────────────────
   if (showResult) {
     return (
-      <div className="mx-[-3px] sm:mx-auto px-0" style={{ maxWidth: 760 }}>
+      <div className="quiz-temperamento-container mx-[-3px] sm:mx-auto px-0 w-full max-w-[760px] animate-in fade-in duration-300">
         {/* Header */}
-        <div className="mx-[3px] sm:mx-0" style={{
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)',
-          borderRadius: 20,
-          padding: '28px 28px 24px',
-          marginBottom: 20,
-          color: '#fff',
-          position: 'relative',
-          overflow: 'hidden',
-        }}>
-          <div style={{ position: 'absolute', right: -20, top: -20, opacity: 0.06 }}>
+        <div className="mx-[3px] sm:mx-0 p-6 sm:p-7 rounded-[22px] mb-5 text-white relative overflow-hidden bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 dark:from-slate-900 dark:via-blue-950 dark:to-slate-900 border border-blue-700/40 dark:border-blue-900/50 shadow-md">
+          <div className="absolute -right-5 -top-5 opacity-10 pointer-events-none">
             <IconBrain />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <div style={{ color: '#93c5fd' }}><IconBrain /></div>
-            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: '#93c5fd', textTransform: 'uppercase' }}>
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="text-blue-300 dark:text-blue-400"><IconBrain /></div>
+            <p className="m-0 text-[11px] font-black uppercase tracking-wider text-blue-200 dark:text-blue-400">
               Resultado do Perfil
             </p>
           </div>
-          <h1 style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 800, color: '#fff' }}>
+          <h1 className="m-0 mb-1 text-xl sm:text-2xl font-black text-white tracking-tight">
             Seu Temperamento Dominante
           </h1>
-          <p style={{ margin: 0, fontSize: 14, color: '#bfdbfe', fontWeight: 500 }}>
+          <p className="m-0 text-xs sm:text-sm text-blue-100 dark:text-blue-200 font-medium">
             {profiles[resultSummary.dominant].title} · Secundário: {profiles[resultSummary.secondary].title}
           </p>
 
           {saveSuccess && (
-            <div style={{ marginTop: 14, background: 'rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 14px', fontSize: 12, color: '#d1fae5', display: 'flex', alignItems: 'center', gap: 6 }}>
-              ✓ Resultado salvo com sucesso no seu perfil
+            <div className="mt-3.5 bg-emerald-500/20 dark:bg-emerald-950/60 border border-emerald-400/40 dark:border-emerald-800/80 rounded-xl p-2.5 px-3.5 text-xs text-emerald-200 flex items-center gap-2">
+              <span>✓</span> <span>Resultado salvo com sucesso no seu perfil!</span>
             </div>
           )}
           {saveError && (
-            <div style={{ marginTop: 14, background: 'rgba(239,68,68,0.2)', borderRadius: 10, padding: '8px 14px', fontSize: 12, color: '#fecaca' }}>
+            <div className="mt-3.5 bg-red-500/20 dark:bg-red-950/60 border border-red-400/40 dark:border-red-800/80 rounded-xl p-2.5 px-3.5 text-xs text-red-200">
               ⚠ {saveError}
             </div>
           )}
           {salvando && (
-            <div style={{ marginTop: 14, fontSize: 12, color: '#93c5fd' }}>
+            <div className="mt-3.5 text-xs text-blue-200 animate-pulse">
               Processando...
             </div>
           )}
         </div>
 
-        {/* Botão de Salvar no Supabase (Solicitado) */}
+        {/* Botão de Salvar no Supabase */}
         {!saveSuccess && (
           <button
             onClick={handleSalvarResultado}
             disabled={salvando}
-            style={{
-              width: '100%',
-              padding: '16px',
-              borderRadius: 16,
-              background: 'linear-gradient(135deg, #055F6D, #0891b2)',
-              border: 'none',
-              color: '#fff',
-              fontSize: '14px',
-              fontWeight: 800,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              marginBottom: 16,
-              cursor: 'pointer',
-              boxShadow: '0 10px 15px -3px rgba(5, 95, 109, 0.3)'
-            }}
+            className="w-full py-4 px-5 rounded-2xl bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 dark:from-teal-700 dark:to-cyan-700 text-white font-extrabold text-xs sm:text-sm uppercase tracking-wider mb-4 cursor-pointer shadow-lg shadow-teal-500/20 active:scale-98 transition"
           >
             {salvando ? 'Salvando...' : '💾 Salvar Resultado no meu Perfil'}
           </button>
         )}
 
         {/* Chart */}
-        <div style={{
-          background: '#fff',
-          border: '1px solid #e2e8f0',
-          borderRadius: 16,
-          padding: '20px 20px 8px',
-          marginBottom: 16,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <div style={{ color: '#1e3a8a' }}><IconChart /></div>
-            <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#1e293b' }}>Distribuição dos Temperamentos</p>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 mb-4 shadow-xs">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="text-blue-600 dark:text-blue-400"><IconChart /></div>
+            <p className="m-0 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
+              Distribuição dos Temperamentos
+            </p>
           </div>
-          <div style={{ height: 200, minWidth: 0 }}>
+          <div className="h-52 min-w-0">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={150}>
               <BarChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-                <XAxis dataKey="nome" tick={{ fontSize: 11, fontWeight: 600, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="nome" tick={{ fontSize: 11, fontWeight: 600, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
                 <YAxis hide domain={[0, 100]} />
                 <Tooltip
-                  cursor={{ fill: 'rgba(0,0,0,0.04)' }}
-                  contentStyle={{ borderRadius: 10, border: '1px solid #e2e8f0', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', fontSize: 12 }}
+                  cursor={{ fill: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }}
+                  contentStyle={{
+                    borderRadius: 12,
+                    border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
+                    background: isDark ? '#0f172a' : '#ffffff',
+                    color: isDark ? '#f8fafc' : '#1e293b',
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.25)',
+                    fontSize: 12
+                  }}
                   formatter={(value) => [`${value}%`, 'Pontuação']}
                 />
                 <Bar dataKey="valor" radius={[8, 8, 0, 0]} barSize={44}>
                   {chartData.map((entry) => (
-                    <Cell key={entry.key} fill={chartColors[entry.key]} />
+                    <Cell key={entry.key} fill={isDark ? chartColorsDark[entry.key] : chartColors[entry.key]} />
                   ))}
                 </Bar>
               </BarChart>
@@ -480,34 +534,19 @@ export default function QuizPersonalidade({ usuarioLogado }) {
         </div>
 
         {/* Profile Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+        <div className="flex flex-col gap-3 mb-5">
           {sortedChart.map((item, idx) => (
-            <ResultProfileCard key={item.key} item={item} rank={idx} />
+            <ResultProfileCard key={item.key} item={item} rank={idx} isDark={isDark} />
           ))}
         </div>
 
         {/* Refazer */}
         <button
           onClick={handleRefazer}
-          style={{
-            width: '100%',
-            padding: '14px',
-            borderRadius: 14,
-            background: '#f8fafc',
-            border: '1.5px solid #e2e8f0',
-            cursor: 'pointer',
-            fontSize: 13,
-            fontWeight: 700,
-            color: '#475569',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            transition: 'all 0.15s',
-          }}
+          className="w-full py-3.5 px-4 rounded-2xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition cursor-pointer active:scale-98 shadow-xs"
         >
           <IconRefresh />
-          Refazer o Teste
+          <span>Refazer o Teste</span>
         </button>
       </div>
     );
@@ -515,51 +554,37 @@ export default function QuizPersonalidade({ usuarioLogado }) {
 
   // ── QUIZ VIEW ──────────────────────────────────────────────────────────
   return (
-    <div className="mx-[-3px] sm:mx-auto px-0" style={{ maxWidth: 680 }}>
+    <div className="quiz-temperamento-container mx-[-3px] sm:mx-auto px-0 w-full max-w-[680px] animate-in fade-in duration-300">
       {/* Header Card */}
-      <div className="mx-[3px] sm:mx-0" style={{
-        background: 'linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%)',
-        borderRadius: 20,
-        padding: '28px 28px 22px',
-        marginBottom: 24,
-        color: '#fff',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-          <div style={{
-            width: 44, height: 44, borderRadius: 12,
-            background: 'rgba(255,255,255,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#fff',
-          }}>
+      <div className="mx-[3px] sm:mx-0 p-6 sm:p-7 rounded-[22px] mb-6 text-white bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 dark:from-slate-900 dark:via-blue-950 dark:to-slate-900 border border-blue-700/40 dark:border-blue-900/50 shadow-md">
+        <div className="flex items-center gap-3 mb-2.5">
+          <div className="w-11 h-11 rounded-xl bg-white/15 dark:bg-blue-600/30 text-white dark:text-blue-300 border border-white/20 dark:border-blue-500/30 flex items-center justify-center shrink-0">
             <IconBrain />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#fff' }}>Teste de Temperamento</h1>
-            <p style={{ margin: 0, fontSize: 12, color: '#bfdbfe' }}>Descubra seu perfil comportamental</p>
+            <h1 className="m-0 text-lg sm:text-xl font-black text-white tracking-tight">Teste de Temperamento</h1>
+            <p className="m-0 text-xs text-blue-200 dark:text-blue-300">Descubra seu perfil comportamental</p>
           </div>
         </div>
 
-        <p style={{ margin: '12px 0 16px', fontSize: 13, color: '#bfdbfe', lineHeight: 1.6 }}>
+        <p className="my-3 text-xs sm:text-[13px] text-blue-100 dark:text-slate-300 leading-relaxed font-medium">
           Responda sendo o mais sincero possível sobre quem você <em>realmente</em> é.
         </p>
 
-        {/* Progress */}
-        <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 99, height: 6, overflow: 'hidden', marginBottom: 6 }}>
-          <div style={{
-            height: '100%',
-            width: `${progress}%`,
-            background: '#34d399',
-            borderRadius: 99,
-            transition: 'width 0.3s ease',
-          }} />
+        {/* Progress Bar */}
+        <div className="bg-white/20 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden mb-1.5">
+          <div
+            className="h-full bg-emerald-400 rounded-full transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
         </div>
-        <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 600, textAlign: 'right', letterSpacing: '0.05em' }}>
+        <p className="m-0 text-[10px] text-white/70 dark:text-slate-400 font-semibold text-right tracking-wider">
           {Object.keys(answers).length}/{questions.length} · {progress}% concluído
         </p>
       </div>
 
-      {/* Lista de Perguntas Unificada */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 32 }}>
+      {/* Lista de Perguntas */}
+      <div className="flex flex-col gap-3 mb-6">
         {questions.map((q) => (
           <QuestionCard
             key={q.id}
@@ -570,47 +595,24 @@ export default function QuizPersonalidade({ usuarioLogado }) {
         ))}
       </div>
 
-      {/* Submit */}
-      <div style={{
-        background: '#f8fafc',
-        border: '1px solid #e2e8f0',
-        borderRadius: 16,
-        padding: '20px',
-        marginTop: 8,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 12,
-      }}>
+      {/* Submit Card */}
+      <div className="bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 mt-2 flex flex-col items-center gap-3 text-center shadow-xs">
         {!isComplete && (
-          <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#ef4444', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+          <p className="m-0 text-[11px] font-bold text-red-500 dark:text-red-400 tracking-wider uppercase">
             Responda todas as {questions.length} perguntas para continuar
           </p>
         )}
         <button
           disabled={!isComplete || salvando}
           onClick={handleFinalizarTeste}
-          style={{
-            width: '100%',
-            padding: '15px',
-            borderRadius: 14,
-            border: 'none',
-            background: isComplete ? 'linear-gradient(135deg, #1e3a8a, #1d4ed8)' : '#e2e8f0',
-            color: isComplete ? '#fff' : '#94a3b8',
-            fontSize: 13,
-            fontWeight: 800,
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            cursor: isComplete ? 'pointer' : 'not-allowed',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            transition: 'all 0.2s',
-          }}
+          className={`w-full py-3.5 px-5 rounded-2xl font-black text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center gap-2 transition active:scale-98 ${
+            isComplete
+              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-600/25 cursor-pointer'
+              : 'bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-300/50 dark:border-slate-700/50'
+          }`}
         >
           <IconChart />
-          {salvando ? 'Salvando perfil…' : 'Ver meu perfil comportamental'}
+          <span>{salvando ? 'Salvando perfil…' : 'Ver meu perfil comportamental'}</span>
         </button>
       </div>
     </div>

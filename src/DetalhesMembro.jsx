@@ -310,24 +310,24 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
       <button
         type="button"
         onClick={() => navegarParaOutroMembro(parente.id)}
-        className="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 bg-white hover:bg-slate-50/50 hover:border-slate-300 hover:shadow-sm hover:scale-[1.02] active:scale-98 transition-all duration-200 text-left w-full sm:w-auto min-w-[240px] group cursor-pointer"
+        className="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-750/70 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-sm hover:scale-[1.02] active:scale-98 transition-all duration-200 text-left w-full sm:w-auto min-w-[240px] group cursor-pointer"
       >
-        <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200 flex items-center justify-center">
+        <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-700 shrink-0 border border-slate-200 dark:border-slate-600 flex items-center justify-center">
           {foto ? (
             <img src={foto} alt={parente.nome} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-sm font-bold text-[#055F6D]">{inicial}</span>
+            <span className="text-sm font-bold text-[#055F6D] dark:text-teal-300">{inicial}</span>
           )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             {infoRelacao.icon}
-            <span className="text-[9px] font-bold text-[#055F6D] uppercase tracking-wider">{infoRelacao.label}</span>
+            <span className="text-[9px] font-bold text-[#055F6D] dark:text-teal-300 uppercase tracking-wider">{infoRelacao.label}</span>
           </div>
-          <p className="text-sm font-semibold text-slate-800 truncate group-hover:text-[#055F6D] transition-colors">{parente.nome}</p>
-          <span className="text-[10px] text-slate-400 capitalize">{parente.cargo || 'Membro'}</span>
+          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate group-hover:text-[#055F6D] dark:group-hover:text-teal-300 transition-colors">{parente.nome}</p>
+          <span className="text-[10px] text-slate-400 dark:text-slate-400 capitalize">{parente.cargo || 'Membro'}</span>
         </div>
-        <span className="text-slate-300 group-hover:text-[#055F6D] group-hover:translate-x-1 transition-all text-sm font-bold shrink-0 pr-1">
+        <span className="text-slate-300 dark:text-slate-600 group-hover:text-[#055F6D] dark:group-hover:text-teal-300 group-hover:translate-x-1 transition-all text-sm font-bold shrink-0 pr-1">
           →
         </span>
       </button>
@@ -1389,20 +1389,20 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
   return (
     <div className="w-full space-y-5 max-w-[1600px] mx-auto px-2 md:px-4">
       {modalExclusaoAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50">
-          <div className="bg-white rounded-2xl border shadow-xl w-full max-w-md p-5 space-y-4">
-            <h3 className="font-semibold text-[var(--text-heading)]">Inativar Cadastro de {nome}</h3>
-            <p className="text-sm text-[var(--text-muted)]">O membro será movido para a lista de inativos. Você poderá reativá-lo a qualquer momento.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 dark:bg-slate-950/75 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-5 space-y-4">
+            <h3 className="font-semibold text-[var(--text-heading)] dark:text-white">Inativar Cadastro de {nome}</h3>
+            <p className="text-sm text-[var(--text-muted)] dark:text-slate-400">O membro será movido para a lista de inativos. Você poderá reativá-lo a qualquer momento.</p>
             <div>
-              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Motivo da inativação</label>
-              <select value={motivoExclusao} onChange={(e) => setMotivoExclusao(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm bg-white">
+              <label className="block text-xs font-medium text-[var(--text-muted)] dark:text-slate-400 mb-1">Motivo da inativação</label>
+              <select value={motivoExclusao} onChange={(e) => setMotivoExclusao(e.target.value)} className="w-full px-3 py-2 border dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-950 dark:text-slate-100">
                 <option value="">Selecione o motivo</option>
                 {MOTIVOS_EXCLUSAO.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
             <div className="flex justify-end gap-2">
-              <button type="button" onClick={() => setModalExclusaoAberto(false)} className="px-4 py-2 text-xs border rounded-xl">Cancelar</button>
-              <button type="button" onClick={confirmarInativacaoCadastro} disabled={excluindoCadastro} className="px-4 py-2 text-xs font-semibold rounded-xl bg-amber-600 text-white disabled:opacity-50">
+              <button type="button" onClick={() => setModalExclusaoAberto(false)} className="px-4 py-2 text-xs border dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 rounded-xl cursor-pointer">Cancelar</button>
+              <button type="button" onClick={confirmarInativacaoCadastro} disabled={excluindoCadastro} className="px-4 py-2 text-xs font-semibold rounded-xl bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 cursor-pointer">
                 {excluindoCadastro ? 'Processando...' : 'Confirmar inativação'}
               </button>
             </div>
@@ -1412,27 +1412,27 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
 
       {mostrarCortador && ( // Modal de recorte de imagem
         <div className="fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-xl">
-            <div className="p-4 border-b border-[var(--border)]">
-              <h3 className="font-semibold text-[var(--text-heading)] text-sm">Recortar foto de perfil</h3>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-xl dark:border dark:border-slate-800">
+            <div className="p-4 border-b border-[var(--border)] dark:border-slate-800">
+              <h3 className="font-semibold text-[var(--text-heading)] dark:text-white text-sm">Recortar foto de perfil</h3>
             </div>
             <div className="relative h-64 w-full bg-slate-900">
               <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={1} cropShape="round" showGrid={false} onCropChange={setCrop} onCropComplete={onCropComplete} onZoomChange={setZoom} />
             </div>
-            <div className="p-4 bg-[var(--surface-muted)] flex gap-2">
-              <button type="button" onClick={() => setMostrarCortador(false)} className="flex-1 py-2 bg-slate-200 text-xs font-medium rounded-xl">Cancelar</button>
-              <button type="button" onClick={criarImagemRecortada} className="flex-1 py-2 btn-primary text-xs font-semibold rounded-xl">Confirmar</button>
+            <div className="p-4 bg-[var(--surface-muted)] dark:bg-slate-850 flex gap-2">
+              <button type="button" onClick={() => setMostrarCortador(false)} className="flex-1 py-2 bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-750 text-xs font-medium rounded-xl cursor-pointer">Cancelar</button>
+              <button type="button" onClick={criarImagemRecortada} className="flex-1 py-2 btn-primary text-xs font-semibold rounded-xl cursor-pointer">Confirmar</button>
             </div>
           </div>
         </div>
       )}
       <div className="member-header flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
         <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start w-full">
-          <div className="relative shrink-0 w-36 h-36 rounded-2xl border-2 border-[var(--border)] overflow-hidden bg-[var(--surface-muted)] shadow-sm">
+          <div className="relative shrink-0 w-36 h-36 rounded-2xl border-2 border-[var(--border)] dark:border-slate-700 overflow-hidden bg-[var(--surface-muted)] dark:bg-slate-800 shadow-sm">
             {fotoExibir ? (
               <img src={fotoExibir} alt={nome} className="w-full h-full object-cover" />
             ) : (
-              <span className="w-full h-full flex items-center justify-center text-4xl font-semibold text-[var(--text-muted)]">{nome.charAt(0).toUpperCase()}</span>
+              <span className="w-full h-full flex items-center justify-center text-4xl font-semibold text-[var(--text-muted)] dark:text-slate-400">{nome.charAt(0).toUpperCase()}</span>
             )}
             {modoEdicao && (
               <label className="absolute inset-0 bg-slate-950/60 flex flex-col items-center justify-center text-[10px] font-medium text-white cursor-pointer">
@@ -1448,44 +1448,44 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                 <button
                   type="button"
                   onClick={voltarMembroAnterior}
-                  className="flex items-center gap-1 text-[#055F6D] hover:text-[#044c57] font-bold bg-[#055F6D]/5 hover:bg-[#055F6D]/10 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                  className="flex items-center gap-1 text-[#055F6D] dark:text-teal-400 hover:text-[#044c57] dark:hover:text-teal-300 font-bold bg-[#055F6D]/5 dark:bg-teal-950/30 hover:bg-[#055F6D]/10 dark:hover:bg-teal-900/40 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
                 >
                   ← Voltar para {listaPessoas.find(p => String(p.id) === String(historicoNavegacao[historicoNavegacao.length - 1]))?.nome || 'anterior'}
                 </button>
               ) : (
                 <>
-                  <button type="button" onClick={() => onFechar()} className="hover:text-slate-600">Pessoas</button>
-                  <span className="text-slate-200">/</span>
-                  <span className="text-[#055F6D]">Ficha</span>
+                  <button type="button" onClick={() => onFechar()} className="hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer">Pessoas</button>
+                  <span className="text-slate-200 dark:text-slate-700">/</span>
+                  <span className="text-[#055F6D] dark:text-blue-400">Ficha</span>
                 </>
               )}
             </div>
-            <h1 className="text-2xl sm:text-4xl font-semibold text-[var(--text-heading)] tracking-tight leading-tight">{nome}</h1>
+            <h1 className="text-2xl sm:text-4xl font-semibold text-[var(--text-heading)] dark:text-white tracking-tight leading-tight">{nome}</h1>
 
             {/* Info Detalhada: Oculta em mobile (hidden), visível em telas pequenas+ (sm:grid) */}
             <div className="hidden sm:grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm mt-4">
-              <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Zona de moradia</span> <span className="font-medium text-[var(--text-heading)]">{nomeZona}</span></p>
-              <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Célula</span>
-                <span className="font-medium text-[#055F6D]">
+              <p><span className="text-[var(--text-muted)] dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Zona de moradia</span> <span className="font-medium text-[var(--text-heading)] dark:text-slate-100">{nomeZona}</span></p>
+              <p><span className="text-[var(--text-muted)] dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Célula</span>
+                <span className="font-medium text-[#055F6D] dark:text-blue-400">
                   {nomeCelula}
                 </span>
               </p>
-              <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">{cargosSelecionados.length > 1 ? 'Cargos' : 'Cargo'}</span> <span className="font-medium text-[var(--text-heading)] capitalize">{cargo || 'Membro'}</span></p>
-              <p><span className="text-[var(--text-muted)] font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Telefone</span> <span className="font-medium text-[var(--text-heading)]">{telefone || '—'}</span></p>
-              <p className="sm:col-span-2"><span className="text-[var(--text-muted)]">Endereço:</span> <span className="font-medium text-[var(--text-heading)]">{enderecoCompleto}</span></p>
+              <p><span className="text-[var(--text-muted)] dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider block mb-0.5">{cargosSelecionados.length > 1 ? 'Cargos' : 'Cargo'}</span> <span className="font-medium text-[var(--text-heading)] dark:text-slate-100 capitalize">{cargo || 'Membro'}</span></p>
+              <p><span className="text-[var(--text-muted)] dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider block mb-0.5">Telefone</span> <span className="font-medium text-[var(--text-heading)] dark:text-slate-100">{telefone || '—'}</span></p>
+              <p className="sm:col-span-2"><span className="text-[var(--text-muted)] dark:text-slate-400">Endereço:</span> <span className="font-medium text-[var(--text-heading)] dark:text-slate-100">{enderecoCompleto}</span></p>
             </div>
 
             {/* Status Minimalista: Visível apenas em mobile (sm:hidden) */}
             <div className="flex flex-wrap justify-center gap-2 mt-2 sm:hidden">
               {celulaId && (
-                <span className="text-[9px] bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded border border-teal-100 font-black uppercase">Ativo</span>
+                <span className="text-[9px] bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 px-1.5 py-0.5 rounded border border-teal-100 dark:border-teal-800 font-black uppercase">Ativo</span>
               )}
               {cargosSelecionados.length > 0 ? (
                 cargosSelecionados.map((c) => (
-                  <span key={c} className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 font-bold capitalize">{c}</span>
+                  <span key={c} className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-bold capitalize">{c}</span>
                 ))
               ) : (
-                <span className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 font-bold capitalize">Membro</span>
+                <span className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-bold capitalize">Membro</span>
               )}
             </div>
           </div>
@@ -1498,7 +1498,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                 <button
                   type="button"
                   onClick={() => setModoEdicao(true)}
-                  className="flex items-center justify-center gap-2 bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-xs font-semibold p-2.5 sm:px-4 sm:py-2 rounded-xl transition shadow-sm"
+                  className="flex items-center justify-center gap-2 bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-semibold p-2.5 sm:px-4 sm:py-2 rounded-xl transition shadow-sm cursor-pointer"
                   title="Editar Membro"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -1512,7 +1512,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                   <button
                     type="button"
                     onClick={() => setModalExclusaoAberto(true)}
-                    className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold p-2.5 sm:px-4 sm:py-2 rounded-xl transition shadow-sm"
+                    className="flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold p-2.5 sm:px-4 sm:py-2 rounded-xl transition shadow-sm cursor-pointer"
                     title="Inativar Membro"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -1520,17 +1520,17 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                     </svg>
                     <span className="hidden sm:block">Inativar</span>
                   </button>
-                  <button type="button" onClick={handleExcluirPermanente} className="px-2 text-slate-400 hover:text-rose-600 transition-colors" title="Excluir Permanentemente">
+                  <button type="button" onClick={handleExcluirPermanente} className="px-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer" title="Excluir Permanentemente">
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                   </button>
                 </>
               )}
-              <button type="button" onClick={onFechar} className="px-4 py-2 rounded-xl border border-[var(--border)] text-xs font-medium text-[var(--text-primary)]">Fechar</button>
+              <button type="button" onClick={onFechar} className="px-4 py-2 rounded-xl border border-[var(--border)] dark:border-slate-700 text-xs font-medium text-[var(--text-primary)] dark:text-slate-200 dark:hover:bg-slate-800 transition cursor-pointer">Fechar</button>
             </>
           ) : (
-            <span className="text-xs text-amber-700 font-medium px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
+            <span className="text-xs text-amber-700 dark:text-amber-300 font-medium px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50">
               {membro?.status === 'pendente' ? 'Revisando para aprovação' : 'Modo edição'}
             </span>
           )}
@@ -1558,18 +1558,18 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
             {abaAtiva === 'informacoes' && (
               <div className="space-y-4">
                 {membro.status === 'pendente' && (
-                  <div className="p-5 bg-amber-50 border border-amber-200 rounded-[24px] flex gap-4 animate-in slide-in-from-top-2 duration-300">
+                  <div className="p-5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-[24px] flex gap-4 animate-in slide-in-from-top-2 duration-300">
                     <span className="text-2xl">📋</span>
                     <div>
-                      <h4 className="text-sm font-black text-amber-900 uppercase tracking-tight">Análise de Novo Cadastro</h4>
-                      <p className="text-xs text-amber-700 mt-1 leading-relaxed">Este membro se cadastrou pelo formulário público. Verifique as sugestões abaixo e preencha os dados oficiais antes de aprovar.</p>
+                      <h4 className="text-sm font-black text-amber-900 dark:text-amber-200 uppercase tracking-tight">Análise de Novo Cadastro</h4>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 mt-1 leading-relaxed">Este membro se cadastrou pelo formulário público. Verifique as sugestões abaixo e preencha os dados oficiais antes de aprovar.</p>
                       <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                        <p className="text-[10px] font-bold text-amber-800 uppercase">Cargo Escolhido: <span className="text-slate-900">{membro.cargo || 'Não informado'}</span></p>
-                        <p className="text-[10px] font-bold text-amber-800 uppercase">Célula Vinculada: <span className="text-slate-900">{nomeCelula !== '—' ? nomeCelula : 'Nenhuma'}</span></p>
-                        <p className="text-[10px] font-bold text-amber-800 uppercase">Zona Vinculada: <span className="text-slate-900">{nomeZona !== '—' ? nomeZona : 'Nenhuma'}</span></p>
-                        {membro.atuacao && <p className="text-[10px] font-bold text-amber-800 uppercase">Aptidão/Ministério: <span className="text-slate-900">{membro.atuacao}</span></p>}
-                        {membro.conjuge_sugerido && <p className="text-[10px] font-bold text-amber-800 uppercase">Cônjuge sugerido: <span className="text-slate-900">{membro.conjuge_sugerido}</span>{!conjugeId && <span className="text-amber-600 font-normal italic ml-1">— confirme em Vínculo Familiar</span>}</p>}
-                        {membro.filhos_sugeridos && <p className="text-[10px] font-bold text-amber-800 uppercase">Filhos sugeridos: <span className="text-slate-900">{membro.filhos_sugeridos}</span><span className="text-amber-600 font-normal italic ml-1">— busque e vincule em Vínculo Familiar</span></p>}
+                        <p className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase">Cargo Escolhido: <span className="text-slate-900 dark:text-slate-100">{membro.cargo || 'Não informado'}</span></p>
+                        <p className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase">Célula Vinculada: <span className="text-slate-900 dark:text-slate-100">{nomeCelula !== '—' ? nomeCelula : 'Nenhuma'}</span></p>
+                        <p className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase">Zona Vinculada: <span className="text-slate-900 dark:text-slate-100">{nomeZona !== '—' ? nomeZona : 'Nenhuma'}</span></p>
+                        {membro.atuacao && <p className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase">Aptidão/Ministério: <span className="text-slate-900 dark:text-slate-100">{membro.atuacao}</span></p>}
+                        {membro.conjuge_sugerido && <p className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase">Cônjuge sugerido: <span className="text-slate-900 dark:text-slate-100">{membro.conjuge_sugerido}</span>{!conjugeId && <span className="text-amber-600 dark:text-amber-400 font-normal italic ml-1">— confirme em Vínculo Familiar</span>}</p>}
+                        {membro.filhos_sugeridos && <p className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase">Filhos sugeridos: <span className="text-slate-900 dark:text-slate-100">{membro.filhos_sugeridos}</span><span className="text-amber-600 dark:text-amber-400 font-normal italic ml-1">— busque e vincule em Vínculo Familiar</span></p>}
                       </div>
                     </div>
                   </div>
@@ -1581,8 +1581,8 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                     <CampoInput label="Gênero" value={genero} onChange={setGenero} disabled={dis} />
                     {!dis ? (
                       <div>
-                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Estado civil</label>
-                        <select disabled={dis} value={estadoCivil} onChange={(e) => setEstadoCivil(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
+                        <label className="block text-[11px] font-medium text-[var(--text-muted)] dark:text-slate-400 mb-0.5">Estado civil</label>
+                        <select disabled={dis} value={estadoCivil} onChange={(e) => setEstadoCivil(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 dark:text-slate-100">
                           <option value="Solteiro(a)">Solteiro(a)</option>
                           <option value="Casado(a)">Casado(a)</option>
                           <option value="Divorciado(a)">Divorciado(a)</option>
@@ -1605,8 +1605,8 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                     <CampoInput label="RG" value={rg} onChange={setRg} disabled={dis} />
                     {!dis ? (
                       <div>
-                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Escolaridade</label>
-                        <select value={escolaridade} onChange={(e) => setEscolaridade(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
+                        <label className="block text-[11px] font-medium text-[var(--text-muted)] dark:text-slate-400 mb-0.5">Escolaridade</label>
+                        <select value={escolaridade} onChange={(e) => setEscolaridade(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 dark:text-slate-100">
                           <option value="">Selecione</option>
                           <option value="Ensino Medio">Ensino Fundamental</option>
                           <option value="Ensino Medio">Ensino Medio</option>
@@ -1624,8 +1624,8 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                     <CampoInput label="Telefone" value={telefone} onChange={setTelefone} disabled={dis} mask={mascaraTelefone} />
                     {!dis ? (
                       <div>
-                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Status</label>
-                        <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-3 py-1.5 text-xs font-medium border border-[var(--border)] rounded-xl bg-white focus:outline-none">
+                        <label className="block text-[11px] font-medium text-[var(--text-muted)] dark:text-slate-400 mb-0.5">Status</label>
+                        <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-3 py-1.5 text-xs font-medium border border-[var(--border)] dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 dark:text-slate-100 focus:outline-none">
                           <option value="ativo">Ativo</option>
                           <option value="inativo">Inativo</option>
                           <option value="afastado">Afastado</option>
@@ -1655,12 +1655,12 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                   <div className="section-body space-y-4">
                     {/* Seleção de Múltiplos Cargos */}
                     {!dis ? (
-                      <div className="p-3.5 bg-slate-50/60 rounded-2xl border border-slate-200/80 space-y-2.5">
+                      <div className="p-3.5 bg-slate-50/60 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700 space-y-2.5">
                         <div className="flex items-center justify-between">
-                          <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                          <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                             Cargos e Funções Eclesiásticas
                           </label>
-                          <span className="text-[10px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">
+                          <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-700">
                             {cargosSelecionados.length === 0 ? 'Nenhum cargo selecionado' : `${cargosSelecionados.length} selecionado(s)`}
                           </span>
                         </div>
@@ -1671,7 +1671,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                             {cargosSelecionados.map((c) => (
                               <span
                                 key={c}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#055F6D] text-white shadow-xs animate-in fade-in"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#055F6D] dark:bg-blue-600 text-white shadow-xs animate-in fade-in"
                               >
                                 <span>{c}</span>
                                 <button
@@ -1700,11 +1700,11 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                                   onClick={() => toggleCargo(cNome)}
                                   className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 border cursor-pointer ${
                                     selecionado
-                                      ? 'bg-teal-50 border-[#055F6D] text-[#055F6D] font-bold shadow-xs'
-                                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-100/70'
+                                      ? 'bg-teal-50 dark:bg-blue-950/60 border-[#055F6D] dark:border-blue-500 text-[#055F6D] dark:text-blue-300 font-bold shadow-xs'
+                                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/70 dark:hover:bg-slate-800'
                                   }`}
                                 >
-                                  <span className={`w-1.5 h-1.5 rounded-full ${selecionado ? 'bg-[#055F6D]' : 'bg-slate-300'}`} />
+                                  <span className={`w-1.5 h-1.5 rounded-full ${selecionado ? 'bg-[#055F6D] dark:bg-blue-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
                                   {cNome}
                                 </button>
                               );
@@ -1728,7 +1728,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                                 }
                               }
                             }}
-                            className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:border-[#055F6D]"
+                            className="flex-1 px-3 py-1.5 text-xs bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:border-[#055F6D] dark:focus:border-blue-500"
                           />
                           <button
                             type="button"
@@ -1739,7 +1739,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                               }
                             }}
                             disabled={!novoCargoPersonalizado.trim()}
-                            className="px-3 py-1.5 text-xs font-semibold bg-slate-200 hover:bg-slate-300 disabled:opacity-40 rounded-xl text-slate-700 transition cursor-pointer"
+                            className="px-3 py-1.5 text-xs font-semibold bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 disabled:opacity-40 rounded-xl text-slate-700 dark:text-slate-200 transition cursor-pointer"
                           >
                             + Adicionar
                           </button>
@@ -1747,19 +1747,19 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                       </div>
                     ) : (
                       <div className="sm:col-span-2 lg:col-span-3">
-                        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">Cargos / Funções</label>
+                        <label className="block text-[11px] font-medium text-[var(--text-muted)] dark:text-slate-400 mb-1">Cargos / Funções</label>
                         <div className="flex flex-wrap gap-1.5">
                           {cargosSelecionados.length > 0 ? (
                             cargosSelecionados.map((c) => (
                               <span
                                 key={c}
-                                className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200"
+                                className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
                               >
                                 {c}
                               </span>
                             ))
                           ) : (
-                            <span className="text-xs text-slate-500 font-medium">Membro</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Membro</span>
                           )}
                         </div>
                       </div>
@@ -1770,15 +1770,15 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                       {!dis ? (
                         <>
                           <div>
-                            <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Célula</label>
-                            <select value={celulaId} onChange={(e) => setCelulaId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
+                            <label className="block text-[11px] font-medium text-[var(--text-muted)] dark:text-slate-400 mb-0.5">Célula</label>
+                            <select value={celulaId} onChange={(e) => setCelulaId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 dark:text-slate-100">
                               <option value="">Nenhuma</option>
                               {celulas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
                             </select>
                           </div>
                           <div>
-                            <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Zona</label>
-                            <select value={zonaId} onChange={(e) => setZonaId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] rounded-xl bg-white">
+                            <label className="block text-[11px] font-medium text-[var(--text-muted)] dark:text-slate-400 mb-0.5">Zona</label>
+                            <select value={zonaId} onChange={(e) => setZonaId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-[var(--border)] dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 dark:text-slate-100">
                               <option value="">Nenhuma</option>
                               {zonas.map((z) => <option key={z.id} value={z.id}>{z.nome}</option>)}
                             </select>
@@ -1793,7 +1793,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                       <CampoInput label="Data de conversão" value={dataConversao} onChange={setDataConversao} disabled={dis} mask={mascaraDataBR} />
                       <CampoInput label="Data de batismo" value={dataBatismo} onChange={setDataBatismo} disabled={dis} mask={mascaraDataBR} />
                       {!dis ? (
-                        <label className="flex items-center gap-2 text-xs font-medium text-[var(--text-primary)] pt-5">
+                        <label className="flex items-center gap-2 text-xs font-medium text-[var(--text-primary)] dark:text-slate-200 pt-5">
                           <input type="checkbox" checked={batizadoAguas} onChange={(e) => setBatizadoAguas(e.target.checked)} className="rounded" />
                           Batizado nas águas
                         </label>
@@ -1804,14 +1804,14 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                   </div>
                 </div>
 
-                <div className="section-group !bg-gradient-to-br !from-[#055F6D] !to-[#034c57] border border-[#034c57] shadow-lg">
-                  <h3 className="section-title !text-white !border-b !border-white/10">Vínculo Familiar</h3>
+                <div className="section-group !bg-gradient-to-br !from-[#055F6D] !to-[#034c57] dark:!from-[#17223b] dark:!to-[#1c2b4a] border border-[#034c57] dark:border-[#2b3954] shadow-lg">
+                  <h3 className="section-title !text-white !border-b !border-white/10 dark:!border-white/10">Vínculo Familiar</h3>
                   <div className="section-body space-y-3">
                     {!dis ? (
                       <>
                         <div>
-                          <label className="block text-[11px] font-semibold text-teal-100 mb-0.5">Cônjuge</label>
-                          <select value={conjugeId} onChange={(e) => setConjugeId(e.target.value)} className="w-full px-3 py-1.5 text-sm border rounded-xl bg-white">
+                          <label className="block text-[11px] font-semibold text-teal-100 dark:text-slate-300 mb-0.5">Cônjuge</label>
+                          <select value={conjugeId} onChange={(e) => setConjugeId(e.target.value)} className="w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 dark:text-slate-100">
                             <option value="">Sem cônjuge vinculado</option>
                             {listaPessoas.filter((p) => String(p.id) !== String(pessoaId)).map((p) => (
                               <option key={p.id} value={p.id}>{p.nome}</option>
@@ -1820,14 +1820,14 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                         </div>
 
                         <div className="space-y-2">
-                          <label className="block text-[11px] font-semibold text-teal-100 mb-0.5">Pais / Responsáveis</label>
-                          <input type="text" value={filtroBuscaPai} onChange={(e) => setFiltroBuscaPai(e.target.value)} placeholder="Buscar pai/mãe na base..." className="w-full px-3 py-1.5 text-xs border rounded-xl mb-1 bg-white text-slate-800" />
+                          <label className="block text-[11px] font-semibold text-teal-100 dark:text-slate-300 mb-0.5">Pais / Responsáveis</label>
+                          <input type="text" value={filtroBuscaPai} onChange={(e) => setFiltroBuscaPai(e.target.value)} placeholder="Buscar pai/mãe na base..." className="w-full px-3 py-1.5 text-xs border border-slate-300 dark:border-slate-700 rounded-xl mb-1 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder:text-slate-400" />
                           {filtroBuscaPai && (
-                            <div className="border rounded-xl max-h-32 overflow-y-auto divide-y bg-white shadow-sm text-slate-800">
+                            <div className="border border-slate-200 dark:border-slate-700 rounded-xl max-h-32 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900 shadow-sm text-slate-800 dark:text-slate-100">
                               {pessoasParaPais.slice(0, 8).map((p) => (
-                                <button key={p.id} type="button" onClick={() => { togglePaiMae(p.id); setFiltroBuscaPai(''); }} className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--surface-muted)] flex justify-between">
+                                <button key={p.id} type="button" onClick={() => { togglePaiMae(p.id); setFiltroBuscaPai(''); }} className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--surface-muted)] dark:hover:bg-slate-800 flex justify-between">
                                   <span>{p.nome}</span>
-                                  <span className={idsPaisEdit.includes(p.id) ? 'text-[#055F6D] font-bold' : ''}>
+                                  <span className={idsPaisEdit.includes(p.id) ? 'text-[#055F6D] dark:text-blue-400 font-bold' : ''}>
                                     {idsPaisEdit.includes(p.id) ? '✓ Vinculado' : '+ Adicionar'}
                                   </span>
                                 </button>
@@ -1836,7 +1836,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                           )}
                           <div className="flex flex-wrap gap-2 mt-1">
                             {pais.map((p) => (
-                              <span key={p.id} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-slate-200/50 text-xs bg-white/95 text-slate-800">
+                              <span key={p.id} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-slate-200/50 dark:border-slate-700 text-xs bg-white/95 dark:bg-slate-800 text-slate-800 dark:text-slate-100">
                                 {String(p.genero || '').toLowerCase().startsWith('f') ? (
                                   <svg className="w-3.5 h-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M18 21a6 6 0 0 0-12 0" />
@@ -1857,14 +1857,14 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                         </div>
 
                         <div className="space-y-2">
-                          <label className="block text-[11px] font-semibold text-teal-100 mb-0.5">Filhos</label>
-                          <input type="text" value={filtroBuscaFilho} onChange={(e) => setFiltroBuscaFilho(e.target.value)} placeholder="Buscar filho na base..." className="w-full px-3 py-1.5 text-xs border rounded-xl mb-1 bg-white text-slate-800" />
+                          <label className="block text-[11px] font-semibold text-teal-100 dark:text-slate-300 mb-0.5">Filhos</label>
+                          <input type="text" value={filtroBuscaFilho} onChange={(e) => setFiltroBuscaFilho(e.target.value)} placeholder="Buscar filho na base..." className="w-full px-3 py-1.5 text-xs border border-slate-300 dark:border-slate-700 rounded-xl mb-1 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 placeholder:text-slate-400" />
                           {filtroBuscaFilho && (
-                            <div className="border rounded-xl max-h-32 overflow-y-auto divide-y bg-white shadow-sm text-slate-800">
+                            <div className="border border-slate-200 dark:border-slate-700 rounded-xl max-h-32 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900 shadow-sm text-slate-800 dark:text-slate-100">
                               {pessoasParaFilhos.slice(0, 8).map((p) => (
-                                <button key={p.id} type="button" onClick={() => { toggleFilho(p.id); setFiltroBuscaFilho(''); }} className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--surface-muted)] flex justify-between">
+                                <button key={p.id} type="button" onClick={() => { toggleFilho(p.id); setFiltroBuscaFilho(''); }} className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--surface-muted)] dark:hover:bg-slate-800 flex justify-between">
                                   <span>{p.nome}</span>
-                                  <span className={idsFilhosEdit.includes(p.id) ? 'text-[#055F6D] font-bold' : ''}>
+                                  <span className={idsFilhosEdit.includes(p.id) ? 'text-[#055F6D] dark:text-blue-400 font-bold' : ''}>
                                     {idsFilhosEdit.includes(p.id) ? '✓ Vinculado' : '+ Adicionar'}
                                   </span>
                                 </button>
@@ -1873,7 +1873,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                           )}
                           <div className="flex flex-wrap gap-2 mt-1">
                             {filhos.map((p) => (
-                              <span key={p.id} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-slate-200/50 text-xs bg-white/95 text-slate-800">
+                              <span key={p.id} className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border border-slate-200/50 dark:border-slate-700 text-xs bg-white/95 dark:bg-slate-800 text-slate-800 dark:text-slate-100">
                                 {String(p.genero || '').toLowerCase().startsWith('f') ? (
                                   <svg className="w-3.5 h-3.5 shrink-0 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="12" cy="12" r="10" />
@@ -1959,9 +1959,9 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                 <div className="section-group">
                   <div><h3 className="section-title">Perfil Comportamental</h3><p className="section-subtitle">Valores numéricos baseados no teste de perfil (0 a 100).</p></div>
                   <div className="section-body grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-blue-100 bg-blue-50/30">
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/30">
                       <span className="text-xl">🦅</span>
-                      <span className="font-bold text-slate-700 text-sm flex-1">Águia</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Águia</span>
                       <input
                         type="number"
                         min="0"
@@ -1969,12 +1969,12 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                         value={perfilAguia}
                         onChange={(e) => setPerfilAguia(e.target.value)}
                         disabled={dis}
-                        className="w-20 px-2 py-1 border border-blue-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-blue-500/20 outline-none"
+                        className="w-20 px-2 py-1 border border-blue-200 dark:border-blue-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-blue-500/20 outline-none"
                       />
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-100 bg-purple-50/30">
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-100 dark:border-purple-900/50 bg-purple-50/30 dark:bg-purple-950/30">
                       <span className="text-xl">🐈</span>
-                      <span className="font-bold text-slate-700 text-sm flex-1">Gato</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Gato</span>
                       <input
                         type="number"
                         min="0"
@@ -1982,12 +1982,12 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                         value={perfilGato}
                         onChange={(e) => setPerfilGato(e.target.value)}
                         disabled={dis}
-                        className="w-20 px-2 py-1 border border-purple-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-purple-500/20 outline-none"
+                        className="w-20 px-2 py-1 border border-purple-200 dark:border-purple-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-purple-500/20 outline-none"
                       />
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/30">
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/30 dark:bg-slate-800/40">
                       <span className="text-xl">🐺</span>
-                      <span className="font-bold text-slate-700 text-sm flex-1">Lobo</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Lobo</span>
                       <input
                         type="number"
                         min="0"
@@ -1995,12 +1995,12 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                         value={perfilLobo}
                         onChange={(e) => setPerfilLobo(e.target.value)}
                         disabled={dis}
-                        className="w-20 px-2 py-1 border border-gray-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-gray-500/20 outline-none"
+                        className="w-20 px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-gray-500/20 outline-none"
                       />
                     </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 bg-red-50/30">
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/30">
                       <span className="text-xl">🦈</span>
-                      <span className="font-bold text-slate-700 text-sm flex-1">Tubarão</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Tubarão</span>
                       <input
                         type="number"
                         min="0"
@@ -2008,7 +2008,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                         value={perfilTubarao}
                         onChange={(e) => setPerfilTubarao(e.target.value)}
                         disabled={dis}
-                        className="w-20 px-2 py-1 border border-red-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
+                        className="w-20 px-2 py-1 border border-red-200 dark:border-red-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
                       />
                     </div>
                   </div>
@@ -2021,31 +2021,31 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                     {testePersonalidade ? (
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 bg-red-50/30">
+                          <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/30">
                             <span className="text-xl">🔥</span>
-                            <span className="font-bold text-slate-700 text-sm flex-1">Colérico</span>
-                            <span className="text-lg font-black text-red-600">{testePersonalidade.colerico}</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Colérico</span>
+                            <span className="text-lg font-black text-red-600 dark:text-red-400">{testePersonalidade.colerico}</span>
                           </div>
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-100 bg-purple-50/30">
+                          <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-100 dark:border-purple-900/50 bg-purple-50/30 dark:bg-purple-950/30">
                             <span className="text-xl">📋</span>
-                            <span className="font-bold text-slate-700 text-sm flex-1">Melancólico</span>
-                            <span className="text-lg font-black text-purple-600">{testePersonalidade.melancolico}</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Melancólico</span>
+                            <span className="text-lg font-black text-purple-600 dark:text-purple-400">{testePersonalidade.melancolico}</span>
                           </div>
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-amber-100 bg-amber-50/30">
+                          <div className="flex items-center gap-3 p-3 rounded-xl border border-amber-100 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-950/30">
                             <span className="text-xl">☀️</span>
-                            <span className="font-bold text-slate-700 text-sm flex-1">Sanguíneo</span>
-                            <span className="text-lg font-black text-amber-600">{testePersonalidade.sanguineo}</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Sanguíneo</span>
+                            <span className="text-lg font-black text-amber-600 dark:text-amber-400">{testePersonalidade.sanguineo}</span>
                           </div>
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-cyan-100 bg-cyan-50/30">
+                          <div className="flex items-center gap-3 p-3 rounded-xl border border-cyan-100 dark:border-cyan-900/50 bg-cyan-50/30 dark:bg-cyan-950/30">
                             <span className="text-xl">💧</span>
-                            <span className="font-bold text-slate-700 text-sm flex-1">Fleumático</span>
-                            <span className="text-lg font-black text-cyan-600">{testePersonalidade.fleumatico}</span>
+                            <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Fleumático</span>
+                            <span className="text-lg font-black text-cyan-600 dark:text-cyan-400">{testePersonalidade.fleumatico}</span>
                           </div>
                         </div>
-                        <div className="p-3 bg-[#055F6D]/5 rounded-xl border border-[#055F6D]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="p-3 bg-[#055F6D]/5 dark:bg-slate-800/60 rounded-xl border border-[#055F6D]/10 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Perfil Dominante:</span>
-                            <span className="text-xs font-black text-[#055F6D] uppercase">{testePersonalidade.dominant} + {testePersonalidade.secondary}</span>
+                            <span className="text-xs font-black text-[#055F6D] dark:text-blue-400 uppercase">{testePersonalidade.dominant} + {testePersonalidade.secondary}</span>
                           </div>
                           <span className="text-[9px] text-slate-400 font-bold">Realizado em: {new Date(testePersonalidade.created_at).toLocaleDateString('pt-BR')}</span>
                         </div>
@@ -2063,7 +2063,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                     {/* Pensante (Topo) */}
                     <div className="flex flex-col items-center gap-2 w-full max-w-xs">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pensante</span>
-                      <div className="flex items-center gap-2 p-2 rounded-xl border border-blue-100 bg-blue-50/30 w-full">
+                      <div className="flex items-center gap-2 p-2 rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/30 w-full">
                         <span className="text-xl">🧠</span>
                         <input
                           type="number"
@@ -2072,7 +2072,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                           value={perfilPensante}
                           onChange={(e) => setPerfilPensante(e.target.value)}
                           disabled={dis}
-                          className="flex-1 px-2 py-1 border border-blue-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-blue-500/20 outline-none"
+                          className="flex-1 px-2 py-1 border border-blue-200 dark:border-blue-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-blue-500/20 outline-none"
                         />
                       </div>
                     </div>
@@ -2081,7 +2081,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                     <div className="flex items-center justify-between w-full max-w-md gap-4">
                       <div className="flex flex-col items-center gap-2 flex-1">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Razão</span>
-                        <div className="flex items-center gap-2 p-2 rounded-xl border border-green-100 bg-green-50/30 w-full">
+                        <div className="flex items-center gap-2 p-2 rounded-xl border border-green-100 dark:border-emerald-900/50 bg-green-50/30 dark:bg-emerald-950/30 w-full">
                           <span className="text-xl">⚖️</span>
                           <input
                             type="number"
@@ -2090,13 +2090,13 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                             value={perfilRazao}
                             onChange={(e) => setPerfilRazao(e.target.value)}
                             disabled={dis}
-                            className="flex-1 px-2 py-1 border border-green-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-green-500/20 outline-none"
+                            className="flex-1 px-2 py-1 border border-green-200 dark:border-emerald-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-green-500/20 outline-none"
                           />
                         </div>
                       </div>
                       <div className="flex flex-col items-center gap-2 flex-1">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Emoção</span>
-                        <div className="flex items-center gap-2 p-2 rounded-xl border border-red-100 bg-red-50/30 w-full">
+                        <div className="flex items-center gap-2 p-2 rounded-xl border border-red-100 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/30 w-full">
                           <span className="text-xl">❤️</span>
                           <input
                             type="number"
@@ -2105,7 +2105,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                             value={perfilEmocao}
                             onChange={(e) => setPerfilEmocao(e.target.value)}
                             disabled={dis}
-                            className="flex-1 px-2 py-1 border border-red-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
+                            className="flex-1 px-2 py-1 border border-red-200 dark:border-red-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
                           />
                         </div>
                       </div>
@@ -2114,7 +2114,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                     {/* Atuante (Inferior) */}
                     <div className="flex flex-col items-center gap-2 w-full max-w-xs">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atuante</span>
-                      <div className="flex items-center gap-2 p-2 rounded-xl border border-yellow-100 bg-yellow-50/30 w-full">
+                      <div className="flex items-center gap-2 p-2 rounded-xl border border-yellow-100 dark:border-amber-900/50 bg-yellow-50/30 dark:bg-amber-950/30 w-full">
                         <span className="text-xl">💪</span>
                         <input
                           type="number"
@@ -2123,7 +2123,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                           value={perfilAtuante}
                           onChange={(e) => setPerfilAtuante(e.target.value)}
                           disabled={dis}
-                          className="flex-1 px-2 py-1 border border-yellow-200 rounded-lg text-right bg-white text-xs focus:ring-2 focus:ring-yellow-500/20 outline-none"
+                          className="flex-1 px-2 py-1 border border-yellow-200 dark:border-amber-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-yellow-500/20 outline-none"
                         />
                       </div>
                     </div>
@@ -2149,11 +2149,11 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                               setAtuacao(novaLista);
                             }}
                             className={`flex items-center gap-2 p-3 rounded-xl border text-left transition-all ${selecionado
-                              ? 'bg-emerald-50 border-emerald-200 text-emerald-900 ring-2 ring-emerald-500/10'
-                              : 'bg-white border-slate-200 hover:border-emerald-200 text-slate-600'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-300 ring-2 ring-emerald-500/10'
+                              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-700 text-slate-600 dark:text-slate-300'
                               } ${dis ? 'cursor-default opacity-80' : 'cursor-pointer hover:shadow-sm'}`}
                           >
-                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selecionado ? 'bg-emerald-600 border-emerald-600' : 'bg-white border-slate-300'}`}>
+                            <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selecionado ? 'bg-emerald-600 border-emerald-600' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600'}`}>
                               {selecionado && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                             </div>
                             <span className="text-xs font-bold">{a.nome}</span>
@@ -2171,12 +2171,12 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                   <h3 className="section-title">Observações Acadêmicas e Perfil</h3>
                   <div className="section-body grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Avaliações da Escola de Discípulos</label>
-                      <textarea disabled={dis} value={avaliacaoEscola} onChange={(e) => setAvaliacaoEscola(e.target.value)} rows={4} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" placeholder="Registros de avaliação, módulos concluídos..." />
+                      <label className="block text-xs font-medium text-[var(--text-muted)] dark:text-slate-400 mb-1">Avaliações da Escola de Discípulos</label>
+                      <textarea disabled={dis} value={avaliacaoEscola} onChange={(e) => setAvaliacaoEscola(e.target.value)} rows={4} className="w-full px-3 py-2 text-sm border border-[var(--border)] dark:border-slate-700 rounded-xl disabled:bg-[var(--surface-muted)] dark:disabled:bg-slate-800/40 dark:bg-slate-900 dark:text-slate-100" placeholder="Registros de avaliação, módulos concluídos..." />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">Atividade cerebral</label>
-                      <textarea disabled={dis} value={atividadeCerebral} onChange={(e) => setAtividadeCerebral(e.target.value)} rows={3} className="w-full px-3 py-2 text-sm border border-[var(--border)] rounded-xl disabled:bg-[var(--surface-muted)]" />
+                      <label className="block text-xs font-medium text-[var(--text-muted)] dark:text-slate-400 mb-1">Atividade cerebral</label>
+                      <textarea disabled={dis} value={atividadeCerebral} onChange={(e) => setAtividadeCerebral(e.target.value)} rows={3} className="w-full px-3 py-2 text-sm border border-[var(--border)] dark:border-slate-700 rounded-xl disabled:bg-[var(--surface-muted)] dark:disabled:bg-slate-800/40 dark:bg-slate-900 dark:text-slate-100" />
                     </div>
                   </div>
                 </div>
@@ -2195,14 +2195,14 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                         {matriculasMembro.map(m => {
                           const isDesistente = m.status === 'desistente';
                           return (
-                            <div key={m.id} className={`p-3 rounded-xl border flex justify-between items-center ${isDesistente ? 'border-rose-100 bg-rose-50/30' : 'border-emerald-100 bg-emerald-50/30'
+                            <div key={m.id} className={`p-3 rounded-xl border flex justify-between items-center ${isDesistente ? 'border-rose-100 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/30' : 'border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-950/30'
                               }`}>
                               <div>
-                                <p className={`text-[10px] font-bold uppercase ${isDesistente ? 'text-rose-600' : 'text-emerald-600'
+                                <p className={`text-[10px] font-bold uppercase ${isDesistente ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
                                   }`}>{m.turmas?.escolas?.nome}</p>
-                                <p className="text-sm font-bold text-slate-700">{m.turmas?.nome}</p>
+                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{m.turmas?.nome}</p>
                               </div>
-                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${isDesistente ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${isDesistente ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300' : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'
                                 }`}>
                                 {m.status}
                               </span>
@@ -2225,11 +2225,11 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                             key={turma.id}
                             type="button"
                             onClick={() => handleMatricularEmTurma(turma.id)}
-                            className="text-left p-3 rounded-xl border border-slate-200 hover:border-[#055F6D] hover:bg-slate-50 transition group cursor-pointer"
+                            className="text-left p-3 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800/40 hover:border-[#055F6D] dark:hover:border-blue-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition group cursor-pointer"
                           >
                             <p className="text-[9px] font-bold text-slate-400 uppercase">{turma.escolas?.nome}</p>
-                            <p className="text-xs font-bold text-slate-700 group-hover:text-[#055F6D]">{turma.nome}</p>
-                            <p className="text-[10px] text-[#055F6D] mt-2 font-bold">+ Matricular agora</p>
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-200 group-hover:text-[#055F6D] dark:group-hover:text-blue-400">{turma.nome}</p>
+                            <p className="text-[10px] text-[#055F6D] dark:text-blue-400 mt-2 font-bold">+ Matricular agora</p>
                           </button>
                         ))}
                     </div>
@@ -2278,16 +2278,16 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
 
             {abaAtiva === 'financeiro' && !isStudentCadernetaView && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 p-4 rounded-2xl">
+                <div className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/40 p-4 rounded-2xl">
                   <div>
-                    <h4 className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Histórico Contribuitivo</h4>
-                    <p className="text-xs text-emerald-600 mt-0.5">Lançamentos vinculados a este membro no ano corrente.</p>
+                    <h4 className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">Histórico Contribuitivo</h4>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">Lançamentos vinculados a este membro no ano corrente.</p>
                   </div>
                   {!isMembro && (
                     <button
                       type="button"
                       onClick={() => setIsModalReceitaAberto(true)}
-                      className="px-3 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition shadow-sm"
+                      className="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
                     >
                       + Nova Receita
                     </button>
@@ -2295,30 +2295,30 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                 </div>
 
                 {/* Tabela de Transações do Membro */}
-                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      <tr className="bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                         <th className="p-3">Data</th>
                         <th className="p-3">Categoria</th>
                         <th className="p-3">Descrição</th>
                         <th className="p-3 text-right">Valor</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs text-slate-700 dark:text-slate-200">
                       {contribuicoes.length === 0 ? (
                         <tr><td colSpan={4} className="p-8 text-center text-slate-400 italic">Nenhum lançamento vinculado a este membro.</td></tr>
                       ) : (
                         contribuicoes.map((t) => (
-                          <tr key={t.id}>
+                          <tr key={t.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
                             <td className="p-3 font-medium">{new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
                             <td className="p-3">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${t.tipo === 'receita' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${t.tipo === 'receita' ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300' : 'bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300'}`}>
                                 {t.categorias_financeiras?.nome || '—'}
                               </span>
                             </td>
                             <td className="p-3">{t.descricao || '—'}</td>
-                            <td className={`p-3 text-right font-bold ${t.tipo === 'receita' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            <td className={`p-3 text-right font-bold ${t.tipo === 'receita' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                               R$ {Number(t.valor).toFixed(2)}
                             </td>
                           </tr>
@@ -2332,7 +2332,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
 
             {abaAtiva === 'caderneta' && (
               <div className="section-group space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
                   <div>
                     <h3 className="section-title">Caderneta Escolar</h3>
                     <p className="section-subtitle">Notas e avaliações oficiais registradas por disciplina.</p>
@@ -2349,7 +2349,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                           setTurmaSelecionadaAcademica(novaT);
                           carregarDadosAcademicos(novaT);
                         }}
-                        className="px-3 py-1.5 text-xs font-bold border border-slate-200 rounded-xl bg-white text-[#055F6D] outline-none"
+                        className="px-3 py-1.5 text-xs font-bold border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-[#055F6D] dark:text-blue-400 outline-none"
                       >
                         {turmasDoAluno.map(t => (
                           <option key={t.id} value={t.id}>{t.escolaNome} - {t.nome}</option>
@@ -2361,9 +2361,9 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
 
                 {/* Banner de Feedback de Salvamento */}
                 {mensagemSucessoNotas && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center justify-between animate-in fade-in">
+                  <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-bold flex items-center justify-between animate-in fade-in">
                     <span>{mensagemSucessoNotas}</span>
-                    <button type="button" onClick={() => setMensagemSucessoNotas('')} className="text-emerald-500 hover:text-emerald-700">✕</button>
+                    <button type="button" onClick={() => setMensagemSucessoNotas('')} className="text-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-300">✕</button>
                   </div>
                 )}
 
@@ -2378,54 +2378,54 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                     <div className="space-y-4">
                       {/* Métricas Resumidas do Aluno */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-150">
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-150 dark:border-slate-700">
                           <p className="text-[10px] font-bold text-slate-400 uppercase">Média Geral</p>
                           <p className={`text-xl font-black ${
                             cadernetaDados?.mediaGeral === null ? 'text-slate-400' :
-                            cadernetaDados.mediaGeral >= 7.0 ? 'text-emerald-600' :
-                            cadernetaDados.mediaGeral >= 5.0 ? 'text-amber-600' : 'text-rose-600'
+                            cadernetaDados.mediaGeral >= 7.0 ? 'text-emerald-600 dark:text-emerald-400' :
+                            cadernetaDados.mediaGeral >= 5.0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'
                           }`}>
                             {cadernetaDados?.mediaGeral !== null ? cadernetaDados.mediaGeral.toFixed(1) : '---'}
                           </p>
                         </div>
 
-                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-150">
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-150 dark:border-slate-700">
                           <p className="text-[10px] font-bold text-slate-400 uppercase">Disciplinas</p>
-                          <p className="text-xl font-black text-slate-700">
+                          <p className="text-xl font-black text-slate-700 dark:text-slate-100">
                             {disciplinasAcademicas.filter(d => d.nota !== null).length} <span className="text-xs text-slate-400 font-bold">/ {disciplinasAcademicas.length}</span>
                           </p>
                         </div>
 
-                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-150">
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-150 dark:border-slate-700">
                           <p className="text-[10px] font-bold text-slate-400 uppercase">Frequência</p>
-                          <p className="text-xl font-black text-teal-700">
+                          <p className="text-xl font-black text-teal-700 dark:text-teal-400">
                             {disciplinasAcademicas.length > 0
                               ? Math.round(disciplinasAcademicas.reduce((acc, d) => acc + d.frequencia, 0) / disciplinasAcademicas.length)
                               : 100}%
                           </p>
                         </div>
 
-                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-150">
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-150 dark:border-slate-700">
                           <p className="text-[10px] font-bold text-slate-400 uppercase">Situação</p>
                           <p className="text-sm font-black mt-1">
                             {cadernetaDados?.mediaGeral === null ? (
                               <span className="text-slate-400 uppercase">Em Andamento</span>
                             ) : cadernetaDados.mediaGeral >= 7.0 ? (
-                              <span className="text-emerald-600 uppercase">✓ Aprovado</span>
+                              <span className="text-emerald-600 dark:text-emerald-400 uppercase">✓ Aprovado</span>
                             ) : cadernetaDados.mediaGeral >= 5.0 ? (
-                              <span className="text-amber-600 uppercase">Em Atenção</span>
+                              <span className="text-amber-600 dark:text-amber-400 uppercase">Em Atenção</span>
                             ) : (
-                              <span className="text-rose-600 uppercase">Reprovado</span>
+                              <span className="text-rose-600 dark:text-rose-400 uppercase">Reprovado</span>
                             )}
                           </p>
                         </div>
                       </div>
 
                       {/* Tabela de Lançamento e Visualização de Notas */}
-                      <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-2xs">
-                        <table className="w-full text-left text-xs bg-white">
+                      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                        <table className="w-full text-left text-xs bg-white dark:bg-slate-900">
                           <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-black uppercase text-[10px] tracking-wider">
+                            <tr className="bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-black uppercase text-[10px] tracking-wider">
                               <th className="p-3">Disciplina</th>
                               <th className="p-3 hidden sm:table-cell">Professor</th>
                               <th className="p-3 text-center w-28">Nota (0 - 10)</th>
@@ -2433,26 +2433,26 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                               <th className="p-3 text-center">Status</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 text-slate-700">
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
                             {disciplinasAcademicas.map((d, idx) => {
                               const nNum = d.notaInput !== '' && d.notaInput !== null
                                 ? parseFloat(String(d.notaInput).replace(',', '.'))
                                 : d.nota;
 
-                              let estiloNota = 'border-slate-200 text-slate-700 focus:border-[#055F6D]';
+                              let estiloNota = 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 dark:bg-slate-950 focus:border-[#055F6D] dark:focus:border-blue-500';
                               if (nNum !== null && !isNaN(nNum)) {
-                                if (nNum >= 7.0) estiloNota = 'bg-emerald-50 border-emerald-300 text-emerald-800 font-extrabold';
-                                else if (nNum >= 5.0) estiloNota = 'bg-amber-50 border-amber-300 text-amber-800 font-extrabold';
-                                else estiloNota = 'bg-rose-50 border-rose-300 text-rose-800 font-extrabold';
+                                if (nNum >= 7.0) estiloNota = 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 font-extrabold';
+                                else if (nNum >= 5.0) estiloNota = 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-300 font-extrabold';
+                                else estiloNota = 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-700 text-rose-800 dark:text-rose-300 font-extrabold';
                               }
 
                               return (
-                                <tr key={d.turmaDisciplinaId || idx} className="hover:bg-slate-50/70 transition">
-                                  <td className="p-3 font-bold text-slate-800">
+                                <tr key={d.turmaDisciplinaId || idx} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition">
+                                  <td className="p-3 font-bold text-slate-800 dark:text-slate-100">
                                     {d.nome}
                                     <div className="sm:hidden text-[10px] text-slate-400 font-normal">{d.professor}</div>
                                   </td>
-                                  <td className="p-3 text-slate-500 hidden sm:table-cell">{d.professor}</td>
+                                  <td className="p-3 text-slate-500 dark:text-slate-400 hidden sm:table-cell">{d.professor}</td>
                                   <td className="p-3 text-center">
                                     <input
                                       type="text"
@@ -2478,18 +2478,18 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                                       placeholder="Adicionar observação..."
                                       value={d.observacao || ''}
                                       onChange={(e) => handleObsDisciplinaChange(idx, e.target.value)}
-                                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:border-[#055F6D]"
+                                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-[#055F6D] dark:focus:border-blue-500"
                                     />
                                   </td>
                                   <td className="p-3 text-center">
                                     {nNum === null || isNaN(nNum) ? (
-                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-400">Pendente</span>
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-400">Pendente</span>
                                     ) : nNum >= 7.0 ? (
-                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200">Aprovado</span>
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Aprovado</span>
                                     ) : nNum >= 5.0 ? (
-                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-50 text-amber-700 border border-amber-200">Recuperação</span>
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">Recuperação</span>
                                     ) : (
-                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-50 text-rose-700 border border-rose-200">Reprovado</span>
+                                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">Reprovado</span>
                                     )}
                                   </td>
                                 </tr>
@@ -2505,7 +2505,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                           type="button"
                           onClick={handleSalvarNotasAcademico}
                           disabled={salvandoNotasAluno}
-                          className="px-5 py-2.5 bg-[#055F6D] hover:bg-[#034c57] text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                          className="px-5 py-2.5 bg-[#055F6D] dark:bg-blue-600 hover:bg-[#034c57] dark:hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
                         >
                           {salvandoNotasAluno ? (
                             <>
@@ -2536,10 +2536,10 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                     <p className="text-sm text-slate-400 italic">Nenhum registro de faltas ou aulas encontrado.</p>
                   ) : (
                     <>
-                      <div className="overflow-x-auto rounded-xl border border-slate-200">
-                        <table className="w-full text-left text-xs bg-white">
+                      <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                        <table className="w-full text-left text-xs bg-white dark:bg-slate-900">
                           <thead>
-                            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
+                            <tr className="bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px]">
                               <th className="p-3">Disciplina</th>
                               <th className="p-3 text-center">Aulas Ministradas</th>
                               <th className="p-3 text-center">Presenças</th>
@@ -2547,15 +2547,15 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                               <th className="p-3 text-right pr-4">Frequência (%)</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 text-slate-700">
+                          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
                             {disciplinasAcademicas.map((d, idx) => (
-                              <tr key={idx} className="hover:bg-slate-50">
-                                <td className="p-3 font-bold text-slate-800">{d.nome}</td>
-                                <td className="p-3 text-center text-slate-500">{d.totalAulas}</td>
-                                <td className="p-3 text-center font-semibold text-emerald-600">{d.presencas}</td>
-                                <td className="p-3 text-center font-semibold text-rose-600">{d.faltas}</td>
+                              <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                <td className="p-3 font-bold text-slate-800 dark:text-slate-100">{d.nome}</td>
+                                <td className="p-3 text-center text-slate-500 dark:text-slate-400">{d.totalAulas}</td>
+                                <td className="p-3 text-center font-semibold text-emerald-600 dark:text-emerald-400">{d.presencas}</td>
+                                <td className="p-3 text-center font-semibold text-rose-600 dark:text-rose-400">{d.faltas}</td>
                                 <td className="p-3 text-right pr-4">
-                                  <span className={`font-black ${d.frequencia >= 75 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                                  <span className={`font-black ${d.frequencia >= 75 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
                                     {d.frequencia}%
                                   </span>
                                 </td>
@@ -2565,9 +2565,9 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                         </table>
                       </div>
 
-                      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 rounded-xl border border-slate-150 text-xs">
-                        <span className="font-bold text-slate-600">
-                          Total de Faltas Acumuladas: <strong className="text-rose-600">{faltasDados?.total || 0}</strong>
+                      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-150 dark:border-slate-750 text-xs">
+                        <span className="font-bold text-slate-600 dark:text-slate-300">
+                          Total de Faltas Acumuladas: <strong className="text-rose-600 dark:text-rose-400">{faltasDados?.total || 0}</strong>
                         </span>
                         <span className="text-slate-400 italic">
                           * Presenças calculadas automaticamente a partir das aulas lançadas na turma.
@@ -2589,15 +2589,15 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                   {carregandoAcademicos ? (
                     <p className="text-sm text-slate-400 italic">Carregando avaliação...</p>
                   ) : (
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                    <div className="bg-slate-50 dark:bg-slate-850 p-4 rounded-xl border border-slate-200 dark:border-slate-750 space-y-3">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide">
                         Observações e Histórico de Desenvolvimento
                       </label>
                       <textarea
                         value={crescimentoDados?.observacoes || ''}
                         onChange={(e) => setCrescimentoDados({ ...crescimentoDados, observacoes: e.target.value })}
                         rows="6"
-                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#055F6D]"
+                        className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#055F6D] dark:focus:ring-blue-500"
                         placeholder="Registre aqui as observações sobre o crescimento, discipulado, dedicação e pontos de atenção do aluno..."
                       />
                       <div className="flex justify-end">
@@ -2605,7 +2605,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                           type="button"
                           onClick={handleSalvarNotasAcademico}
                           disabled={salvandoNotasAluno}
-                          className="px-4 py-2 bg-[#055F6D] text-white rounded-xl text-xs font-bold hover:bg-[#034c57] transition shadow-xs cursor-pointer disabled:opacity-50"
+                          className="px-4 py-2 bg-[#055F6D] dark:bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-[#034c57] dark:hover:bg-blue-700 transition shadow-xs cursor-pointer disabled:opacity-50"
                         >
                           {salvandoNotasAluno ? 'Salvando...' : 'Salvar Parecer / Observação'}
                         </button>
@@ -2641,11 +2641,11 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                   />
 
                   {membroLogado?.permissao === 'admin' && (
-                    <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mt-4">
-                      <h4 className="text-sm font-black text-slate-800 uppercase mb-4 tracking-tight flex items-center gap-2">
+                    <div className="bg-slate-50 dark:bg-slate-850 p-5 rounded-2xl border border-slate-200 dark:border-slate-750 mt-4">
+                      <h4 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase mb-4 tracking-tight flex items-center gap-2">
                         <span className="text-lg">🛡️</span> Gerenciamento Manual de Acessos
                       </h4>
-                      <p className="text-xs text-slate-500 mb-6">Como administrador, você pode ligar/desligar módulos específicos para este membro, ignorando o perfil padrão.</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Como administrador, você pode ligar/desligar módulos específicos para este membro, ignorando o perfil padrão.</p>
 
                       <div className="space-y-3">
                         {MODULOS_SISTEMA.map((m) => {
@@ -2653,16 +2653,16 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                           const blocosAtivosCount = m.blocos.filter(bloco => permissoesJson[`${m.modulo}|${bloco}`] === true).length;
 
                           return (
-                            <div key={m.modulo} className="bg-white rounded-2xl border border-slate-200 overflow-hidden transition-all duration-200">
+                            <div key={m.modulo} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden transition-all duration-200">
                               {/* Cabeçalho do Acordeão */}
                               <button
                                 type="button"
                                 onClick={() => setModulosExpandidos(prev => ({ ...prev, [m.modulo]: !isOpen }))}
-                                className="w-full flex items-center justify-between p-4 hover:bg-slate-50/80 transition-colors text-left focus:outline-none"
+                                className="w-full flex items-center justify-between p-4 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 transition-colors text-left focus:outline-none"
                               >
                                 <div className="flex items-center gap-3">
-                                  <span className="text-sm font-extrabold text-slate-800 tracking-tight">{m.modulo}</span>
-                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${blocosAtivosCount > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+                                  <span className="text-sm font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">{m.modulo}</span>
+                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${blocosAtivosCount > 0 ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 border border-slate-200 dark:border-slate-700'}`}>
                                     {blocosAtivosCount > 0 ? `🟢 ${blocosAtivosCount} ativo(s)` : '⚪ inativo'}
                                   </span>
                                 </div>
@@ -2679,15 +2679,15 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
 
                               {/* Corpo do Acordeão */}
                               {isOpen && (
-                                <div className="p-4 border-t border-slate-100 bg-slate-50/30 animate-in fade-in duration-200">
+                                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-950/40 animate-in fade-in duration-200">
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     {m.blocos.map((bloco) => {
                                       const keyBase = `${m.modulo}|${bloco}`;
                                       const ativo = permissoesJson[keyBase] === true;
                                       return (
-                                        <div key={bloco} className={`p-3 rounded-xl border transition-all duration-200 ${ativo ? 'bg-white border-emerald-200 shadow-xs' : 'bg-white border-slate-200'}`}>
+                                        <div key={bloco} className={`p-3 rounded-xl border transition-all duration-200 ${ativo ? 'bg-white dark:bg-slate-900 border-emerald-200 dark:border-emerald-700 shadow-xs' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'}`}>
                                           <div className="flex items-center justify-between">
-                                            <span className={`text-[11px] font-bold ${ativo ? 'text-slate-800' : 'text-slate-400'}`}>{bloco}</span>
+                                            <span className={`text-[11px] font-bold ${ativo ? 'text-slate-800 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'}`}>{bloco}</span>
                                             <button
                                               type="button"
                                               disabled={dis}
@@ -2705,20 +2705,20 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                                                 }
                                                 return next;
                                               })}
-                                              className={`w-10 h-6 rounded-full relative transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${ativo ? 'bg-emerald-500' : 'bg-slate-200'}`}
+                                              className={`w-10 h-6 rounded-full relative transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 ${ativo ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'}`}
                                             >
-                                              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-xs transition-all duration-200 ${ativo ? 'right-1' : 'left-1'}`} />
+                                              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white dark:bg-slate-200 shadow-xs transition-all duration-200 ${ativo ? 'right-1' : 'left-1'}`} />
                                             </button>
                                           </div>
 
                                           {ativo && (
-                                            <div className="flex gap-1 pt-3 border-t border-slate-100 mt-2 animate-in fade-in slide-in-from-top-1 duration-150">
+                                            <div className="flex gap-1 pt-3 border-t border-slate-100 dark:border-slate-800 mt-2 animate-in fade-in slide-in-from-top-1 duration-150">
                                               {['ver', 'editar', 'excluir'].map(action => {
                                                 const subKey = `${keyBase}|${action}`;
                                                 const subAtivo = permissoesJson[subKey] === true;
 
                                                 let activeClass = '';
-                                                let inactiveClass = 'bg-white border-slate-200 text-slate-400 hover:border-slate-300 hover:text-slate-600';
+                                                let inactiveClass = 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-600 dark:hover:text-slate-300';
 
                                                 if (action === 'ver') {
                                                   activeClass = 'bg-blue-500 border-blue-500 text-white shadow-xs shadow-blue-500/20';
@@ -2766,13 +2766,13 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                       <tbody>
                         {permissoesVinculadas.length === 0 ? (
                           <tr>
-                            <td colSpan={2} className="text-center py-6 text-[var(--text-muted)]">Nenhum vínculo de permissão definido.</td>
+                            <td colSpan={2} className="text-center py-6 text-[var(--text-muted)] dark:text-slate-400">Nenhum vínculo de permissão definido.</td>
                           </tr>
                         ) : (
                           permissoesVinculadas.map((item, idx) => (
                             <tr key={`${item.modulo}-${item.bloco}-${idx}`}>
-                              <td className="font-medium text-[var(--text-heading)]">{item.modulo}</td>
-                              <td>{item.bloco}</td>
+                              <td className="font-medium text-[var(--text-heading)] dark:text-slate-100">{item.modulo}</td>
+                              <td className="dark:text-slate-300">{item.bloco}</td>
                             </tr>
                           ))
                         )}
@@ -2790,14 +2790,14 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                   <button
                     type="button"
                     onClick={() => { setModoEdicao(false); preencherFormulario(membro); }}
-                    className="px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-xs font-medium shadow-lg hover:bg-slate-50 transition"
+                    className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-medium shadow-lg hover:bg-slate-50 dark:hover:bg-slate-750 transition"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={salvando}
-                    className="flex items-center gap-2 bg-[#1e3a8a] hover:bg-[#1e40af] text-white text-xs font-semibold px-6 py-2.5 rounded-xl disabled:opacity-50 shadow-xl transition"
+                    className="flex items-center gap-2 bg-[#1e3a8a] dark:bg-blue-600 hover:bg-[#1e40af] dark:hover:bg-blue-700 text-white text-xs font-semibold px-6 py-2.5 rounded-xl disabled:opacity-50 shadow-xl transition"
                   >
                     {salvando ? (
                       <>
@@ -2870,12 +2870,12 @@ function AcessoSistemaPanel({
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-0.5">Perfil de permissão (sistema)</label>
+        <label className="block text-[11px] font-medium text-[var(--text-muted)] dark:text-slate-400 mb-0.5">Perfil de permissão (sistema)</label>
         <select
           value={permissao || 'membro'}
           onChange={(e) => setPermissao(e.target.value)}
           disabled={dis}
-          className="w-full max-w-md px-3 py-2 text-sm border border-[var(--border)] rounded-xl bg-white disabled:bg-slate-100 disabled:text-slate-600 cursor-pointer disabled:cursor-not-allowed font-medium"
+          className="w-full max-w-md px-3 py-2 text-sm border border-[var(--border)] dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-600 dark:disabled:text-slate-400 cursor-pointer disabled:cursor-not-allowed font-medium"
         >
           <option value="membro">Membro</option>
           <option value="lider-celula">Líder de Célula</option>
@@ -2886,18 +2886,18 @@ function AcessoSistemaPanel({
         </select>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-4 space-y-3">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-sm font-bold text-slate-800">Acesso ao sistema</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-100">Acesso ao sistema</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               {acessoAtivo
                 ? 'Este membro já possui usuário vinculado ao Supabase Auth.'
                 : 'Crie um usuário e senha para este membro acessar o painel.'}
             </p>
           </div>
           {acessoAtivo && (
-            <span className="w-fit rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold text-emerald-700">
+            <span className="w-fit rounded-full bg-emerald-100 dark:bg-emerald-950/70 px-3 py-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
               Acesso ativo
             </span>
           )}
@@ -2906,7 +2906,7 @@ function AcessoSistemaPanel({
         {!acessoAtivo && (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_auto] gap-3 items-end">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Senha inicial</label>
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Senha inicial</label>
               <div className="relative flex items-center">
                 <input 
                   type={mostrarSenhaNovoAcesso ? "text" : "password"} 
@@ -2914,12 +2914,12 @@ function AcessoSistemaPanel({
                   onChange={(e) => setSenhaNovoAcesso(e.target.value)} 
                   disabled={dis}
                   minLength={6} 
-                  className="w-full pl-3 pr-9 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800 disabled:bg-slate-100 disabled:cursor-not-allowed" 
+                  className="w-full pl-3 pr-9 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed" 
                 />
                 <button 
                   type="button" 
                   onClick={() => setMostrarSenhaNovoAcesso(!mostrarSenhaNovoAcesso)} 
-                  className="absolute right-2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                  className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
                   title={mostrarSenhaNovoAcesso ? "Ocultar senha" : "Visualizar senha"}
                   aria-label={mostrarSenhaNovoAcesso ? "Ocultar senha" : "Visualizar senha"}
                 >
@@ -2928,7 +2928,7 @@ function AcessoSistemaPanel({
               </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 mb-1">Confirmar senha</label>
+              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Confirmar senha</label>
               <div className="relative flex items-center">
                 <input 
                   type={mostrarSenhaNovoAcesso ? "text" : "password"} 
@@ -2936,12 +2936,12 @@ function AcessoSistemaPanel({
                   onChange={(e) => setConfirmarSenhaNovoAcesso(e.target.value)} 
                   disabled={dis}
                   minLength={6} 
-                  className="w-full pl-3 pr-9 py-2 border border-slate-200 rounded-xl text-sm bg-white text-slate-800 disabled:bg-slate-100 disabled:cursor-not-allowed" 
+                  className="w-full pl-3 pr-9 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed" 
                 />
                 <button 
                   type="button" 
                   onClick={() => setMostrarSenhaNovoAcesso(!mostrarSenhaNovoAcesso)} 
-                  className="absolute right-2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                  className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
                   title={mostrarSenhaNovoAcesso ? "Ocultar senha" : "Visualizar senha"}
                   aria-label={mostrarSenhaNovoAcesso ? "Ocultar senha" : "Visualizar senha"}
                 >
@@ -2956,10 +2956,10 @@ function AcessoSistemaPanel({
         )}
 
         {!email.trim() && (
-          <p className="text-xs font-semibold text-amber-700">Informe um e-mail na aba Dados Pessoais antes de criar o acesso.</p>
+          <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">Informe um e-mail na aba Dados Pessoais antes de criar o acesso.</p>
         )}
         {mensagemAcesso && (
-          <p className={`text-xs font-semibold ${mensagemAcesso.startsWith('Acesso') ? 'text-emerald-700' : 'text-rose-700'}`}>
+          <p className={`text-xs font-semibold ${mensagemAcesso.startsWith('Acesso') ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
             {mensagemAcesso}
           </p>
         )}

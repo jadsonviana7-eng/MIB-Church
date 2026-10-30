@@ -56,6 +56,20 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
   const [categorias, setCategorias] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [filtrosPainelExpandidos, setFiltrosPainelExpandidos] = useState(false);
+  const [isDark, setIsDark] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
+
+  useEffect(() => {
+    const handler = () => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    };
+    window.addEventListener('mib-theme-changed', handler);
+    const observer = new MutationObserver(handler);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => {
+      window.removeEventListener('mib-theme-changed', handler);
+      observer.disconnect();
+    };
+  }, []);
 
   // Paleta de cores sólidas, modernas e vibrantes para os gráficos (sem degradê)
   const coresSolidas = ['#2563eb', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#6366f1'];
@@ -416,13 +430,13 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
       {abaAtiva === 'resumo' && (
         <>
           {/* 1. VERSÃO DESKTOP (Mantida intacta e elegante) */}
-          <div className="hidden sm:flex bg-white border border-slate-200 rounded-2xl p-2 shadow-xs items-center justify-between gap-2">
+          <div className="hidden sm:flex bg-white dark:bg-[#17223b] border border-slate-200 dark:border-[#2b3954] rounded-2xl p-2 shadow-xs items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 shrink-0">
               <button
                 onClick={() => handleMudarAba('resumo')}
                 className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${abaAtiva === 'resumo'
-                  ? 'bg-[#0f172a] text-white shadow-xs'
-                  : 'text-slate-600 hover:bg-slate-100'
+                  ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
               >
                 <BarChart3 className="w-4 h-4 text-blue-400" />
@@ -433,8 +447,8 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 <button
                   onClick={() => handleMudarAba('transacoes')}
                   className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${abaAtiva === 'transacoes'
-                    ? 'bg-[#0f172a] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                 >
                   <DollarSign className="w-4 h-4 text-emerald-500" />
@@ -446,8 +460,8 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 <button
                   onClick={() => handleMudarAba('categorias')}
                   className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${abaAtiva === 'categorias'
-                    ? 'bg-[#0f172a] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                 >
                   <Tag className="w-4 h-4 text-amber-500" />
@@ -459,8 +473,8 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 <button
                   onClick={() => handleMudarAba('contas')}
                   className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${abaAtiva === 'contas'
-                    ? 'bg-[#0f172a] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                 >
                   <Landmark className="w-4 h-4 text-cyan-500" />
@@ -472,8 +486,8 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 <button
                   onClick={() => handleMudarAba('relatorios')}
                   className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${abaAtiva === 'relatorios'
-                    ? 'bg-[#0f172a] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                 >
                   <TrendingUp className="w-4 h-4 text-purple-500" />
@@ -485,8 +499,8 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 <button
                   onClick={() => handleMudarAba('historico')}
                   className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${abaAtiva === 'historico'
-                    ? 'bg-[#0f172a] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                 >
                   <History className="w-4 h-4 text-slate-400" />
@@ -497,7 +511,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
 
             <button
               onClick={carregarDadosIniciais}
-              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition shrink-0"
+              className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition shrink-0"
               title="Recarregar Dados"
             >
               <RefreshCw className={`w-4 h-4 ${carregando ? 'animate-spin text-blue-600' : ''}`} />
@@ -505,10 +519,10 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
           </div>
 
           {/* 2. VERSÃO MOBILE (Compacta de 1 linha sem desestruturar o layout) */}
-          <div className="sm:hidden bg-white border border-slate-200 rounded-xl p-2.5 shadow-xs flex items-center justify-between gap-2">
+          <div className="sm:hidden bg-white dark:bg-[#17223b] border border-slate-200 dark:border-[#2b3954] rounded-xl p-2.5 shadow-xs flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0 animate-pulse" />
-              <span className="text-xs font-black text-slate-800 truncate">
+              <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
                 {abaAtiva === 'resumo' && 'Visão Geral & Gráficos'}
                 {abaAtiva === 'transacoes' && 'Transações Financeiras'}
                 {abaAtiva === 'categorias' && 'Categorias Financeiras'}
@@ -522,7 +536,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
               <select
                 value={abaAtiva}
                 onChange={(e) => handleMudarAba(e.target.value)}
-                className="bg-slate-100 border border-slate-200 text-slate-800 text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="resumo">📊 Visão Geral & Gráficos</option>
                 {hasAccess('Financeiro', 'Transações') && <option value="transacoes">💵 Transações</option>}
@@ -534,7 +548,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
 
               <button
                 onClick={carregarDadosIniciais}
-                className="p-1.5 text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition shrink-0"
+                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 transition shrink-0"
                 title="Recarregar Dados"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${carregando ? 'animate-spin text-blue-600' : ''}`} />
@@ -549,10 +563,10 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
         <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300">
 
           {/* BARRA DE FILTROS DINÂMICOS - COMPACTA E EXPANDÍVEL EM MOBILE */}
-          <div className="bg-[#0f172a] p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-white shadow-md border border-slate-800 space-y-3 sm:space-y-4">
+          <div className="bg-[#0f172a] dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-white shadow-md border border-slate-800 dark:border-[#2b3954] space-y-3 sm:space-y-4">
 
             {/* Cabeçalho do Filtro com Toggle Mobile */}
-            <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-3 sm:pb-4">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-800 dark:border-[#2b3954] pb-3 sm:pb-4">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
                 <div>
@@ -569,7 +583,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setFiltrosPainelExpandidos(!filtrosPainelExpandidos)}
-                  className="sm:hidden px-2.5 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-xs font-bold text-slate-200 border border-slate-700 flex items-center gap-1"
+                  className="sm:hidden px-2.5 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] flex items-center gap-1"
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5 text-blue-400" />
                   <span>{filtrosPainelExpandidos ? 'Ocultar' : 'Filtrar'}</span>
@@ -580,25 +594,25 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 <div className="hidden sm:flex flex-wrap items-center gap-1.5">
                   <button
                     onClick={() => aplicarAtalhoPeriodo('este_mes')}
-                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-xs font-bold text-slate-200 transition border border-slate-700"
+                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 transition border border-slate-700 dark:border-[#2b3954]"
                   >
                     Este Mês
                   </button>
                   <button
                     onClick={() => aplicarAtalhoPeriodo('mes_anterior')}
-                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-xs font-bold text-slate-200 transition border border-slate-700"
+                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 transition border border-slate-700 dark:border-[#2b3954]"
                   >
                     Mês Anterior
                   </button>
                   <button
                     onClick={() => aplicarAtalhoPeriodo('este_ano')}
-                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-xs font-bold text-slate-200 transition border border-slate-700"
+                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 transition border border-slate-700 dark:border-[#2b3954]"
                   >
                     Ano Atual
                   </button>
                   <button
                     onClick={() => aplicarAtalhoPeriodo('todos')}
-                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] text-xs font-bold text-slate-200 transition border border-slate-700"
+                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 transition border border-slate-700 dark:border-[#2b3954]"
                   >
                     Todo o Período
                   </button>
@@ -617,25 +631,25 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
             <div className="sm:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
               <button
                 onClick={() => aplicarAtalhoPeriodo('este_mes')}
-                className="px-2.5 py-1 rounded-md bg-[#1e293b] text-[11px] font-bold text-slate-200 border border-slate-700 shrink-0"
+                className="px-2.5 py-1 rounded-md bg-[#1e293b] dark:bg-slate-900/90 text-[11px] font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] shrink-0"
               >
                 Este Mês
               </button>
               <button
                 onClick={() => aplicarAtalhoPeriodo('mes_anterior')}
-                className="px-2.5 py-1 rounded-md bg-[#1e293b] text-[11px] font-bold text-slate-200 border border-slate-700 shrink-0"
+                className="px-2.5 py-1 rounded-md bg-[#1e293b] dark:bg-slate-900/90 text-[11px] font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] shrink-0"
               >
                 Mês Ant.
               </button>
               <button
                 onClick={() => aplicarAtalhoPeriodo('este_ano')}
-                className="px-2.5 py-1 rounded-md bg-[#1e293b] text-[11px] font-bold text-slate-200 border border-slate-700 shrink-0"
+                className="px-2.5 py-1 rounded-md bg-[#1e293b] dark:bg-slate-900/90 text-[11px] font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] shrink-0"
               >
                 Ano Atual
               </button>
               <button
                 onClick={() => aplicarAtalhoPeriodo('todos')}
-                className="px-2.5 py-1 rounded-md bg-[#1e293b] text-[11px] font-bold text-slate-200 border border-slate-700 shrink-0"
+                className="px-2.5 py-1 rounded-md bg-[#1e293b] dark:bg-slate-900/90 text-[11px] font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] shrink-0"
               >
                 Todos
               </button>
@@ -662,7 +676,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                       value={buscaNome}
                       onChange={(e) => setBuscaNome(e.target.value)}
                       placeholder="Nome, fornecedor, nota..."
-                      className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-3 py-2 pl-9 pr-8 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                      className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-3 py-2 pl-9 pr-8 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
                     />
                     <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     {buscaNome && (
@@ -680,7 +694,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                     type="date"
                     value={dataInicioFiltro}
                     onChange={(e) => setDataInicioFiltro(e.target.value)}
-                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                    className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
                   />
                 </div>
 
@@ -691,7 +705,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                     type="date"
                     value={dataFimFiltro}
                     onChange={(e) => setDataFimFiltro(e.target.value)}
-                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                    className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
                   />
                 </div>
 
@@ -701,7 +715,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                   <select
                     value={tipoTransacaoFiltro}
                     onChange={(e) => setTipoTransacaoFiltro(e.target.value)}
-                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                    className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
                   >
                     <option value="">Todos Tipos</option>
                     <option value="receita">Receita</option>
@@ -715,7 +729,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                   <select
                     value={statusTransacaoFiltro}
                     onChange={(e) => setStatusTransacaoFiltro(e.target.value)}
-                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                    className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
                   >
                     <option value="">Todos Status</option>
                     <option value="pago">Pago / Recebido</option>
@@ -726,13 +740,13 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
               </div>
 
               {/* Linha Secundária de Filtros: Conta e Categoria */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-slate-800">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-slate-800 dark:border-[#2b3954]">
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Conta / Caixa</label>
                   <select
                     value={contaFiltro}
                     onChange={(e) => setContaFiltro(e.target.value)}
-                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                    className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
                   >
                     <option value="">Todas as Contas</option>
                     {contas.map(c => (
@@ -746,7 +760,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                   <select
                     value={categoriaFiltro}
                     onChange={(e) => setCategoriaFiltro(e.target.value)}
-                    className="w-full bg-[#1e293b] border border-slate-700 rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                    className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
                   >
                     <option value="">Todas as Categorias</option>
                     {categorias.map(c => (
@@ -774,64 +788,64 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
           {/* METRIC CARDS OTIMIZADOS PARA MOBILE (GRID 2x2 EM SMARTPHONES) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
 
-            {/* Card Receitas - Verde Sólido */}
-            <div className="bg-[#059669] p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200">
+            {/* Card Receitas - Verde */}
+            <div className="bg-[#059669] dark:bg-emerald-950/70 dark:border dark:border-emerald-800/60 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200">
               <div className="min-w-0">
-                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-100 truncate">Total Recebido</p>
+                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-100 dark:text-emerald-300 truncate">Total Recebido</p>
                 <p className="text-sm sm:text-2xl font-black mt-0.5 sm:mt-1 tracking-tight truncate">{formatMoeda(statsFiltradas.totalReceitas)}</p>
               </div>
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
-                <ArrowUpRight className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 dark:bg-emerald-500/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
+                <ArrowUpRight className="w-4 h-4 sm:w-6 sm:h-6 text-white dark:text-emerald-300" />
               </div>
             </div>
 
-            {/* Card Despesas - Vermelho Sólido */}
-            <div className="bg-[#e11d48] p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200">
+            {/* Card Despesas - Vermelho */}
+            <div className="bg-[#e11d48] dark:bg-rose-950/70 dark:border dark:border-rose-800/60 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200">
               <div className="min-w-0">
-                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-rose-100 truncate">Total Pago</p>
+                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-rose-100 dark:text-rose-300 truncate">Total Pago</p>
                 <p className="text-sm sm:text-2xl font-black mt-0.5 sm:mt-1 tracking-tight truncate">{formatMoeda(statsFiltradas.totalDespesas)}</p>
               </div>
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
-                <ArrowDownRight className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 dark:bg-rose-500/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
+                <ArrowDownRight className="w-4 h-4 sm:w-6 sm:h-6 text-white dark:text-rose-300" />
               </div>
             </div>
 
-            {/* Card Saldo Líquido - Azul / Âmbar Sólido */}
+            {/* Card Saldo Líquido - Azul / Âmbar */}
             <div className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200 ${statsFiltradas.saldoLiquido >= 0
-              ? 'bg-[#2563eb]'
-              : 'bg-[#d97706]'
+              ? 'bg-[#2563eb] dark:bg-blue-950/70 dark:border dark:border-blue-800/60'
+              : 'bg-[#d97706] dark:bg-amber-950/70 dark:border dark:border-amber-800/60'
               }`}>
               <div className="min-w-0">
-                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider opacity-90 truncate">Saldo Líquido</p>
+                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider opacity-90 dark:text-blue-300 truncate">Saldo Líquido</p>
                 <p className="text-sm sm:text-2xl font-black mt-0.5 sm:mt-1 tracking-tight truncate">{formatMoeda(statsFiltradas.saldoLiquido)}</p>
               </div>
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 dark:bg-white/10 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
                 <Wallet className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
               </div>
             </div>
 
-            {/* Card Pendentes - Âmbar Sólido */}
-            <div className="bg-[#d97706] p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200">
+            {/* Card Pendentes - Âmbar */}
+            <div className="bg-[#d97706] dark:bg-amber-950/70 dark:border dark:border-amber-800/60 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200">
               <div className="min-w-0">
-                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-amber-100 truncate">Pendentes</p>
+                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-amber-100 dark:text-amber-300 truncate">Pendentes</p>
                 <p className="text-sm sm:text-2xl font-black mt-0.5 sm:mt-1 tracking-tight truncate">{formatMoeda(statsFiltradas.totalPendentes)}</p>
               </div>
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
-                <Clock className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 dark:bg-amber-500/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
+                <Clock className="w-4 h-4 sm:w-6 sm:h-6 text-white dark:text-amber-300" />
               </div>
             </div>
 
           </div>
 
           {/* GRÁFICO PRINCIPAL: EVOLUÇÃO TEMPORAL COM RESPONSIVIDADE MOBILE */}
-          <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-md">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6 border-b border-slate-100 pb-3 sm:pb-4">
+          <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6 border-b border-slate-100 dark:border-[#2b3954] pb-3 sm:pb-4">
               <div>
-                <h3 className="text-sm sm:text-base font-black text-slate-800 flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+                <h3 className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                   Fluxo de Caixa no Período
                 </h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">
+                <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">
                   Evolução das entradas, saídas e saldo filtrados.
                 </p>
               </div>
@@ -843,8 +857,8 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 <span className="flex items-center gap-1 text-[#f43f5e]">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#f43f5e] inline-block" /> Despesas
                 </span>
-                <span className="flex items-center gap-1 text-[#2563eb]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb] inline-block" /> Saldo
+                <span className="flex items-center gap-1 text-[#2563eb] dark:text-[#60a5fa]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb] dark:bg-[#60a5fa] inline-block" /> Saldo
                 </span>
               </div>
             </div>
@@ -858,18 +872,21 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
               ) : (
                 <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                   <ComposedChart data={dadosEvolucaoTemporal} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#2b3954' : '#f1f5f9'} />
+                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
                     <Tooltip
                       formatter={(val, name) => [`R$ ${formatMoedaValor(val)}`, name]}
                       contentStyle={{
-                        background: '#ffffff',
-                        border: '1px solid #e2e8f0',
+                        background: isDark ? '#17223b' : '#ffffff',
+                        border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
+                        color: isDark ? '#f8fafc' : '#0f172a',
                         borderRadius: '14px',
-                        boxShadow: '0 10px 20px -5px rgba(0,0,0,0.1)',
+                        boxShadow: '0 10px 20px -5px rgba(0,0,0,0.3)',
                         fontSize: '11px'
                       }}
+                      itemStyle={{ color: isDark ? '#f8fafc' : '#0f172a' }}
+                      labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: 'bold' }}
                     />
                     <Bar dataKey="receitas" name="Receitas" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={28} />
                     <Bar dataKey="despesas" name="Despesas" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={28} />
@@ -884,13 +901,13 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
 
             {/* Top Categorias - Receita */}
-            <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5">
+            <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-[#2b3954] pb-2.5">
                 <div>
-                  <h3 className="text-xs sm:text-sm font-black text-slate-800">Top Categorias de Receita</h3>
-                  <p className="text-[10px] sm:text-[11px] text-slate-400">Principais entradas filtradas</p>
+                  <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Top Categorias de Receita</h3>
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Principais entradas filtradas</p>
                 </div>
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
               </div>
 
               <div className="h-52 sm:h-64 w-full">
@@ -901,10 +918,19 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 ) : (
                   <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                     <BarChart data={dadosCategoriasFiltradas.receitas} layout="vertical" margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                      <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                      <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: '#334155' }} width={95} axisLine={false} tickLine={false} />
-                      <Tooltip formatter={(val) => [`R$ ${formatMoedaValor(val)}`, 'Total']} />
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? '#2b3954' : '#f1f5f9'} />
+                      <XAxis type="number" tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+                      <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: isDark ? '#cbd5e1' : '#334155' }} width={95} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        formatter={(val) => [`R$ ${formatMoedaValor(val)}`, 'Total']}
+                        contentStyle={{
+                          background: isDark ? '#17223b' : '#ffffff',
+                          border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
+                          color: isDark ? '#f8fafc' : '#0f172a',
+                          borderRadius: '14px',
+                          fontSize: '11px'
+                        }}
+                      />
                       <Bar dataKey="value" name="Total R$" radius={[0, 4, 4, 0]}>
                         {dadosCategoriasFiltradas.receitas.map((entry, index) => (
                           <Cell key={`cell-rec-${index}`} fill={coresSolidas[index % coresSolidas.length]} />
@@ -917,13 +943,13 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
             </div>
 
             {/* Top Categorias - Despesa */}
-            <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2.5">
+            <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-[#2b3954] pb-2.5">
                 <div>
-                  <h3 className="text-xs sm:text-sm font-black text-slate-800">Top Categorias de Despesa</h3>
-                  <p className="text-[10px] sm:text-[11px] text-slate-400">Principais saídas filtradas</p>
+                  <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Top Categorias de Despesa</h3>
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Principais saídas filtradas</p>
                 </div>
-                <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600" />
+                <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 dark:text-rose-400" />
               </div>
 
               <div className="h-52 sm:h-64 w-full">
@@ -934,10 +960,19 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 ) : (
                   <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                     <BarChart data={dadosCategoriasFiltradas.despesas} layout="vertical" margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                      <XAxis type="number" tick={{ fontSize: 9, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                      <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: '#334155' }} width={95} axisLine={false} tickLine={false} />
-                      <Tooltip formatter={(val) => [`R$ ${formatMoedaValor(val)}`, 'Total']} />
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? '#2b3954' : '#f1f5f9'} />
+                      <XAxis type="number" tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+                      <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: isDark ? '#cbd5e1' : '#334155' }} width={95} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        formatter={(val) => [`R$ ${formatMoedaValor(val)}`, 'Total']}
+                        contentStyle={{
+                          background: isDark ? '#17223b' : '#ffffff',
+                          border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
+                          color: isDark ? '#f8fafc' : '#0f172a',
+                          borderRadius: '14px',
+                          fontSize: '11px'
+                        }}
+                      />
                       <Bar dataKey="value" name="Total R$" radius={[0, 4, 4, 0]}>
                         {dadosCategoriasFiltradas.despesas.map((entry, index) => (
                           <Cell key={`cell-des-${index}`} fill={['#f43f5e', '#e11d48', '#d97706', '#8b5cf6', '#ef4444'][index % 5]} />
@@ -955,11 +990,11 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
 
             {/* Gráfico Donut de Status (Pago vs Pendente) */}
-            <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-md flex flex-col justify-between">
-              <div className="border-b border-slate-100 pb-2.5 mb-3 flex items-center justify-between">
+            <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
+              <div className="border-b border-slate-100 dark:border-[#2b3954] pb-2.5 mb-3 flex items-center justify-between">
                 <div>
-                  <h3 className="text-xs sm:text-sm font-black text-slate-800">Proporção de Status</h3>
-                  <p className="text-[10px] sm:text-[11px] text-slate-400">Pago vs Pendente</p>
+                  <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Proporção de Status</h3>
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Pago vs Pendente</p>
                 </div>
                 <PieIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
               </div>
@@ -983,8 +1018,17 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                           <Cell key={`pie-cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(val) => [`R$ ${formatMoedaValor(val)}`, 'Valor']} />
-                      <Legend wrapperStyle={{ fontSize: 10 }} />
+                      <Tooltip
+                        formatter={(val) => [`R$ ${formatMoedaValor(val)}`, 'Valor']}
+                        contentStyle={{
+                          background: isDark ? '#17223b' : '#ffffff',
+                          border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
+                          color: isDark ? '#f8fafc' : '#0f172a',
+                          borderRadius: '14px',
+                          fontSize: '11px'
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 10, color: isDark ? '#cbd5e1' : '#475569' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
@@ -992,13 +1036,13 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
             </div>
 
             {/* Gráfico de Contas / Caixas */}
-            <div className="lg:col-span-2 bg-white p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-md flex flex-col justify-between">
-              <div className="border-b border-slate-100 pb-2.5 mb-3 flex items-center justify-between">
+            <div className="lg:col-span-2 bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
+              <div className="border-b border-slate-100 dark:border-[#2b3954] pb-2.5 mb-3 flex items-center justify-between">
                 <div>
-                  <h3 className="text-xs sm:text-sm font-black text-slate-800">Movimentação por Conta / Caixa</h3>
-                  <p className="text-[10px] sm:text-[11px] text-slate-400">Totais de entradas e saídas por conta financeira</p>
+                  <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Movimentação por Conta / Caixa</h3>
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Totais de entradas e saídas por conta financeira</p>
                 </div>
-                <Landmark className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600" />
+                <Landmark className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 dark:text-cyan-400" />
               </div>
 
               <div className="h-48 sm:h-56 w-full">
@@ -1009,11 +1053,20 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 ) : (
                   <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
                     <BarChart data={dadosSaldosContas} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                      <Tooltip formatter={(val, name) => [`R$ ${formatMoedaValor(val)}`, name]} />
-                      <Legend wrapperStyle={{ fontSize: 10 }} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#2b3954' : '#f1f5f9'} />
+                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        formatter={(val, name) => [`R$ ${formatMoedaValor(val)}`, name]}
+                        contentStyle={{
+                          background: isDark ? '#17223b' : '#ffffff',
+                          border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
+                          color: isDark ? '#f8fafc' : '#0f172a',
+                          borderRadius: '14px',
+                          fontSize: '11px'
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 10, color: isDark ? '#cbd5e1' : '#475569' }} />
                       <Bar dataKey="receitas" name="Receitas" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={26} />
                       <Bar dataKey="despesas" name="Despesas" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={26} />
                     </BarChart>

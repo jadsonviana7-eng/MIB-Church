@@ -1150,12 +1150,12 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
         sub: prefixo ? `Acervo de ${prefixo}` : 'Acervo Geral',
         count: countTodas,
         icon: Disc3,
-        iconBadgeClass: 'bg-indigo-50 text-indigo-600 border border-indigo-100',
+        iconBadgeClass: 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/60',
         activeClass: 'bg-gradient-to-br from-blue-700 via-indigo-700 to-blue-800 text-white border-blue-600 ring-2 ring-blue-400/40',
-        textClass: 'text-slate-800',
-        subClass: 'text-slate-400',
-        countClass: 'bg-slate-100 text-slate-700',
-        bgCard: 'bg-white hover:bg-slate-50 border-slate-200/90'
+        textClass: 'text-slate-800 dark:text-slate-100',
+        subClass: 'text-slate-400 dark:text-slate-500',
+        countClass: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300',
+        bgCard: 'bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-800/80 border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
       },
       {
         id: 'masculino',
@@ -1163,12 +1163,12 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
         sub: prefixo ? `${prefixo} Masc.` : 'Tons masculinos',
         count: countMasc,
         icon: User,
-        iconBadgeClass: 'bg-blue-50 text-blue-600 border border-blue-200/60',
+        iconBadgeClass: 'bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60',
         activeClass: 'bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white border-blue-600 ring-2 ring-blue-400/40',
-        textClass: 'text-blue-700 font-black',
-        subClass: 'text-blue-500 font-medium',
-        countClass: 'bg-blue-100 text-blue-700 font-bold',
-        bgCard: 'bg-white hover:bg-blue-50/40 border-blue-200/80'
+        textClass: 'text-blue-700 dark:text-blue-300 font-black',
+        subClass: 'text-blue-500 dark:text-blue-400/80 font-medium',
+        countClass: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold',
+        bgCard: 'bg-white dark:bg-slate-900/80 hover:bg-blue-50/40 dark:hover:bg-blue-950/40 border-blue-200/80 dark:border-blue-900/60 hover:border-blue-300 dark:hover:border-blue-700'
       },
       {
         id: 'feminino',
@@ -1176,12 +1176,12 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
         sub: prefixo ? `${prefixo} Fem.` : 'Tons femininos',
         count: countFem,
         icon: User,
-        iconBadgeClass: 'bg-pink-50 text-pink-600 border border-pink-200/60',
+        iconBadgeClass: 'bg-pink-50 dark:bg-pink-950/80 text-pink-600 dark:text-pink-400 border border-pink-200/60 dark:border-pink-900/60',
         activeClass: 'bg-gradient-to-br from-pink-600 via-rose-600 to-pink-700 text-white border-pink-600 ring-2 ring-pink-400/40',
-        textClass: 'text-pink-700 font-black',
-        subClass: 'text-pink-500 font-medium',
-        countClass: 'bg-pink-100 text-pink-700 font-bold',
-        bgCard: 'bg-white hover:bg-pink-50/40 border-pink-200/80'
+        textClass: 'text-pink-700 dark:text-pink-300 font-black',
+        subClass: 'text-pink-500 dark:text-pink-400/80 font-medium',
+        countClass: 'bg-pink-100 dark:bg-pink-950 text-pink-700 dark:text-pink-300 font-bold',
+        bgCard: 'bg-white dark:bg-slate-900/80 hover:bg-pink-50/40 dark:hover:bg-pink-950/40 border-pink-200/80 dark:border-pink-900/60 hover:border-pink-300 dark:hover:border-pink-700'
       },
       {
         id: 'misto',
@@ -1189,12 +1189,12 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
         sub: prefixo ? `${prefixo} Mista` : 'Ambos / Duetos',
         count: countMisto,
         icon: Users,
-        iconBadgeClass: 'bg-purple-50 text-purple-600 border border-purple-200/60',
+        iconBadgeClass: 'bg-purple-50 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-900/60',
         activeClass: 'bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-800 text-white border-purple-600 ring-2 ring-purple-400/40',
-        textClass: 'text-purple-700 font-black',
-        subClass: 'text-purple-500 font-medium',
-        countClass: 'bg-purple-100 text-purple-700 font-bold',
-        bgCard: 'bg-white hover:bg-purple-50/40 border-purple-200/80'
+        textClass: 'text-purple-700 dark:text-purple-300 font-black',
+        subClass: 'text-purple-500 dark:text-purple-400/80 font-medium',
+        countClass: 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 font-bold',
+        bgCard: 'bg-white dark:bg-slate-900/80 hover:bg-purple-50/40 dark:hover:bg-purple-950/40 border-purple-200/80 dark:border-purple-900/60 hover:border-purple-300 dark:hover:border-purple-700'
       }
     ];
 
@@ -1354,38 +1354,38 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
     if (isMasc) {
       return {
-        badgeClass: 'bg-blue-50 text-blue-700 border-blue-200/80',
-        iconClass: 'text-blue-600',
-        textClass: 'text-blue-700',
-        subClass: 'text-blue-500',
-        bgCard: 'bg-white hover:bg-blue-50/40 text-blue-900 border-blue-200/80 hover:border-blue-300',
-        countClass: 'bg-blue-100 text-blue-700',
-        iconBadgeClass: 'bg-blue-50 text-blue-600 border border-blue-200/60',
+        badgeClass: 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200/80 dark:border-blue-900/60',
+        iconClass: 'text-blue-600 dark:text-blue-400',
+        textClass: 'text-blue-700 dark:text-blue-300',
+        subClass: 'text-blue-500 dark:text-blue-400/80',
+        bgCard: 'bg-white dark:bg-slate-900/80 hover:bg-blue-50/40 dark:hover:bg-blue-950/40 text-blue-900 dark:text-blue-200 border-blue-200/80 dark:border-blue-900/60 hover:border-blue-300 dark:hover:border-blue-700',
+        countClass: 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300',
+        iconBadgeClass: 'bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60',
         icon: Folder
       };
     }
 
     if (isFem) {
       return {
-        badgeClass: 'bg-pink-50 text-pink-700 border-pink-200/80',
-        iconClass: 'text-pink-600',
-        textClass: 'text-pink-700',
-        subClass: 'text-pink-500',
-        bgCard: 'bg-white hover:bg-pink-50/40 text-pink-900 border-pink-200/80 hover:border-pink-300',
-        countClass: 'bg-pink-100 text-pink-700',
-        iconBadgeClass: 'bg-pink-50 text-pink-600 border border-pink-200/60',
+        badgeClass: 'bg-pink-50 dark:bg-pink-950/60 text-pink-700 dark:text-pink-300 border-pink-200/80 dark:border-pink-900/60',
+        iconClass: 'text-pink-600 dark:text-pink-400',
+        textClass: 'text-pink-700 dark:text-pink-300',
+        subClass: 'text-pink-500 dark:text-pink-400/80',
+        bgCard: 'bg-white dark:bg-slate-900/80 hover:bg-pink-50/40 dark:hover:bg-pink-950/40 text-pink-900 dark:text-pink-200 border-pink-200/80 dark:border-pink-900/60 hover:border-pink-300 dark:hover:border-pink-700',
+        countClass: 'bg-pink-100 dark:bg-pink-950 text-pink-700 dark:text-pink-300',
+        iconBadgeClass: 'bg-pink-50 dark:bg-pink-950/80 text-pink-600 dark:text-pink-400 border border-pink-200/60 dark:border-pink-900/60',
         icon: Folder
       };
     }
 
     return {
-      badgeClass: 'bg-slate-100 text-slate-700 border-slate-200',
-      iconClass: 'text-slate-500',
-      textClass: 'text-slate-800',
-      subClass: 'text-slate-400',
-      bgCard: 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/90 hover:border-slate-300',
-      countClass: 'bg-slate-100 text-slate-700',
-      iconBadgeClass: 'bg-slate-100 text-slate-600 border border-slate-200/60',
+      badgeClass: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+      iconClass: 'text-slate-500 dark:text-slate-400',
+      textClass: 'text-slate-800 dark:text-slate-100',
+      subClass: 'text-slate-400 dark:text-slate-500',
+      bgCard: 'bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700',
+      countClass: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300',
+      iconBadgeClass: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700',
       icon: Folder
     };
   }
@@ -1425,7 +1425,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
   }
 
   return (
-    <div className="space-y-6 w-full animate-in fade-in duration-300">
+    <div className="repertorio-louvor-container space-y-6 w-full animate-in fade-in duration-300">
       {/* ── TOAST FLUTUANTE ── */}
       {toastNotificacao && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-in slide-in-from-bottom-2 duration-300">
@@ -1438,10 +1438,9 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
       {!hideHeader && (
         <>
           {/* Card Branco de Título no Mobile (Mesma largura dos elementos da página) */}
-          {/* Card Branco de Título no Mobile (Mesma largura dos elementos da página) */}
-          <div className="md:hidden w-full mb-4 bg-white px-4 py-3.5 rounded-b-2xl sm:rounded-b-3xl rounded-t-none border border-t-0 border-slate-200/90 shadow-2xs flex items-center justify-between">
+          <div className="md:hidden w-full mb-4 bg-white dark:bg-slate-900 px-4 py-3.5 rounded-b-2xl sm:rounded-b-3xl rounded-t-none border border-t-0 border-slate-200/90 dark:border-slate-800 shadow-2xs flex items-center justify-between">
             <div className="w-8 shrink-0" />
-            <h1 className="text-sm font-black uppercase tracking-wider text-slate-800 text-center truncate">
+            <h1 className="text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-100 text-center truncate">
               Repertório de Louvor
             </h1>
             <div className="w-8 shrink-0 flex justify-end">
@@ -1449,7 +1448,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 <button
                   type="button"
                   onClick={() => setModalSqlAberto(true)}
-                  className="p-1 rounded-lg bg-amber-500/10 text-amber-700 text-[10px] font-bold border border-amber-300/60"
+                  className="p-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 text-[10px] font-bold border border-amber-300/60 dark:border-amber-700/60"
                   title="Configurar Banco"
                 >
                   SQL
@@ -1465,7 +1464,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 <button
                   type="button"
                   onClick={onVoltar}
-                  className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-white hover:bg-slate-100 text-slate-600 border border-slate-200/80 shadow-xs transition cursor-pointer shrink-0 active:scale-95"
+                  className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 shadow-xs transition cursor-pointer shrink-0 active:scale-95"
                   title="Voltar"
                 >
                   <ChevronLeft size={20} strokeWidth={2.5} />
@@ -1476,14 +1475,14 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">
+                  <h1 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
                     Repertório de Louvor
                   </h1>
                   {statusBanco && !statusBanco.conectado && (
                     <button
                       type="button"
                       onClick={() => setModalSqlAberto(true)}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 transition cursor-pointer shadow-2xs active:scale-95"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 hover:bg-amber-100 dark:hover:bg-amber-900/60 transition cursor-pointer shadow-2xs active:scale-95"
                       title="Clique para ver o script SQL para criar as tabelas no Supabase"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
@@ -1491,7 +1490,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     </button>
                   )}
                 </div>
-                <p className="text-xs sm:text-sm text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                   Planejamento musical dos cultos com biblioteca de músicas e sugestões inteligentes.
                 </p>
               </div>
@@ -1501,7 +1500,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
       )}
 
       {/* ── NAVEGAÇÃO DE ABAS (MOBILE: 3 BOTÕES QUADRADOS COM ÍCONE ACIMA E NOME ABAIXO) ── */}
-      <div className={`${hideSidebar ? 'flex' : 'flex lg:hidden'} flex-col gap-2.5 pb-3 border-b border-slate-150 w-full`}>
+      <div className={`${hideSidebar ? 'flex' : 'flex lg:hidden'} flex-col gap-2.5 pb-3 border-b border-slate-150 dark:border-slate-800 w-full`}>
         <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
           {abas.map((a) => {
             const Icon = a.icon;
@@ -1513,22 +1512,22 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 onClick={() => handleNavegarTab(a.id)}
                 className={`relative flex flex-col items-center justify-center p-2 sm:p-3 rounded-2xl transition-all duration-200 cursor-pointer active:scale-95 group text-center min-h-[82px] sm:min-h-[92px] ${ativo
                   ? 'bg-gradient-to-b from-blue-600 via-indigo-600 to-blue-800 text-white shadow-lg shadow-blue-700/25 border border-blue-400/40'
-                  : 'bg-white hover:bg-slate-50 text-slate-600 border border-slate-200/90 shadow-2xs hover:border-slate-300'
+                  : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
               >
                 {a.badge !== undefined && (
-                  <span className={`absolute top-1.5 right-1.5 text-[9px] font-black px-1.5 py-0.2 rounded-full shadow-2xs ${ativo ? 'bg-white text-blue-800' : 'bg-blue-100 text-blue-700'
+                  <span className={`absolute top-1.5 right-1.5 text-[9px] font-black px-1.5 py-0.2 rounded-full shadow-2xs ${ativo ? 'bg-white text-blue-800' : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300'
                     }`}>
                     {a.badge}
                   </span>
                 )}
                 <span className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center mb-1.5 transition-all ${ativo
                   ? 'bg-white/20 text-white shadow-inner'
-                  : 'bg-blue-50 text-blue-600 group-hover:bg-blue-100'
+                  : 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/60'
                   }`}>
                   <Icon size={20} strokeWidth={ativo ? 2.5 : 2} />
                 </span>
-                <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-tight leading-tight line-clamp-2 ${ativo ? 'text-white' : 'text-slate-700 group-hover:text-slate-900'
+                <span className={`text-[10px] sm:text-[11px] font-black uppercase tracking-tight leading-tight line-clamp-2 ${ativo ? 'text-white' : 'text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white'
                   }`}>
                   {a.label}
                 </span>
@@ -1562,13 +1561,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
           {abaAtiva === 'cultos' && (
             <div className="space-y-3 w-full min-w-0">
               {/* Segmented Control no Mobile (< lg) para alternar entre lista de cultos e editor */}
-              <div className="lg:hidden flex items-center p-1 bg-slate-200/80 rounded-2xl gap-1">
+              <div className="lg:hidden flex items-center p-1 bg-slate-200/80 dark:bg-slate-800/80 rounded-2xl gap-1">
                 <button
                   type="button"
                   onClick={() => setSubAbaMobileCultos('lista')}
                   className={`flex-1 py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer ${subAbaMobileCultos === 'lista'
-                    ? 'bg-white text-blue-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                 >
                   <Calendar size={14} />
@@ -1580,7 +1579,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                   onClick={() => setSubAbaMobileCultos('editor')}
                   className={`flex-1 py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer ${subAbaMobileCultos === 'editor'
                     ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                     }`}
                 >
                   <ListMusic size={14} />
@@ -1591,25 +1590,25 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-5 items-start w-full min-w-0">
                 {/* COLUNA ESQUERDA: LISTA DE EVENTOS DAS ESCALAS (4 colunas) */}
                 <div className={`${subAbaMobileCultos === 'lista' ? 'block' : 'hidden lg:block'} lg:col-span-4 xl:col-span-4 space-y-4 min-w-0 w-full`}>
-                  <div className="bg-white rounded-3xl border border-slate-200/80 p-4 shadow-sm space-y-3">
+                  <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-sm space-y-3">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                        <Calendar size={16} className="text-blue-600" />
+                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <Calendar size={16} className="text-blue-600 dark:text-blue-400" />
                         Cultos Agendados
                       </h3>
-                      <span className="text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
                         {eventosFiltrados.length} {eventosFiltrados.length === 1 ? 'culto' : 'cultos'}
                       </span>
                     </div>
 
                     {/* Navegador e Filtro Mensal */}
-                    <div className="bg-slate-50/90 rounded-2xl p-2.5 border border-slate-200/90 shadow-2xs space-y-2">
+                    <div className="bg-slate-50/90 dark:bg-slate-850/60 rounded-2xl p-2.5 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2">
                       <div className="flex items-center justify-between gap-1">
                         <button
                           type="button"
                           onClick={() => navegarMes(-1)}
                           title="Mês anterior"
-                          className="p-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200/80 text-slate-600 hover:text-slate-900 shadow-2xs transition active:scale-95 cursor-pointer"
+                          className="p-1.5 rounded-lg bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-2xs transition active:scale-95 cursor-pointer"
                         >
                           <ChevronLeft size={15} />
                         </button>
@@ -1618,7 +1617,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           <select
                             value={filtroMesEvento}
                             onChange={(e) => setFiltroMesEvento(e.target.value)}
-                            className="w-full text-center appearance-none bg-white font-black text-xs text-slate-800 py-1.5 px-3 rounded-lg border border-slate-200/80 shadow-2xs focus:border-blue-500 outline-none cursor-pointer pr-6"
+                            className="w-full text-center appearance-none bg-white dark:bg-slate-900 font-black text-xs text-slate-800 dark:text-slate-100 py-1.5 px-3 rounded-lg border border-slate-200/80 dark:border-slate-700 shadow-2xs focus:border-blue-500 outline-none cursor-pointer pr-6"
                           >
                             <option value="todos">Todos os meses</option>
                             {mesesDisponiveis.map(m => (
@@ -1636,7 +1635,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           type="button"
                           onClick={() => navegarMes(1)}
                           title="Próximo mês"
-                          className="p-1.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200/80 text-slate-600 hover:text-slate-900 shadow-2xs transition active:scale-95 cursor-pointer"
+                          className="p-1.5 rounded-lg bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-2xs transition active:scale-95 cursor-pointer"
                         >
                           <ChevronRight size={15} />
                         </button>
@@ -1649,7 +1648,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           onClick={() => setFiltroMesEvento(mesAtualStr)}
                           className={`px-2 py-1 rounded-md transition cursor-pointer flex items-center gap-1 ${filtroMesEvento === mesAtualStr
                             ? 'bg-blue-600 text-white shadow-2xs'
-                            : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/70'
+                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/70 dark:border-slate-700'
                             }`}
                         >
                           <Calendar size={11} />
@@ -1660,8 +1659,8 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           type="button"
                           onClick={() => setFiltroMesEvento(filtroMesEvento === 'todos' ? mesAtualStr : 'todos')}
                           className={`px-2 py-1 rounded-md transition cursor-pointer flex items-center gap-1 ${filtroMesEvento === 'todos'
-                            ? 'bg-slate-800 text-white shadow-2xs'
-                            : 'text-slate-500 hover:text-slate-800'
+                            ? 'bg-slate-800 dark:bg-slate-700 text-white shadow-2xs'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                             }`}
                         >
                           {filtroMesEvento === 'todos' && <Check size={11} strokeWidth={2.5} />}
@@ -1678,30 +1677,30 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         placeholder="Filtrar culto, pregador..."
                         value={buscaEvento}
                         onChange={e => setBuscaEvento(e.target.value)}
-                        className="w-full pl-8.5 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-medium"
+                        className="w-full pl-8.5 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-blue-500 font-medium text-slate-800 dark:text-slate-100"
                       />
                     </div>
 
                     {/* Filtro de status */}
-                    <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl text-[10px] font-black uppercase tracking-wider text-center">
+                    <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-[10px] font-black uppercase tracking-wider text-center">
                       <button
                         type="button"
                         onClick={() => setFiltroStatusEvento('todos')}
-                        className={`py-1.5 rounded-lg transition cursor-pointer ${filtroStatusEvento === 'todos' ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                        className={`py-1.5 rounded-lg transition cursor-pointer ${filtroStatusEvento === 'todos' ? 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
                       >
                         Todos
                       </button>
                       <button
                         type="button"
                         onClick={() => setFiltroStatusEvento('com_repertorio')}
-                        className={`py-1.5 rounded-lg transition cursor-pointer ${filtroStatusEvento === 'com_repertorio' ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                        className={`py-1.5 rounded-lg transition cursor-pointer ${filtroStatusEvento === 'com_repertorio' ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
                       >
                         Prontos
                       </button>
                       <button
                         type="button"
                         onClick={() => setFiltroStatusEvento('sem_repertorio')}
-                        className={`py-1.5 rounded-lg transition cursor-pointer ${filtroStatusEvento === 'sem_repertorio' ? 'bg-white text-amber-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+                        className={`py-1.5 rounded-lg transition cursor-pointer ${filtroStatusEvento === 'sem_repertorio' ? 'bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-400 shadow-xs' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'}`}
                       >
                         Pendentes
                       </button>
@@ -1710,16 +1709,16 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     {/* Lista de cards de eventos */}
                     <div className="space-y-2">
                       {eventosFiltrados.length === 0 ? (
-                        <div className="py-8 px-3 text-center text-slate-400 text-xs bg-slate-50/60 rounded-2xl border border-dashed border-slate-200 space-y-2">
-                          <Calendar size={22} className="mx-auto text-slate-300" />
-                          <p className="font-semibold text-slate-500">
+                        <div className="py-8 px-3 text-center text-slate-400 text-xs bg-slate-50/60 dark:bg-slate-850/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 space-y-2">
+                          <Calendar size={22} className="mx-auto text-slate-300 dark:text-slate-600" />
+                          <p className="font-semibold text-slate-500 dark:text-slate-400">
                             Nenhum culto encontrado {filtroMesEvento !== 'todos' ? 'neste mês' : ''}.
                           </p>
                           {filtroMesEvento !== 'todos' && (
                             <button
                               type="button"
                               onClick={() => setFiltroMesEvento('todos')}
-                              className="text-[11px] font-black text-blue-600 hover:text-blue-700 underline cursor-pointer"
+                              className="text-[11px] font-black text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                             >
                               Ver cultos de todos os meses
                             </button>
@@ -1739,17 +1738,26 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                 selecionarEvento(ev.id);
                                 setModalVisualizarCulto(ev);
                               }}
-                              className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative group active:scale-[0.99] ${selecionado
-                                ? 'bg-blue-50/70 border-blue-400 shadow-sm ring-2 ring-blue-500/20'
-                                : 'bg-white border-slate-200/70 hover:border-blue-200 hover:bg-slate-50/60'
+                              className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative group active:scale-[0.99] card-evento-btn ${selecionado
+                                ? 'card-evento-selected text-white ring-2 ring-blue-400/40'
+                                : 'card-evento-unselected text-slate-700 dark:text-slate-200'
                                 }`}
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0 flex-1">
-                                  <p className="text-[10px] font-black uppercase tracking-wider text-blue-700">
-                                    {diaSemana} · {dataFormatada} {horaFormatada !== '--:--' && `às ${horaFormatada}`}
-                                  </p>
-                                  <h4 className="font-black text-slate-800 text-xs mt-0.5 line-clamp-1">
+                                  <div className={`text-[10px] font-black uppercase tracking-wider transition-colors ${selecionado
+                                    ? 'text-cyan-200'
+                                    : 'text-blue-700 dark:text-blue-400 group-hover:text-blue-800 dark:group-hover:text-blue-300'
+                                    }`}>
+                                    <span>{diaSemana} · {dataFormatada}</span>
+                                    {horaFormatada !== '--:--' && (
+                                      <span className="card-evento-time"> às {horaFormatada}</span>
+                                    )}
+                                  </div>
+                                  <h4 className={`font-black text-xs mt-0.5 line-clamp-1 transition-colors ${selecionado
+                                    ? 'text-white'
+                                    : 'text-slate-800 dark:text-slate-100 group-hover:text-blue-700 dark:group-hover:text-blue-200'
+                                    }`}>
                                     {ev.titulo}
                                   </h4>
                                 </div>
@@ -1763,37 +1771,58 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                           enviarWhatsAppCulto(ev, rep);
                                         }}
                                         title="Enviar repertório diretamente para o WhatsApp"
-                                        className="p-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white border border-emerald-200 transition active:scale-90 cursor-pointer shadow-2xs"
+                                        className={`p-1.5 rounded-lg border transition active:scale-90 cursor-pointer shadow-2xs ${selecionado
+                                          ? 'bg-white/20 hover:bg-emerald-600 text-white border-white/30 backdrop-blur-xs'
+                                          : 'bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-400 hover:text-white border border-emerald-200 dark:border-emerald-800'
+                                          }`}
                                       >
                                         <IconWhatsApp size={12} />
                                       </button>
-                                      <span className="shrink-0 bg-emerald-100 text-emerald-800 border border-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                                      <span className={`shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border transition-colors ${selecionado
+                                        ? 'bg-white/20 text-white border-white/30 backdrop-blur-xs'
+                                        : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                        }`}>
                                         <CheckCircle2 size={11} /> {qtdMusicas}
                                       </span>
                                     </>
                                   ) : (
-                                    <span className="shrink-0 bg-amber-50 text-amber-700 border border-amber-200/80 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                    <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors ${selecionado
+                                      ? 'bg-amber-400/25 text-amber-100 border-amber-300/40 backdrop-blur-xs'
+                                      : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800'
+                                      }`}>
                                       Pendente
                                     </span>
                                   )}
                                 </div>
                               </div>
 
-                              <div className="mt-2 pt-2 border-t border-slate-100 text-[11px] text-slate-500 flex items-center justify-between">
+                              <div className={`mt-2 pt-2 border-t text-[11px] flex items-center justify-between transition-colors ${selecionado
+                                ? 'border-white/20 text-blue-100'
+                                : 'border-slate-100 dark:border-slate-800/80 group-hover:border-blue-200/70 dark:group-hover:border-blue-800/60 text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300'
+                                }`}>
                                 <span className="truncate flex items-center gap-1.5">
                                   {ev.pregador ? (
                                     <>
-                                      <BookOpen size={11} className="shrink-0 text-slate-400" />
+                                      <BookOpen size={11} className={`shrink-0 transition-colors ${selecionado
+                                        ? 'text-cyan-200'
+                                        : 'text-slate-400 dark:text-slate-500 group-hover:text-blue-500 dark:group-hover:text-blue-400'
+                                        }`} />
                                       <span className="truncate">{ev.pregador}</span>
                                     </>
                                   ) : (
                                     <>
-                                      <MapPin size={11} className="shrink-0 text-slate-400" />
+                                      <MapPin size={11} className={`shrink-0 transition-colors ${selecionado
+                                        ? 'text-blue-200'
+                                        : 'text-slate-400 dark:text-slate-500 group-hover:text-blue-500 dark:group-hover:text-blue-400'
+                                        }`} />
                                       <span className="truncate">{ev.local || 'Templo Sede'}</span>
                                     </>
                                   )}
                                 </span>
-                                <span className="text-[10px] font-bold text-blue-600 flex items-center gap-0.5 group-hover:translate-x-0.5 transition-transform shrink-0">
+                                <span className={`text-[10px] font-bold flex items-center gap-0.5 group-hover:translate-x-0.5 transition-all shrink-0 card-evento-link ${selecionado
+                                  ? 'text-white'
+                                  : 'text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300'
+                                  }`}>
                                   Ver repertório
                                   <ChevronRight size={12} />
                                 </span>
@@ -1809,11 +1838,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 {/* COLUNA DIREITA: MONTAGEM DO REPERTÓRIO (8 colunas) */}
                 <div className={`${subAbaMobileCultos === 'editor' ? 'block' : 'hidden lg:block'} lg:col-span-8 xl:col-span-8 space-y-4 min-w-0 w-full`}>
                   {/* Banner no Mobile para voltar para a lista de cultos */}
-                  <div className="lg:hidden flex items-center justify-between p-2.5 bg-blue-50/90 border border-blue-200 rounded-2xl shadow-2xs">
+                  <div className="lg:hidden flex items-center justify-between p-2.5 bg-blue-50/90 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-2xl shadow-2xs">
                     <button
                       type="button"
                       onClick={() => setSubAbaMobileCultos('lista')}
-                      className="text-xs font-black text-blue-700 flex items-center gap-1.5 active:scale-95 transition cursor-pointer"
+                      className="text-xs font-black text-blue-700 dark:text-blue-300 flex items-center gap-1.5 active:scale-95 transition cursor-pointer"
                     >
                       <ChevronLeft size={16} />
                       <span>Voltar para Lista de Cultos</span>
@@ -1822,7 +1851,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       <button
                         type="button"
                         onClick={() => setModalVisualizarCulto(eventoAtualObj)}
-                        className="text-[10px] font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-2.5 py-1 rounded-xl border border-emerald-300 flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-2xs"
+                        className="text-[10px] font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-950/80 hover:bg-emerald-200 dark:hover:bg-emerald-900/80 px-2.5 py-1 rounded-xl border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-2xs"
                         title="Ver prévia e enviar no WhatsApp"
                       >
                         <IconWhatsApp size={12} />
@@ -1832,20 +1861,20 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                   </div>
 
                   {!eventoAtualObj ? (
-                    <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm">
-                      <Music size={40} className="mx-auto text-slate-300 mb-3" />
-                      <h3 className="text-base font-black text-slate-700">Selecione um culto ao lado</h3>
-                      <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-12 text-center shadow-sm">
+                      <Music size={40} className="mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+                      <h3 className="text-base font-black text-slate-700 dark:text-slate-200">Selecione um culto ao lado</h3>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
                         Escolha um evento na lista de escalas para montar, salvar e compartilhar o repertório de louvor.
                       </p>
                     </div>
                   ) : (
-                    <div className="bg-white rounded-3xl border border-slate-200/80 p-4 sm:p-5 shadow-sm space-y-4 min-w-0">
+                    <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-sm space-y-4 min-w-0">
                       {/* Cabeçalho do Culto Selecionado */}
-                      <div className="pb-3.5 border-b border-slate-100 space-y-2.5 min-w-0">
+                      <div className="pb-3.5 border-b border-slate-100 dark:border-slate-800 space-y-2.5 min-w-0">
                         {/* Linha 1: Nome do Evento alinhado aos Botões de Ação */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
-                          <h2 className="text-lg sm:text-xl font-black text-slate-800 tracking-tight break-words min-w-0 flex-1">
+                          <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-slate-100 tracking-tight break-words min-w-0 flex-1">
                             {eventoAtualObj.titulo}
                           </h2>
 
@@ -1865,7 +1894,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                               type="button"
                               onClick={enviarParaWhatsApp}
                               title="Enviar repertório para o WhatsApp"
-                              className="p-1.5 border border-emerald-300 text-emerald-600 hover:bg-emerald-50 rounded-xl transition cursor-pointer shrink-0"
+                              className="p-1.5 border border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 rounded-xl transition cursor-pointer shrink-0"
                             >
                               <IconWhatsApp size={15} />
                             </button>
@@ -1874,7 +1903,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                               type="button"
                               onClick={imprimirRepertorio}
                               title="Imprimir repertório"
-                              className="p-1.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl transition cursor-pointer shrink-0"
+                              className="p-1.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer shrink-0"
                             >
                               <Printer size={15} />
                             </button>
@@ -1883,33 +1912,33 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
                         {/* Linha 2: Informações de calendário (dia, data, hora, local) na linha abaixo com largura total sem cortes */}
                         <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                          <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-600 bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-lg shadow-2xs">
-                            <Calendar size={12} className="text-blue-600 shrink-0" />
-                            <span className="font-black text-blue-700 uppercase tracking-wide">
+                          <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 px-2.5 py-1 rounded-lg shadow-2xs">
+                            <Calendar size={12} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                            <span className="font-black text-blue-700 dark:text-blue-400 uppercase tracking-wide">
                               {formatarDataHoraEvento(eventoAtualObj.data_evento).diaSemana}, {formatarDataHoraEvento(eventoAtualObj.data_evento).dataFormatada}
                               {formatarDataHoraEvento(eventoAtualObj.data_evento).horaFormatada !== '--:--' && ` às ${formatarDataHoraEvento(eventoAtualObj.data_evento).horaFormatada}`}
                             </span>
-                            <span className="text-slate-300">·</span>
-                            <span className="text-slate-600 font-medium flex items-center gap-1">
-                              <MapPin size={11} className="text-slate-400" />
+                            <span className="text-slate-300 dark:text-slate-600">·</span>
+                            <span className="text-slate-600 dark:text-slate-300 font-medium flex items-center gap-1">
+                              <MapPin size={11} className="text-slate-400 dark:text-slate-500" />
                               <span>{eventoAtualObj.local || 'Templo Sede'}</span>
                             </span>
                           </div>
 
                           {eventoAtualObj.pregador && (
-                            <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-500 bg-slate-50 border border-slate-200/60 px-2.5 py-1 rounded-lg font-medium">
-                              <BookOpen size={11} className="text-slate-400" />
+                            <span className="inline-flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700 px-2.5 py-1 rounded-lg font-medium">
+                              <BookOpen size={11} className="text-slate-400 dark:text-slate-500" />
                               <span>Palavra:</span>
-                              <strong className="text-slate-700 font-bold">{eventoAtualObj.pregador}</strong>
+                              <strong className="text-slate-700 dark:text-slate-200 font-bold">{eventoAtualObj.pregador}</strong>
                             </span>
                           )}
                         </div>
                       </div>
 
                       {/* Tema e Observações Gerais do Culto */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/70">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/70 dark:bg-slate-850/60 p-3.5 rounded-2xl border border-slate-200/70 dark:border-slate-800">
                         <div>
-                          <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                          <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">
                             Tema do Culto / Mensagem (Opcional)
                           </label>
                           <input
@@ -1917,11 +1946,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                             placeholder="Ex: Família, Fé e Milagres, Santidade..."
                             value={repertorioAtual.tema_culto}
                             onChange={e => setRepertorioAtual(prev => ({ ...prev, tema_culto: e.target.value }))}
-                            className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-medium"
+                            className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-blue-500 font-medium text-slate-800 dark:text-slate-100"
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                          <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block mb-1">
                             Observação Geral da Equipe (Opcional)
                           </label>
                           <input
@@ -1929,7 +1958,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                             placeholder="Ex: Ensaio 30 min antes, traje preto e branco..."
                             value={repertorioAtual.observacoes_gerais}
                             onChange={e => setRepertorioAtual(prev => ({ ...prev, observacoes_gerais: e.target.value }))}
-                            className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-medium"
+                            className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-blue-500 font-medium text-slate-800 dark:text-slate-100"
                           />
                         </div>
                       </div>
@@ -2049,13 +2078,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-[11px] font-bold">
+                        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-[11px] font-bold">
                           <button
                             type="button"
                             onClick={() => setModoVisualizacaoRepertorio('sequencia')}
                             className={`px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${modoVisualizacaoRepertorio === 'sequencia'
-                              ? 'bg-white text-slate-900 shadow-2xs font-black'
-                              : 'text-slate-500 hover:text-slate-800'
+                              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-black'
+                              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                               }`}
                             title="Exibir em ordem sequencial do culto (1º, 2º, 3º...)"
                           >
@@ -2066,8 +2095,8 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                             type="button"
                             onClick={() => setModoVisualizacaoRepertorio('blocos')}
                             className={`px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${modoVisualizacaoRepertorio === 'blocos'
-                              ? 'bg-white text-slate-900 shadow-2xs font-black'
-                              : 'text-slate-500 hover:text-slate-800'
+                              ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-black'
+                              : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                               }`}
                             title="Exibir agrupado por momentos litúrgicos"
                           >
@@ -2080,15 +2109,15 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       {/* ── MODO 1: SEQUÊNCIA CRONOLÓGICA DO CULTO (SETLIST #1, #2, #3...) ── */}
                       {modoVisualizacaoRepertorio === 'sequencia' ? (
                         repertorioAtual.musicas.length === 0 ? (
-                          <div className="border-2 border-dashed border-slate-200 rounded-3xl p-8 sm:p-10 bg-slate-50/50 text-center space-y-4">
-                            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-2xs">
+                          <div className="border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 bg-slate-50/50 dark:bg-slate-850/40 text-center space-y-4">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-2xs">
                               <Music size={24} />
                             </div>
                             <div>
-                              <h4 className="text-sm font-black text-slate-800">
+                              <h4 className="text-sm font-black text-slate-800 dark:text-slate-100">
                                 Nenhuma música no repertório ainda
                               </h4>
-                              <p className="text-xs text-slate-400 max-w-md mx-auto mt-1">
+                              <p className="text-xs text-slate-400 dark:text-slate-500 max-w-md mx-auto mt-1">
                                 Por qual momento você deseja abrir este culto? Escolha uma das opções abaixo para abrir a biblioteca e selecionar a primeira música:
                               </p>
                             </div>
@@ -2125,23 +2154,23 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                             {repertorioAtual.musicas.map((item, globalIndex) => {
                               const tipoBadge =
                                 item.tipo === 'Celebração'
-                                  ? { bg: 'bg-amber-50 text-amber-800 border-amber-200' }
+                                  ? { bg: 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800' }
                                   : item.tipo === 'Pós pregação'
-                                    ? { bg: 'bg-purple-50 text-purple-800 border-purple-200' }
-                                    : { bg: 'bg-blue-50 text-blue-800 border-blue-200' };
+                                    ? { bg: 'bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800' }
+                                    : { bg: 'bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800' };
 
                               return (
                                 <div
                                   key={globalIndex}
-                                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 bg-white hover:bg-slate-50/80 border border-slate-200/80 rounded-2xl transition shadow-2xs group"
+                                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-3.5 bg-white dark:bg-slate-850/70 hover:bg-slate-50/80 dark:hover:bg-slate-800/80 border border-slate-200/80 dark:border-slate-800 rounded-2xl transition shadow-2xs group"
                                 >
                                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <span className="w-7 h-7 rounded-xl bg-slate-900 text-white flex items-center justify-center text-xs font-black shrink-0 shadow-2xs">
+                                    <span className="w-7 h-7 rounded-xl bg-slate-900 dark:bg-slate-800 text-white dark:text-slate-100 flex items-center justify-center text-xs font-black shrink-0 shadow-2xs">
                                       {item.ordem}
                                     </span>
                                     <div className="min-w-0 flex-1">
                                       <div className="flex items-center gap-2 flex-wrap">
-                                        <p className="text-xs font-black text-slate-800 truncate">
+                                        <p className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
                                           {item.titulo}
                                         </p>
                                         {/* Seletor de Tipo / Momento na música */}
@@ -2156,7 +2185,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                           <option value="Pós pregação">Pós pregação</option>
                                         </select>
                                       </div>
-                                      <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                                      <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                                         {item.artista || 'Geral'}
                                       </p>
                                     </div>
@@ -2165,11 +2194,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                   <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
                                     {/* Seletor de Tom do Culto */}
                                     <div className="flex items-center gap-1 shrink-0">
-                                      <span className="text-[10px] font-black text-slate-400 uppercase">Tom:</span>
+                                      <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase">Tom:</span>
                                       <select
                                         value={item.tom || 'G'}
                                         onChange={e => atualizarTomMusicaRepertorio(globalIndex, e.target.value)}
-                                        className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-black text-blue-700 outline-none cursor-pointer"
+                                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-black text-blue-700 dark:text-blue-400 outline-none cursor-pointer"
                                       >
                                         {TONS_DISPONIVEIS.map(t => (
                                           <option key={t} value={t}>{t}</option>
@@ -2183,7 +2212,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                       placeholder="Obs (ex: violão)..."
                                       value={item.observacao || ''}
                                       onChange={e => atualizarObsMusicaRepertorio(globalIndex, e.target.value)}
-                                      className="w-24 sm:w-28 md:w-32 text-[10px] px-2 py-1 bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-500"
+                                      className="w-24 sm:w-28 md:w-32 text-[10px] px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-blue-500 text-slate-800 dark:text-slate-100"
                                     />
 
                                     {/* Reordenação */}
@@ -2193,7 +2222,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                         onClick={() => moverMusicaRepertorio(globalIndex, -1)}
                                         disabled={globalIndex === 0}
                                         title="Subir na ordem do culto"
-                                        className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30 cursor-pointer"
+                                        className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-30 cursor-pointer"
                                       >
                                         <ArrowUp size={14} />
                                       </button>
@@ -2202,7 +2231,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                         onClick={() => moverMusicaRepertorio(globalIndex, 1)}
                                         disabled={globalIndex === repertorioAtual.musicas.length - 1}
                                         title="Descer na ordem do culto"
-                                        className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30 cursor-pointer"
+                                        className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-30 cursor-pointer"
                                       >
                                         <ArrowDown size={14} />
                                       </button>
@@ -2221,15 +2250,15 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                             })}
 
                             {/* Botões rápidos ao final da lista para adicionar a próxima */}
-                            <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between gap-2 flex-wrap">
-                              <span className="text-[11px] font-bold text-slate-500">
+                            <div className="p-3 bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-2 flex-wrap">
+                              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
                                 + Adicionar próxima música à sequência:
                               </span>
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <button
                                   type="button"
                                   onClick={() => abrirModalAdicionarPorTipo('Adoração')}
-                                  className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-[10px] font-black uppercase tracking-wider transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+                                  className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 rounded-lg text-[10px] font-black uppercase tracking-wider transition active:scale-95 cursor-pointer flex items-center gap-1.5"
                                 >
                                   <HeartHandshake size={13} strokeWidth={2.2} />
                                   <span>+ Adoração</span>
@@ -2237,7 +2266,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                 <button
                                   type="button"
                                   onClick={() => abrirModalAdicionarPorTipo('Celebração')}
-                                  className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-lg text-[10px] font-black uppercase tracking-wider transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+                                  className="px-2.5 py-1 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-lg text-[10px] font-black uppercase tracking-wider transition active:scale-95 cursor-pointer flex items-center gap-1.5"
                                 >
                                   <Flame size={13} strokeWidth={2.2} />
                                   <span>+ Celebração</span>
@@ -2245,7 +2274,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                 <button
                                   type="button"
                                   onClick={() => abrirModalAdicionarPorTipo('Pós pregação')}
-                                  className="px-2.5 py-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg text-[10px] font-black uppercase tracking-wider transition active:scale-95 cursor-pointer flex items-center gap-1.5"
+                                  className="px-2.5 py-1 bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 rounded-lg text-[10px] font-black uppercase tracking-wider transition active:scale-95 cursor-pointer flex items-center gap-1.5"
                                 >
                                   <BookOpen size={13} strokeWidth={2.2} />
                                   <span>+ Pós Pregação</span>
@@ -2265,17 +2294,17 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                             const musicasDoBloco = repertorioAtual.musicas.filter(m => m.tipo === bloco.tipo);
 
                             return (
-                              <div key={bloco.tipo} className="border border-slate-200/80 rounded-2xl p-4 bg-white shadow-2xs space-y-3">
+                              <div key={bloco.tipo} className="border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 bg-white dark:bg-slate-900 shadow-2xs space-y-3">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                                    <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
                                       <bloco.Icon size={16} className={bloco.iconColor} strokeWidth={2.2} />
                                     </div>
                                     <div>
-                                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
+                                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100">
                                         {bloco.tipo}
                                       </h4>
-                                      <p className="text-[10px] text-slate-400">{bloco.desc}</p>
+                                      <p className="text-[10px] text-slate-400 dark:text-slate-500">{bloco.desc}</p>
                                     </div>
                                   </div>
 
@@ -2283,7 +2312,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                     type="button"
                                     onClick={() => abrirModalAdicionarPorTipo(bloco.tipo)}
                                     title={`Adicionar música em ${bloco.tipo}`}
-                                    className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-600 border border-slate-200/90 hover:border-blue-300 rounded-lg text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider transition cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs"
+                                    className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-slate-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950 hover:text-blue-700 dark:hover:text-blue-300 text-slate-600 dark:text-slate-300 border border-slate-200/90 dark:border-slate-700 hover:border-blue-300 rounded-lg text-[9.5px] sm:text-[10px] font-bold uppercase tracking-wider transition cursor-pointer flex items-center gap-1 active:scale-95 shadow-2xs"
                                   >
                                     <Plus size={11} strokeWidth={2.5} />
                                     <span>Adicionar</span>
@@ -2291,7 +2320,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                 </div>
 
                                 {musicasDoBloco.length === 0 ? (
-                                  <div className="py-4 text-center border-2 border-dashed border-slate-100 rounded-xl text-xs text-slate-400 italic">
+                                  <div className="py-4 text-center border-2 border-dashed border-slate-100 dark:border-slate-800 rounded-xl text-xs text-slate-400 dark:text-slate-500 italic">
                                     Nenhuma música de {bloco.tipo} selecionada para este culto.
                                   </div>
                                 ) : (
@@ -2302,17 +2331,17 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                       return (
                                         <div
                                           key={globalIndex}
-                                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50/80 hover:bg-slate-50 border border-slate-200/70 rounded-xl transition"
+                                          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50/80 dark:bg-slate-850/60 hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-slate-200/70 dark:border-slate-800 rounded-xl transition"
                                         >
                                           <div className="flex items-center gap-3 min-w-0 flex-1">
-                                            <span className="w-6 h-6 rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-black shrink-0">
+                                            <span className="w-6 h-6 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center text-xs font-black shrink-0">
                                               {item.ordem}
                                             </span>
                                             <div className="min-w-0">
-                                              <p className="text-xs font-black text-slate-800 truncate">
+                                              <p className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
                                                 {item.titulo}
                                               </p>
-                                              <p className="text-[10px] text-slate-500 truncate">
+                                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                                                 {item.artista || 'Geral'}
                                               </p>
                                             </div>
@@ -2321,11 +2350,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-end">
                                             {/* Seletor de Tom do Culto */}
                                             <div className="flex items-center gap-1 shrink-0">
-                                              <span className="text-[10px] font-black text-slate-400 uppercase">Tom:</span>
+                                              <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase">Tom:</span>
                                               <select
                                                 value={item.tom || 'G'}
                                                 onChange={e => atualizarTomMusicaRepertorio(globalIndex, e.target.value)}
-                                                className="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-black text-blue-700 outline-none cursor-pointer"
+                                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs font-black text-blue-700 dark:text-blue-400 outline-none cursor-pointer"
                                               >
                                                 {TONS_DISPONIVEIS.map(t => (
                                                   <option key={t} value={t}>{t}</option>
@@ -2339,7 +2368,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                               placeholder="Obs (ex: violão)..."
                                               value={item.observacao || ''}
                                               onChange={e => atualizarObsMusicaRepertorio(globalIndex, e.target.value)}
-                                              className="w-24 sm:w-28 md:w-32 text-[10px] px-2 py-1 bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-500"
+                                              className="w-24 sm:w-28 md:w-32 text-[10px] px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-blue-500 text-slate-800 dark:text-slate-100"
                                             />
 
                                             {/* Reordenação */}
@@ -2349,7 +2378,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                                 onClick={() => moverMusicaRepertorio(globalIndex, -1)}
                                                 disabled={globalIndex === 0}
                                                 title="Subir ordem"
-                                                className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30 cursor-pointer"
+                                                className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-30 cursor-pointer"
                                               >
                                                 <ArrowUp size={14} />
                                               </button>
@@ -2358,7 +2387,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                                 onClick={() => moverMusicaRepertorio(globalIndex, 1)}
                                                 disabled={globalIndex === repertorioAtual.musicas.length - 1}
                                                 title="Descer ordem"
-                                                className="p-1 text-slate-400 hover:text-slate-700 disabled:opacity-30 cursor-pointer"
+                                                className="p-1 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 disabled:opacity-30 cursor-pointer"
                                               >
                                                 <ArrowDown size={14} />
                                               </button>
@@ -2384,9 +2413,9 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       )}
 
                       {/* Botão de Salvar no Rodapé */}
-                      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                        <span className="text-xs font-bold text-slate-500">
-                          Total: <strong className="text-slate-800">{repertorioAtual.musicas.length} músicas</strong> no repertório
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                          Total: <strong className="text-slate-800 dark:text-slate-100">{repertorioAtual.musicas.length} músicas</strong> no repertório
                         </span>
 
                         <button
@@ -2411,7 +2440,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
           {abaAtiva === 'biblioteca' && (
             <div className="space-y-5">
               {/* Barra de Ações da Biblioteca */}
-              <div className="bg-white rounded-3xl border border-slate-200/80 p-4 sm:p-5 shadow-sm space-y-4">
+              <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-sm space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   {/* Barra de Busca */}
                   <div className="relative flex-1 max-w-md">
@@ -2421,7 +2450,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       placeholder="Buscar por título ou artista..."
                       value={buscaBiblioteca}
                       onChange={e => setBuscaBiblioteca(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-medium"
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-blue-500 font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
                   </div>
 
@@ -2431,7 +2460,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       <button
                         type="button"
                         onClick={handleCarregarSeed}
-                        className="col-span-2 sm:col-span-1 px-3 py-2.5 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap"
+                        className="col-span-2 sm:col-span-1 px-3 py-2.5 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap"
                       >
                         <Sparkles size={14} />
                         <span>Carregar Populares</span>
@@ -2441,7 +2470,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     <button
                       type="button"
                       onClick={() => setModalImportarAberto(true)}
-                      className="px-2.5 sm:px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap"
+                      className="px-2.5 sm:px-3.5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 whitespace-nowrap"
                     >
                       <FileSpreadsheet size={15} />
                       <span>Importar XLS / CSV</span>
@@ -2459,9 +2488,9 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 </div>
 
                 {/* SELETOR DE PASTAS / BIBLIOTECAS EM CARDS (SEM BARRA DESLIZANTE) */}
-                <div className="space-y-2.5 pt-2 border-t border-slate-100">
+                <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-400 flex items-center gap-1.5">
                       <Folder size={13} className="text-blue-500" /> Pastas & Bibliotecas Temáticas:
                     </span>
                     <button
@@ -2471,7 +2500,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         setFormBiblioteca({ nome: '', descricao: '', cor: '#ec4899', tipo: 'Geral', voz: 'Feminino' });
                         setModalBibliotecaAberto(true);
                       }}
-                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer transition"
+                      className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 cursor-pointer transition"
                     >
                       <Plus size={13} strokeWidth={2.5} />
                       <span>Nova Pasta</span>
@@ -2486,20 +2515,20 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       onClick={() => setBibliotecaSelecionada('todas')}
                       className={`p-2.5 rounded-2xl border text-left transition-all duration-200 cursor-pointer active:scale-95 flex flex-col justify-between gap-2 ${bibliotecaSelecionada === 'todas'
                         ? 'bg-gradient-to-br from-blue-700 via-indigo-700 to-blue-800 text-white border-blue-600 shadow-md shadow-blue-700/25 ring-2 ring-blue-400/40'
-                        : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/90 hover:border-slate-300 shadow-2xs'
+                        : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-2xs'
                         }`}
                     >
                       <div className="flex items-center justify-between w-full">
                         <span
                           className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all ${bibliotecaSelecionada === 'todas'
                             ? 'bg-white/20 text-white shadow-inner'
-                            : 'bg-indigo-50 text-indigo-600 border border-indigo-100'
+                            : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/60'
                             }`}
                         >
                           <Disc3 size={15} strokeWidth={2.5} />
                         </span>
                         <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${bibliotecaSelecionada === 'todas' ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-700'
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${bibliotecaSelecionada === 'todas' ? 'bg-white/25 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                             }`}
                         >
                           {musicas.length}
@@ -2508,13 +2537,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
                       <div className="min-w-0">
                         <p
-                          className={`text-[11px] font-black leading-tight truncate ${bibliotecaSelecionada === 'todas' ? 'text-white' : 'text-slate-800'
+                          className={`text-[11px] font-black leading-tight truncate ${bibliotecaSelecionada === 'todas' ? 'text-white' : 'text-slate-800 dark:text-slate-100'
                             }`}
                         >
                           Todas as Pastas
                         </p>
                         <p
-                          className={`text-[9px] leading-tight mt-0.5 font-medium truncate ${bibliotecaSelecionada === 'todas' ? 'text-blue-100' : 'text-slate-400'
+                          className={`text-[9px] leading-tight mt-0.5 font-medium truncate ${bibliotecaSelecionada === 'todas' ? 'text-blue-100' : 'text-slate-400 dark:text-slate-400'
                             }`}
                         >
                           Acervo Geral
@@ -2585,19 +2614,19 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         setFormBiblioteca({ nome: '', descricao: '', cor: '#ec4899', tipo: 'Geral', voz: 'Feminino' });
                         setModalBibliotecaAberto(true);
                       }}
-                      className="p-2.5 rounded-2xl border-2 border-dashed border-slate-200 hover:border-blue-400 bg-slate-50/50 hover:bg-blue-50/30 text-left transition-all duration-200 cursor-pointer active:scale-95 flex flex-col justify-between gap-2 group"
+                      className="p-2.5 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500 bg-slate-50/50 dark:bg-slate-900/50 hover:bg-blue-50/30 dark:hover:bg-blue-900/20 text-left transition-all duration-200 cursor-pointer active:scale-95 flex flex-col justify-between gap-2 group"
                     >
                       <div className="flex items-center justify-between w-full">
-                        <span className="w-7 h-7 rounded-xl bg-slate-100 group-hover:bg-blue-100 text-slate-400 group-hover:text-blue-600 flex items-center justify-center transition">
+                        <span className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-slate-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 flex items-center justify-center transition">
                           <Plus size={15} strokeWidth={2.5} />
                         </span>
-                        <span className="text-[10px] text-slate-300 font-bold group-hover:text-blue-500">+</span>
+                        <span className="text-[10px] text-slate-300 dark:text-slate-600 font-bold group-hover:text-blue-500 dark:group-hover:text-blue-400">+</span>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[11px] font-black leading-tight text-slate-600 group-hover:text-blue-700 truncate">
+                        <p className="text-[11px] font-black leading-tight text-slate-600 dark:text-slate-300 group-hover:text-blue-700 dark:group-hover:text-blue-400 truncate">
                           Nova Pasta
                         </p>
-                        <p className="text-[9px] leading-tight mt-0.5 font-medium text-slate-400 truncate">
+                        <p className="text-[9px] leading-tight mt-0.5 font-medium text-slate-400 dark:text-slate-500 truncate">
                           Criar biblioteca
                         </p>
                       </div>
@@ -2610,11 +2639,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     const isMasc = isPastaMasculina(bibAtiva);
                     const isFem = isPastaFeminina(bibAtiva);
                     const bannerClasses = isMasc
-                      ? 'bg-gradient-to-r from-blue-50/90 to-sky-50/60 border-blue-200/80'
+                      ? 'bg-gradient-to-r from-blue-50/90 to-sky-50/60 border-blue-200/80 dark:from-blue-950/40 dark:to-sky-950/30 dark:border-blue-800/60'
                       : isFem
-                        ? 'bg-gradient-to-r from-pink-50/90 to-rose-50/60 border-pink-200/80'
-                        : 'bg-gradient-to-r from-blue-50/70 to-indigo-50/50 border-blue-200/60';
-                    const titleClasses = isMasc ? 'text-blue-900' : isFem ? 'text-pink-900' : 'text-slate-800';
+                        ? 'bg-gradient-to-r from-pink-50/90 to-rose-50/60 border-pink-200/80 dark:from-pink-950/40 dark:to-rose-950/30 dark:border-pink-800/60'
+                        : 'bg-gradient-to-r from-blue-50/70 to-indigo-50/50 border-blue-200/60 dark:from-slate-800/60 dark:to-indigo-950/40 dark:border-slate-700/60';
+                    const titleClasses = isMasc ? 'text-blue-900 dark:text-blue-200' : isFem ? 'text-pink-900 dark:text-pink-200' : 'text-slate-800 dark:text-slate-100';
                     const dotColor = isMasc ? '#2563eb' : isFem ? '#ec4899' : (bibAtiva?.cor || '#3b82f6');
                     return (
                       <div className={`flex items-center justify-between p-3 border rounded-2xl animate-in fade-in ${bannerClasses}`}>
@@ -2624,7 +2653,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                             <h4 className={`text-xs font-black truncate ${titleClasses}`}>
                               Pasta: {bibliotecaSelecionada}
                             </h4>
-                            <p className="text-[10px] text-slate-500 truncate">
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                               {bibAtiva?.descricao || 'Músicas organizadas nesta pasta'} · {bibAtiva?.voz ? `Classificação: Vocal ${bibAtiva.voz}` : ''}
                             </p>
                           </div>
@@ -2646,7 +2675,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                   });
                                   setModalBibliotecaAberto(true);
                                 }}
-                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-white/80 transition"
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/80 dark:hover:bg-slate-800/80 transition"
                                 title="Editar pasta"
                               >
                                 <Pencil size={12} />
@@ -2654,7 +2683,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                               <button
                                 type="button"
                                 onClick={() => excluirBibliotecaItem(bibAtiva)}
-                                className="p-1 rounded-lg text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition"
+                                className="p-1 rounded-lg text-rose-400 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                                 title="Excluir pasta"
                               >
                                 <Trash2 size={12} />
@@ -2675,9 +2704,9 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 </div>
 
                 {/* Barra de Contagem e Seletor de Modo (Cards / Lista) */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                    <span className="text-[11px] font-bold text-slate-600">
+                    <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
                       {musicasFiltradas.length} {musicasFiltradas.length === 1 ? 'música' : 'músicas'}
                       {bibliotecaSelecionada !== 'todas' ? ` na pasta "${bibliotecaSelecionada}"` : ' no acervo total'}
                     </span>
@@ -2690,13 +2719,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       onClick={toggleSelecionarTodasVisiveis}
                       title={todasVisiveisSelecionadas ? "Desmarcar todas as músicas" : "Selecionar todas as músicas visíveis"}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition cursor-pointer active:scale-95 shadow-2xs ${todasVisiveisSelecionadas
-                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200 font-black'
+                        ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 font-black'
                         : musicasSelecionadas.length > 0
-                          ? 'bg-indigo-50 text-indigo-700 border-indigo-200 font-black'
-                          : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200/90'
+                          ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 font-black'
+                          : 'bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200/90 dark:border-slate-800'
                         }`}
                     >
-                      <Check size={14} strokeWidth={2.5} className={musicasSelecionadas.length > 0 ? 'text-indigo-600' : 'text-slate-400'} />
+                      <Check size={14} strokeWidth={2.5} className={musicasSelecionadas.length > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} />
                       <span>{todasVisiveisSelecionadas ? 'Desmarcar' : 'Selecionar'}</span>
                       {musicasSelecionadas.length > 0 && (
                         <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-black bg-indigo-600 text-white">
@@ -2705,13 +2734,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       )}
                     </button>
 
-                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200/80">
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700">
                       <button
                         type="button"
                         onClick={() => trocarModoVisualizacao('cards')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer active:scale-95 ${modoVisualizacao === 'cards'
-                          ? 'bg-white text-slate-900 shadow-2xs font-black'
-                          : 'text-slate-500 hover:text-slate-800'
+                          ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-black'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                           }`}
                         title="Visualizar em formato de Cards"
                       >
@@ -2722,8 +2751,8 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         type="button"
                         onClick={() => trocarModoVisualizacao('lista')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer active:scale-95 ${modoVisualizacao === 'lista'
-                          ? 'bg-white text-slate-900 shadow-2xs font-black'
-                          : 'text-slate-500 hover:text-slate-800'
+                          ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-2xs font-black'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                           }`}
                         title="Visualizar em formato de Lista"
                       >
@@ -2797,10 +2826,10 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
               {/* Músicas da Biblioteca: Vazio / Cards / Lista */}
               {musicasFiltradas.length === 0 ? (
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-12 text-center shadow-sm space-y-3">
-                  <Music size={40} className="mx-auto text-slate-300" />
-                  <h3 className="text-base font-black text-slate-700">Nenhuma música encontrada</h3>
-                  <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-12 text-center shadow-sm space-y-3">
+                  <Music size={40} className="mx-auto text-slate-300 dark:text-slate-600" />
+                  <h3 className="text-base font-black text-slate-700 dark:text-slate-200">Nenhuma música encontrada</h3>
+                  <p className="text-xs text-slate-400 dark:text-slate-400 max-w-sm mx-auto">
                     {bibliotecaSelecionada !== 'todas'
                       ? `Nenhuma música encontrada na pasta "${bibliotecaSelecionada}".`
                       : 'Cadastre suas músicas ou importe uma planilha com seus títulos e artistas.'}
@@ -2817,9 +2846,9 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       <button
                         type="button"
                         onClick={handleCarregarSeed}
-                        className="px-4 py-2 bg-purple-50 text-purple-700 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-purple-100 transition cursor-pointer flex items-center gap-1.5"
+                        className="px-4 py-2 bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-purple-100 dark:hover:bg-purple-900/50 transition cursor-pointer flex items-center gap-1.5"
                       >
-                        <Sparkles size={14} className="text-purple-600" />
+                        <Sparkles size={14} className="text-purple-600 dark:text-purple-400" />
                         <span>Carregar 25 Músicas Populares</span>
                       </button>
                     )}
@@ -2830,10 +2859,10 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                   {musicasFiltradas.map(m => {
                     const tipoBadge =
                       m.tipo === 'Celebração'
-                        ? { bg: 'bg-amber-50 text-amber-800 border-amber-200', Icon: Flame, iconColor: 'text-amber-600' }
+                        ? { bg: 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60', Icon: Flame, iconColor: 'text-amber-600 dark:text-amber-400' }
                         : m.tipo === 'Pós pregação'
-                          ? { bg: 'bg-purple-50 text-purple-800 border-purple-200', Icon: BookOpen, iconColor: 'text-purple-600' }
-                          : { bg: 'bg-blue-50 text-blue-800 border-blue-200', Icon: HeartHandshake, iconColor: 'text-blue-600' };
+                          ? { bg: 'bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800/60', Icon: BookOpen, iconColor: 'text-purple-600 dark:text-purple-400' }
+                          : { bg: 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800/60', Icon: HeartHandshake, iconColor: 'text-blue-600 dark:text-blue-400' };
 
                     const selecionada = musicasSelecionadas.includes(m.id);
 
@@ -2842,11 +2871,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     return (
                       <div
                         key={m.id}
-                        className={`bg-white rounded-2xl border p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3 group relative ${recemSalva
-                          ? 'border-emerald-400 bg-emerald-50/20 ring-2 ring-emerald-400/70 shadow-md shadow-emerald-500/10'
+                        className={`rounded-2xl border p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between gap-3 group relative ${recemSalva
+                          ? 'border-emerald-400 dark:border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/30 ring-2 ring-emerald-400/70 shadow-md shadow-emerald-500/10'
                           : selecionada
-                            ? 'border-indigo-400 bg-indigo-50/25 ring-2 ring-indigo-400/40 shadow-indigo-100'
-                            : 'border-slate-200/80 hover:border-slate-300'
+                            ? 'border-indigo-400 dark:border-indigo-500 bg-indigo-50/25 dark:bg-indigo-950/40 ring-2 ring-indigo-400/40 shadow-indigo-100'
+                            : 'bg-white dark:bg-slate-900/90 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                           }`}
                       >
                         <div>
@@ -2864,13 +2893,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                 title={selecionada ? "Desmarcar música" : "Selecionar música"}
                                 className={`w-5 h-5 rounded-md flex items-center justify-center transition cursor-pointer shrink-0 ${selecionada
                                   ? 'bg-indigo-600 text-white shadow-2xs'
-                                  : 'bg-slate-100 hover:bg-slate-200 text-slate-400 border border-slate-200/80'
+                                  : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 border border-slate-200/80 dark:border-slate-700'
                                   }`}
                               >
                                 {selecionada ? (
                                   <Check size={11} strokeWidth={3} />
                                 ) : (
-                                  <div className="w-2 h-2 rounded-xs border border-slate-300" />
+                                  <div className="w-2 h-2 rounded-xs border border-slate-300 dark:border-slate-600" />
                                 )}
                               </button>
 
@@ -2889,7 +2918,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                 );
                               })()}
                               {m.voz && (
-                                <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md flex items-center gap-1">
+                                <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded-md flex items-center gap-1">
                                   {m.voz === 'Feminino' ? (
                                     <>
                                       <User size={10} className="text-pink-500" />
@@ -2911,29 +2940,29 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                             </div>
 
                             {m.tom && (
-                              <span className="text-[11px] font-black bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">
+                              <span className="text-[11px] font-black bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md">
                                 Tom: {m.tom}
                               </span>
                             )}
                           </div>
 
-                          <h4 className="font-black text-slate-800 text-sm line-clamp-1 group-hover:text-blue-700 transition-colors">
+                          <h4 className="font-black text-slate-800 dark:text-slate-100 text-sm line-clamp-1 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
                             {m.titulo}
                           </h4>
-                          <p className="text-xs text-slate-500 font-medium truncate mt-0.5">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
                             {m.artista || 'Artista não informado'}
                           </p>
                         </div>
 
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px]">
-                          <div className="flex items-center gap-2 text-slate-400">
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
+                          <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500">
                             {m.bpm && <span>⏱️ {m.bpm} BPM</span>}
                             {m.link && (
                               <a
                                 href={m.link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline flex items-center gap-0.5 font-bold"
+                                className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5 font-bold"
                               >
                                 Cifra <ExternalLink size={10} />
                               </a>
@@ -2945,7 +2974,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                               type="button"
                               onClick={() => abrirModalEditarMusica(m)}
                               title="Editar música"
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
+                              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                             >
                               <Pencil size={13} />
                             </button>
@@ -2953,7 +2982,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                               type="button"
                               onClick={() => excluirMusicaItem(m.id, m.titulo)}
                               title="Excluir música"
-                              className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition cursor-pointer"
+                              className="p-1.5 rounded-lg text-rose-500 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer"
                             >
                               <Trash2 size={13} />
                             </button>
@@ -2964,11 +2993,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                   })}
                 </div>
               ) : (
-                <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden animate-in fade-in">
+                <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden animate-in fade-in">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-slate-50/90 border-b border-slate-200/80 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                        <tr className="bg-slate-50/90 dark:bg-slate-950/80 border-b border-slate-200/80 dark:border-slate-800 text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
                           <th className="py-3 px-3 text-center w-10">
                             <button
                               type="button"
@@ -2976,7 +3005,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                               title={todasVisiveisSelecionadas ? "Desmarcar todas" : "Selecionar todas"}
                               className={`w-4.5 h-4.5 mx-auto rounded-md flex items-center justify-center transition cursor-pointer ${todasVisiveisSelecionadas
                                 ? 'bg-rose-600 text-white shadow-2xs'
-                                : 'bg-white border border-slate-300 hover:border-slate-400'
+                                : 'bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600'
                                 }`}
                             >
                               {todasVisiveisSelecionadas && <Check size={11} strokeWidth={3} />}
@@ -2992,20 +3021,20 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           <th className="py-3 px-4 text-right">Ações</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {musicasFiltradas.map(m => {
                           const tipoBadge =
                             m.tipo === 'Celebração'
-                              ? { bg: 'bg-amber-50 text-amber-800 border-amber-200', Icon: Flame, iconColor: 'text-amber-600' }
+                              ? { bg: 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60', Icon: Flame, iconColor: 'text-amber-600 dark:text-amber-400' }
                               : m.tipo === 'Pós pregação'
-                                ? { bg: 'bg-purple-50 text-purple-800 border-purple-200', Icon: BookOpen, iconColor: 'text-purple-600' }
-                                : { bg: 'bg-blue-50 text-blue-800 border-blue-200', Icon: HeartHandshake, iconColor: 'text-blue-600' };
+                                ? { bg: 'bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800/60', Icon: BookOpen, iconColor: 'text-purple-600 dark:text-purple-400' }
+                                : { bg: 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800/60', Icon: HeartHandshake, iconColor: 'text-blue-600 dark:text-blue-400' };
 
                           const selecionada = musicasSelecionadas.includes(m.id);
                           const recemSalva = m.id === musicaRecemSalvaId;
 
                           return (
-                            <tr key={m.id} className={`transition group ${recemSalva ? 'bg-emerald-50/70 border-y border-emerald-200' : selecionada ? 'bg-indigo-50/50' : 'hover:bg-blue-50/40'}`}>
+                            <tr key={m.id} className={`transition group ${recemSalva ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-y border-emerald-200 dark:border-emerald-800' : selecionada ? 'bg-indigo-50/50 dark:bg-indigo-950/40' : 'hover:bg-blue-50/40 dark:hover:bg-slate-800/40'}`}>
                               <td className="py-3 px-3 text-center w-10">
                                 <button
                                   type="button"
@@ -3013,7 +3042,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                   title={selecionada ? "Desmarcar música" : "Selecionar música"}
                                   className={`w-4.5 h-4.5 mx-auto rounded-md flex items-center justify-center transition cursor-pointer ${selecionada
                                     ? 'bg-indigo-600 text-white shadow-2xs'
-                                    : 'bg-white border border-slate-300 hover:border-slate-400 group-hover:border-slate-400'
+                                    : 'bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 group-hover:border-slate-400'
                                     }`}
                                 >
                                   {selecionada && <Check size={11} strokeWidth={3} />}
@@ -3021,11 +3050,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                               </td>
                               <td className="py-3 px-4 font-medium">
                                 <div className="flex items-center gap-2.5">
-                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 transition shadow-2xs ${recemSalva ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 group-hover:bg-blue-600 group-hover:text-white'}`}>
+                                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 transition shadow-2xs ${recemSalva ? 'bg-emerald-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 group-hover:bg-blue-600 group-hover:text-white'}`}>
                                     <Music size={14} />
                                   </div>
                                   <div className="min-w-0 max-w-[200px] sm:max-w-xs">
-                                    <p className="font-black text-slate-800 text-xs truncate group-hover:text-blue-700 flex items-center gap-1.5">
+                                    <p className="font-black text-slate-800 dark:text-slate-100 text-xs truncate group-hover:text-blue-700 dark:group-hover:text-blue-400 flex items-center gap-1.5">
                                       <span>{m.titulo}</span>
                                       {recemSalva && (
                                         <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-emerald-600 text-white animate-pulse">
@@ -3033,7 +3062,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                         </span>
                                       )}
                                     </p>
-                                    <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
                                       {m.artista || 'Geral / Desconhecido'}
                                     </p>
                                   </div>
@@ -3058,13 +3087,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                     </span>
                                   );
                                 })() : (
-                                  <span className="text-[10px] text-slate-400 font-medium">Geral</span>
+                                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Geral</span>
                                 )}
                               </td>
 
                               <td className="py-3 px-3 whitespace-nowrap">
                                 {m.voz ? (
-                                  <span className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                                  <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
                                     {m.voz === 'Feminino' ? (
                                       <>
                                         <User size={10} className="text-pink-500" />
@@ -3083,17 +3112,17 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                     )}
                                   </span>
                                 ) : (
-                                  <span className="text-slate-300">-</span>
+                                  <span className="text-slate-300 dark:text-slate-600">-</span>
                                 )}
                               </td>
 
                               <td className="py-3 px-3 text-center whitespace-nowrap">
-                                <span className="text-[11px] font-black bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md">
+                                <span className="text-[11px] font-black bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md">
                                   {m.tom || '-'}
                                 </span>
                               </td>
 
-                              <td className="py-3 px-3 text-center whitespace-nowrap font-mono text-[11px] text-slate-500">
+                              <td className="py-3 px-3 text-center whitespace-nowrap font-mono text-[11px] text-slate-500 dark:text-slate-400">
                                 {m.bpm ? `${m.bpm}` : '-'}
                               </td>
 
@@ -3103,13 +3132,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                     href={m.link}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline font-bold"
+                                    className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-bold"
                                   >
                                     <span>Cifra</span>
                                     <ExternalLink size={11} />
                                   </a>
                                 ) : (
-                                  <span className="text-slate-300 text-[10px]">-</span>
+                                  <span className="text-slate-300 dark:text-slate-600 text-[10px]">-</span>
                                 )}
                               </td>
 
@@ -3119,7 +3148,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                     type="button"
                                     onClick={() => abrirModalEditarMusica(m)}
                                     title="Editar música"
-                                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
+                                    className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
                                   >
                                     <Pencil size={13} />
                                   </button>
@@ -3127,7 +3156,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                     type="button"
                                     onClick={() => excluirMusicaItem(m.id, m.titulo)}
                                     title="Excluir música"
-                                    className="p-1.5 rounded-lg text-rose-400 hover:text-rose-700 hover:bg-rose-50 transition cursor-pointer"
+                                    className="p-1.5 rounded-lg text-rose-400 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer"
                                   >
                                     <Trash2 size={13} />
                                   </button>
@@ -3151,43 +3180,43 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             <div className="space-y-6">
               {/* Cards de Métricas Principais */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">Biblioteca Total</span>
-                  <p className="text-2xl sm:text-3xl font-black text-slate-800 mt-1">{musicas.length}</p>
-                  <span className="text-[10px] text-slate-400">Músicas cadastradas</span>
+                <div className="bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-sm">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 block">Biblioteca Total</span>
+                  <p className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100 mt-1">{musicas.length}</p>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-400">Músicas cadastradas</span>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 flex items-center gap-1">
+                <div className="bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-sm">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1">
                     <Flame size={12} className="text-amber-500" strokeWidth={2.2} />
                     <span>Celebração</span>
                   </span>
-                  <p className="text-2xl sm:text-3xl font-black text-amber-700 mt-1">
+                  <p className="text-2xl sm:text-3xl font-black text-amber-700 dark:text-amber-400 mt-1">
                     {musicas.filter(m => m.tipo === 'Celebração').length}
                   </p>
-                  <span className="text-[10px] text-slate-400">Músicas animadas</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-400">Músicas animadas</span>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 flex items-center gap-1">
+                <div className="bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-sm">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1">
                     <HeartHandshake size={12} className="text-blue-500" strokeWidth={2.2} />
                     <span>Adoração</span>
                   </span>
-                  <p className="text-2xl sm:text-3xl font-black text-blue-700 mt-1">
+                  <p className="text-2xl sm:text-3xl font-black text-blue-700 dark:text-blue-400 mt-1">
                     {musicas.filter(m => m.tipo === 'Adoração').length}
                   </p>
-                  <span className="text-[10px] text-slate-400">Intimidade e adoração</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-400">Intimidade e adoração</span>
                 </div>
 
-                <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 flex items-center gap-1">
+                <div className="bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-sm">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400 flex items-center gap-1">
                     <BookOpen size={12} className="text-purple-500" strokeWidth={2.2} />
                     <span>Pós Pregação</span>
                   </span>
-                  <p className="text-2xl sm:text-3xl font-black text-purple-700 mt-1">
+                  <p className="text-2xl sm:text-3xl font-black text-purple-700 dark:text-purple-400 mt-1">
                     {musicas.filter(m => m.tipo === 'Pós pregação').length}
                   </p>
-                  <span className="text-[10px] text-slate-400">Ministração e apelo</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-400">Ministração e apelo</span>
                 </div>
               </div>
 
@@ -3221,17 +3250,17 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               {/* Grid de Rankings: Mais Tocadas vs Menos Tocadas */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Bloco 1: Mais Tocadas */}
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-2">
                       <Flame size={16} className="text-rose-500" />
                       Músicas Mais Tocadas
                     </h4>
-                    <span className="text-[10px] text-slate-400 font-bold">Top execuções</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-400 font-bold">Top execuções</span>
                   </div>
 
                   {!estatisticas?.maisTocadas || estatisticas.maisTocadas.length === 0 ? (
-                    <div className="py-8 text-center text-slate-400 text-xs italic">
+                    <div className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs italic">
                       Ainda não há dados suficientes. Conforme você salva repertórios nos cultos, o ranking é montado automaticamente!
                     </div>
                   ) : (
@@ -3239,19 +3268,19 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       {estatisticas.maisTocadas.slice(0, 10).map((m, idx) => (
                         <div
                           key={m.id}
-                          className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60"
+                          className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200/60 dark:border-slate-800"
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ${idx === 0 ? 'bg-amber-400 text-white' : idx === 1 ? 'bg-slate-300 text-slate-700' : idx === 2 ? 'bg-amber-600 text-white' : 'bg-slate-200 text-slate-600'
+                            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ${idx === 0 ? 'bg-amber-400 text-white' : idx === 1 ? 'bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-200' : idx === 2 ? 'bg-amber-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                               }`}>
                               {idx + 1}
                             </span>
                             <div className="min-w-0">
-                              <p className="text-xs font-black text-slate-800 truncate">{m.titulo}</p>
-                              <p className="text-[10px] text-slate-400 truncate">{m.artista} · {m.tipo}</p>
+                              <p className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">{m.titulo}</p>
+                              <p className="text-[10px] text-slate-400 dark:text-slate-400 truncate">{m.artista} · {m.tipo}</p>
                             </div>
                           </div>
-                          <span className="shrink-0 bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-black px-2 py-0.5 rounded-full">
+                          <span className="shrink-0 bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 text-[10px] font-black px-2 py-0.5 rounded-full">
                             {m.vezesTocada}x
                           </span>
                         </div>
@@ -3261,17 +3290,17 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 </div>
 
                 {/* Bloco 2: Menos Tocadas / Na Gaveta */}
-                <div className="bg-white rounded-3xl border border-slate-200/80 p-5 shadow-sm space-y-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                <div className="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100 flex items-center gap-2">
                       <Sparkles size={16} className="text-amber-500" />
                       Músicas Pouco ou Nunca Tocadas
                     </h4>
-                    <span className="text-[10px] text-slate-400 font-bold">Para renovar</span>
+                    <span className="text-[10px] text-slate-400 dark:text-slate-400 font-bold">Para renovar</span>
                   </div>
 
                   {!estatisticas?.menosTocadas || estatisticas.menosTocadas.length === 0 ? (
-                    <div className="py-8 text-center text-slate-400 text-xs italic">
+                    <div className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs italic">
                       Cadastre músicas na biblioteca para ver recomendações de canções pouco exploradas.
                     </div>
                   ) : (
@@ -3279,13 +3308,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       {estatisticas.menosTocadas.slice(0, 10).map((m) => (
                         <div
                           key={m.id}
-                          className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200/60"
+                          className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200/60 dark:border-slate-800"
                         >
                           <div className="min-w-0 flex-1">
-                            <p className="text-xs font-black text-slate-800 truncate">{m.titulo}</p>
-                            <p className="text-[10px] text-slate-400 truncate">{m.artista} · {m.tipo}</p>
+                            <p className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">{m.titulo}</p>
+                            <p className="text-[10px] text-slate-400 dark:text-slate-400 truncate">{m.artista} · {m.tipo}</p>
                           </div>
-                          <span className="shrink-0 bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          <span className="shrink-0 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                             {m.vezesTocada === 0 ? 'Nunca tocada' : `${m.vezesTocada}x`}
                           </span>
                         </div>
@@ -3305,10 +3334,10 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             className={`hidden lg:block shrink-0 transition-all duration-300 lg:sticky lg:top-4 z-20 ${colunaRecolhida ? 'lg:w-16' : 'lg:w-60 xl:w-64'
               }`}
           >
-            <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/80 shadow-sm p-3.5 space-y-3">
+            <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-3.5 space-y-3">
               {/* Header da Coluna Lateral */}
               {colunaRecolhida ? (
-                <div className="flex flex-col items-center pb-2 border-b border-slate-100 gap-2">
+                <div className="flex flex-col items-center pb-2 border-b border-slate-100 dark:border-slate-800 gap-2">
                   <div
                     className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-xs"
                     title="Repertório de Louvor"
@@ -3319,29 +3348,29 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     type="button"
                     onClick={() => setColunaRecolhida(false)}
                     title="Expandir menu"
-                    className="p-1 rounded-lg text-slate-400 hover:text-blue-700 hover:bg-blue-50 transition cursor-pointer"
+                    className="p-1 rounded-lg text-slate-400 hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition cursor-pointer"
                   >
                     <ChevronLeft size={16} />
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 px-1">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 px-1">
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
                       <Music size={18} strokeWidth={2.5} />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 truncate">
+                      <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100 truncate">
                         Repertório
                       </h3>
-                      <p className="text-[10px] text-slate-400 font-bold truncate">Menu de Navegação</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold truncate">Menu de Navegação</p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setColunaRecolhida(true)}
                     title="Recolher menu para ícones"
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer shrink-0"
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shrink-0"
                   >
                     <ChevronRight size={16} />
                   </button>
@@ -3362,7 +3391,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         title={`${a.label} — ${a.desc}`}
                         className={`w-full flex items-center justify-center p-3 rounded-2xl transition-all duration-200 group cursor-pointer active:scale-95 relative ${ativo
                           ? 'bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white shadow-lg shadow-blue-700/25 border border-blue-400/30'
-                          : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-transparent'
                           }`}
                       >
                         <Icon size={20} strokeWidth={ativo ? 2.5 : 2} />
@@ -3385,29 +3414,29 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         onClick={() => handleNavegarTab(a.id)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-left transition-all duration-200 group cursor-pointer active:scale-95 ${ativo
                           ? 'bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white shadow-lg shadow-blue-700/25 border border-blue-400/30'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/80 border border-transparent'
                           }`}
                       >
                         <span
                           className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center transition-all duration-200 ${ativo
                             ? 'bg-white/20 text-white shadow-inner'
-                            : 'bg-slate-100 text-slate-500 group-hover:bg-blue-50 group-hover:text-blue-700'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-950/60 group-hover:text-blue-700 dark:group-hover:text-blue-400'
                             }`}
                         >
                           <Icon size={18} strokeWidth={ativo ? 2.5 : 2} />
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className={`text-xs font-black uppercase tracking-wider leading-tight truncate ${ativo ? 'text-white' : 'text-slate-700 group-hover:text-slate-900'
+                          <p className={`text-xs font-black uppercase tracking-wider leading-tight truncate ${ativo ? 'text-white' : 'text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white'
                             }`}>
                             {a.label}
                           </p>
-                          <p className={`text-[10px] leading-tight truncate mt-0.5 font-medium ${ativo ? 'text-blue-100' : 'text-slate-400'
+                          <p className={`text-[10px] leading-tight truncate mt-0.5 font-medium ${ativo ? 'text-blue-100' : 'text-slate-400 dark:text-slate-500'
                             }`}>
                             {a.desc}
                           </p>
                         </div>
                         {a.badge !== undefined && (
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ml-auto shrink-0 ${ativo ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ml-auto shrink-0 ${ativo ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                             }`}>
                             {a.badge}
                           </span>
@@ -3423,35 +3452,35 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
               {/* Widget / Atalho do Banco de Dados no Menu */}
               {!colunaRecolhida && (
-                <div className="pt-2 border-t border-slate-100">
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                   {statusBanco && !statusBanco.conectado ? (
                     <button
                       type="button"
                       onClick={() => setModalSqlAberto(true)}
-                      className="w-full p-2.5 rounded-2xl border text-left transition cursor-pointer flex items-center gap-2.5 bg-amber-50/70 border-amber-200/80 hover:bg-amber-100/60 mb-2"
+                      className="w-full p-2.5 rounded-2xl border text-left transition cursor-pointer flex items-center gap-2.5 bg-amber-50/70 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/60 hover:bg-amber-100/60 dark:hover:bg-amber-900/50 mb-2"
                     >
-                      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 bg-amber-100 text-amber-700">
+                      <div className="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">
                         <Save size={14} strokeWidth={2.2} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-black text-amber-900 truncate">Configurar Banco</p>
-                        <p className="text-[9px] text-amber-700 truncate">Executar script SQL</p>
+                        <p className="text-[11px] font-black text-amber-900 dark:text-amber-200 truncate">Configurar Banco</p>
+                        <p className="text-[9px] text-amber-700 dark:text-amber-400 truncate">Executar script SQL</p>
                       </div>
                       <span className="w-2 h-2 rounded-full bg-amber-500" />
                     </button>
                   ) : null}
 
-                  <div className="pt-1 px-1 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <div className="pt-1 px-1 flex items-center justify-between text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => setModalSqlAberto(true)}
-                      className="hover:text-slate-600 transition flex items-center gap-1.5 cursor-pointer"
+                      className="hover:text-slate-600 dark:hover:text-slate-300 transition flex items-center gap-1.5 cursor-pointer"
                       title="Configuração do Banco / SQL"
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${statusBanco?.conectado ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                       <span>Supabase</span>
                     </button>
-                    <span className="text-slate-400 font-bold">MIB Church</span>
+                    <span className="text-slate-400 dark:text-slate-500 font-bold">MIB Church</span>
                   </div>
                 </div>
               )}
@@ -3466,17 +3495,17 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
       {modalMusicaAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs animate-in fade-in" onClick={() => { pararAudioPreview(); setModalMusicaAberto(false); }} />
-          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 border border-slate-100 z-10 animate-in zoom-in-95 duration-200 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-6 border border-slate-100 dark:border-slate-800 z-10 animate-in zoom-in-95 duration-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                   <Music size={16} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-800 leading-tight">
+                  <h3 className="text-base font-black text-slate-800 dark:text-slate-100 leading-tight">
                     {musicaEmEdicao ? 'Editar Música' : 'Nova Música na Biblioteca'}
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                     {musicaEmEdicao ? 'Altere as informações da música' : 'Digite o nome para buscar sugestões automáticas'}
                   </p>
                 </div>
@@ -3484,7 +3513,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               <button
                 type="button"
                 onClick={() => { pararAudioPreview(); setModalMusicaAberto(false); }}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -3494,11 +3523,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               {/* Campo Título com Busca e Autocomplete Automático */}
               <div className="relative">
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-slate-700 block">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
                     Título da Música *
                   </label>
-                  <span className="text-[10px] text-blue-600 font-semibold bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Sparkles size={11} className="text-blue-500" /> Sugestões em tempo real
+                  <span className="text-[10px] text-blue-600 dark:text-blue-300 font-semibold bg-blue-50 dark:bg-blue-950/50 border border-blue-100 dark:border-blue-900/60 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Sparkles size={11} className="text-blue-500 dark:text-blue-400" /> Sugestões em tempo real
                   </span>
                 </div>
 
@@ -3512,7 +3541,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     onFocus={() => {
                       if (sugestoesMusica.length > 0) setMostrarSugestoes(true);
                     }}
-                    className="w-full pl-3 pr-9 py-2.5 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-medium transition"
+                    className="w-full pl-3 pr-9 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-blue-500 font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 transition"
                   />
                   <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     {buscandoSugestoes ? (
@@ -3530,18 +3559,18 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       className="fixed inset-0 z-40"
                       onClick={() => setMostrarSugestoes(false)}
                     />
-                    <div className="absolute z-50 left-0 right-0 mt-1 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100 max-h-72 overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
-                      <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-bold text-slate-500 flex items-center justify-between">
+                    <div className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden divide-y divide-slate-100 dark:divide-slate-800 max-h-72 overflow-y-auto animate-in fade-in zoom-in-95 duration-150">
+                      <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center justify-between">
                         <span>Selecione para preencher tudo automaticamente:</span>
                         {buscandoSugestoes && (
-                          <span className="text-blue-600 flex items-center gap-1">
+                          <span className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
                             <Loader2 size={10} className="animate-spin" /> Buscando catálogo...
                           </span>
                         )}
                       </div>
 
                       {sugestoesMusica.length === 0 && !buscandoSugestoes ? (
-                        <div className="p-4 text-center text-xs text-slate-400">
+                        <div className="p-4 text-center text-xs text-slate-400 dark:text-slate-500">
                           Nenhuma sugestão encontrada. Você pode preencher manualmente!
                         </div>
                       ) : (
@@ -3549,29 +3578,29 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           <div
                             key={sug.id}
                             onClick={() => aplicarSugestaoMusica(sug)}
-                            className="p-2.5 hover:bg-blue-50/70 transition cursor-pointer flex items-center justify-between gap-3 group"
+                            className="p-2.5 hover:bg-blue-50/70 dark:hover:bg-blue-900/30 transition cursor-pointer flex items-center justify-between gap-3 group"
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               {sug.capa ? (
                                 <img
                                   src={sug.capa}
                                   alt={sug.titulo}
-                                  className="w-9 h-9 rounded-lg object-cover shadow-2xs border border-slate-200 shrink-0"
+                                  className="w-9 h-9 rounded-lg object-cover shadow-2xs border border-slate-200 dark:border-slate-700 shrink-0"
                                 />
                               ) : (
-                                <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+                                <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                                   <Music size={16} />
                                 </div>
                               )}
                               <div className="min-w-0">
-                                <div className="text-xs font-bold text-slate-800 truncate group-hover:text-blue-600">
+                                <div className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">
                                   {sug.titulo}
                                 </div>
-                                <div className="text-[11px] text-slate-500 truncate flex items-center gap-1.5">
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5">
                                   <span>{sug.artista}</span>
                                   {sug.ano && <span className="text-slate-400">• {sug.ano}</span>}
                                   {sug.origem && (
-                                    <span className={`text-[9px] px-1 py-0.2 rounded font-semibold ${sug.origem.includes('Biblioteca') ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                                    <span className={`text-[9px] px-1 py-0.2 rounded font-semibold ${sug.origem.includes('Biblioteca') ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                                       }`}>
                                       {sug.origem}
                                     </span>
@@ -3582,16 +3611,16 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
                             <div className="flex items-center gap-1.5 shrink-0">
                               {sug.tom && (
-                                <span className="text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200 px-1.5 py-0.5 rounded-md">
+                                <span className="text-[10px] font-bold bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 px-1.5 py-0.5 rounded-md">
                                   {sug.tom}
                                 </span>
                               )}
                               {sug.bpm && (
-                                <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded-md">
+                                <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded-md">
                                   {sug.bpm} bpm
                                 </span>
                               )}
-                              <span className="text-[10px] font-bold text-blue-600 bg-blue-100 group-hover:bg-blue-600 group-hover:text-white px-2 py-1 rounded-lg transition">
+                              <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-950/60 group-hover:bg-blue-600 group-hover:text-white px-2 py-1 rounded-lg transition">
                                 Usar
                               </span>
                             </div>
@@ -3604,13 +3633,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
                 {/* Card de Informações da Música Selecionada com Preview de Áudio e Atalhos */}
                 {musicaSelecionadaInfo && (
-                  <div className="mt-2.5 p-3 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 rounded-2xl border border-blue-100 flex items-center justify-between gap-3 animate-in fade-in duration-200">
+                  <div className="mt-2.5 p-3 bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-slate-50 dark:from-blue-950/50 dark:via-indigo-950/40 dark:to-slate-900 rounded-2xl border border-blue-100 dark:border-blue-900/50 flex items-center justify-between gap-3 animate-in fade-in duration-200">
                     <div className="flex items-center gap-2.5 min-w-0">
                       {musicaSelecionadaInfo.capa ? (
                         <img
                           src={musicaSelecionadaInfo.capa}
                           alt="Capa"
-                          className="w-10 h-10 rounded-xl object-cover shadow-xs border border-blue-200 shrink-0"
+                          className="w-10 h-10 rounded-xl object-cover shadow-xs border border-blue-200 dark:border-blue-800 shrink-0"
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -3619,15 +3648,15 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       )}
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] font-extrabold text-blue-600 bg-blue-100 px-1.5 py-0.2 rounded-md">
+                          <span className="text-[9px] font-extrabold text-blue-600 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/60 px-1.5 py-0.2 rounded-md">
                             Preenchido Online
                           </span>
                           {musicaSelecionadaInfo.ano && (
-                            <span className="text-[10px] text-slate-500">{musicaSelecionadaInfo.ano}</span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">{musicaSelecionadaInfo.ano}</span>
                           )}
                         </div>
-                        <div className="text-xs font-bold text-slate-800 truncate">
-                          {musicaSelecionadaInfo.tituloOriginal} — <span className="text-slate-600 font-normal">{formMusica.artista}</span>
+                        <div className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                          {musicaSelecionadaInfo.tituloOriginal} — <span className="text-slate-600 dark:text-slate-300 font-normal">{formMusica.artista}</span>
                         </div>
                       </div>
                     </div>
@@ -3641,7 +3670,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           title={tocandoAudioPreview ? "Pausar prévia" : "Ouvir trecho de 30s"}
                           className={`p-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${tocandoAudioPreview
                             ? 'bg-rose-500 text-white shadow-xs animate-pulse'
-                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                            : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
                             }`}
                         >
                           {tocandoAudioPreview ? <Pause size={13} /> : <Play size={13} fill="currentColor" />}
@@ -3656,7 +3685,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           target="_blank"
                           rel="noreferrer"
                           title="Abrir no Cifra Club"
-                          className="p-1.5 rounded-xl bg-orange-50 border border-orange-200 text-orange-700 hover:bg-orange-100 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          className="p-1.5 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/60 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                         >
                           <ExternalLink size={12} />
                           <span className="hidden sm:inline">Cifra</span>
@@ -3670,7 +3699,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           target="_blank"
                           rel="noreferrer"
                           title="Abrir no YouTube"
-                          className="p-1.5 rounded-xl bg-red-50 border border-red-200 text-red-700 hover:bg-red-100 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          className="p-1.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/60 text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                         >
                           <IconYouTube size={12} />
                         </a>
@@ -3682,7 +3711,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                     Artista / Banda / Ministério
                   </label>
                   <input
@@ -3690,12 +3719,12 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     placeholder="Ex: Morada, Gabriela Rocha..."
                     value={formMusica.artista}
                     onChange={e => setFormMusica(prev => ({ ...prev, artista: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-medium"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-blue-500 font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                     Tipo de Música *
                   </label>
                   <select
@@ -3712,7 +3741,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         biblioteca: pastaCorrespondente?.nome || prev.biblioteca
                       }));
                     }}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-bold bg-white cursor-pointer"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold text-slate-800 dark:text-slate-100 cursor-pointer"
                   >
                     <option value="Celebração">Celebração</option>
                     <option value="Adoração">Adoração</option>
@@ -3722,10 +3751,10 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               </div>
 
               {/* Biblioteca / Pasta e Classificação Vocal */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/70 p-3 rounded-2xl border border-slate-200/70">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/70 dark:bg-slate-950/60 p-3 rounded-2xl border border-slate-200/70 dark:border-slate-800">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs font-bold text-slate-700 block">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
                       Pasta / Biblioteca *
                     </label>
                     <button
@@ -3741,7 +3770,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         });
                         setModalBibliotecaAberto(true);
                       }}
-                      className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5 cursor-pointer"
+                      className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-0.5 cursor-pointer"
                     >
                       <Plus size={11} strokeWidth={2.5} /> Nova Pasta
                     </button>
@@ -3758,7 +3787,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         tipo: achada?.tipo && achada.tipo !== 'Geral' ? achada.tipo : prev.tipo
                       }));
                     }}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-bold bg-white cursor-pointer"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold text-slate-800 dark:text-slate-100 cursor-pointer"
                   >
                     {bibliotecas.length === 0 ? (
                       <option value="Geral">Geral</option>
@@ -3773,7 +3802,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                     Classificação Vocal (Tom)
                   </label>
                   <div className="grid grid-cols-3 gap-1.5">
@@ -3799,7 +3828,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         }}
                         className={`py-1.5 px-1 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-1 ${formMusica.voz === v.id
                           ? `${v.activeClass} font-black shadow-2xs`
-                          : 'border-slate-200 text-slate-600 bg-white hover:bg-slate-100 font-semibold'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800/80 font-semibold'
                           }`}
                       >
                         <v.Icon size={14} className={formMusica.voz === v.id ? 'currentColor' : v.iconColor} strokeWidth={2.2} />
@@ -3812,13 +3841,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                     Tom Padrão
                   </label>
                   <select
                     value={formMusica.tom}
                     onChange={e => setFormMusica(prev => ({ ...prev, tom: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-bold bg-white cursor-pointer"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold text-slate-800 dark:text-slate-100 cursor-pointer"
                   >
                     {TONS_DISPONIVEIS.map(t => (
                       <option key={t} value={t}>{t}</option>
@@ -3827,7 +3856,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                     BPM (Opcional)
                   </label>
                   <input
@@ -3835,14 +3864,14 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     placeholder="Ex: 72, 128..."
                     value={formMusica.bpm}
                     onChange={e => setFormMusica(prev => ({ ...prev, bpm: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-medium"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-blue-500 font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold text-slate-700 block">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block">
                     Link de Cifra ou Vídeo (Opcional)
                   </label>
                   {formMusica.titulo && (
@@ -3856,7 +3885,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                             link: `https://www.cifraclub.com.br/?q=${encodeURIComponent(query)}`
                           }));
                         }}
-                        className="text-[10px] font-bold text-orange-600 hover:text-orange-800 bg-orange-50 border border-orange-100 px-1.5 py-0.5 rounded cursor-pointer transition"
+                        className="text-[10px] font-bold text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 bg-orange-50 dark:bg-orange-950/40 border border-orange-100 dark:border-orange-900/60 px-1.5 py-0.5 rounded cursor-pointer transition"
                       >
                         + Cifra Club
                       </button>
@@ -3869,7 +3898,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                             link: `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
                           }));
                         }}
-                        className="text-[10px] font-bold text-red-600 hover:text-red-800 bg-red-50 border border-red-100 px-1.5 py-0.5 rounded cursor-pointer transition"
+                        className="text-[10px] font-bold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/60 px-1.5 py-0.5 rounded cursor-pointer transition"
                       >
                         + YouTube
                       </button>
@@ -3881,15 +3910,15 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                   placeholder="https://..."
                   value={formMusica.link}
                   onChange={e => setFormMusica(prev => ({ ...prev, link: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-medium"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-blue-500 font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => { pararAudioPreview(); setModalMusicaAberto(false); }}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -3911,33 +3940,33 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
       {modalImportarAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs animate-in fade-in" onClick={() => setModalImportarAberto(false)} />
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl p-6 border border-slate-100 z-10 animate-in zoom-in-95 duration-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-6 border border-slate-100 dark:border-slate-800 z-10 animate-in zoom-in-95 duration-200 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <FileSpreadsheet size={20} className="text-emerald-600" />
-                <h3 className="text-base font-black text-slate-800">
+                <h3 className="text-base font-black text-slate-800 dark:text-slate-100">
                   Importar Biblioteca de Músicas (.xlsx, .csv)
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setModalImportarAberto(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Dica e Modelo */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="text-slate-600">
-                <p className="font-bold text-slate-800">Colunas reconhecidas automaticamente:</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">Título, Artista, Tipo (Celebração/Adoração/Pós pregação), Tom, BPM, Link.</p>
+            <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="text-slate-600 dark:text-slate-300">
+                <p className="font-bold text-slate-800 dark:text-slate-100">Colunas reconhecidas automaticamente:</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Título, Artista, Tipo (Celebração/Adoração/Pós pregação), Tom, BPM, Link.</p>
               </div>
               <button
                 type="button"
                 onClick={baixarModeloPlanilha}
-                className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 rounded-xl font-bold text-slate-700 flex items-center gap-1.5 shadow-2xs cursor-pointer shrink-0"
+                className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 rounded-xl font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-1.5 shadow-2xs cursor-pointer shrink-0"
               >
                 <Download size={13} />
                 <span>Baixar Modelo (.xlsx)</span>
@@ -3947,13 +3976,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             {/* Upload Zone */}
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-2xl p-6 text-center cursor-pointer bg-slate-50/50 hover:bg-blue-50/20 transition-all space-y-2"
+              className="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 rounded-2xl p-6 text-center cursor-pointer bg-slate-50/50 dark:bg-slate-950/50 hover:bg-blue-50/20 dark:hover:bg-blue-900/20 transition-all space-y-2"
             >
-              <FileSpreadsheet size={32} className="mx-auto text-slate-400" />
-              <p className="text-xs font-black text-slate-700">
+              <FileSpreadsheet size={32} className="mx-auto text-slate-400 dark:text-slate-500" />
+              <p className="text-xs font-black text-slate-700 dark:text-slate-200">
                 {arquivoPlanilha ? arquivoPlanilha.name : 'Clique para selecionar seu arquivo .xlsx ou .csv'}
               </p>
-              <p className="text-[10px] text-slate-400">
+              <p className="text-[10px] text-slate-400 dark:text-slate-500">
                 Suporta planilhas exportadas do Excel, Google Planilhas ou arquivos CSV
               </p>
               <input
@@ -3969,20 +3998,20 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             {musicasPreviaImportacao.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-black text-slate-800">
-                    Prévia: <strong className="text-emerald-600">{musicasPreviaImportacao.length} músicas</strong> detectadas
+                  <span className="font-black text-slate-800 dark:text-slate-100">
+                    Prévia: <strong className="text-emerald-600 dark:text-emerald-400">{musicasPreviaImportacao.length} músicas</strong> detectadas
                   </span>
-                  <span className="text-[11px] text-slate-400">Exibindo primeiras 5</span>
+                  <span className="text-[11px] text-slate-400 dark:text-slate-400">Exibindo primeiras 5</span>
                 </div>
 
-                <div className="border border-slate-200 rounded-xl max-h-44 overflow-y-auto divide-y divide-slate-100 text-xs">
+                <div className="border border-slate-200 dark:border-slate-800 rounded-xl max-h-44 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-950 text-xs">
                   {musicasPreviaImportacao.slice(0, 5).map((m, idx) => (
                     <div key={idx} className="p-2.5 flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-slate-800">{m.titulo}</p>
-                        <p className="text-[10px] text-slate-400">{m.artista || 'Sem artista'} · Tom: {m.tom || 'N/A'}</p>
+                        <p className="font-bold text-slate-800 dark:text-slate-100">{m.titulo}</p>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-400">{m.artista || 'Sem artista'} · Tom: {m.tom || 'N/A'}</p>
                       </div>
-                      <span className="text-[10px] font-bold bg-slate-100 px-2 py-0.5 rounded">
+                      <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded">
                         {m.tipo}
                       </span>
                     </div>
@@ -3992,11 +4021,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             )}
 
             {/* Ações */}
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setModalImportarAberto(false)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 Cancelar
               </button>
@@ -4019,18 +4048,18 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
       {modalAdicionarRepertorioAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs animate-in fade-in" onClick={() => setModalAdicionarRepertorioAberto(false)} />
-          <div className="relative w-full max-w-2xl lg:max-w-3xl bg-white rounded-3xl shadow-2xl p-5 sm:p-6 border border-slate-100 z-10 animate-in zoom-in-95 duration-200 space-y-4 max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+          <div className="relative w-full max-w-2xl lg:max-w-3xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-5 sm:p-6 border border-slate-100 dark:border-slate-800 z-10 animate-in zoom-in-95 duration-200 space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
               <div>
-                <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
+                <h3 className="text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-2">
                   <span>Adicionar ao Repertório</span>
                   <span className={`text-xs px-2.5 py-0.5 rounded-full font-black border inline-flex items-center gap-1.5 ${categoriaAdicionar === 'Celebração'
-                    ? 'bg-amber-100 text-amber-800 border-amber-200'
+                    ? 'bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60'
                     : categoriaAdicionar === 'Pós pregação'
-                      ? 'bg-purple-100 text-purple-800 border-purple-200'
+                      ? 'bg-purple-100 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800/60'
                       : categoriaAdicionar === 'todos'
-                        ? 'bg-slate-100 text-slate-700 border-slate-200'
-                        : 'bg-blue-100 text-blue-800 border-blue-200'
+                        ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                        : 'bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800/60'
                     }`}>
                     {categoriaAdicionar === 'Celebração' && <Flame size={12} strokeWidth={2.5} />}
                     {categoriaAdicionar === 'Pós pregação' && <BookOpen size={12} strokeWidth={2.5} />}
@@ -4047,7 +4076,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     </span>
                   </span>
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-400 dark:text-slate-400">
                   {categoriaAdicionar === 'Adoração'
                     ? 'Selecione uma música de intimidade e adoração para abrir ou compor este momento'
                     : categoriaAdicionar === 'Celebração'
@@ -4060,7 +4089,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               <button
                 type="button"
                 onClick={() => setModalAdicionarRepertorioAberto(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -4069,11 +4098,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             {/* SELETOR DE PASTAS / BIBLIOTECAS EM CARDS (SEM BARRA DESLIZANTE) */}
             <div className="space-y-2 shrink-0">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-400 flex items-center gap-1.5">
                   <Folder size={12} className="text-blue-500" />
                   {categoriaAdicionar === 'todos' ? 'Pastas da Biblioteca:' : `Pastas de ${categoriaAdicionar}:`}
                 </span>
-                <span className="text-[10px] text-slate-500 font-bold">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">
                   {filtroBibliotecaAdicionar === 'todas'
                     ? 'Visualizando Todas as Pastas'
                     : `Pasta: ${pastasModalAdicionar.find(p => p.id === filtroBibliotecaAdicionar)?.label || filtroBibliotecaAdicionar}`}
@@ -4148,13 +4177,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     placeholder="Buscar por título, artista, tom ou pasta..."
                     value={buscaModalAdicionar}
                     onChange={e => setBuscaModalAdicionar(e.target.value)}
-                    className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-medium"
+                    className="w-full pl-9 pr-8 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-blue-500 font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                   />
                   {buscaModalAdicionar && (
                     <button
                       type="button"
                       onClick={() => setBuscaModalAdicionar('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5 cursor-pointer"
                     >
                       <X size={13} />
                     </button>
@@ -4166,19 +4195,19 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             {/* Lista com scroll */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[220px]">
               {musicasParaAdicionar.length === 0 ? (
-                <div className="py-12 text-center text-slate-400 text-xs italic space-y-2">
+                <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs italic space-y-2">
                   <p>Nenhuma música encontrada com os filtros selecionados.</p>
-                  <p className="text-[11px] text-slate-400">Tente buscar por outro termo ou selecione "Todas as Pastas".</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">Tente buscar por outro termo ou selecione "Todas as Pastas".</p>
                 </div>
               ) : (
                 musicasParaAdicionar.map(m => (
                   <div
                     key={m.id}
-                    className="flex items-center justify-between p-3 bg-slate-50 hover:bg-blue-50/60 border border-slate-200/60 rounded-xl transition group"
+                    className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-950/60 hover:bg-blue-50/60 dark:hover:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 rounded-xl transition group"
                   >
                     <div className="min-w-0 pr-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <h5 className="font-black text-slate-800 text-xs truncate group-hover:text-blue-700">
+                        <h5 className="font-black text-slate-800 dark:text-slate-100 text-xs truncate group-hover:text-blue-700 dark:group-hover:text-blue-400">
                           {m.titulo}
                         </h5>
                         {m.biblioteca && m.biblioteca !== 'Geral' && (() => {
@@ -4192,7 +4221,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           );
                         })()}
                         {m.voz && (
-                          <span className="text-[9px] font-bold bg-slate-200/80 text-slate-700 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1">
+                          <span className="text-[9px] font-bold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded-md inline-flex items-center gap-1">
                             {m.voz === 'Feminino' ? (
                               <>
                                 <User size={10} className="text-pink-500" />
@@ -4212,7 +4241,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           </span>
                         )}
                       </div>
-                      <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                         {m.artista || 'Geral'} · Tom sugerido: <strong>{m.tom || 'G'}</strong>
                         {m.bpm ? ` · ${m.bpm} BPM` : ''}
                       </p>
@@ -4225,7 +4254,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         setModalAdicionarRepertorioAberto(false);
                       }}
                       title={`Adicionar "${m.titulo}"`}
-                      className="px-2.5 py-1 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white border border-blue-200/90 hover:border-blue-600 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-150 active:scale-95 cursor-pointer shrink-0 flex items-center gap-1 shadow-2xs group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600"
+                      className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-600 text-blue-700 dark:text-blue-300 hover:text-white border border-blue-200/90 dark:border-blue-800/80 hover:border-blue-600 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-150 active:scale-95 cursor-pointer shrink-0 flex items-center gap-1 shadow-2xs group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600"
                     >
                       <Plus size={11} strokeWidth={2.5} />
                       <span>Escolher</span>
@@ -4236,8 +4265,8 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             </div>
 
             {/* Rodapé rápido para criar uma música caso não ache */}
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs shrink-0">
-              <span className="text-slate-400 text-[11px]">Não encontrou a música desejada?</span>
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs shrink-0">
+              <span className="text-slate-400 dark:text-slate-400 text-[11px]">Não encontrou a música desejada?</span>
               <button
                 type="button"
                 onClick={() => {
@@ -4245,7 +4274,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                   setAdicionarAoRepertorioAoSalvar(true);
                   abrirModalNovaMusica(categoriaAdicionar);
                 }}
-                className="text-blue-600 font-bold hover:underline"
+                className="text-blue-600 dark:text-blue-400 font-bold hover:underline"
               >
                 + Cadastrar Nova Música
               </button>
@@ -4263,18 +4292,18 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs animate-in fade-in"
             onClick={() => setModalBibliotecaAberto(false)}
           />
-          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl p-6 border border-slate-100 z-10 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl p-6 border border-slate-100 dark:border-slate-800 z-10 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <FolderPlus size={20} className="text-blue-600" />
-                <h3 className="text-base font-black text-slate-800">
+                <h3 className="text-base font-black text-slate-800 dark:text-slate-100">
                   {bibliotecaEmEdicao ? 'Editar Pasta de Músicas' : 'Nova Pasta / Biblioteca'}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setModalBibliotecaAberto(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <X size={18} />
               </button>
@@ -4282,7 +4311,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
             <form onSubmit={salvarBibliotecaForm} className="space-y-4 pt-3">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                   Nome da Pasta / Biblioteca *
                 </label>
                 <input
@@ -4291,19 +4320,19 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                   placeholder="Ex: Celebração Feminina, Adoração Masculina..."
                   value={formBiblioteca.nome}
                   onChange={e => setFormBiblioteca(prev => ({ ...prev, nome: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-bold"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                   Classificação Vocal
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'Feminino', label: 'Feminino', Icon: User, iconColor: 'text-pink-600', desc: 'Tons femininos', cor: 'border-pink-300 text-pink-700 bg-pink-50 ring-pink-400' },
-                    { id: 'Masculino', label: 'Masculino', Icon: User, iconColor: 'text-blue-600', desc: 'Tons masculinos', cor: 'border-blue-300 text-blue-700 bg-blue-50 ring-blue-400' },
-                    { id: 'Misto', label: 'Misto', Icon: Users, iconColor: 'text-purple-600', desc: 'Ambos / Duetos', cor: 'border-purple-300 text-purple-700 bg-purple-50 ring-purple-400' }
+                    { id: 'Feminino', label: 'Feminino', Icon: User, iconColor: 'text-pink-600', desc: 'Tons femininos', cor: 'border-pink-300 dark:border-pink-800 text-pink-700 dark:text-pink-300 bg-pink-50 dark:bg-pink-950/40 ring-pink-400' },
+                    { id: 'Masculino', label: 'Masculino', Icon: User, iconColor: 'text-blue-600', desc: 'Tons masculinos', cor: 'border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 ring-blue-400' },
+                    { id: 'Misto', label: 'Misto', Icon: Users, iconColor: 'text-purple-600', desc: 'Ambos / Duetos', cor: 'border-purple-300 dark:border-purple-800 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 ring-purple-400' }
                   ].map(v => (
                     <button
                       key={v.id}
@@ -4315,7 +4344,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       }))}
                       className={`p-2 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-1 ${formBiblioteca.voz === v.id
                         ? `${v.cor} ring-2 ring-offset-1 font-black shadow-2xs`
-                        : 'border-slate-200 text-slate-600 bg-slate-50 hover:bg-slate-100'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-800'
                         }`}
                     >
                       <v.Icon size={16} className={formBiblioteca.voz === v.id ? 'currentColor' : v.iconColor} strokeWidth={2.2} />
@@ -4328,13 +4357,13 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                     Momento Predominante
                   </label>
                   <select
                     value={formBiblioteca.tipo}
                     onChange={e => setFormBiblioteca(prev => ({ ...prev, tipo: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-bold bg-white cursor-pointer"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-blue-500 font-bold text-slate-800 dark:text-slate-100 cursor-pointer"
                   >
                     <option value="Geral">Geral (Todos)</option>
                     <option value="Celebração">Celebração</option>
@@ -4344,7 +4373,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                     Cor Identificadora
                   </label>
                   <div className="flex items-center gap-1.5 pt-1">
@@ -4360,7 +4389,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         key={c.cor}
                         type="button"
                         onClick={() => setFormBiblioteca(prev => ({ ...prev, cor: c.cor }))}
-                        className={`w-6 h-6 rounded-full transition cursor-pointer ${formBiblioteca.cor === c.cor ? 'ring-2 ring-offset-2 ring-slate-800 scale-110' : 'opacity-70 hover:opacity-100'
+                        className={`w-6 h-6 rounded-full transition cursor-pointer ${formBiblioteca.cor === c.cor ? 'ring-2 ring-offset-2 ring-slate-800 dark:ring-slate-100 scale-110' : 'opacity-70 hover:opacity-100'
                           }`}
                         style={{ backgroundColor: c.cor }}
                         title={c.nome}
@@ -4371,7 +4400,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
                   Descrição (Opcional)
                 </label>
                 <input
@@ -4379,15 +4408,15 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                   placeholder="Ex: Músicas arranjadas para ministras com voz feminina"
                   value={formBiblioteca.descricao}
                   onChange={e => setFormBiblioteca(prev => ({ ...prev, descricao: e.target.value }))}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs outline-none focus:border-blue-500 font-medium"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs outline-none focus:border-blue-500 font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
                   onClick={() => setModalBibliotecaAberto(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -4411,7 +4440,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             onClick={() => !transferindoLote && setModalTransferirAberto(false)}
           />
 
-          <div className="relative bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden z-10 animate-in zoom-in-95 duration-200">
+          <div className="relative bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden z-10 animate-in zoom-in-95 duration-200">
             {/* Cabeçalho */}
             <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-5 text-white flex items-start justify-between shrink-0">
               <div className="flex items-center gap-3">
@@ -4442,27 +4471,27 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               {/* Músicas Selecionadas Prévia */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                    <Music size={13} className="text-indigo-600" />
+                  <span className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Music size={13} className="text-indigo-600 dark:text-indigo-400" />
                     Músicas Selecionadas ({musicasSelecionadasObjs.length})
                   </span>
-                  <span className="text-[10px] text-slate-400">
+                  <span className="text-[10px] text-slate-400 dark:text-slate-400">
                     Origem: {bibliotecaSelecionada === 'todas' ? 'Várias pastas' : bibliotecaSelecionada}
                   </span>
                 </div>
 
-                <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-2.5 max-h-36 overflow-y-auto divide-y divide-slate-100 space-y-1">
+                <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-2.5 max-h-36 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 space-y-1">
                   {musicasSelecionadasObjs.map(m => (
                     <div key={m.id} className="pt-1.5 first:pt-0 flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="font-black text-slate-800 text-[11px] truncate">
+                        <p className="font-black text-slate-800 dark:text-slate-100 text-[11px] truncate">
                           {m.titulo}
                         </p>
-                        <p className="text-[10px] text-slate-400 truncate">
+                        <p className="text-[10px] text-slate-400 dark:text-slate-400 truncate">
                           {m.artista || 'Geral'} {m.tom ? `• Tom ${m.tom}` : ''}
                         </p>
                       </div>
-                      <span className="shrink-0 px-2 py-0.5 rounded-md text-[9px] font-bold bg-white border border-slate-200 text-slate-600">
+                      <span className="shrink-0 px-2 py-0.5 rounded-md text-[9px] font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                         {m.biblioteca || 'Geral'}
                       </span>
                     </div>
@@ -4472,7 +4501,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
               {/* Escolha da Pasta Destino */}
               <div>
-                <label className="font-bold text-slate-700 uppercase tracking-wider text-[11px] block mb-2">
+                <label className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px] block mb-2">
                   Escolha a Pasta de Destino:
                 </label>
 
@@ -4513,7 +4542,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                         </div>
 
                         <div className="shrink-0 flex items-center gap-1.5">
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${selecionada ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600'
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${selecionada ? 'bg-white/25 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
                             }`}>
                             {count}
                           </span>
@@ -4526,19 +4555,19 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               </div>
 
               {/* Sincronização de Voz */}
-              <div className="p-3.5 bg-indigo-50/60 border border-indigo-100 rounded-2xl flex items-start gap-3">
+              <div className="p-3.5 bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/60 rounded-2xl flex items-start gap-3">
                 <input
                   type="checkbox"
                   id="check-ajustar-voz"
                   checked={ajustarVozTransferencia}
                   onChange={e => setAjustarVozTransferencia(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                  className="mt-0.5 w-4 h-4 text-indigo-600 rounded border-slate-300 dark:border-slate-700 focus:ring-indigo-500 cursor-pointer"
                 />
-                <label htmlFor="check-ajustar-voz" className="text-xs text-slate-700 cursor-pointer select-none">
-                  <span className="font-bold block text-slate-800">
+                <label htmlFor="check-ajustar-voz" className="text-xs text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                  <span className="font-bold block text-slate-800 dark:text-slate-100">
                     Ajustar vocal da música automaticamente
                   </span>
-                  <span className="text-[10px] text-slate-500 leading-tight block mt-0.5">
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight block mt-0.5">
                     Se a pasta de destino for especificada como Feminina ou Masculina, ajusta o campo de voz da música para manter as buscas de escala afinadas.
                   </span>
                 </label>
@@ -4546,8 +4575,8 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             </div>
 
             {/* Rodapé / Ações */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
-              <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
+            <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">
                 {musicasSelecionadas.length} {musicasSelecionadas.length === 1 ? 'música será movida' : 'músicas serão movidas'} para <strong>"{pastaDestinoTransferencia}"</strong>
               </span>
 
@@ -4556,7 +4585,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                   type="button"
                   disabled={transferindoLote}
                   onClick={() => setModalTransferirAberto(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer transition disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -4591,34 +4620,34 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
             onClick={() => setModalVisualizarCulto(null)}
           />
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 z-10 animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh] overflow-hidden">
+          <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 z-10 animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh] overflow-hidden">
             {/* Topo do Modal */}
-            <div className="p-4 sm:p-5 bg-gradient-to-b from-slate-50 to-white border-b border-slate-150 flex items-start justify-between gap-3 shrink-0">
+            <div className="p-4 sm:p-5 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 border-b border-slate-150 dark:border-slate-800 flex items-start justify-between gap-3 shrink-0">
               <div className="min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                  <span className="font-black uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200/80 px-2.5 py-0.5 rounded-lg flex items-center gap-1">
+                  <span className="font-black uppercase tracking-wider text-blue-700 bg-blue-50 border border-blue-200/80 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800 px-2.5 py-0.5 rounded-lg flex items-center gap-1">
                     <Calendar size={12} />
                     {formatarDataHoraEvento(modalVisualizarCulto.data_evento).diaSemana}, {formatarDataHoraEvento(modalVisualizarCulto.data_evento).dataFormatada}
                     {formatarDataHoraEvento(modalVisualizarCulto.data_evento).horaFormatada !== '--:--' && ` às ${formatarDataHoraEvento(modalVisualizarCulto.data_evento).horaFormatada}`}
                   </span>
-                  <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded-lg font-medium flex items-center gap-1">
-                    <MapPin size={11} className="text-slate-400" />
+                  <span className="text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-lg font-medium flex items-center gap-1">
+                    <MapPin size={11} className="text-slate-400 dark:text-slate-500" />
                     {modalVisualizarCulto.local || 'Templo Sede'}
                   </span>
                   {modalVisualizarCulto.pregador && (
-                    <span className="text-slate-700 bg-slate-100 px-2 py-0.5 rounded-lg font-medium flex items-center gap-1">
-                      <BookOpen size={11} className="text-slate-400" />
+                    <span className="text-slate-700 bg-slate-100 dark:bg-slate-800 dark:text-slate-300 px-2 py-0.5 rounded-lg font-medium flex items-center gap-1">
+                      <BookOpen size={11} className="text-slate-400 dark:text-slate-500" />
                       {modalVisualizarCulto.pregador}
                     </span>
                   )}
                 </div>
-                <h3 className="text-base sm:text-lg font-black text-slate-800 tracking-tight break-words">
+                <h3 className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight break-words">
                   {modalVisualizarCulto.titulo}
                 </h3>
                 {repModalVisualizado?.tema_culto && (
-                  <p className="text-xs text-indigo-700 font-bold flex items-center gap-1.5">
+                  <p className="text-xs text-indigo-700 dark:text-indigo-400 font-bold flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                    Tema: <span className="font-semibold text-slate-700">{repModalVisualizado.tema_culto}</span>
+                    Tema: <span className="font-semibold text-slate-700 dark:text-slate-300">{repModalVisualizado.tema_culto}</span>
                   </p>
                 )}
               </div>
@@ -4626,22 +4655,22 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               <button
                 type="button"
                 onClick={() => setModalVisualizarCulto(null)}
-                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer shrink-0"
+                className="p-2 text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer shrink-0"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Conteúdo do Repertório */}
-            <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 flex-1 min-h-0 bg-slate-50/50">
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 flex-1 min-h-0 bg-slate-50/50 dark:bg-slate-950/50">
               {!repModalVisualizado || !repModalVisualizado.musicas || repModalVisualizado.musicas.length === 0 ? (
-                <div className="py-12 px-4 text-center bg-white rounded-2xl border border-dashed border-slate-200 space-y-3">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto border border-blue-100">
+                <div className="py-12 px-4 text-center bg-white dark:bg-slate-900/60 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto border border-blue-100 dark:border-blue-800">
                     <Music size={24} />
                   </div>
                   <div>
-                    <h4 className="font-black text-slate-800 text-sm">Nenhum repertório salvo ainda</h4>
-                    <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    <h4 className="font-black text-slate-800 dark:text-slate-200 text-sm">Nenhum repertório salvo ainda</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
                       Este culto ainda não possui músicas salvas no repertório. Você pode escolher músicas por tipo litúrgico ou gerar uma sugestão inteligente.
                     </p>
                   </div>
@@ -4662,11 +4691,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 <>
                   {/* Barra de resumo */}
                   <div className="flex items-center justify-between gap-2 px-1">
-                    <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                      <ListMusic size={14} className="text-blue-600" />
+                    <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <ListMusic size={14} className="text-blue-600 dark:text-blue-400" />
                       Ordem do Louvor ({repModalVisualizado.musicas.length} {repModalVisualizado.musicas.length === 1 ? 'música' : 'músicas'})
                     </span>
-                    <span className="text-[10px] font-bold text-slate-400">
+                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
                       Sequência do culto
                     </span>
                   </div>
@@ -4683,20 +4712,20 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                       return (
                         <div
                           key={idx}
-                          className="p-3 sm:p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-2xs space-y-2 hover:border-slate-300 transition"
+                          className="p-3 sm:p-3.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-2 hover:border-slate-300 dark:hover:border-slate-700 transition"
                         >
                           <div className="flex items-start justify-between gap-2.5">
                             <div className="flex items-start gap-2.5 min-w-0">
                               {/* Número na ordem */}
-                              <div className="w-6 h-6 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
+                              <div className="w-6 h-6 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
                                 {idx + 1}
                               </div>
 
                               <div className="min-w-0">
-                                <h4 className="font-black text-slate-800 text-xs sm:text-sm tracking-tight truncate">
+                                <h4 className="font-black text-slate-800 dark:text-slate-100 text-xs sm:text-sm tracking-tight truncate">
                                   {m.titulo}
                                 </h4>
-                                <p className="text-[11px] text-slate-500 font-medium truncate">
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
                                   {m.artista || 'Geral'}
                                 </p>
                               </div>
@@ -4704,15 +4733,15 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
                             {/* Tom e Momento */}
                             <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
-                              <span className="px-2 py-0.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-800 font-black text-[11px]">
+                              <span className="px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-black text-[11px]">
                                 Tom: {m.tom || 'N/A'}
                               </span>
                               <span
                                 className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider border ${m.tipo === 'Celebração'
-                                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                  ? 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
                                   : m.tipo === 'Pós pregação'
-                                    ? 'bg-purple-50 text-purple-700 border-purple-200'
-                                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                                    ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800'
+                                    : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
                                   }`}
                               >
                                 {m.tipo || 'Adoração'}
@@ -4721,22 +4750,22 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           </div>
 
                           {/* Linha secundária: Pasta e Observação */}
-                          <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-slate-100 text-[11px]">
+                          <div className="flex flex-wrap items-center justify-between gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800 text-[11px]">
                             <div className="flex items-center gap-2 flex-wrap">
                               {pastaNome && (
                                 <span
                                   className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${isMasculino
-                                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
                                     : isFeminino
-                                      ? 'bg-pink-50 text-pink-700 border-pink-200'
-                                      : 'bg-slate-50 text-slate-600 border-slate-200'
+                                      ? 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950/60 dark:text-pink-300 dark:border-pink-800'
+                                      : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
                                     }`}
                                 >
                                   📁 {pastaNome}
                                 </span>
                               )}
                               {m.bpm && (
-                                <span className="text-[10px] text-slate-400 font-semibold">
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">
                                   {m.bpm} BPM
                                 </span>
                               )}
@@ -4748,7 +4777,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                                 href={m.link || musicaOriginal?.link}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-[10px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline ml-auto"
+                                className="text-[10px] font-bold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 hover:underline ml-auto"
                               >
                                 <ExternalLink size={10} />
                                 <span>Ouvir / Cifra</span>
@@ -4757,8 +4786,8 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                           </div>
 
                           {m.observacao && (
-                            <div className="text-[11px] text-slate-600 bg-amber-50/70 border border-amber-200/80 px-2.5 py-1 rounded-lg italic flex items-center gap-1.5">
-                              <Info size={11} className="text-amber-600 shrink-0" />
+                            <div className="text-[11px] text-slate-600 dark:text-amber-300 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/40 px-2.5 py-1 rounded-lg italic flex items-center gap-1.5">
+                              <Info size={11} className="text-amber-600 dark:text-amber-400 shrink-0" />
                               <span>{m.observacao}</span>
                             </div>
                           )}
@@ -4769,11 +4798,11 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
                   {/* Observações Gerais */}
                   {repModalVisualizado.observacoes_gerais && (
-                    <div className="p-3.5 bg-white rounded-2xl border border-slate-200/80 space-y-1">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                    <div className="p-3.5 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-1">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
                         Observações Gerais do Culto
                       </span>
-                      <p className="text-xs text-slate-700 font-medium whitespace-pre-line">
+                      <p className="text-xs text-slate-700 dark:text-slate-300 font-medium whitespace-pre-line">
                         {repModalVisualizado.observacoes_gerais}
                       </p>
                     </div>
@@ -4783,7 +4812,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
             </div>
 
             {/* Rodapé Fixo do Modal com Ações */}
-            <div className="p-3.5 sm:p-4 bg-white border-t border-slate-150 flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0">
+            <div className="p-3.5 sm:p-4 bg-white dark:bg-slate-950 border-t border-slate-150 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0">
               {/* Botão WhatsApp em destaque */}
               <button
                 type="button"
@@ -4803,7 +4832,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     setSubAbaMobileCultos('editor');
                     setModalVisualizarCulto(null);
                   }}
-                  className="flex-1 sm:flex-initial px-3.5 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
+                  className="flex-1 sm:flex-initial px-3.5 py-2.5 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer"
                 >
                   <Pencil size={13} />
                   <span>Editar Repertório</span>
@@ -4812,7 +4841,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 <button
                   type="button"
                   onClick={() => setModalVisualizarCulto(null)}
-                  className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
+                  className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition cursor-pointer"
                 >
                   Fechar
                 </button>
@@ -4825,14 +4854,14 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
       {/* ── MODAL INSTRUÇÕES DO BANCO DE DADOS (SUPABASE) ── */}
       {modalSqlAberto && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-            <div className="bg-slate-900 p-5 text-white flex justify-between items-start shrink-0">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-slate-900 dark:bg-slate-950 p-5 text-white flex justify-between items-start shrink-0 border-b dark:border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-600/30 text-blue-400 flex items-center justify-center font-bold text-lg border border-blue-500/30">
                   <Save size={20} className="text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="font-black text-base">Salvar Músicas, Pastas e Repertório no Banco de Dados</h3>
+                  <h3 className="font-black text-base text-white">Salvar Músicas, Pastas e Repertório no Banco de Dados</h3>
                   <p className="text-xs text-slate-400">Criar tabelas no Supabase (Dashboard &gt; SQL Editor)</p>
                 </div>
               </div>
@@ -4845,12 +4874,12 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto space-y-4 text-xs">
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-amber-900 space-y-2">
+            <div className="p-6 overflow-y-auto space-y-4 text-xs dark:bg-slate-900">
+              <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-2xl p-4 text-amber-900 dark:text-amber-200 space-y-2">
                 <p className="font-bold text-sm flex items-center gap-2">
                   <span>ℹ️</span> Instruções Rápidas:
                 </p>
-                <ol className="list-decimal pl-5 space-y-1 text-amber-800 leading-relaxed font-medium">
+                <ol className="list-decimal pl-5 space-y-1 text-amber-800 dark:text-amber-300 leading-relaxed font-medium">
                   <li>Acesse o painel do seu projeto no <strong>Supabase</strong>.</li>
                   <li>No menu lateral esquerdo, clique em <strong>SQL Editor</strong>.</li>
                   <li>Cole o código SQL abaixo e clique no botão <strong>Run</strong> (Executar).</li>
@@ -4860,8 +4889,8 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">Código SQL de Criação</span>
-                  <span className="text-[10px] text-slate-400">Arquivo salvo em: supabase/add-tabelas-repertorio-louvor.sql</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-[11px]">Código SQL de Criação</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">Arquivo salvo em: supabase/add-tabelas-repertorio-louvor.sql</span>
                 </div>
                 <pre className="bg-slate-950 text-emerald-400 p-4 rounded-2xl text-[11px] font-mono overflow-x-auto max-h-56 leading-relaxed border border-slate-800 select-all">
                   {`-- MIB CHURCH - TABELAS DE REPERTÓRIO, BIBLIOTECAS E MÚSICAS
@@ -4922,7 +4951,7 @@ ON CONFLICT (nome) DO NOTHING;`}
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+            <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
               <button
                 type="button"
                 onClick={() => {
@@ -4957,7 +4986,7 @@ ON CONFLICT (nome) DO NOTHING;`}
                 <button
                   type="button"
                   onClick={() => setModalSqlAberto(false)}
-                  className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
+                  className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition cursor-pointer"
                 >
                   Fechar
                 </button>

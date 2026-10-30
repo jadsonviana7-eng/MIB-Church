@@ -1,33 +1,67 @@
-export const acentos = {
-  azul: {
-    '--brand': '#202046',
-    '--brand-light': '#f0f2fa',
-    '--brand-dark': '#2f2f80',
-    '--brand-strong': '#383874',
-    '--accent': '#292991'
+export const acentosModo = {
+  claro: {
+    azul: {
+      '--brand': '#202046',
+      '--brand-light': '#f0f2fa',
+      '--brand-dark': '#2f2f80',
+      '--brand-strong': '#383874',
+      '--accent': '#292991'
+    },
+    esmeralda: {
+      '--brand': '#0f766e',
+      '--brand-light': '#f0fdfa',
+      '--brand-dark': '#115e59',
+      '--brand-strong': '#134e4a',
+      '--accent': '#0d9488'
+    },
+    roxo: {
+      '--brand': '#6b21a8',
+      '--brand-light': '#faf5ff',
+      '--brand-dark': '#581c87',
+      '--brand-strong': '#4c1d95',
+      '--accent': '#7c3aed'
+    },
+    slate: {
+      '--brand': '#334155',
+      '--brand-light': '#f8fafc',
+      '--brand-dark': '#1e293b',
+      '--brand-strong': '#0f172a',
+      '--accent': '#475569'
+    }
   },
-  esmeralda: {
-    '--brand': '#0f766e',
-    '--brand-light': '#f0fdfa',
-    '--brand-dark': '#115e59',
-    '--brand-strong': '#134e4a',
-    '--accent': '#0d9488'
-  },
-  roxo: {
-    '--brand': '#6b21a8',
-    '--brand-light': '#faf5ff',
-    '--brand-dark': '#581c87',
-    '--brand-strong': '#4c1d95',
-    '--accent': '#7c3aed'
-  },
-  slate: {
-    '--brand': '#334155',
-    '--brand-light': '#f8fafc',
-    '--brand-dark': '#1e293b',
-    '--brand-strong': '#0f172a',
-    '--accent': '#475569'
+  escuro: {
+    azul: {
+      '--brand': '#3b82f6',
+      '--brand-light': '#1e293b',
+      '--brand-dark': '#2563eb',
+      '--brand-strong': '#60a5fa',
+      '--accent': '#60a5fa'
+    },
+    esmeralda: {
+      '--brand': '#10b981',
+      '--brand-light': '#064e3b',
+      '--brand-dark': '#059669',
+      '--brand-strong': '#34d399',
+      '--accent': '#34d399'
+    },
+    roxo: {
+      '--brand': '#a855f7',
+      '--brand-light': '#3b0764',
+      '--brand-dark': '#9333ea',
+      '--brand-strong': '#c084fc',
+      '--accent': '#c084fc'
+    },
+    slate: {
+      '--brand': '#94a3b8',
+      '--brand-light': '#1e293b',
+      '--brand-dark': '#64748b',
+      '--brand-strong': '#cbd5e1',
+      '--accent': '#cbd5e1'
+    }
   }
 };
+
+export const acentos = acentosModo.claro;
 
 export const esquemas = {
   claro: {
@@ -41,11 +75,11 @@ export const esquemas = {
   },
   escuro: {
     '--surface': '#1e293b',
-    '--surface-muted': '#0f172a',
-    '--surface-header': '#0f172a',
-    '--text-primary': '#94a3b8',
+    '--surface-muted': '#0b1329',
+    '--surface-header': '#17223b',
+    '--text-primary': '#cbd5e1',
     '--text-heading': '#f8fafc',
-    '--text-muted': '#64748b',
+    '--text-muted': '#94a3b8',
     '--border': '#334155'
   }
 };
@@ -63,8 +97,9 @@ export function aplicarTema(modo, acento) {
     root.style.setProperty(key, varsEsquema[key]);
   });
   
-  // Aplicar acento
-  const varsAcento = acentos[acento] || acentos.azul;
+  // Aplicar acento adaptado ao modo
+  const acentosDoModo = acentosModo[modo] || acentosModo.claro;
+  const varsAcento = acentosDoModo[acento] || acentosDoModo.azul;
   Object.keys(varsAcento).forEach(key => {
     root.style.setProperty(key, varsAcento[key]);
   });
@@ -75,6 +110,11 @@ export function aplicarTema(modo, acento) {
   } else {
     root.classList.remove('dark');
   }
+
+  // Notificar outros componentes da aplicação
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('mib-theme-changed', { detail: { modo, acento } }));
+  }
 }
 
 export function obterTemaCarregado() {
@@ -83,7 +123,15 @@ export function obterTemaCarregado() {
   return { modo, acento };
 }
 
+export function alternarTemaModo() {
+  const { modo, acento } = obterTemaCarregado();
+  const novoModo = modo === 'escuro' ? 'claro' : 'escuro';
+  aplicarTema(novoModo, acento);
+  return novoModo;
+}
+
 export function inicializarTema() {
   const { modo, acento } = obterTemaCarregado();
   aplicarTema(modo, acento);
 }
+

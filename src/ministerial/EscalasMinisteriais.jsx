@@ -366,7 +366,7 @@ export default function EscalasMinisteriais({
       setListaMinisterios(mins || []);
 
       // Carregar todas as pessoas para sugestão rápida de pregador / membros
-      const { data: todasp } = await supabase.from('pessoas').select('id, nome').order('nome');
+      const { data: todasp } = await supabase.from('pessoas').select('id, nome, telefone').order('nome');
       setTodasPessoasSistema(todasp || []);
     } catch (error) {
       console.error('Erro ao carregar eventos:', error);
@@ -1898,13 +1898,23 @@ export default function EscalasMinisteriais({
           (i.ministerio_funcoes?.nome || '').toLowerCase().includes('palavra')
         );
         if (!jaTemFuncPregacao) {
+          const pessoaCadastrada = (todasPessoasSistema || []).find(p =>
+            p.nome && p.nome.trim().toLowerCase() === pregadorEv.trim().toLowerCase()
+          );
           minCultosEntry.itens.unshift({
             id: `pregador-manual-${eventoSelecionado.id}`,
             isPregadorManual: true,
+            evento_id: eventoSelecionado.id,
             ministerio_id: minCultosEntry.id,
-            pessoas: { nome: pregadorEv },
+            pessoa_id: pessoaCadastrada?.id || null,
+            pessoas: {
+              id: pessoaCadastrada?.id || null,
+              nome: pregadorEv,
+              telefone: pessoaCadastrada?.telefone || null
+            },
             ministerio_funcoes: { nome: 'Pregação' },
-            status: 'confirmado'
+            status: eventoSelecionado?.fardamentos?._pregador_status || 'confirmado',
+            justificativa: eventoSelecionado?.fardamentos?._pregador_justificativa || null
           });
         } else {
           // Se já tem item de pregação mas o nome estava vazio, preenche com o pregador do evento
@@ -1932,7 +1942,7 @@ export default function EscalasMinisteriais({
     });
 
     return acc;
-  }, [escalas, eventoSelecionado, listaMinisterios]);
+  }, [escalas, eventoSelecionado, listaMinisterios, todasPessoasSistema]);
 
   // Filtrar voluntários no modal de escalação
   const voluntáriosFiltrados = useMemo(() => {
@@ -2087,6 +2097,11 @@ export default function EscalasMinisteriais({
     const nomesDiasLongos = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
     const nomesMeses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
     const nomePessoa = item.pessoas?.nome || 'irmão(ã)';
+    const pessoaMatch = (todasPessoasSistema || []).find(p =>
+      p.nome && p.nome.trim().toLowerCase() === nomePessoa.trim().toLowerCase()
+    );
+    const resolvedPessoaId = item.pessoa_id || pessoaMatch?.id || null;
+    const resolvedTelefone = item.pessoas?.telefone || pessoaMatch?.telefone || '';
 
     try {
       // 1. Obter todos os eventos do mês filtrado
@@ -2097,7 +2112,7 @@ export default function EscalasMinisteriais({
 
       // 2. Buscar todas as escalas da pessoa no mês
       let escalasPessoaMes = [];
-      if (item.pessoa_id && eventIds.length > 0) {
+      if (resolvedPessoaId && eventIds.length > 0) {
         const { data: escData } = await supabase
           .from('escalas')
           .select(`
@@ -2110,12 +2125,39 @@ export default function EscalasMinisteriais({
             ministerio_funcoes (id, nome),
             eventos_ministeriais (id, titulo, data_evento, data_fim, local, pregador, fardamentos)
           `)
-          .eq('pessoa_id', item.pessoa_id)
+          .eq('pessoa_id', resolvedPessoaId)
           .in('evento_id', eventIds);
 
         if (escData && escData.length > 0) {
           escalasPessoaMes = escData;
         }
+      }
+
+      // Incluir eventos do mês em que a pessoa está como pregador manual
+      if (nomePessoa && nomePessoa !== 'irmão(ã)') {
+        const minCultosObj = listaMinisterios.find(m => isMinisterioCultos(m.nome)) || grupo || item.ministerios || { nome: 'Cultos' };
+        evsMes.forEach(ev => {
+          const pregEv = extrairPregador(ev);
+          if (pregEv && pregEv.trim().toLowerCase() === nomePessoa.trim().toLowerCase()) {
+            const jaTemPregaNoEvento = escalasPessoaMes.some(esc =>
+              String(esc.evento_id) === String(ev.id) &&
+              ((esc.ministerio_funcoes?.nome || '').toLowerCase().includes('prega') ||
+               (esc.ministerio_funcoes?.nome || '').toLowerCase().includes('palavra'))
+            );
+            if (!jaTemPregaNoEvento) {
+              escalasPessoaMes.push({
+                id: `pregador-manual-${ev.id}`,
+                isPregadorManual: true,
+                evento_id: ev.id,
+                ministerio_id: minCultosObj?.id || grupo?.id || item.ministerio_id,
+                status: ev?.fardamentos?._pregador_status || 'confirmado',
+                ministerios: minCultosObj,
+                ministerio_funcoes: { nome: 'Pregação' },
+                eventos_ministeriais: ev
+              });
+            }
+          }
+        });
       }
 
       // Se não encontrou outras escalas ou não retornou dados, usa a escala atual
@@ -2138,7 +2180,8 @@ export default function EscalasMinisteriais({
         ? (nomesMeses[filtroMes].charAt(0).toUpperCase() + nomesMeses[filtroMes].slice(1))
         : 'Mês';
 
-      const linkConfirmacao = `${window.location.origin}/confirmar-escala?id=${item.id}&pessoa=${item.pessoa_id || ''}&mes=${filtroMes}&ano=${filtroAno}`;
+      const pregadorQuery = item.isPregadorManual ? `&pregador=${encodeURIComponent(nomePessoa)}` : '';
+      const linkConfirmacao = `${window.location.origin}/confirmar-escala?id=${encodeURIComponent(item.id)}&pessoa=${resolvedPessoaId || ''}&mes=${filtroMes}&ano=${filtroAno}${pregadorQuery}`;
 
       let texto = `Olá, *${nomePessoa}*! 🙌\n\n`;
       if (escalasPessoaMes.length > 1) {
@@ -2171,7 +2214,7 @@ export default function EscalasMinisteriais({
       texto += `👉 *Por favor, confirme todas as suas escalas clicando no link abaixo:*\n`;
       texto += `${linkConfirmacao}\n`;
 
-      const telLimpo = item.pessoas?.telefone ? String(item.pessoas.telefone).replace(/\D/g, '') : '';
+      const telLimpo = resolvedTelefone ? String(resolvedTelefone).replace(/\D/g, '') : '';
       if (telLimpo && telLimpo.length >= 10) {
         const urlWa = `https://wa.me/55${telLimpo}?text=${encodeURIComponent(texto)}`;
         try {
@@ -2185,7 +2228,8 @@ export default function EscalasMinisteriais({
     } catch (err) {
       console.error('Erro ao gerar mensagem de escalas do mês:', err);
       // Fallback para link simples
-      const linkSimples = `${window.location.origin}/confirmar-escala?id=${item.id}`;
+      const pregadorQuery = item.isPregadorManual ? `&pregador=${encodeURIComponent(nomePessoa)}` : '';
+      const linkSimples = `${window.location.origin}/confirmar-escala?id=${encodeURIComponent(item.id)}${pregadorQuery}`;
       copiarEAbrirWhatsApp(`Olá, *${nomePessoa}*! Por favor, confirme sua escala na MIB Church no link: ${linkSimples}`, `✓ Link copiado!`);
     }
   }
@@ -3219,7 +3263,7 @@ export default function EscalasMinisteriais({
                                   </div>
 
                                   {/* Rodapé Gradiente com Botões de Ações Quadrados (Ícone Acima, Legenda Abaixo) */}
-                                  {!isMembroNormal && !item.isPregadorManual && (
+                                  {!isMembroNormal && (
                                     <div
                                       className="px-3 py-2 border-t flex items-center justify-end gap-1.5 sm:gap-2 transition-colors"
                                       style={{
@@ -3230,17 +3274,19 @@ export default function EscalasMinisteriais({
                                       }}
                                     >
                                       {/* 1. Botão Quadrado APONTAR */}
-                                      <button
-                                        type="button"
-                                        onClick={() => abrirModalApontamento(item, grupo)}
-                                        className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-indigo-900 hover:text-indigo-950 bg-white hover:bg-indigo-50/90 border border-indigo-200/90 hover:border-indigo-300 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
-                                        title="Apontar presença, falta justificada ou negativação"
-                                      >
-                                        <CheckCircle size={16} strokeWidth={2.4} className="text-indigo-600 group-hover:scale-115 transition-transform shrink-0" />
-                                        <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5">
-                                          Apontar
-                                        </span>
-                                      </button>
+                                      {!item.isPregadorManual && (
+                                        <button
+                                          type="button"
+                                          onClick={() => abrirModalApontamento(item, grupo)}
+                                          className="group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl text-indigo-900 hover:text-indigo-950 bg-white hover:bg-indigo-50/90 border border-indigo-200/90 hover:border-indigo-300 shadow-2xs hover:shadow-xs transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95"
+                                          title="Apontar presença, falta justificada ou negativação"
+                                        >
+                                          <CheckCircle size={16} strokeWidth={2.4} className="text-indigo-600 group-hover:scale-115 transition-transform shrink-0" />
+                                          <span className="text-[9.5px] sm:text-[10px] font-black uppercase tracking-tight leading-none text-center whitespace-nowrap w-full px-0.5">
+                                            Apontar
+                                          </span>
+                                        </button>
+                                      )}
 
                                       {/* 2. Botão Quadrado AVISAR (WhatsApp) */}
                                       <button
@@ -3256,7 +3302,7 @@ export default function EscalasMinisteriais({
                                       </button>
 
                                       {/* 3. Botão Quadrado SUBSTITUIR: Removido após a substituição ser feita */}
-                                      {!jaFoiSubstituido && !eSubstituto && (
+                                      {!item.isPregadorManual && !jaFoiSubstituido && !eSubstituto && (
                                         <button
                                           type="button"
                                           onClick={() => abrirModalSubstituicao(item, grupo)}

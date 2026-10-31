@@ -332,15 +332,60 @@ export const escalasService = {
     }
   },
 
-  async obterEscalasPublicasDoMes({ escalaId, pessoaId, mes, ano }) {
+  async obterEscalasPublicasDoMes({ escalaId, pessoaId, pregadorNome, mes, ano }) {
     try {
       let targetPessoaId = pessoaId || null;
+      let targetPregadorNome = pregadorNome ? String(pregadorNome).trim() : null;
       let targetMes = (mes !== undefined && mes !== null && mes !== '') ? Number(mes) : null;
       let targetAno = (ano !== undefined && ano !== null && ano !== '') ? Number(ano) : null;
       let escalaInicial = null;
+      let manualEventoInicial = null;
 
-      // Se foi fornecido escalaId, busca a escala correspondente para identificar a pessoa e data
-      if (escalaId) {
+      const extrairPregadorEvento = (ev) => {
+        if (!ev) return '';
+        if (ev.pregador && typeof ev.pregador === 'string' && ev.pregador.trim()) return ev.pregador.trim();
+        if (ev.fardamentos && ev.fardamentos._pregador) return String(ev.fardamentos._pregador).trim();
+        if (ev.descricao) {
+          const m = ev.descricao.match(/\[PREGADOR:(.+?)\]/);
+          if (m && m[1]) return m[1].trim();
+        }
+        return '';
+      };
+
+      const isPregadorManualId = String(escalaId || '').startsWith('pregador-manual-');
+      const manualEventoId = isPregadorManualId ? String(escalaId).replace(/^pregador-manual-/, '').trim() : null;
+
+      if (isPregadorManualId && manualEventoId) {
+        const { data: evData } = await supabase
+          .from('eventos_ministeriais')
+          .select('*')
+          .eq('id', manualEventoId)
+          .limit(1);
+
+        if (evData && evData.length > 0) {
+          manualEventoInicial = evData[0];
+          if (!targetPregadorNome) {
+            targetPregadorNome = extrairPregadorEvento(manualEventoInicial);
+          }
+          if (manualEventoInicial.data_evento && (targetMes === null || targetAno === null)) {
+            const d = new Date(manualEventoInicial.data_evento);
+            const bDate = new Date(d.getTime() - 3 * 3600 * 1000);
+            if (targetMes === null) targetMes = bDate.getUTCMonth();
+            if (targetAno === null) targetAno = bDate.getUTCFullYear();
+          }
+        }
+
+        if (!targetPessoaId && targetPregadorNome) {
+          const { data: pData } = await supabase
+            .from('pessoas')
+            .select('id, nome')
+            .ilike('nome', targetPregadorNome)
+            .limit(1);
+          if (pData && pData.length > 0) {
+            targetPessoaId = pData[0].id;
+          }
+        }
+      } else if (escalaId) {
         const { data: escData, error: errEsc } = await supabase
           .from('escalas')
           .select('*')
@@ -369,7 +414,7 @@ export const escalasService = {
         }
       }
 
-      if (!targetPessoaId && !escalaInicial) {
+      if (!targetPessoaId && !escalaInicial && !manualEventoInicial && !targetPregadorNome) {
         throw new Error('Link de confirmação inválido ou escala não encontrada.');
       }
 
@@ -397,7 +442,10 @@ export const escalasService = {
       }
 
       const mapaEventos = new Map((eventosMes || []).map(e => [e.id, e]));
-      const eventoIds = (eventosMes || []).map(e => e.id);
+      if (manualEventoInicial && !mapaEventos.has(manualEventoInicial.id)) {
+        mapaEventos.set(manualEventoInicial.id, manualEventoInicial);
+      }
+      const eventoIds = Array.from(mapaEventos.keys());
 
       // Adiciona o evento da escala inicial se estiver fora do range
       if (escalaInicial?.evento_id && !mapaEventos.has(escalaInicial.evento_id)) {
@@ -423,41 +471,88 @@ export const escalasService = {
         rawEscalas.push(escalaInicial);
       }
 
-      if (rawEscalas.length === 0) {
-        throw new Error('Nenhuma escala encontrada para este voluntário neste período.');
-      }
-
       // 3. Buscar entidades relacionadas em lote
-      const pessoaIds = [...new Set(rawEscalas.map(e => e.pessoa_id).filter(Boolean))];
+      const pessoaIds = [...new Set([
+        ...rawEscalas.map(e => e.pessoa_id),
+        targetPessoaId
+      ].filter(Boolean))];
       const ministerioIds = [...new Set(rawEscalas.map(e => e.ministerio_id).filter(Boolean))];
       const funcaoIds = [...new Set(rawEscalas.map(e => e.funcao_id).filter(Boolean))];
       const missingEventoIds = rawEscalas.map(e => e.evento_id).filter(id => id && !mapaEventos.has(id));
 
-      const [resPessoas, resMin, resFunc, resMissingEvents] = await Promise.all([
+      const [resPessoas, resMin, resFunc, resMissingEvents, resAllMin] = await Promise.all([
         pessoaIds.length > 0 ? supabase.from('pessoas').select('id, nome, foto_url, telefone').in('id', pessoaIds) : { data: [] },
         ministerioIds.length > 0 ? supabase.from('ministerios').select('id, nome, icone, cor_principal, fardamentos').in('id', ministerioIds) : { data: [] },
         funcaoIds.length > 0 ? supabase.from('ministerio_funcoes').select('id, nome').in('id', funcaoIds) : { data: [] },
-        missingEventoIds.length > 0 ? supabase.from('eventos_ministeriais').select('*').in('id', missingEventoIds) : { data: [] }
+        missingEventoIds.length > 0 ? supabase.from('eventos_ministeriais').select('*').in('id', missingEventoIds) : { data: [] },
+        supabase.from('ministerios').select('id, nome, icone, cor_principal, fardamentos')
       ]);
 
       (resMissingEvents.data || []).forEach(ev => mapaEventos.set(ev.id, ev));
 
       const mapPessoas = new Map((resPessoas.data || []).map(p => [p.id, p]));
       const mapMin = new Map((resMin.data || []).map(m => [m.id, m]));
+      (resAllMin.data || []).forEach(m => { if (!mapMin.has(m.id)) mapMin.set(m.id, m); });
       const mapFunc = new Map((resFunc.data || []).map(f => [f.id, f]));
 
-      const pessoa = (targetPessoaId && mapPessoas.get(targetPessoaId)) || (resPessoas.data?.[0]) || { nome: 'Voluntário' };
+      const pessoa = (targetPessoaId && mapPessoas.get(targetPessoaId)) ||
+        (resPessoas.data?.[0]) ||
+        { id: targetPessoaId, nome: targetPregadorNome || 'Pregador(a)' };
 
-      const escalasFormatadas = rawEscalas.map(esc => {
-        const ev = mapaEventos.get(esc.evento_id) || null;
-        return {
-          ...esc,
-          eventos_ministeriais: ev,
-          pessoas: mapPessoas.get(esc.pessoa_id) || pessoa,
-          ministerios: mapMin.get(esc.ministerio_id) || { nome: 'Ministério' },
-          ministerio_funcoes: mapFunc.get(esc.funcao_id) || { nome: 'Função' }
-        };
+      // 4. Incluir escalas de pregador manual do mês
+      const nomeBuscaPregador = (targetPregadorNome || pessoa?.nome || '').trim().toLowerCase();
+      const minCultos = (resAllMin.data || []).find(m => {
+        const norm = (m.nome || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+        return norm === 'cultos' || norm === 'culto' || norm.includes('culto');
+      }) || { id: null, nome: 'Cultos', cor_principal: '#1e3a8a', icone: 'Scroll' };
+
+      const escalasPregadorManual = [];
+      Array.from(mapaEventos.values()).forEach(ev => {
+        const pregEv = extrairPregadorEvento(ev);
+        const matchPorId = manualEventoId && String(ev.id) === String(manualEventoId);
+        const matchPorNome = nomeBuscaPregador && pregEv && pregEv.toLowerCase() === nomeBuscaPregador;
+        if (matchPorId || matchPorNome) {
+          const jaTemPregaNaTabela = rawEscalas.some(esc => {
+            if (String(esc.evento_id) !== String(ev.id)) return false;
+            const fnNome = (mapFunc.get(esc.funcao_id)?.nome || '').toLowerCase();
+            return fnNome.includes('prega') || fnNome.includes('palavra');
+          });
+          if (!jaTemPregaNaTabela) {
+            escalasPregadorManual.push({
+              id: `pregador-manual-${ev.id}`,
+              isPregadorManual: true,
+              evento_id: ev.id,
+              ministerio_id: minCultos?.id || null,
+              pessoa_id: targetPessoaId || null,
+              status: ev.fardamentos?._pregador_status || 'pendente',
+              justificativa: ev.fardamentos?._pregador_justificativa || null,
+              pedido_substituicao: ev.fardamentos?._pregador_status === 'recusado',
+              eventos_ministeriais: ev,
+              pessoas: pessoa,
+              ministerios: minCultos,
+              ministerio_funcoes: { nome: 'Pregação' }
+            });
+          }
+        }
       });
+
+      const escalasFormatadas = [
+        ...rawEscalas.map(esc => {
+          const ev = mapaEventos.get(esc.evento_id) || null;
+          return {
+            ...esc,
+            eventos_ministeriais: ev,
+            pessoas: mapPessoas.get(esc.pessoa_id) || pessoa,
+            ministerios: mapMin.get(esc.ministerio_id) || { nome: 'Ministério' },
+            ministerio_funcoes: mapFunc.get(esc.funcao_id) || { nome: 'Função' }
+          };
+        }),
+        ...escalasPregadorManual
+      ];
+
+      if (escalasFormatadas.length === 0) {
+        throw new Error('Nenhuma escala encontrada para este voluntário neste período.');
+      }
 
       // Ordena cronologicamente pela data do evento
       escalasFormatadas.sort((a, b) => {
@@ -488,6 +583,17 @@ export const escalasService = {
 
   async atualizarStatusMultiplasEscalas(escalaIds, status, justificativa = null) {
     if (!escalaIds || escalaIds.length === 0) return [];
+    const manualIds = escalaIds.filter(id => String(id).startsWith('pregador-manual-'));
+    const normalIds = escalaIds.filter(id => !String(id).startsWith('pregador-manual-'));
+
+    const manualResults = await Promise.all(
+      manualIds.map(mId => this.atualizarStatusEscala(mId, status, justificativa))
+    );
+
+    if (normalIds.length === 0) {
+      return manualResults;
+    }
+
     const payload = { status };
     if (justificativa !== undefined && justificativa !== null) {
       payload.justificativa = justificativa;
@@ -502,14 +608,14 @@ export const escalasService = {
       const { data, error } = await supabase
         .from('escalas')
         .update(payload)
-        .in('id', escalaIds)
+        .in('id', normalIds)
         .select();
 
       if (!error) {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
         }
-        return data || [];
+        return [...(data || []), ...manualResults];
       }
 
       // Fallback se pedido_substituicao falhar
@@ -518,28 +624,28 @@ export const escalasService = {
       const { data: dataFallback, error: errFallback } = await supabase
         .from('escalas')
         .update(payloadSemSubst)
-        .in('id', escalaIds)
+        .in('id', normalIds)
         .select();
 
       if (!errFallback) {
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
         }
-        return dataFallback || [];
+        return [...(dataFallback || []), ...manualResults];
       }
 
       // Fallback se justificativa falhar por ausência de coluna
       const { data: dataFb2, error: errFb2 } = await supabase
         .from('escalas')
         .update({ status })
-        .in('id', escalaIds)
+        .in('id', normalIds)
         .select();
 
       if (errFb2) throw errFb2;
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
       }
-      return dataFb2 || [];
+      return [...(dataFb2 || []), ...manualResults];
     } catch (error) {
       console.error('Erro em atualizarStatusMultiplasEscalas:', error);
       throw error;
@@ -703,6 +809,33 @@ export const escalasService = {
   },
 
   async atualizarStatusEscala(id, status, justificativa = null, options = {}) {
+    if (String(id || '').startsWith('pregador-manual-')) {
+      const eventoId = String(id).replace(/^pregador-manual-/, '').trim();
+      const { data: evData } = await supabase
+        .from('eventos_ministeriais')
+        .select('fardamentos')
+        .eq('id', eventoId)
+        .limit(1);
+
+      const fardamentosAtuais = (evData && evData[0]?.fardamentos) || {};
+      const novosFardamentos = {
+        ...fardamentosAtuais,
+        _pregador_status: status,
+        ...(justificativa !== undefined && justificativa !== null ? { _pregador_justificativa: justificativa } : {})
+      };
+
+      const { error: errEv } = await supabase
+        .from('eventos_ministeriais')
+        .update({ fardamentos: novosFardamentos })
+        .eq('id', eventoId);
+
+      if (errEv) throw errEv;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('mib-nova-notificacao'));
+      }
+      return { id, status, justificativa };
+    }
+
     const payload = { status };
     if (justificativa !== undefined && justificativa !== null) {
       payload.justificativa = justificativa;

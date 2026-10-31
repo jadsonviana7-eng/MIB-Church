@@ -55,6 +55,7 @@ export default function PublicConfirmarEscala() {
   useEffect(() => {
     let id = null;
     let pessoaId = null;
+    let pregadorNome = null;
     let mes = null;
     let ano = null;
 
@@ -62,6 +63,7 @@ export default function PublicConfirmarEscala() {
     const urlParams = new URLSearchParams(window.location.search);
     id = urlParams.get('id') || urlParams.get('escala') || urlParams.get('escala_id');
     pessoaId = urlParams.get('pessoa') || urlParams.get('pessoa_id');
+    pregadorNome = urlParams.get('pregador');
     mes = urlParams.get('mes');
     ano = urlParams.get('ano');
 
@@ -74,11 +76,12 @@ export default function PublicConfirmarEscala() {
     }
 
     // C. Hash (#/confirmar-escala?id=xxx...)
-    if ((!id && !pessoaId) && window.location.hash) {
+    if ((!id && !pessoaId && !pregadorNome) && window.location.hash) {
       const hashStr = window.location.hash.replace(/^#\/?/, '');
       const hashParams = new URLSearchParams(hashStr.includes('?') ? hashStr.split('?')[1] : '');
       id = hashParams.get('id') || hashParams.get('escala') || hashParams.get('escala_id');
       pessoaId = hashParams.get('pessoa') || hashParams.get('pessoa_id');
+      pregadorNome = hashParams.get('pregador');
       mes = hashParams.get('mes');
       ano = hashParams.get('ano');
 
@@ -89,11 +92,13 @@ export default function PublicConfirmarEscala() {
 
     const cleanId = id ? String(id).trim().replace(/\/$/, '') : null;
     const cleanPessoaId = pessoaId ? String(pessoaId).trim() : null;
+    const cleanPregadorNome = pregadorNome ? String(pregadorNome).trim() : null;
 
-    if (cleanId || cleanPessoaId) {
+    if (cleanId || cleanPessoaId || cleanPregadorNome) {
       const params = {
         escalaId: cleanId,
         pessoaId: cleanPessoaId,
+        pregadorNome: cleanPregadorNome,
         mes,
         ano
       };

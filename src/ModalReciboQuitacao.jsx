@@ -497,6 +497,8 @@ export default function ModalReciboQuitacao({
 
     // Card 2: Detalhes do Evento
     const card2X = 108;
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
     doc.roundedRect(card2X, cardY, cardW, cardH, 3, 3, 'FD');
 
     doc.setFont('helvetica', 'bold');

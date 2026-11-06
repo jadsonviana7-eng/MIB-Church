@@ -183,26 +183,26 @@ export const gerarMensagemInscricaoEvento = (evento, url) => {
     } catch (_) {}
   }
 
-  const dataInfo = dataTexto ? `\n📅 *Data:* ${dataTexto}` : '';
-  const localTexto = evento?.local_nome ? `\n📍 *Local:* ${evento.local_nome}` : '';
+  const dataInfo = dataTexto ? `\n• *Data:* ${dataTexto}` : '';
+  const localTexto = evento?.local_nome ? `\n• *Local:* ${evento.local_nome}` : '';
 
   let valorInfo = '';
   if (evento?.valor_tipo === 'pago') {
     const valor = Number(evento.valor_padrao || evento.valor || 0);
-    valorInfo = valor > 0 ? `\n🎟️ *Inscrição:* R$ ${valor.toFixed(2).replace('.', ',')}` : '\n🎟️ *Inscrição:* Evento Pago';
+    valorInfo = valor > 0 ? `\n• *Inscrição:* R$ ${valor.toFixed(2).replace('.', ',')}` : '\n• *Inscrição:* Evento Pago';
   } else if (evento?.valor_tipo === 'gratuito') {
-    valorInfo = '\n🎟️ *Inscrição:* Gratuita';
+    valorInfo = '\n• *Inscrição:* Gratuita';
   }
 
   return (
-    `Olá! Paz do Senhor! ✨\n\n` +
-    `Estão abertas as inscrições para o evento *${nomeEv}* da MIB Church! 🎉` +
+    `Olá! Paz do Senhor!\n\n` +
+    `Estão abertas as inscrições para o evento *${nomeEv}* da MIB Church!\n` +
     `${dataInfo}` +
     `${localTexto}` +
     `${valorInfo}\n\n` +
     `Para garantir a sua vaga e preencher a sua inscrição, acesse o link oficial abaixo:\n\n` +
     `${url}\n\n` +
-    `Ficamos muito felizes com a sua participação! Esperamos por você! 🙏✨`
+    `Ficamos muito felizes com a sua participação! Esperamos por você!`
   );
 };
 

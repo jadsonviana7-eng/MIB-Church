@@ -87,10 +87,10 @@ export default function ModalLinkCopiado({
         texto = gerarMensagemInscricaoEvento(evento || { titulo: nomeEvento }, urlFinal);
       } else {
         texto = 
-          `Olá! Seja muito bem-vindo(a) à MIB Church! ✨\n\n` +
+          `Olá! Seja muito bem-vindo(a) à MIB Church!\n\n` +
           `Para realizar o seu cadastro em nossa comunidade e acompanhar nossos ministérios e atividades, acesse o link de autocadastro abaixo:\n\n` +
           `${urlFinal}\n\n` +
-          `Ficamos muito felizes em ter você conosco! Deus abençoe! 🙏`;
+          `Ficamos muito felizes em ter você conosco! Deus abençoe!`;
       }
     }
     const textoMensagem = encodeURIComponent(texto);

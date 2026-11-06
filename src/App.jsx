@@ -2090,7 +2090,7 @@ export default function App() {
         )}
       </nav>
 
-      <main className="min-w-0 px-2 pb-20 pt-14 sm:px-6 sm:pb-6 md:pl-20 md:pr-6 md:pt-16 lg:pl-20 lg:pr-10 lg:pt-16 lg:pb-8 flex-1 overflow-y-auto scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <main className="min-w-0 px-2 pb-20 pt-14 sm:px-6 sm:pb-6 md:pl-20 md:pr-6 md:pt-16 lg:pl-20 lg:pr-10 lg:pt-16 lg:pb-8 print:p-0 print:m-0 print:w-full print:max-w-full flex-1 overflow-y-auto scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {/* Nova HomePage como a tela principal do dashboard */}
         {moduloAtual === 'dashboard' && (
           <>

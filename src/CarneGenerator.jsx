@@ -909,10 +909,10 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
       await baixarCartaoPDF(dadosCartao, nomeArquivo);
 
       let msg = `*Olá ${nomeCliente}!* \n\nSegue os dados para pagamento da sua parcela do carnê da *${igreja}*:\n\n`;
-      msg += `📌 *Parcela:* ${parcela.parcelaLabel}\n`;
-      msg += `📅 *Vencimento:* ${dataVenc}\n`;
-      msg += `💰 *Valor:* R$ ${valor}\n`;
-      if (linkPagamento) msg += `\n🔗 *Link para pagamento:* ${linkPagamento}\n`;
+      msg += `• *Parcela:* ${parcela.parcelaLabel}\n`;
+      msg += `• *Vencimento:* ${dataVenc}\n`;
+      msg += `• *Valor:* R$ ${valor}\n`;
+      if (linkPagamento) msg += `\n• *Link para pagamento:* ${linkPagamento}\n`;
 
       if (copiado) {
         msg += `\n*DICA:* A imagem do cartão digital correspondente a esta parcela foi copiada para sua área de transferência. Basta colar (Ctrl+V) no chat do WhatsApp para enviá-la! O arquivo PDF também foi baixado.`;
@@ -937,10 +937,10 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
     const buildMsg = (comNota) => {
       let msg = `Olá *${nomeCliente}*!\n`;
       msg += `Segue o resumo do seu carnê da *${nomeEvento}*:\n\n`;
-      msg += `📊 *Total de Parcelas:* ${totalParcelas}\n`;
-      msg += `💰 *Valor Total:* R$ ${formatCurrency(valorTotal)}\n`;
-      msg += `💰 *Valor da Parcela:* R$ ${formatCurrency(dadosVenda.valorParcela)}\n`;
-      msg += `📅 *Vencimento Inicial:* ${formatDate(dadosVenda.vencimentoPrimeiraParcela)}\n`;
+      msg += `• *Total de Parcelas:* ${totalParcelas}\n`;
+      msg += `• *Valor Total:* R$ ${formatCurrency(valorTotal)}\n`;
+      msg += `• *Valor da Parcela:* R$ ${formatCurrency(dadosVenda.valorParcela)}\n`;
+      msg += `• *Vencimento Inicial:* ${formatDate(dadosVenda.vencimentoPrimeiraParcela)}\n`;
       if (comNota) {
         msg += `\n_Nota: O PDF contendo todas as parcelas consolidadas segue em anexo nesta mensagem._`;
       }

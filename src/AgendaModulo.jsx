@@ -22,6 +22,8 @@ import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import { mascaraTelefone, mascaraCPF } from './mascaras';
 import { findInJsonGlobal, parseMoeda, extrairValorInscricao, extrairParcelasInscricao, gerarMensagemInscricaoEvento } from './eventoInscricaoUtils';
+import ModalExportarInscritos from './ModalExportarInscritos';
+import ModalReciboQuitacao from './ModalReciboQuitacao';
 
 /* ─── Roboto via Google Fonts ─────────────────────────────────────────────── */
 const RobotoStyle = () => (
@@ -29,9 +31,40 @@ const RobotoStyle = () => (
     @import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&display=swap');
     .agenda-root, .agenda-root * { font-family: 'Roboto', sans-serif !important; }
 
+    @page {
+      size: A4 portrait;
+      margin: 12mm 12mm 12mm 12mm;
+    }
+
     @media print {
-      body { background: white !important; }
-      main { padding-top: 0 !important; padding-bottom: 0 !important; }
+      html, body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      main {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      aside, header, nav, .print\\:hidden {
+        display: none !important;
+      }
+      .agenda-root, .space-y-6, .ag-card {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      .ag-table {
+        width: 100% !important;
+      }
+      tr { page-break-inside: avoid; }
+      thead { display: table-header-group; }
     }
 
     /* ── tokens claros ── */
@@ -365,6 +398,21 @@ const Icon = {
       <line x1="3" y1="10" x2="21" y2="10" />
       <path d="M8 14h.01M12 14h.01M16 14h.01" />
       <path d="M8 18h.01M12 18h.01M16 18h.01" />
+    </svg>
+  ),
+  Download: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  ),
+  Recibo: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" />
+      <path d="M16 8h-8" />
+      <path d="M16 12h-8" />
+      <path d="M11 16h-3" />
     </svg>
   ),
 };
@@ -1387,6 +1435,10 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
   const [filtroStatusModal, setFiltroStatusModal] = useState('todos');
   const [buscaModal, setBuscaModal] = useState('');
   const [listaZonas, setListaZonas] = useState(zonas || []);
+  const [modalExportarAberto, setModalExportarAberto] = useState(false);
+  const [formatoExportarInicial, setFormatoExportarInicial] = useState('pdf');
+  const [incluirTransporteNoTotal, setIncluirTransporteNoTotal] = useState(true);
+  const [modalRecibo, setModalRecibo] = useState({ aberto: false, inscrito: null });
 
   useEffect(() => {
     if (zonas && zonas.length > 0) {
@@ -1419,7 +1471,8 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
     let confirmados = 0;
     let pendentes = 0;
     let cancelados = 0;
-    let totalArrecadado = 0;
+    let totalArrecadadoComTransporte = 0;
+    let totalArrecadadoSemTransporte = 0;
 
     let transporteSim = 0;
     let transporteNao = 0;
@@ -1428,14 +1481,33 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
     inscritos.forEach(i => {
       const dados = i.dados_inscricao || {};
       const incluiTransporte = findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
-      const valorInscricaoReal = extrairValorInscricao(dados, evento);
+      const valorInscricaoTotal = extrairValorInscricao(dados, evento);
+
+      let valorTransporteItem = 0;
+      if (dados.valor_transporte !== undefined && dados.valor_transporte !== null && dados.valor_transporte !== '') {
+        valorTransporteItem = Number(dados.valor_transporte) || 0;
+      } else if (incluiTransporte) {
+        valorTransporteItem = Number(evento?.valor_transporte) || 0;
+      }
+      const valorInscricaoBase = Math.max(0, valorInscricaoTotal - valorTransporteItem);
 
       const totalParcelas = Number(findInJsonGlobal(dados, 'parcelas')) || 1;
       const pagas = dados.parcelas_pagas || [];
 
-      if (i.status_pagamento === 'pago') { confirmados++; totalArrecadado += valorInscricaoReal; }
-      else if (i.status_pagamento === 'cancelado') { cancelados++; }
-      else { pendentes++; if (pagas.length > 0) totalArrecadado += (valorInscricaoReal / totalParcelas) * pagas.length; }
+      if (i.status_pagamento === 'pago') {
+        confirmados++;
+        totalArrecadadoComTransporte += valorInscricaoTotal;
+        totalArrecadadoSemTransporte += valorInscricaoBase;
+      } else if (i.status_pagamento === 'cancelado') {
+        cancelados++;
+      } else {
+        pendentes++;
+        if (pagas.length > 0) {
+          const proporcao = totalParcelas > 0 ? (pagas.length / totalParcelas) : 0;
+          totalArrecadadoComTransporte += valorInscricaoTotal * proporcao;
+          totalArrecadadoSemTransporte += valorInscricaoBase * proporcao;
+        }
+      }
 
       // Estatísticas apenas de inscritos ativos (não cancelados)
       if (i.status_pagamento !== 'cancelado') {
@@ -1450,13 +1522,17 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
     // Vagas ocupadas (considerando pagos e pendentes como reserva de vaga)
     const ocupadas = confirmados + pendentes;
     const disponiveis = evento.vagas ? Math.max(0, evento.vagas - ocupadas) : '∞';
+    const totalTransporteArrecadado = Math.max(0, totalArrecadadoComTransporte - totalArrecadadoSemTransporte);
 
     return {
       confirmados,
       pendentes,
       cancelados,
       disponiveis,
-      totalRecebido: totalArrecadado,
+      totalComTransporte: totalArrecadadoComTransporte,
+      totalSemTransporte: totalArrecadadoSemTransporte,
+      totalTransporteArrecadado,
+      totalRecebido: totalArrecadadoComTransporte,
       transporteSim,
       transporteNao,
       formasPagamento
@@ -1741,11 +1817,25 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
           </button>
           <button
             className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2"
-            onClick={() => window.print()}
-            title="Imprimir Lista"
+            onClick={() => {
+              setFormatoExportarInicial('pdf');
+              setModalExportarAberto(true);
+            }}
+            title="Imprimir ou Salvar Lista em PDF com opções personalizadas"
           >
             <Icon.Printer />
-            <span className="hidden sm:inline ml-1">Imprimir Lista</span>
+            <span className="hidden sm:inline ml-1">Imprimir / PDF</span>
+          </button>
+          <button
+            className="btn-ghost !rounded-md p-2.5 sm:px-4 sm:py-2 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 font-bold"
+            onClick={() => {
+              setFormatoExportarInicial('xlsx');
+              setModalExportarAberto(true);
+            }}
+            title="Exportar Lista (PDF, Excel ou CSV)"
+          >
+            <Icon.Download />
+            <span className="hidden sm:inline ml-1">Exportar Lista</span>
           </button>
           {podeEditar && (
             <>
@@ -1817,21 +1907,57 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:hidden">
         {/* CARD TOTAL RECEBIDO DESTACADO */}
         <div
-          className="lg:col-span-1 p-8 rounded-[24px] shadow-xl flex flex-col justify-center relative overflow-hidden"
+          className="lg:col-span-1 p-7 sm:p-8 rounded-[24px] shadow-xl flex flex-col justify-between relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #059669 0%, #0d9488 100%)', color: '#ffffff' }}
         >
           <div className="absolute -right-6 -bottom-6 opacity-20 rotate-12">
             <svg width="140" height="140" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.15 0 2.25-.56 2.25-1.75 0-.94-.74-1.55-2.45-1.99-2.31-.6-4.14-1.48-4.14-3.8 0-2.09 1.63-3.41 3.27-3.79V3.2h2.67v1.88c1.37.31 2.82 1.13 2.97 3.21h-1.93c-.14-.94-.84-1.68-2.38-1.68-1.37 0-2.1.72-2.1 1.51 0 .97.94 1.48 2.84 1.95 2.5.62 4.14 1.7 4.14 3.93 0 2.38-1.63 3.66-3.66 3.89z" /></svg>
           </div>
-          <h3 style={{ margin: 0, fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', opacity: 0.9 }}>
-            Total Recebido
-          </h3>
-          <div style={{ fontSize: 44, fontWeight: 900, marginTop: 8, letterSpacing: '-0.02em', lineHeight: 1 }}>
-            {stats.totalRecebido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          <div>
+            <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
+              <h3 style={{ margin: 0, fontSize: 12, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', opacity: 0.9 }}>
+                Total Recebido
+              </h3>
+              {/* Alternador com / sem transporte */}
+              <div className="inline-flex items-center bg-black/20 p-0.5 rounded-xl backdrop-blur-xs text-[10px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setIncluirTransporteNoTotal(true)}
+                  className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                    incluirTransporteNoTotal
+                      ? 'bg-white text-emerald-900 shadow-sm font-black'
+                      : 'text-white/80 hover:text-white'
+                  }`}
+                  title="Total somando ingressos + taxas de transporte"
+                >
+                  Com Transp.
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIncluirTransporteNoTotal(false)}
+                  className={`px-2 py-1 rounded-lg transition-all cursor-pointer ${
+                    !incluirTransporteNoTotal
+                      ? 'bg-white text-emerald-900 shadow-sm font-black'
+                      : 'text-white/80 hover:text-white'
+                  }`}
+                  title="Total apenas dos ingressos do evento (sem transporte)"
+                >
+                  Sem Transp.
+                </button>
+              </div>
+            </div>
+            <div style={{ fontSize: 38, fontWeight: 900, marginTop: 4, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
+              {(incluirTransporteNoTotal ? stats.totalComTransporte : stats.totalSemTransporte).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </div>
           </div>
-          <p style={{ margin: '16px 0 0', fontSize: 11, fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {stats.confirmados} inscrições confirmadas
-          </p>
+          <div className="mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-[11px] font-bold opacity-90">
+            <span>{stats.confirmados} confirmações</span>
+            <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-md">
+              {incluirTransporteNoTotal
+                ? (stats.totalTransporteArrecadado > 0 ? `🚌 + ${stats.totalTransporteArrecadado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} transporte` : '🚌 Sem taxa extra')
+                : '🎟️ Apenas Ingressos'}
+            </span>
+          </div>
         </div>
 
         {/* GRÁFICO DE INSCRIÇÕES POR PERÍODO */}
@@ -1941,8 +2067,12 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
             <p className="text-2xl font-black text-amber-600 leading-none">{stats.pendentes}</p>
           </div>
           <div className="border border-slate-200 p-4 rounded-2xl">
-            <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">Arrecadado</p>
-            <p className="text-2xl font-black text-slate-800 leading-none">{stats.totalRecebido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+            <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">
+              Arrecadado {incluirTransporteNoTotal ? '(Com Transp.)' : '(Sem Transp.)'}
+            </p>
+            <p className="text-2xl font-black text-slate-800 leading-none">
+              {(incluirTransporteNoTotal ? stats.totalComTransporte : stats.totalSemTransporte).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </p>
           </div>
           <div className="border border-slate-200 p-4 rounded-2xl">
             <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">Total Geral</p>
@@ -1952,9 +2082,23 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
       </div>
 
       <div className="ag-card print:border-none print:shadow-none print:p-0" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="ag-card-header print:hidden" style={{ padding: '20px 24px', marginBottom: 0, borderBottom: '1.5px solid var(--card-border)', background: 'var(--slate-50)' }}>
-          <div className="ag-card-title">Participantes Inscritos</div>
-          <span className="badge" style={{ background: 'var(--blue-50)', color: 'var(--blue-900)' }}>{inscritos.length} registros</span>
+        <div className="ag-card-header print:hidden flex items-center justify-between flex-wrap gap-2" style={{ padding: '20px 24px', marginBottom: 0, borderBottom: '1.5px solid var(--card-border)', background: 'var(--slate-50)' }}>
+          <div className="flex items-center gap-3">
+            <div className="ag-card-title">Participantes Inscritos</div>
+            <span className="badge" style={{ background: 'var(--blue-50)', color: 'var(--blue-900)' }}>{inscritos.length} registros</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setFormatoExportarInicial('pdf');
+              setModalExportarAberto(true);
+            }}
+            className="btn-ghost !rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition"
+            title="Exportar dados dos participantes para PDF, Excel ou CSV"
+          >
+            <Icon.Download />
+            <span>Exportar / PDF</span>
+          </button>
         </div>
         <div style={{ overflowX: 'auto' }} className="print:overflow-visible">
           {carregando ? (
@@ -2000,6 +2144,14 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                         </td>
                         <td style={{ textAlign: 'right', paddingRight: '24px' }} className="print:hidden">
                           <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => setModalRecibo({ aberto: true, inscrito: i })}
+                              className="text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition p-1.5 rounded-lg cursor-pointer"
+                              title="Recibo Especial de Quitação"
+                            >
+                              <Icon.Recibo />
+                            </button>
                             <button
                               type="button"
                               onClick={() => onGerarCarne({ inscricaoId: i.id, pessoaId: membroFound?.id || null })}
@@ -2052,6 +2204,14 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                             <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">pendente</span>
                           )}
                           <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => setModalRecibo({ aberto: true, inscrito: i })}
+                              className="p-1.5 text-emerald-600 active:scale-95 cursor-pointer print:hidden"
+                              title="Recibo Especial de Quitação"
+                            >
+                              <Icon.Recibo />
+                            </button>
                             <button
                               type="button"
                               onClick={() => onGerarCarne({ inscricaoId: i.id, pessoaId: membroFound?.id || null })}
@@ -2222,7 +2382,16 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
 
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Geração de Documentos</p>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalRecibo({ aberto: true, inscrito: modalInscrito.dados });
+                    }}
+                    className="flex-1 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-700/20 active:scale-95 transition cursor-pointer"
+                  >
+                    <Icon.Recibo /> Recibo Especial de Quitação
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -2235,7 +2404,7 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                       });
                       setModalInscrito({ aberto: false, dados: null });
                     }}
-                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-blue-100 cursor-pointer"
+                    className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-blue-100 active:scale-95 transition cursor-pointer"
                   >
                     <Icon.Carne /> Gerar Carnê do Inscrito
                   </button>
@@ -2538,6 +2707,28 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
           </div>
         </div>
       )}
+
+      {/* MODAL DE EXPORTAÇÃO PERSONALIZADA (PDF / EXCEL / CSV) */}
+      <ModalExportarInscritos
+        aberto={modalExportarAberto}
+        onFechar={() => setModalExportarAberto(false)}
+        evento={evento}
+        inscritos={inscritos}
+        pessoas={pessoas}
+        obterZonaParticipante={obterZonaParticipante}
+        formatoInicial={formatoExportarInicial}
+        modoTransporteInicial={incluirTransporteNoTotal ? 'com_transporte' : 'sem_transporte'}
+      />
+
+      {/* MODAL RECIBO ESPECIAL DE QUITAÇÃO */}
+      <ModalReciboQuitacao
+        aberto={modalRecibo.aberto}
+        onFechar={() => setModalRecibo({ aberto: false, inscrito: null })}
+        evento={evento}
+        inscrito={modalRecibo.inscrito}
+        pessoas={pessoas}
+        obterZonaParticipante={obterZonaParticipante}
+      />
 
     </div>
   );

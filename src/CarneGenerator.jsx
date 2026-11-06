@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import QRCode from 'qrcode';
 import { supabase } from './supabaseClient';
 import { mascaraCPF, mascaraTelefone, mascaraCEP } from './mascaras';
+import { extrairValorInscricao, extrairParcelasInscricao } from './eventoInscricaoUtils';
 import './CarneGenerator.css';
 import { baixarCartaoPNG, baixarCartaoPDF, baixarCartoesPDF, compartilharCartaoPDF, compartilharCartoesPDF } from './cartaoDigital';
 import { PageHeader } from './ui';
@@ -704,20 +705,10 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
     // Se o evento associado tiver informações de valor e parcelas, preenche dadosVenda
     const ev = inscricaoSelecionada.agenda_eventos || {};
     
-    // Obtém o valor total exato salvo na inscrição (ex: "Valor Total": "R$ 140,00"),
-    // senão recalcula usando ev.valor e ev.valor_transporte como fallback.
-    const valorTotalStr = findInJsonGlobal(di, ['valor total', 'valor_total', 'valorTotal']);
-    let valorTotal = 0;
-    if (valorTotalStr) {
-      valorTotal = parseCurrency(valorTotalStr);
-    } else {
-      const valorInscricao = Number(ev.valor) || 0;
-      const incluiTransporte = findInJsonGlobal(di, ['transporte'])?.toString().toLowerCase().startsWith('sim');
-      const valorTransporte = incluiTransporte ? (Number(ev.valor_transporte) || 0) : 0;
-      valorTotal = valorInscricao + valorTransporte;
-    }
-
-    const qtdParcelas = Number(findInJsonGlobal(di, ['parcelas', 'qtd_parcelas', 'quantidade_parcelas'])) || 1;
+    // Obtém o valor total exato e imutável gravado na inscrição,
+    // garantindo que não seja recalculado mesmo que o lote/valor base do evento mude depois.
+    const valorTotal = extrairValorInscricao(di, ev);
+    const qtdParcelas = Number(findInJsonGlobal(di, ['parcelas', 'qtd_parcelas', 'quantidade_parcelas'])) || extrairParcelasInscricao(di) || 1;
     const valorParcela = qtdParcelas > 0 ? (valorTotal / qtdParcelas) : valorTotal;
 
     // Define o título padrão do carnê como o título do evento

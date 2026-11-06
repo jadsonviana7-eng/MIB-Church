@@ -14,30 +14,47 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { gerarMensagemInscricaoEvento } from './eventoInscricaoUtils';
 
 /**
- * Modal elegante e polido para confirmar a cópia do link de autocadastro público.
- * Oferece atalhos práticos para compartilhamento direto no WhatsApp, visualização em nova aba
- * e exibição de QR Code para escaneamento presencial em cultos e recepção.
+ * Modal elegante e polido para confirmar a cópia do link público (autocadastro de membros ou inscrição em eventos).
+ * Oferece atalhos práticos para compartilhamento direto no WhatsApp com mensagem contextualizada,
+ * visualização em nova aba e exibição de QR Code para escaneamento presencial em cultos e recepção.
  * 
  * @param {Object} props
  * @param {boolean} props.aberto - Controle de abertura do modal
  * @param {Function} props.onFechar - Callback para fechamento
- * @param {string} [props.url] - URL pública do link de cadastro
+ * @param {string} [props.url] - URL pública do link de cadastro/inscrição
  * @param {string} [props.titulo] - Título personalizado
  * @param {string} [props.subtitulo] - Subtítulo personalizado
+ * @param {string} [props.mensagemWhatsapp] - Mensagem personalizada para WhatsApp
+ * @param {string} [props.tipo] - Tipo do link ('autocadastro' | 'evento' | 'generico')
+ * @param {string} [props.nomeEvento] - Nome do evento (se aplicável)
+ * @param {Object} [props.evento] - Objeto do evento completo
+ * @param {string} [props.dicaSeguranca] - Texto explicativo sobre segurança
  */
 export default function ModalLinkCopiado({
   aberto = true,
   onFechar,
   url,
-  titulo = 'Link Copiado com Sucesso!',
-  subtitulo = 'O link do formulário de autocadastro já está na sua área de transferência.'
+  titulo,
+  subtitulo,
+  mensagemWhatsapp,
+  tipo,
+  nomeEvento,
+  evento,
+  dicaSeguranca
 }) {
   const [copiadoNovamente, setCopiadoNovamente] = useState(false);
   const [mostrarQrCode, setMostrarQrCode] = useState(false);
 
   const urlFinal = url || (typeof window !== 'undefined' ? `${window.location.origin}/cadastro-publico` : '');
+  const isEvento = tipo === 'evento' || urlFinal.includes('/inscricao-evento');
+
+  const tituloFinal = titulo || (isEvento ? 'Link de Inscrição Copiado!' : 'Link Copiado com Sucesso!');
+  const subtituloFinal = subtitulo || (isEvento
+    ? 'O link do formulário de inscrição já está na sua área de transferência.'
+    : 'O link do formulário de autocadastro já está na sua área de transferência.');
 
   // Fecha o modal ao pressionar a tecla ESC
   useEffect(() => {
@@ -64,12 +81,19 @@ export default function ModalLinkCopiado({
   };
 
   const abrirWhatsApp = () => {
-    const textoMensagem = encodeURIComponent(
-      `Olá! Seja muito bem-vindo(a) à MIB Church! ✨\n\n` +
-      `Para realizar o seu cadastro em nossa comunidade e acompanhar nossos ministérios e atividades, acesse o link de autocadastro abaixo:\n\n` +
-      `${urlFinal}\n\n` +
-      `Ficamos muito felizes em ter você conosco! Deus abençoe! 🙏`
-    );
+    let texto = mensagemWhatsapp;
+    if (!texto) {
+      if (isEvento) {
+        texto = gerarMensagemInscricaoEvento(evento || { titulo: nomeEvento }, urlFinal);
+      } else {
+        texto = 
+          `Olá! Seja muito bem-vindo(a) à MIB Church! ✨\n\n` +
+          `Para realizar o seu cadastro em nossa comunidade e acompanhar nossos ministérios e atividades, acesse o link de autocadastro abaixo:\n\n` +
+          `${urlFinal}\n\n` +
+          `Ficamos muito felizes em ter você conosco! Deus abençoe! 🙏`;
+      }
+    }
+    const textoMensagem = encodeURIComponent(texto);
     window.open(`https://api.whatsapp.com/send?text=${textoMensagem}`, '_blank', 'noopener,noreferrer');
   };
 
@@ -111,10 +135,10 @@ export default function ModalLinkCopiado({
                 </span>
               </div>
               <h2 id="modal-link-copiado-titulo" className="text-lg sm:text-xl font-black text-slate-850 mt-1 tracking-tight">
-                {titulo}
+                {tituloFinal}
               </h2>
               <p className="text-xs text-slate-500 mt-0.5 leading-snug">
-                {subtitulo}
+                {subtituloFinal}
               </p>
             </div>
           </div>
@@ -233,7 +257,13 @@ export default function ModalLinkCopiado({
           <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-blue-50/50 border border-blue-100/80 text-[11px] text-slate-600 leading-snug">
             <ShieldCheck size={18} className="text-blue-600 shrink-0 mt-0.5" />
             <span>
-              Este link é <strong>100% seguro</strong>: permite apenas a criação de novos cadastros sem expor dados de membros existentes.
+              {dicaSeguranca ? (
+                dicaSeguranca
+              ) : isEvento ? (
+                <>Este link é <strong>100% seguro</strong>: permite que qualquer pessoa preencha o formulário de inscrição do evento sem expor dados de outros participantes.</>
+              ) : (
+                <>Este link é <strong>100% seguro</strong>: permite apenas a criação de novos cadastros sem expor dados de membros existentes.</>
+              )}
             </span>
           </div>
 

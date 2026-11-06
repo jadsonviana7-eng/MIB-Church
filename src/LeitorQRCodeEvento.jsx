@@ -4,6 +4,7 @@ import { jsPDF } from 'jspdf';
 import { baixarCartaoPNG, baixarCartaoPDF } from './cartaoDigital';
 import { supabase } from './supabaseClient';
 import { Card, PageHeader } from './ui';
+import { extrairValorInscricao } from './eventoInscricaoUtils';
 import './LeitorQRCode.css';
 import {
   Camera, QrCode, CheckCircle, AlertCircle,
@@ -219,19 +220,10 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
 
       if (errorUpdate) throw errorUpdate;
 
-      // Tenta identificar o valor pago (parcela ou valor total/à vista)
-      const valorEntry = Object.entries(dados).find(([k]) => k.toLowerCase().includes('valor'));
-      let valorPagoTotal = 0;
-      if (valorEntry) {
-        const valStr = String(valorEntry[1]);
-        const valorLimpo = valStr
-          .replace(/[^\d,.-]/g, '') // remove "R$" e caracteres não numéricos/separadores
-          .replace(/\./g, '')       // remove pontos de milhar
-          .replace(',', '.');       // substitui vírgula por ponto
-        valorPagoTotal = Number(valorLimpo) || 0;
-      }
+      // Identifica o valor histórico exato da inscrição e da parcela
+      const valorTotalInscricao = extrairValorInscricao(dados, inscricao.agenda_eventos);
       const ehParcela = totalParcelasConfiguradas > 1;
-      const valorPago = ehParcela ? (valorPagoTotal / totalParcelasConfiguradas) : valorPagoTotal;
+      const valorPago = ehParcela && totalParcelasConfiguradas > 0 ? (valorTotalInscricao / totalParcelasConfiguradas) : valorTotalInscricao;
 
       setStatus({
         loading: false,

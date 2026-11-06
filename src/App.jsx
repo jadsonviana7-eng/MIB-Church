@@ -2323,6 +2323,7 @@ export default function App() {
             membroLogado={membroLogado}
             hasAccess={hasAccess}
             pessoas={pessoasVisiveis}
+            zonas={zonas}
           />
         )}
 
@@ -2379,9 +2380,7 @@ export default function App() {
         {linkCopiadoDialog && (
           <ModalLinkCopiado
             aberto={true}
-            url={linkCopiadoDialog.url}
-            titulo={linkCopiadoDialog.titulo}
-            subtitulo={linkCopiadoDialog.subtitulo}
+            {...linkCopiadoDialog}
             onFechar={() => setLinkCopiadoDialog(null)}
           />
         )}

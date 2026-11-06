@@ -84,10 +84,12 @@ export default function PublicEventRegistration() {
     setEnviando(true);
 
     try {
-      const detalhesPagamento = metodoPagamentoSelecionado ?
-        `${metodoPagamentoSelecionado}${parcelas[metodoPagamentoSelecionado] > 1 ? ` (${parcelas[metodoPagamentoSelecionado]}x de ${formatarMoeda(valorTotal / parcelas[metodoPagamentoSelecionado])})` : ''}` :
-        "Nenhum método selecionado";
+      const totalParc = parcelas[metodoPagamentoSelecionado] || 1;
+      const valorParc = totalParc > 0 ? (valorTotal / totalParc) : valorTotal;
 
+      const detalhesPagamento = metodoPagamentoSelecionado ?
+        `${metodoPagamentoSelecionado}${totalParc > 1 ? ` (${totalParc}x de ${formatarMoeda(valorParc)})` : ''}` :
+        "Nenhum método selecionado";
 
       const { error } = await supabase
         .from('agenda_inscricoes')
@@ -96,9 +98,13 @@ export default function PublicEventRegistration() {
           dados_inscricao: {
             ...respostas,
             "Valor Total": formatarMoeda(valorTotal),
+            "valor_total_numerico": valorTotal,
+            "valor_base_lote": precoBase,
+            "valor_transporte": precoTransporte,
+            "valor_parcela": valorParc,
             "Inclui Transporte": incluirTransporte ? `Sim (${formatarMoeda(evento.valor_transporte)})` : "Não",
             "Forma de Pagamento": detalhesPagamento,
-            "parcelas": parcelas[metodoPagamentoSelecionado] || 1,
+            "parcelas": totalParc,
             "parcelas_pagas": []
           },
           status_pagamento: evento.valor_tipo === 'gratuito' ? 'pago' : 'pendente'

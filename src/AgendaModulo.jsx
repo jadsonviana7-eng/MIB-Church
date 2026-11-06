@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { supabase } from './supabaseClient';
 import Cropper from 'react-easy-crop';
 import { PageHeader, Card, CardHeader, Avatar, uploadImagemCelula, StatCard } from './ui';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useEditor, EditorContent } from '@tiptap/react';
 import LeitorQRCodeEvento from './LeitorQRCodeEvento';
 import CarneGenerator from './CarneGenerator';
@@ -21,6 +21,7 @@ import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import { mascaraTelefone, mascaraCPF } from './mascaras';
+import { findInJsonGlobal, parseMoeda, extrairValorInscricao, extrairParcelasInscricao, gerarMensagemInscricaoEvento } from './eventoInscricaoUtils';
 
 /* ─── Roboto via Google Fonts ─────────────────────────────────────────────── */
 const RobotoStyle = () => (
@@ -575,15 +576,11 @@ function QuillEditorDetalhes({ value, onChange }) {
   );
 }
 
-// Helper global para encontrar valores no JSON dinâmico das inscrições
-const findInJsonGlobal = (obj, query) => {
-  if (!obj) return null;
-  const key = Object.keys(obj).find(k => k.toLowerCase().includes(query.toLowerCase()));
-  return key ? obj[key] : null;
-};
+// Helpers de manipulação financeira de inscrições importados de eventoInscricaoUtils.js:
+// findInJsonGlobal, parseMoeda, extrairValorInscricao, extrairParcelasInscricao
 
 /* ─── Main Export ─────────────────────────────────────────────────────────── */
-export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAccess, pessoas = [] }) {
+export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAccess, pessoas = [], zonas = [] }) {
   const [eventos, setEventos] = useState([]);
   const [dataAtual, setDataAtual] = useState(new Date());
   const [carregando, setCarregando] = useState(false);
@@ -729,23 +726,23 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
             submenu === 'calendario'
               ? 'Calendário'
               : submenu === 'mural'
-              ? 'Mural de Avisos'
-              : view === 'form'
-              ? (eventoSelecionado ? 'Editar Evento' : 'Novo Evento')
-              : view === 'dashboard'
-              ? 'Painel do Evento'
-              : 'Eventos'
+                ? 'Mural de Avisos'
+                : view === 'form'
+                  ? (eventoSelecionado ? 'Editar Evento' : 'Novo Evento')
+                  : view === 'dashboard'
+                    ? 'Painel do Evento'
+                    : 'Eventos'
           }
           breadcrumb={
             submenu === 'calendario'
               ? ['Agenda', 'Calendário']
               : submenu === 'mural'
-              ? ['Agenda', 'Mural']
-              : view === 'form'
-              ? ['Agenda', 'Eventos', eventoSelecionado ? 'Editar' : 'Novo']
-              : view === 'dashboard'
-              ? ['Agenda', 'Eventos', 'Painel']
-              : ['Agenda', 'Lista de Eventos']
+                ? ['Agenda', 'Mural']
+                : view === 'form'
+                  ? ['Agenda', 'Eventos', eventoSelecionado ? 'Editar' : 'Novo']
+                  : view === 'dashboard'
+                    ? ['Agenda', 'Eventos', 'Painel']
+                    : ['Agenda', 'Lista de Eventos']
           }
           onNavigate={(target) => {
             const dest = target.toLowerCase();
@@ -788,6 +785,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
           />
         </div>
       )}
+
 
       {/* ── EVENTOS LISTA / FORM ── */}
       {submenu === 'eventos' && (
@@ -835,6 +833,34 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
                             {ev.local_nome && <span className="hidden sm:flex items-center gap-1.5 truncate"><Icon.MapPin /> {ev.local_nome}</span>}
                           </div>
                           <div className="flex items-center gap-1.5">
+                            <button
+                              className="btn-ghost"
+                              style={{ padding: '4px 10px', fontSize: 10, background: 'var(--blue-50)', color: 'var(--blue-900)', border: 'none', fontWeight: 'bold', minHeight: '34px' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const url = `${window.location.origin}/inscricao-evento/${ev.id}`;
+                                navigator.clipboard?.writeText?.(url);
+                                const msgWhatsapp = gerarMensagemInscricaoEvento(ev, url);
+                                if (window.modalLinkCopiado) {
+                                  window.modalLinkCopiado({
+                                    url,
+                                    tipo: 'evento',
+                                    titulo: 'Link de Inscrição Copiado!',
+                                    subtitulo: `Link público de inscrição para "${ev.titulo || 'o evento'}".`,
+                                    mensagemWhatsapp: msgWhatsapp,
+                                    nomeEvento: ev.titulo,
+                                    evento: ev,
+                                    dicaSeguranca: 'Este formulário permite a inscrição segura de participantes sem expor dados de outros inscritos.'
+                                  });
+                                } else {
+                                  alert('Link do formulário copiado!');
+                                }
+                              }}
+                              title="Copiar Link de Inscrição"
+                            >
+                              <Icon.Link />
+                              <span className="hidden sm:inline ml-1">Copiar Link</span>
+                            </button>
                             <button className="btn-ghost" style={{ padding: '4px 10px', fontSize: 10, background: 'var(--blue-50)', color: 'var(--blue-900)', border: 'none', fontWeight: 'bold', minHeight: '34px' }} onClick={(e) => { e.stopPropagation(); window.open(`${window.location.origin}/inscricao-evento/${ev.id}`, '_blank'); }}>
                               <div className="sm:hidden text-center leading-tight flex flex-col justify-center">
                                 <span>Ficha de</span>
@@ -862,6 +888,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
             <DashboardEvento
               evento={eventoSelecionado}
               pessoas={pessoas}
+              zonas={zonas}
               membroLogado={membroLogado}
               podeEditar={podeEditar}
               onVoltar={() => { setView('lista'); setEventoSelecionado(null); }}
@@ -930,6 +957,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
           </div>
         </div>
       )}
+
 
       {/* ── MURAL DE AVISOS ── */}
       {submenu === 'mural' && (
@@ -1225,15 +1253,150 @@ function FormularioAviso({ aviso, onSucesso, onCancelar }) {
           </div>
         </div>
       )}
+
+
     </div>
   );
 }
 
+/* ─── RoscaGraficoCard ─────────────────────────────────────────────────────── */
+function RoscaGraficoCard({ titulo, subtitulo, dados = [], onSliceClick, totalLabel = "Participantes" }) {
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const total = useMemo(() => dados.reduce((sum, d) => sum + (Number(d.value) || 0), 0), [dados]);
+
+  return (
+    <Card className="p-0 overflow-hidden dark:bg-slate-900 dark:border-slate-800 flex flex-col justify-between">
+      <div>
+        <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+          <div>
+            <h4 className="text-xs font-black uppercase text-slate-800 dark:text-slate-100 tracking-wider flex items-center gap-2">
+              {titulo}
+            </h4>
+            {subtitulo && <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{subtitulo}</p>}
+          </div>
+          <span className="text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/60 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+            <span>👆</span><span>Filtrar</span>
+          </span>
+        </div>
+
+        <div className="p-4 sm:p-6 flex flex-col items-center">
+          {dados.length === 0 || total === 0 ? (
+            <p className="text-xs text-slate-400 italic text-center py-12">Nenhum dado registrado para este gráfico.</p>
+          ) : (
+            <div className="w-full space-y-4">
+              <div className="relative w-full h-52 flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart style={{ outline: 'none' }}>
+                    <Pie
+                      data={dados}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={75}
+                      paddingAngle={3}
+                      dataKey="value"
+                      onMouseEnter={(_, index) => setActiveIndex(index)}
+                      onMouseLeave={() => setActiveIndex(-1)}
+                      onClick={(entry) => onSliceClick && onSliceClick(entry)}
+                      style={{ cursor: 'pointer', outline: 'none' }}
+                    >
+                      {dados.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.color}
+                          stroke={activeIndex === index ? '#ffffff' : 'transparent'}
+                          strokeWidth={activeIndex === index ? 3 : 1}
+                          style={{
+                            cursor: 'pointer',
+                            outline: 'none',
+                            transform: activeIndex === index ? 'scale(1.05)' : 'scale(1)',
+                            transformOrigin: 'center center',
+                            transition: 'all 0.2s ease-in-out'
+                          }}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(val, name) => [`${val} (${total > 0 ? Math.round((val / total) * 100) : 0}%) • Clique para ver detalhes`, name]}
+                      contentStyle={{
+                        borderRadius: 12,
+                        backgroundColor: '#0f172a',
+                        borderColor: '#334155',
+                        color: '#f8fafc',
+                        fontSize: 11,
+                        fontWeight: 700
+                      }}
+                      itemStyle={{ color: '#f8fafc' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                {/* Texto Central da Rosca */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-3xl font-black text-slate-800 dark:text-slate-100 leading-none">{total}</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{totalLabel}</span>
+                </div>
+              </div>
+
+              {/* Lista / Legenda Clicável */}
+              <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800 max-h-48 overflow-y-auto">
+                {dados.map((d, index) => {
+                  const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
+                  const isHover = activeIndex === index;
+                  return (
+                    <div
+                      key={d.name}
+                      onClick={() => onSliceClick && onSliceClick(d)}
+                      onMouseEnter={() => setActiveIndex(index)}
+                      onMouseLeave={() => setActiveIndex(-1)}
+                      className={`flex items-center justify-between p-2 rounded-xl text-xs font-bold transition cursor-pointer ${isHover ? 'bg-blue-50/70 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300' : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'}`}
+                      title={`Clique para visualizar os inscritos de ${d.name}`}
+                    >
+                      <div className="flex items-center gap-2 truncate pr-2">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: d.color }} />
+                        <span className="truncate">{d.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-slate-900 dark:text-slate-100 font-black">{d.value}</span>
+                        <span className="text-[10px] text-slate-400 font-medium w-8 text-right">({pct}%)</span>
+                        <span className="text-xs text-blue-500 opacity-60">➔</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 /* ─── DashboardEvento ──────────────────────────────────────────────────────── */
-function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlternarPublicacao, podeEditar, onVerMembro, onAbrirLeitor, onGerarCarne, membroLogado }) {
+function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar, onExcluir, onAlternarPublicacao, podeEditar, onVerMembro, onAbrirLeitor, onGerarCarne, membroLogado }) {
   const [inscritos, setInscritos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modalInscrito, setModalInscrito] = useState({ aberto: false, dados: null });
+  const [modalFiltroGrafico, setModalFiltroGrafico] = useState({
+    aberto: false,
+    titulo: '',
+    tipo: '',
+    chave: '',
+    participantes: []
+  });
+  const [filtroStatusModal, setFiltroStatusModal] = useState('todos');
+  const [buscaModal, setBuscaModal] = useState('');
+  const [listaZonas, setListaZonas] = useState(zonas || []);
+
+  useEffect(() => {
+    if (zonas && zonas.length > 0) {
+      setListaZonas(zonas);
+    } else {
+      supabase.from('zonas_moradia').select('*').order('nome').then(({ data }) => {
+        if (data && data.length > 0) setListaZonas(data);
+      });
+    }
+  }, [zonas]);
 
   useEffect(() => {
     async function carregarInscritos() {
@@ -1265,8 +1428,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
     inscritos.forEach(i => {
       const dados = i.dados_inscricao || {};
       const incluiTransporte = findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
-      const valorTransporte = incluiTransporte ? (Number(evento.valor_transporte) || 0) : 0;
-      const valorInscricaoReal = (Number(evento.valor) || 0) + valorTransporte;
+      const valorInscricaoReal = extrairValorInscricao(dados, evento);
 
       const totalParcelas = Number(findInJsonGlobal(dados, 'parcelas')) || 1;
       const pagas = dados.parcelas_pagas || [];
@@ -1312,6 +1474,131 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
     return Object.entries(grupos).map(([name, value]) => ({ name, value }));
   }, [inscritos]);
 
+  // Mapeia a zona de moradia do participante (via formulário ou cadastro de membro)
+  const obterZonaParticipante = useCallback((inscrito) => {
+    const dados = inscrito.dados_inscricao || {};
+
+    // 1. Campo de formulário de inscrição
+    const zonaForm = findInJsonGlobal(dados, ['zona de moradia', 'zona moradia', 'zona', 'regiao', 'região']);
+    if (zonaForm && typeof zonaForm === 'string' && zonaForm.trim()) {
+      const zEncontrada = listaZonas.find(z => String(z.id) === String(zonaForm).trim() || z.nome.toLowerCase() === zonaForm.trim().toLowerCase());
+      if (zEncontrada) return zEncontrada.nome;
+      return zonaForm.trim();
+    }
+
+    // 2. Vínculo com membro na base
+    const email = findInJsonGlobal(dados, 'email');
+    const nome = findInJsonGlobal(dados, ['nome', 'nome completo', 'completo']);
+    const membro = pessoas.find(p =>
+      (email && p.email?.toLowerCase().trim() === email.toLowerCase().trim()) ||
+      (nome && p.nome?.toLowerCase().trim() === nome.toLowerCase().trim())
+    );
+
+    if (membro) {
+      if (membro.zona_id) {
+        const z = listaZonas.find(item => String(item.id) === String(membro.zona_id));
+        if (z) return z.nome;
+      }
+      if (membro.bairro) return `Bairro ${membro.bairro}`;
+    }
+
+    // 3. Campo Bairro no formulário
+    const bairroForm = findInJsonGlobal(dados, ['bairro', 'bairro/cidade']);
+    if (bairroForm && typeof bairroForm === 'string' && bairroForm.trim()) {
+      return `Bairro ${bairroForm.trim()}`;
+    }
+
+    return 'Não informada';
+  }, [pessoas, listaZonas]);
+
+  // Dados para o Gráfico Rosca de Opção de Transporte
+  const dadosTransporteRosca = useMemo(() => {
+    const ativos = inscritos.filter(i => i.status_pagamento !== 'cancelado');
+    const comTransp = ativos.filter(i => {
+      const dados = i.dados_inscricao || {};
+      return findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
+    });
+    const semTransp = ativos.filter(i => {
+      const dados = i.dados_inscricao || {};
+      return !findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
+    });
+
+    const itens = [];
+    if (comTransp.length > 0) {
+      itens.push({
+        name: 'Com Transporte (🚌)',
+        value: comTransp.length,
+        color: '#10b981',
+        tipo: 'transporte',
+        chave: 'sim',
+        participantes: comTransp
+      });
+    }
+    if (semTransp.length > 0) {
+      itens.push({
+        name: 'Sem Transporte (🚶)',
+        value: semTransp.length,
+        color: '#64748b',
+        tipo: 'transporte',
+        chave: 'nao',
+        participantes: semTransp
+      });
+    }
+    return itens;
+  }, [inscritos]);
+
+  // Dados para o Gráfico Rosca de Zona de Moradia
+  const dadosZonasRosca = useMemo(() => {
+    const ativos = inscritos.filter(i => i.status_pagamento !== 'cancelado');
+    const grupos = {};
+
+    ativos.forEach(i => {
+      const zona = obterZonaParticipante(i);
+      if (!grupos[zona]) grupos[zona] = [];
+      grupos[zona].push(i);
+    });
+
+    const PALETA_ZONAS = [
+      '#2563eb', // blue
+      '#10b981', // emerald
+      '#f59e0b', // amber
+      '#8b5cf6', // purple
+      '#ec4899', // pink
+      '#06b6d4', // cyan
+      '#f97316', // orange
+      '#64748b', // slate
+      '#14b8a6', // teal
+      '#6366f1', // indigo
+      '#84cc16', // lime
+      '#d946ef'  // fuchsia
+    ];
+
+    return Object.entries(grupos)
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([nome, lista], idx) => ({
+        name: nome,
+        value: lista.length,
+        color: PALETA_ZONAS[idx % PALETA_ZONAS.length],
+        tipo: 'zona',
+        chave: nome,
+        participantes: lista
+      }));
+  }, [inscritos, obterZonaParticipante]);
+
+  // Abertura do modal ao clicar nas divisões/fatias do gráfico
+  const handleAbrirModalGrafico = useCallback((entry) => {
+    if (!entry) return;
+    setFiltroStatusModal('todos');
+    setBuscaModal('');
+    setModalFiltroGrafico({
+      aberto: true,
+      titulo: entry.name,
+      tipo: entry.tipo || 'filtro',
+      chave: entry.chave,
+      participantes: entry.participantes || []
+    });
+  }, []);
+
   const formatarDataHoraExibicao = (iso) => {
     if (!iso) return '—';
     const [data, hora] = iso.split('T');
@@ -1322,12 +1609,19 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
   const handleUpdateStatus = async (id, novoStatus) => {
     const insc = inscritos.find(i => i.id === id);
     const dados = insc?.dados_inscricao || {};
-    const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || 1;
+    const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || extrairParcelasInscricao(dados) || 1;
+    const valorHistorico = extrairValorInscricao(dados, evento);
 
-    const patch = { status_pagamento: novoStatus };
+    const novosDados = {
+      ...dados,
+      valor_total_numerico: valorHistorico,
+      "Valor Total": dados["Valor Total"] || `R$ ${valorHistorico.toFixed(2).replace('.', ',')}`
+    };
     if (novoStatus === 'pago' && totalParc > 1) {
-      patch.dados_inscricao = { ...dados, parcelas_pagas: Array.from({ length: totalParc }, (_, i) => i + 1) };
+      novosDados.parcelas_pagas = Array.from({ length: totalParc }, (_, i) => i + 1);
     }
+
+    const patch = { status_pagamento: novoStatus, dados_inscricao: novosDados };
 
     const { error } = await supabase.from('agenda_inscricoes').update(patch).eq('id', id);
     if (!error) {
@@ -1342,24 +1636,30 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
 
     const dados = insc.dados_inscricao || {};
     const pagas = dados.parcelas_pagas || [];
-    const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || 1;
+    const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || extrairParcelasInscricao(dados) || 1;
+    const valorHistorico = extrairValorInscricao(dados, evento);
 
     const novasPagas = pagas.includes(num)
       ? pagas.filter(p => p !== num)
       : [...pagas, num].sort((a, b) => Number(a) - Number(b));
 
     const novoStatus = novasPagas.length >= totalParc ? 'pago' : 'pendente';
+    const novosDadosInscricao = {
+      ...dados,
+      parcelas_pagas: novasPagas,
+      valor_total_numerico: valorHistorico,
+      "Valor Total": dados["Valor Total"] || `R$ ${valorHistorico.toFixed(2).replace('.', ',')}`
+    };
 
     const { error } = await supabase
       .from('agenda_inscricoes')
       .update({
         status_pagamento: novoStatus,
-        dados_inscricao: { ...dados, parcelas_pagas: novasPagas }
+        dados_inscricao: novosDadosInscricao
       })
       .eq('id', insc.id);
 
     if (!error) {
-      const novosDadosInscricao = { ...dados, parcelas_pagas: novasPagas };
       setInscritos(prev => prev.map(item => item.id === insc.id ? { ...item, status_pagamento: novoStatus, dados_inscricao: novosDadosInscricao } : item));
       setModalInscrito(prev => ({ ...prev, dados: { ...prev.dados, status_pagamento: novoStatus, dados_inscricao: novosDadosInscricao } }));
     }
@@ -1410,11 +1710,17 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
             onClick={() => {
               const url = `${window.location.origin}/inscricao-evento/${evento.id}`;
               navigator.clipboard?.writeText?.(url);
+              const msgWhatsapp = gerarMensagemInscricaoEvento(evento, url);
               if (window.modalLinkCopiado) {
                 window.modalLinkCopiado({
                   url,
+                  tipo: 'evento',
                   titulo: 'Link de Inscrição Copiado!',
-                  subtitulo: `Link público de inscrição para "${evento.titulo || 'o evento'}".`
+                  subtitulo: `Link público de inscrição para "${evento.titulo || 'o evento'}".`,
+                  mensagemWhatsapp: msgWhatsapp,
+                  nomeEvento: evento.titulo,
+                  evento,
+                  dicaSeguranca: 'Este formulário permite a inscrição segura de participantes sem expor dados de outros inscritos.'
                 });
               } else {
                 alert('Link do formulário copiado!');
@@ -1557,78 +1863,60 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
         </Card>
       </div>
 
-      {/* SEÇÃO DE ESTATÍSTICAS DE PAGAMENTO E TRANSPORTE */}
-      {evento.valor_tipo === 'pago' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:hidden">
-          {/* Card Formas de Pagamento */}
-          <Card className="p-0 overflow-hidden">
-            <CardHeader titulo="Formas de Pagamento" subtitulo="Distribuição dos métodos escolhidos pelos inscritos ativos." />
-            <div className="p-6 space-y-4">
-              {Object.keys(stats.formasPagamento).length === 0 ? (
-                <p className="text-sm text-slate-400 italic text-center py-4">Nenhuma forma de pagamento registrada ainda.</p>
-              ) : (
-                <div className="space-y-4">
-                  {Object.entries(stats.formasPagamento).map(([metodo, qtd]) => {
-                    const ativosCount = inscritos.length - stats.cancelados;
-                    const porcentagem = ativosCount > 0 ? Math.round((qtd / ativosCount) * 100) : 0;
-                    return (
-                      <div key={metodo} className="space-y-1.5">
-                        <div className="flex justify-between items-center text-xs font-bold">
-                          <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider">{metodo}</span>
-                          <span className="text-slate-800 dark:text-slate-200">{qtd} {qtd === 1 ? 'optante' : 'optantes'} ({porcentagem}%)</span>
+      {/* SEÇÃO DE ESTATÍSTICAS E GRÁFICOS INTERATIVOS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 print:hidden">
+        {/* Card Formas de Pagamento (apenas para eventos pagos) */}
+        {evento.valor_tipo === 'pago' && (
+          <Card className="p-0 overflow-hidden dark:bg-slate-900 dark:border-slate-800 flex flex-col justify-between">
+            <div>
+              <CardHeader titulo="Formas de Pagamento" subtitulo="Distribuição dos métodos escolhidos pelos inscritos ativos." />
+              <div className="p-6 space-y-4">
+                {Object.keys(stats.formasPagamento).length === 0 ? (
+                  <p className="text-sm text-slate-400 italic text-center py-4">Nenhuma forma de pagamento registrada ainda.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {Object.entries(stats.formasPagamento).map(([metodo, qtd]) => {
+                      const ativosCount = inscritos.length - stats.cancelados;
+                      const porcentagem = ativosCount > 0 ? Math.round((qtd / ativosCount) * 100) : 0;
+                      return (
+                        <div key={metodo} className="space-y-1.5">
+                          <div className="flex justify-between items-center text-xs font-bold">
+                            <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider">{metodo}</span>
+                            <span className="text-slate-800 dark:text-slate-200">{qtd} {qtd === 1 ? 'optante' : 'optantes'} ({porcentagem}%)</span>
+                          </div>
+                          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
+                            <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${porcentagem}%` }} />
+                          </div>
                         </div>
-                        <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
-                          <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${porcentagem}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </Card>
+        )}
 
-          {/* Card Opção de Transporte */}
-          {Number(evento.valor_transporte) > 0 && (
-            <Card className="p-0 overflow-hidden dark:bg-slate-900 dark:border-slate-800">
-              <CardHeader titulo="Opção de Transporte" subtitulo="Adesão ao transporte opcional oferecido pelo evento." />
-              <div className="p-6 space-y-4">
-                <div className="space-y-4">
-                  {/* Com Transporte */}
-                  {(() => {
-                    const ativosCount = inscritos.length - stats.cancelados;
-                    const porcentagemSim = ativosCount > 0 ? Math.round((stats.transporteSim / ativosCount) * 100) : 0;
-                    const porcentagemNao = ativosCount > 0 ? Math.round((stats.transporteNao / ativosCount) * 100) : 0;
-                    return (
-                      <>
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between items-center text-xs font-bold">
-                            <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider">🚌 Com Transporte</span>
-                            <span className="text-slate-800 dark:text-slate-200">{stats.transporteSim} {stats.transporteSim === 1 ? 'pessoa' : 'pessoas'} ({porcentagemSim}%)</span>
-                          </div>
-                          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
-                            <div className="bg-emerald-600 h-2 rounded-full transition-all duration-500" style={{ width: `${porcentagemSim}%` }} />
-                          </div>
-                        </div>
+        {/* Card Opção de Transporte (Gráfico Tipo Rosca Clicável) */}
+        {(Number(evento.valor_transporte) > 0 || stats.transporteSim > 0 || stats.transporteNao > 0) && (
+          <RoscaGraficoCard
+            titulo="Opção de Transporte"
+            subtitulo="Adesão ao transporte oferecido para o evento."
+            dados={dadosTransporteRosca}
+            onSliceClick={handleAbrirModalGrafico}
+            totalLabel="Participantes"
+          />
+        )}
 
-                        <div className="space-y-1.5">
-                          <div className="flex justify-between items-center text-xs font-bold">
-                            <span className="text-slate-600 dark:text-slate-400 uppercase tracking-wider">🚶 Sem Transporte</span>
-                            <span className="text-slate-800 dark:text-slate-200">{stats.transporteNao} {stats.transporteNao === 1 ? 'pessoa' : 'pessoas'} ({porcentagemNao}%)</span>
-                          </div>
-                          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
-                            <div className="bg-slate-400 dark:bg-slate-600 h-2 rounded-full transition-all duration-500" style={{ width: `${porcentagemNao}%` }} />
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-            </Card>
-          )}
-        </div>
-      )}
+        {/* Card Zona de Moradia (Gráfico Tipo Rosca Clicável) */}
+        <RoscaGraficoCard
+          titulo="Zona de Moradia"
+          subtitulo="Distribuição geográfica de residência dos participantes."
+          dados={dadosZonasRosca}
+          onSliceClick={handleAbrirModalGrafico}
+          totalLabel="Residentes"
+        />
+      </div>
 
       {/* CABEÇALHO DE IMPRESSÃO - Visível apenas no papel */}
       <div className="hidden print:block mb-8 border-b-2 border-slate-900 pb-6">
@@ -1802,22 +2090,61 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
               <button className="btn-icon" onClick={() => setModalInscrito({ aberto: false, dados: null })}><Icon.Close /></button>
             </div>
             <div className="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
-              <div className="grid grid-cols-2 gap-4">
-                {Object.entries(modalInscrito.dados.dados_inscricao).map(([label, valor]) => {
-                  const isPhone = ['telefone', 'celular', 'whatsapp', 'contato'].some(k => label.toLowerCase().includes(k));
-                  const isCPF = label.toLowerCase().includes('cpf');
-                  const valorFormatado = (isPhone && typeof valor === 'string') 
-                    ? mascaraTelefone(valor) 
-                    : (isCPF && typeof valor === 'string')
-                    ? mascaraCPF(valor)
-                    : (Array.isArray(valor) ? valor.join(', ') : String(valor));
-                  return (
-                    <div key={label} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700">
-                      <p className="text-[10px] font-black text-slate-400 uppercase mb-1">{label}</p>
-                      <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{valorFormatado}</p>
+              {/* Resumo Financeiro da Inscrição (Garante que o valor histórico do lote seja destacado e imutável) */}
+              {(() => {
+                const dados = modalInscrito.dados.dados_inscricao || {};
+                const valorTotal = extrairValorInscricao(dados, evento);
+                const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || extrairParcelasInscricao(dados) || 1;
+                const pagas = dados.parcelas_pagas || [];
+                const valorParcela = totalParc > 0 ? (valorTotal / totalParc) : valorTotal;
+                const valorPago = valorParcela * (modalInscrito.dados.status_pagamento === 'pago' ? totalParc : pagas.length);
+                const saldoDevedor = Math.max(0, valorTotal - valorPago);
+
+                return (
+                  <div className="p-4 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Valor da Inscrição (Lote da Inscrição)</p>
+                      <p className="text-xl font-black text-slate-800 dark:text-slate-100">
+                        {valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        {totalParc > 1 && (
+                          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 ml-2">
+                            ({totalParc}x de {valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})
+                          </span>
+                        )}
+                      </p>
                     </div>
-                  );
-                })}
+                    <div className="flex gap-4">
+                      <div>
+                        <p className="text-[9px] font-black text-emerald-600 uppercase tracking-wider">Total Pago</p>
+                        <p className="text-sm font-extrabold text-emerald-600">{valorPago.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-black text-rose-500 uppercase tracking-wider">Saldo Restante</p>
+                        <p className="text-sm font-extrabold text-rose-500">{saldoDevedor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div className="grid grid-cols-2 gap-4">
+                {Object.entries(modalInscrito.dados.dados_inscricao || {})
+                  .filter(([label]) => !['parcelas_pagas', 'valor_total_numerico', 'valor_base_lote', 'valor_transporte', 'valor_parcela'].includes(label.toLowerCase()))
+                  .map(([label, valor]) => {
+                    const isPhone = ['telefone', 'celular', 'whatsapp', 'contato'].some(k => label.toLowerCase().includes(k));
+                    const isCPF = label.toLowerCase().includes('cpf');
+                    const valorFormatado = (isPhone && typeof valor === 'string')
+                      ? mascaraTelefone(valor)
+                      : (isCPF && typeof valor === 'string')
+                        ? mascaraCPF(valor)
+                        : (Array.isArray(valor) ? valor.join(', ') : String(valor));
+                    return (
+                      <div key={label} className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <p className="text-[10px] font-black text-slate-400 uppercase mb-1">{label}</p>
+                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{valorFormatado}</p>
+                      </div>
+                    );
+                  })}
               </div>
 
               {/* Vínculo com Membro */}
@@ -1845,22 +2172,25 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
 
               {/* Controle de Parcelas Manuais */}
               {(() => {
-                const dados = modalInscrito.dados.dados_inscricao;
-                const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || 1;
+                const dados = modalInscrito.dados.dados_inscricao || {};
+                const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || extrairParcelasInscricao(dados) || 1;
                 if (totalParc <= 1) return null;
 
-                const incluiTransporte = findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
-                const valorTransporte = incluiTransporte ? (Number(evento.valor_transporte) || 0) : 0;
-                const valorTotal = (Number(evento.valor) || 0) + valorTransporte;
-
+                const valorTotal = extrairValorInscricao(dados, evento);
                 const pagas = dados.parcelas_pagas || [];
-                const valorPago = (valorTotal / totalParc) * pagas.length;
-                const saldoDevedor = valorTotal - valorPago;
+                const valorParcela = totalParc > 0 ? (valorTotal / totalParc) : valorTotal;
+                const valorPago = valorParcela * (modalInscrito.dados.status_pagamento === 'pago' ? totalParc : pagas.length);
+                const saldoDevedor = Math.max(0, valorTotal - valorPago);
 
                 return (
                   <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Controle de Parcelas</p>
+                      <div>
+                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Controle de Parcelas</p>
+                        <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300 mt-0.5">
+                          {totalParc}x de R$ {valorParcela.toFixed(2)} (Total: R$ {valorTotal.toFixed(2)})
+                        </p>
+                      </div>
                       <div className="flex gap-3">
                         <span className="text-[10px] font-bold text-emerald-600">Pago: R$ {valorPago.toFixed(2)}</span>
                         <span className="text-[10px] font-bold text-rose-500">Saldo: R$ {saldoDevedor.toFixed(2)}</span>
@@ -1869,10 +2199,10 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
 
                     <div className="flex flex-wrap gap-2">
                       {Array.from({ length: totalParc }, (_, i) => i + 1).map(num => {
-                        const isPago = pagas.includes(num);
+                        const isPago = modalInscrito.dados.status_pagamento === 'pago' || pagas.includes(num);
                         return (
                           <button key={num} onClick={() => handleToggleParcela(num)} className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${isPago ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-300'}`}>
-                            {num}ª Parcela {isPago ? '✓' : ''}
+                            {num}ª Parcela (R$ {valorParcela.toFixed(2)}) {isPago ? '✓' : ''}
                           </button>
                         );
                       })}
@@ -1893,7 +2223,7 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Geração de Documentos</p>
                 <div className="flex gap-2">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => {
                       const email = findInJsonGlobal(modalInscrito.dados.dados_inscricao, 'email');
@@ -1904,13 +2234,306 @@ function DashboardEvento({ evento, pessoas, onVoltar, onEditar, onExcluir, onAlt
                         pessoaId: membro?.id || null
                       });
                       setModalInscrito({ aberto: false, dados: null });
-                    }} 
+                    }}
                     className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-blue-100 cursor-pointer"
                   >
                     <Icon.Carne /> Gerar Carnê do Inscrito
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE FILTRO DO GRÁFICO (TRANSPORTE / ZONA DE MORADIA) */}
+      {modalFiltroGrafico.aberto && (
+        <div className="modal-overlay px-2 py-4" style={{ zIndex: 150 }}>
+          <div className="modal-box" style={{ maxWidth: 760 }}>
+            <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-start gap-4">
+              <div>
+                <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                    Filtro Aplicado
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                    {modalFiltroGrafico.tipo === 'transporte' ? '🚌 Transporte' : '📍 Zona de Moradia'}
+                  </span>
+                </div>
+                <h3 className="text-lg sm:text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">
+                  {modalFiltroGrafico.titulo}
+                </h3>
+              </div>
+              <button
+                type="button"
+                className="btn-icon"
+                onClick={() => setModalFiltroGrafico({ aberto: false, titulo: '', tipo: '', chave: '', participantes: [] })}
+              >
+                <Icon.Close />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-6 space-y-6 overflow-y-auto max-h-[75vh]">
+              {/* KPIs do Filtro */}
+              {(() => {
+                const lista = modalFiltroGrafico.participantes || [];
+                const totalQtd = lista.length;
+                const valorTotalFiltro = lista.reduce((acc, i) => acc + extrairValorInscricao(i.dados_inscricao, evento), 0);
+                const pagosQtd = lista.filter(i => i.status_pagamento === 'pago').length;
+                const pendentesQtd = lista.filter(i => i.status_pagamento === 'pendente').length;
+
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/80 rounded-2xl">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Quantidade</p>
+                      <p className="text-xl font-black text-slate-800 dark:text-slate-100 mt-0.5">{totalQtd}</p>
+                      <p className="text-[10px] text-slate-400 font-bold">{totalQtd === 1 ? 'participante' : 'participantes'}</p>
+                    </div>
+                    <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-2xl">
+                      <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider">Valor Total</p>
+                      <p className="text-xl font-black text-blue-700 dark:text-blue-300 mt-0.5">
+                        {valorTotalFiltro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </p>
+                      <p className="text-[10px] text-blue-500 font-bold">Lote da inscrição</p>
+                    </div>
+                    <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 rounded-2xl">
+                      <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Confirmados</p>
+                      <p className="text-xl font-black text-emerald-700 dark:text-emerald-300 mt-0.5">{pagosQtd}</p>
+                      <p className="text-[10px] text-emerald-600 font-bold">Status Pago</p>
+                    </div>
+                    <div className="p-3 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 rounded-2xl">
+                      <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider">Pendentes</p>
+                      <p className="text-xl font-black text-amber-700 dark:text-amber-300 mt-0.5">{pendentesQtd}</p>
+                      <p className="text-[10px] text-amber-600 font-bold">Aguardando baixa</p>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Controles de Busca e Abas de Status */}
+              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="Buscar participante, telefone ou e-mail..."
+                    value={buscaModal}
+                    onChange={(e) => setBuscaModal(e.target.value)}
+                    className="campo-input text-xs w-full pl-8"
+                  />
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+                  {buscaModal && (
+                    <button
+                      type="button"
+                      onClick={() => setBuscaModal('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shrink-0 overflow-x-auto">
+                  {['todos', 'pago', 'pendente', 'cancelado'].map(st => {
+                    const label = st === 'todos' ? 'Todos' : st === 'pago' ? 'Pagos' : st === 'pendente' ? 'Pendentes' : 'Cancelados';
+                    const ativo = filtroStatusModal === st;
+                    return (
+                      <button
+                        type="button"
+                        key={st}
+                        onClick={() => setFiltroStatusModal(st)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition ${ativo ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Lista e Tabela de Participantes */}
+              {(() => {
+                const participantes = (modalFiltroGrafico.participantes || []).filter(i => {
+                  if (filtroStatusModal !== 'todos' && i.status_pagamento !== filtroStatusModal) return false;
+                  if (!buscaModal.trim()) return true;
+                  const termo = buscaModal.toLowerCase().trim();
+                  const nome = (findInJsonGlobal(i.dados_inscricao, ['nome', 'nome completo', 'completo']) || '').toLowerCase();
+                  const tel = (findInJsonGlobal(i.dados_inscricao, ['telefone', 'celular', 'whatsapp', 'contato']) || '').toLowerCase();
+                  const email = (findInJsonGlobal(i.dados_inscricao, 'email') || '').toLowerCase();
+                  return nome.includes(termo) || tel.includes(termo) || email.includes(termo);
+                });
+
+                if (participantes.length === 0) {
+                  return (
+                    <div className="text-center py-12 text-slate-400 text-xs italic">
+                      Nenhum participante encontrado para os filtros selecionados.
+                    </div>
+                  );
+                }
+
+                return (
+                  <div>
+                    {/* Tabela Desktop */}
+                    <div className="hidden sm:block border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden">
+                      <table className="ag-table w-full text-xs">
+                        <thead>
+                          <tr>
+                            <th>Participante</th>
+                            <th>Zona de Moradia</th>
+                            <th>Transporte</th>
+                            <th style={{ textAlign: 'right' }}>Valor</th>
+                            <th style={{ textAlign: 'center' }}>Status</th>
+                            <th style={{ textAlign: 'right', paddingRight: '16px' }}>Ação</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {participantes.map(i => {
+                            const dados = i.dados_inscricao || {};
+                            const nome = findInJsonGlobal(dados, ['nome', 'nome completo', 'completo']) || 'Participante';
+                            const email = findInJsonGlobal(dados, 'email');
+                            const tel = findInJsonGlobal(dados, ['telefone', 'celular', 'whatsapp', 'contato']);
+                            const contato = tel ? mascaraTelefone(tel) : (email || '—');
+                            const membroFound = pessoas.find(p => (email && p.email?.toLowerCase() === email.toLowerCase()) || (nome && p.nome?.toLowerCase() === nome.toLowerCase()));
+                            const valorReal = extrairValorInscricao(dados, evento);
+                            const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || extrairParcelasInscricao(dados) || 1;
+                            const pagas = dados.parcelas_pagas || [];
+                            const comTransp = findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
+                            const zonaNome = obterZonaParticipante(i);
+
+                            return (
+                              <tr key={i.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
+                                <td>
+                                  <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                                    <span>{nome}</span>
+                                    {membroFound && (
+                                      <span className="text-[8px] bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 font-black">
+                                        MEMBRO
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 font-medium">{contato}</div>
+                                </td>
+                                <td className="text-slate-600 dark:text-slate-300 font-medium">
+                                  {zonaNome}
+                                </td>
+                                <td>
+                                  {comTransp ? (
+                                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800">
+                                      🚌 Sim
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                                      🚶 Não
+                                    </span>
+                                  )}
+                                </td>
+                                <td style={{ textAlign: 'right' }} className="font-black text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                                  {valorReal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                  {totalParc > 1 && (
+                                    <div className="text-[10px] font-bold text-slate-400">
+                                      {i.status_pagamento === 'pago' ? `${totalParc}/${totalParc}` : `${pagas.length}/${totalParc}`} Parc.
+                                    </div>
+                                  )}
+                                </td>
+                                <td style={{ textAlign: 'center' }}>
+                                  {i.status_pagamento === 'pago' ? (
+                                    <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">pago</span>
+                                  ) : i.status_pagamento === 'cancelado' ? (
+                                    <span className="badge bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">cancelado</span>
+                                  ) : (
+                                    <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">pendente</span>
+                                  )}
+                                </td>
+                                <td style={{ textAlign: 'right', paddingRight: '16px' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => setModalInscrito({ aberto: true, dados: i })}
+                                    className="btn-ghost"
+                                    style={{ fontSize: 11, padding: '4px 10px' }}
+                                  >
+                                    Ver Ficha ➔
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Lista Mobile */}
+                    <div className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden">
+                      {participantes.map(i => {
+                        const dados = i.dados_inscricao || {};
+                        const nome = findInJsonGlobal(dados, ['nome', 'nome completo', 'completo']) || 'Participante';
+                        const email = findInJsonGlobal(dados, 'email');
+                        const tel = findInJsonGlobal(dados, ['telefone', 'celular', 'whatsapp', 'contato']);
+                        const contato = tel ? mascaraTelefone(tel) : (email || '—');
+                        const membroFound = pessoas.find(p => (email && p.email?.toLowerCase() === email.toLowerCase()) || (nome && p.nome?.toLowerCase() === nome.toLowerCase()));
+                        const valorReal = extrairValorInscricao(dados, evento);
+                        const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || extrairParcelasInscricao(dados) || 1;
+                        const pagas = dados.parcelas_pagas || [];
+                        const comTransp = findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
+                        const zonaNome = obterZonaParticipante(i);
+
+                        return (
+                          <div
+                            key={i.id}
+                            className="p-3.5 space-y-2 active:bg-slate-50 dark:active:bg-slate-800 transition"
+                            onClick={() => setModalInscrito({ aberto: true, dados: i })}
+                          >
+                            <div className="flex justify-between items-start gap-2">
+                              <div>
+                                <p className="font-bold text-slate-800 dark:text-slate-100 text-sm">
+                                  {nome} {membroFound && <span className="ml-1 text-[8px] bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-1 py-0.5 rounded font-black">MEMBRO</span>}
+                                </p>
+                                <p className="text-[11px] text-slate-400">{contato}</p>
+                              </div>
+                              <div>
+                                {i.status_pagamento === 'pago' ? (
+                                  <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">pago</span>
+                                ) : i.status_pagamento === 'cancelado' ? (
+                                  <span className="badge bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">cancelado</span>
+                                ) : (
+                                  <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">pendente</span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-50 dark:border-slate-800/60">
+                              <span className="truncate">📍 {zonaNome}</span>
+                              <span className="shrink-0">{comTransp ? '🚌 Com Transporte' : '🚶 Sem Transporte'}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-1">
+                              <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                                {valorReal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                {totalParc > 1 && (
+                                  <span className="text-[10px] text-slate-400 ml-1 font-normal">
+                                    ({pagas.length}/{totalParc}x)
+                                  </span>
+                                )}
+                              </span>
+                              <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                Detalhes ➔
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setModalFiltroGrafico({ aberto: false, titulo: '', tipo: '', chave: '', participantes: [] })}
+                className="btn-primary"
+              >
+                Fechar
+              </button>
             </div>
           </div>
         </div>

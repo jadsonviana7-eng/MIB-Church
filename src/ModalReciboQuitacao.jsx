@@ -67,7 +67,7 @@ export default function ModalReciboQuitacao({
       dataEventoFormatada = d.toLocaleDateString('pt-BR');
       const h = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       if (h && h !== '00:00') dataEventoFormatada += ` às ${h}`;
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // Payload seguro para o QR Code de credenciamento
@@ -340,7 +340,7 @@ export default function ModalReciboQuitacao({
       </div>
       <div class="qr-text">
         <h5>Credenciamento & Check-in Rápido</h5>
-        <p>Apresente este código QR digital ou impresso na recepção do evento para retirada do seu crachá e acesso liberado.</p>
+        <p>Apresente este código QR digital ou impresso na recepção do evento para retirada da sua pulseira e acesso liberado.</p>
         <p style="margin-top: 4px; font-weight: 700; color: #059669;">Autenticação Oficial MIB Church • Código: ${codigoRecibo}</p>
       </div>
     </div>
@@ -726,7 +726,7 @@ export default function ModalReciboQuitacao({
 
         {/* Corpo do Recibo (Scrollável) */}
         <div ref={reciboRef} className="p-5 sm:p-6 overflow-y-auto space-y-4 text-slate-750 dark:text-slate-200 flex-1">
-          
+
           {/* Mensagem de Parabéns */}
           <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 flex items-start gap-3.5">
             <span className="text-2xl shrink-0">🌟</span>

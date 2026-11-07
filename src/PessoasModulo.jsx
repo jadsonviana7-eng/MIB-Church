@@ -363,7 +363,7 @@ export default function PessoasModulo(props) {
 
       {/* Navegação por abas: Membros / Contribuintes (dizimistas não-membros) */}
       {!temFiltroVinculo && (
-        <div className="inline-flex p-1 bg-slate-100/90 dark:bg-[#131d31] rounded-2xl border border-slate-200/50 dark:border-[#24334f] mb-6 w-full sm:w-auto">
+        <div className="inline-flex p-1 bg-slate-100/90 dark:bg-[#131d31] rounded-2xl border border-slate-200/50 dark:border-[#24334f] mb-4 xl:mb-3 w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setAbaPessoas('membros')}
@@ -400,32 +400,32 @@ export default function PessoasModulo(props) {
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Sua conta não possui permissão para visualizar o diretório completo de membros.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-5">
-              <Card className="p-0 bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954]">
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] items-start gap-5">
+              <Card className="p-0 bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] overflow-hidden">
                 <TabelaPessoas pessoas={pessoasFiltradasMembros} onSelecionar={setMembroSelecionadoId} />
               </Card>
 
-        {/* Drawer de Filtros para Mobile / Sidebar para Desktop */}
-        <div className={`${filtrosMobileAberto ? 'fixed inset-0 z-[60] flex items-end justify-center sm:items-center p-0 sm:p-4 bg-slate-950/60 dark:bg-slate-950/75 backdrop-blur-sm' : 'hidden xl:block'} transition-all`}>
-          <div className={`${filtrosMobileAberto ? 'bg-white dark:bg-[#17223b] border border-transparent dark:border-[#2b3954] rounded-t-[32px] sm:rounded-3xl w-full max-w-md animate-in slide-in-from-bottom duration-300' : ''} overflow-hidden`}>
-            {filtrosMobileAberto && (
-              <div className="p-5 border-b border-slate-100 dark:border-[#2b3954] flex items-center justify-between bg-slate-50/50 dark:bg-[#1c2b4a]">
-                <h4 className="font-bold text-slate-800 dark:text-white text-sm uppercase tracking-wider">Filtrar Membros</h4>
-                <button onClick={() => setFiltrosMobileAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-[#ffffff] dark:bg-[#131d31] border border-slate-200 dark:border-[#2b3954] text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-white cursor-pointer">✕</button>
+              {/* Drawer de Filtros para Mobile / Sidebar Fixa para Desktop */}
+              <div className={`${filtrosMobileAberto ? 'fixed inset-0 z-[60] flex items-end justify-center sm:items-center p-0 sm:p-4 bg-slate-950/60 dark:bg-slate-950/75 backdrop-blur-sm' : 'hidden xl:block xl:sticky xl:top-4'} transition-all`}>
+                <div className={`${filtrosMobileAberto ? 'bg-white dark:bg-[#17223b] border border-transparent dark:border-[#2b3954] rounded-t-[32px] sm:rounded-3xl w-full max-w-md max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300' : 'w-full'}`}>
+                  {filtrosMobileAberto && (
+                    <div className="p-5 border-b border-slate-100 dark:border-[#2b3954] flex items-center justify-between bg-slate-50/50 dark:bg-[#1c2b4a]">
+                      <h4 className="font-bold text-slate-800 dark:text-white text-sm uppercase tracking-wider">Filtrar Membros</h4>
+                      <button onClick={() => setFiltrosMobileAberto(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-[#ffffff] dark:bg-[#131d31] border border-slate-200 dark:border-[#2b3954] text-slate-400 dark:text-slate-300 hover:text-slate-600 dark:hover:text-white cursor-pointer">✕</button>
+                    </div>
+                  )}
+                  <FiltrosPessoas 
+                    filtros={filtros} 
+                    alterarFiltro={alterarFiltro} 
+                    limparFiltros={limparFiltros} 
+                    zonas={zonas} 
+                    cargosDisponiveis={cargosDisponiveis} 
+                    atuacoesDisponiveis={atuacoesDisponiveis} 
+                    escolaridadesDisponiveis={escolaridadesDisponiveis} 
+                  />
+                </div>
               </div>
-            )}
-            <FiltrosPessoas 
-              filtros={filtros} 
-              alterarFiltro={alterarFiltro} 
-              limparFiltros={limparFiltros} 
-              zonas={zonas} 
-              cargosDisponiveis={cargosDisponiveis} 
-              atuacoesDisponiveis={atuacoesDisponiveis} 
-              escolaridadesDisponiveis={escolaridadesDisponiveis} 
-            />
-          </div>
-        </div>
-          </div>
+            </div>
         )}
       </>
       )}

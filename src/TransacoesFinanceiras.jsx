@@ -28,6 +28,7 @@ export default function TransacoesFinanceiras({
   const [transacoes, setTransacoes] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [buscaNome, setBuscaNome] = useState('');
+  const [filtroPix, setFiltroPix] = useState(''); // '' (todos), 'pix' (apenas pix), 'outros' (não pix)
 
   const podeEditar = hasAccess('Financeiro', 'Transações', 'editar');
 
@@ -320,6 +321,7 @@ export default function TransacoesFinanceiras({
         setDataInicioFiltro('');
         setDataFimFiltro('');
         setBuscaNome('');
+        setFiltroPix('');
         return;
     }
     setDataInicioFiltro(formatarParaISO(inicio));
@@ -335,15 +337,33 @@ export default function TransacoesFinanceiras({
       .toLowerCase();
   };
 
-  // Filtra as transações em tempo real por nome (contribuinte, descrição, observações, categoria, conta)
+  // Helper para identificar se a transação é uma entrada/recebimento via PIX
+  const ehTransacaoPix = (t) => {
+    return Boolean(
+      t.via_pix === true ||
+      t.forma_pagamento?.toUpperCase() === 'PIX' ||
+      t.anotacoes?.includes('[Via Pix]')
+    );
+  };
+
+  // Filtra as transações em tempo real por nome e por PIX
   const transacoesFiltradas = useMemo(() => {
-    if (!buscaNome.trim()) return transacoes;
+    let lista = transacoes;
+
+    // Filtro específico para entradas via PIX
+    if (filtroPix === 'pix') {
+      lista = lista.filter(t => ehTransacaoPix(t));
+    } else if (filtroPix === 'outros') {
+      lista = lista.filter(t => !ehTransacaoPix(t));
+    }
+
+    if (!buscaNome.trim()) return lista;
     const termo = normalizarTexto(buscaNome.trim());
 
-    return transacoes.filter(t => {
+    return lista.filter(t => {
       const contribuinte = normalizarTexto(t.contribuinte || t.pessoas?.nome);
       const descricao = normalizarTexto(t.descricao);
-      const obs = normalizarTexto(t.observacoes || t.observacao);
+      const obs = normalizarTexto(t.observacoes || t.observacao || t.anotacoes);
       const categoria = normalizarTexto(t.categoria || t.categorias_financeiras?.nome);
       const conta = normalizarTexto(t.conta || t.contas_financeiras?.nome);
 
@@ -355,7 +375,7 @@ export default function TransacoesFinanceiras({
         conta.includes(termo)
       );
     });
-  }, [transacoes, buscaNome]);
+  }, [transacoes, buscaNome, filtroPix]);
 
   // Filtra as categorias com base no tipo selecionado
   const categoriasFiltradas = useMemo(() => {
@@ -442,11 +462,22 @@ export default function TransacoesFinanceiras({
           <div className="flex-1 min-w-[120px]"><SelectFiltro label="Status" valor={statusTransacaoFiltro} onChange={setStatusTransacaoFiltro} opcoes={['Pago', 'Pendente', 'Cancelado']} /></div>
           <div className="flex-1 min-w-[130px]"><SelectFiltro label="Conta" valor={contaFiltro} onChange={setContaFiltro} opcoes={contasDisponiveis.map(c => ({ valor: c.id, label: c.nome }))} /></div>
           <div className="flex-1 min-w-[130px]"><SelectFiltro label="Categoria" valor={categoriaFiltro} onChange={setCategoriaFiltro} opcoes={categoriasFiltradas.map(c => ({ valor: c.id, label: c.nome }))} /></div>
+          <div className="flex-1 min-w-[120px]">
+            <SelectFiltro
+              label="Via PIX"
+              valor={filtroPix}
+              onChange={setFiltroPix}
+              opcoes={[
+                { valor: 'pix', label: 'Apenas PIX' },
+                { valor: 'outros', label: 'Não PIX' }
+              ]}
+            />
+          </div>
         </div>
 
         {/* Atalhos de Período (Desktop) e Ações (Ambos) */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-2 md:border-t md:border-slate-200">
-          <div className="hidden md:flex flex-wrap gap-1.5">
+          <div className="hidden md:flex flex-wrap gap-1.5 items-center">
             <BtnAtalho label="Hoje" onClick={() => setPeriodoRapido('hoje')} />
             <BtnAtalho label="Ontem" onClick={() => setPeriodoRapido('ontem')} />
             <BtnAtalho label="7 Dias" onClick={() => setPeriodoRapido('7dias')} />
@@ -454,6 +485,22 @@ export default function TransacoesFinanceiras({
             <BtnAtalho label="Mês Atual" onClick={() => setPeriodoRapido('mes_atual')} />
             <BtnAtalho label="Mês Anterior" onClick={() => setPeriodoRapido('mes_anterior')} />
             <BtnAtalho label="Todo o período" onClick={() => setPeriodoRapido('limpar')} destaque />
+
+            <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
+
+            <button
+              type="button"
+              onClick={() => setFiltroPix(prev => prev === 'pix' ? '' : 'pix')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 ${
+                filtroPix === 'pix'
+                  ? 'bg-teal-600 text-white shadow-teal-600/30 ring-2 ring-teal-300 dark:ring-teal-800'
+                  : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/40'
+              }`}
+              title="Filtrar apenas entradas via PIX"
+            >
+              <span className="text-[10px] font-black">PIX</span>
+              <span>{filtroPix === 'pix' ? '✓ Apenas PIX' : 'Filtrar PIX'}</span>
+            </button>
           </div>
 
           {podeEditar && (
@@ -542,12 +589,33 @@ export default function TransacoesFinanceiras({
             <SelectFiltro label="Status" valor={statusTransacaoFiltro} onChange={setStatusTransacaoFiltro} opcoes={['Pago', 'Pendente', 'Cancelado']} />
             <SelectFiltro label="Conta" valor={contaFiltro} onChange={setContaFiltro} opcoes={contasDisponiveis.map(c => ({ valor: c.id, label: c.nome }))} />
             <SelectFiltro label="Categoria" valor={categoriaFiltro} onChange={setCategoriaFiltro} opcoes={categoriasFiltradas.map(c => ({ valor: c.id, label: c.nome }))} />
+            <SelectFiltro
+              label="Via PIX"
+              valor={filtroPix}
+              onChange={setFiltroPix}
+              opcoes={[
+                { valor: 'pix', label: 'Apenas PIX' },
+                { valor: 'outros', label: 'Não PIX' }
+              ]}
+            />
 
             <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-100 dark:border-[#2b3954]">
               <BtnAtalho label="Hoje" onClick={() => setPeriodoRapido('hoje')} />
               <BtnAtalho label="7 Dias" onClick={() => setPeriodoRapido('7dias')} />
               <BtnAtalho label="Mês Atual" onClick={() => setPeriodoRapido('mes_atual')} />
               <BtnAtalho label="Limpar" onClick={() => setPeriodoRapido('limpar')} destaque />
+              <button
+                type="button"
+                onClick={() => setFiltroPix(prev => prev === 'pix' ? '' : 'pix')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                  filtroPix === 'pix'
+                    ? 'bg-teal-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-400 border border-teal-300 dark:border-teal-700'
+                }`}
+              >
+                <span className="text-[10px] font-black">PIX</span>
+                <span>{filtroPix === 'pix' ? '✓ Apenas PIX' : 'Filtrar PIX'}</span>
+              </button>
             </div>
 
             <button
@@ -711,7 +779,14 @@ export default function TransacoesFinanceiras({
                     <tr key={t.id} onClick={() => podeEditar && abrirModal(tipoNormalizado, t)} className={`${podeEditar ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60' : ''} transition`}>
                       <td>{t.data ? new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}</td>
                       <td className="text-slate-600 dark:text-slate-300 font-normal">
-                        <div>{t.descricao}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span>{t.descricao}</span>
+                          {(t.via_pix === true || t.forma_pagamento?.toUpperCase() === 'PIX' || t.anotacoes?.includes('[Via Pix]')) && (
+                            <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800" title="Recebimento via PIX">
+                              PIX
+                            </span>
+                          )}
+                        </div>
                         {t.quantidade && t.valor_unitario && (
                           <div className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
                             {t.quantidade} un × R$ {Number(t.valor_unitario).toFixed(2)}
@@ -834,7 +909,14 @@ export default function TransacoesFinanceiras({
                     </div>
 
                     {/* Descrição principal */}
-                    <p className="text-sm font-extrabold text-slate-800 dark:text-slate-100 leading-tight mt-1 truncate">{t.descricao}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <p className="text-sm font-extrabold text-slate-800 dark:text-slate-100 leading-tight truncate">{t.descricao}</p>
+                      {(t.via_pix === true || t.forma_pagamento?.toUpperCase() === 'PIX' || t.anotacoes?.includes('[Via Pix]')) && (
+                        <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800 shrink-0">
+                          PIX
+                        </span>
+                      )}
+                    </div>
                     {t.quantidade && t.valor_unitario && (
                       <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold mt-0.5">
                         {t.quantidade} un × R$ {Number(t.valor_unitario).toFixed(2)}
@@ -909,6 +991,7 @@ export default function TransacoesFinanceiras({
 }
 
 export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pessoas, onSucesso, pessoaIdInicial = '', transacaoParaEditar = null, usuarioLogado }) {
+  const isReceita = tipo === 'receita';
   const [data, setData] = useState(transacaoParaEditar?.data || new Date().toISOString().split('T')[0]);
   const [descricao, setDescricao] = useState(transacaoParaEditar?.descricao || '');
   const [valor, setValor] = useState(transacaoParaEditar?.valor != null ? mascaraMoeda(Math.round(Number(transacaoParaEditar.valor) * 100)) : '');
@@ -928,6 +1011,12 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
     return new Date().getDate();
   });
   const [anotacoes, setAnotacoes] = useState(transacaoParaEditar?.anotacoes || '');
+  const [viaPix, setViaPix] = useState(() => {
+    if (transacaoParaEditar?.via_pix != null) return Boolean(transacaoParaEditar.via_pix);
+    if (transacaoParaEditar?.forma_pagamento) return transacaoParaEditar.forma_pagamento.toUpperCase() === 'PIX';
+    if (transacaoParaEditar?.anotacoes?.includes('[Via Pix]')) return true;
+    return false;
+  });
   const [enviando, setEnviando] = useState(false);
   const [modalNFCeAberto, setModalNFCeAberto] = useState(false);
 
@@ -1027,6 +1116,12 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
     const unitNum = desmascararMoeda(valorUnitario);
     const valorFinal = desmascararMoeda(valor);
 
+    // Formata anotações para marcar [Via Pix] de forma retrocompatível
+    let anotacoesLimpa = (anotacoes || '').replace(/\[Via Pix\]/gi, '').trim();
+    const anotacoesFinal = (isReceita && viaPix)
+      ? (anotacoesLimpa ? `${anotacoesLimpa}\n[Via Pix]` : '[Via Pix]')
+      : anotacoesLimpa;
+
     const payloadBase = {
       tipo,
       descricao: descricao.trim(),
@@ -1037,20 +1132,50 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
       pessoa_id: pessoaId || null,
       categoria_id: categoriaId || null,
       conta_id: contaId || null,
-      anotacoes: anotacoes.trim()
+      anotacoes: anotacoesFinal,
+      via_pix: isReceita ? viaPix : false,
+      forma_pagamento: (isReceita && viaPix) ? 'PIX' : (transacaoParaEditar?.forma_pagamento || null)
+    };
+
+    // Helper resiliente para salvar no Supabase sem quebrar caso as colunas via_pix ou forma_pagamento ainda não existam no banco
+    const salvarDados = async (dadosPayload, operacao, id = null) => {
+      let p = { ...dadosPayload };
+      let res;
+      if (operacao === 'update') {
+        res = await supabase.from('transacoes_financeiras').update(p).eq('id', id);
+      } else {
+        res = await supabase.from('transacoes_financeiras').insert(Array.isArray(p) ? p : [p]);
+      }
+
+      if (res.error && res.error.message?.includes('does not exist')) {
+        console.warn('Coluna via_pix/forma_pagamento não encontrada, aplicando fallback nas anotações:', res.error.message);
+        const limparCampos = (obj) => {
+          const copia = { ...obj };
+          delete copia.via_pix;
+          delete copia.forma_pagamento;
+          return copia;
+        };
+        const payloadSemNovasColunas = Array.isArray(p) ? p.map(limparCampos) : limparCampos(p);
+        if (operacao === 'update') {
+          return await supabase.from('transacoes_financeiras').update(payloadSemNovasColunas).eq('id', id);
+        } else {
+          return await supabase.from('transacoes_financeiras').insert(Array.isArray(payloadSemNovasColunas) ? payloadSemNovasColunas : [payloadSemNovasColunas]);
+        }
+      }
+      return res;
     };
 
     try {
       if (transacaoParaEditar) {
         const compStr = data.slice(0, 7);
-        const { error } = await supabase.from('transacoes_financeiras').update({ ...payloadBase, data, competencia: compStr }).eq('id', transacaoParaEditar.id);
+        const { error } = await salvarDados({ ...payloadBase, data, competencia: compStr }, 'update', transacaoParaEditar.id);
         if (error) throw error;
-        await registrarLogFinanceiro(usuarioLogado?.email, 'Edição de Transação', `Editou ${tipo}: ${descricao} (R$ ${valor})`);
+        await registrarLogFinanceiro(usuarioLogado?.email, 'Edição de Transação', `Editou ${tipo}: ${descricao} (R$ ${valor})${viaPix ? ' [PIX]' : ''}`);
       } else if (tipoLancamento === 'unico') {
         const compStr = data.slice(0, 7);
-        const { error } = await supabase.from('transacoes_financeiras').insert([{ ...payloadBase, data, competencia: compStr }]);
+        const { error } = await salvarDados({ ...payloadBase, data, competencia: compStr }, 'insert');
         if (error) throw error;
-        await registrarLogFinanceiro(usuarioLogado?.email, 'Criação de Transação', `Lançou ${tipo}: ${descricao} (R$ ${valor})`);
+        await registrarLogFinanceiro(usuarioLogado?.email, 'Criação de Transação', `Lançou ${tipo}: ${descricao} (R$ ${valor})${viaPix ? ' [PIX]' : ''}`);
       } else {
         // Lançamento Repetido (Recorrência)
         const items = [];
@@ -1085,9 +1210,9 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
             descricao: repeticoes > 1 ? `${payloadBase.descricao} (${i + 1}/${repeticoes})` : payloadBase.descricao
           });
         }
-        const { error } = await supabase.from('transacoes_financeiras').insert(items);
+        const { error } = await salvarDados(items, 'insert');
         if (error) throw error;
-        await registrarLogFinanceiro(usuarioLogado?.email, 'Criação de Recorrência', `Lançou ${repeticoes}x ${tipo}: ${descricao}`);
+        await registrarLogFinanceiro(usuarioLogado?.email, 'Criação de Recorrência', `Lançou ${repeticoes}x ${tipo}: ${descricao}${viaPix ? ' [PIX]' : ''}`);
       }
       onSucesso();
     } catch (err) {
@@ -1099,7 +1224,6 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
   }
 
   // Estilos dinâmicos modernos para botões de confirmação de receita e despesa
-  const isReceita = tipo === 'receita';
   const gradienteBtnSalvar = isReceita
     ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 border-emerald-400/30 shadow-emerald-600/25 hover:shadow-emerald-600/40'
     : 'bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:via-red-500 hover:to-rose-600 border-rose-400/30 shadow-rose-600/25 hover:shadow-rose-600/40';
@@ -1182,6 +1306,60 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
               </button>
             </div>
           </div>
+
+          {/* Campo Entrada via PIX (Exclusivo para Receitas) */}
+          {isReceita && (
+            <div
+              onClick={() => setViaPix(!viaPix)}
+              className={`p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between gap-3 ${
+                viaPix
+                  ? 'bg-gradient-to-r from-teal-50/90 via-emerald-50/50 to-teal-50/30 dark:from-teal-950/40 dark:via-emerald-950/20 dark:to-transparent border-teal-300 dark:border-teal-700/80 shadow-xs'
+                  : 'bg-slate-50/60 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-[11px] tracking-wider shrink-0 transition-all ${
+                    viaPix
+                      ? 'bg-teal-600 text-white shadow-sm shadow-teal-600/30 ring-2 ring-teal-200 dark:ring-teal-900'
+                      : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                  }`}
+                >
+                  PIX
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">
+                      Entrada via PIX
+                    </p>
+                    {viaPix && (
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-700">
+                        Ativado
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    Identificar este recebimento como transferência instantânea PIX
+                  </p>
+                </div>
+              </div>
+
+              {/* Toggle Switch */}
+              <div className="shrink-0 flex items-center">
+                <div
+                  className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
+                    viaPix ? 'bg-teal-600' : 'bg-slate-300 dark:bg-slate-700'
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
+                      viaPix ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Campos dinâmicos: Quantidade e Valor Unitário para Produtos de Limpeza e Consumo */}
           {ehLimpezaOuConsumo && (

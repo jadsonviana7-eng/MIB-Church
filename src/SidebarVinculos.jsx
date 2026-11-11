@@ -17,9 +17,13 @@ export default function SidebarVinculos({ pessoaId, pessoaData, matriculasEscola
       .replace(/\s+/g, ' ') // Substitui múltiplos espaços por um único espaço
       .trim(), []);
 
+  const emailPessoaRef = pessoaData?.email || '';
+  const nomePessoaRef = pessoaData?.nome || '';
+
   useEffect(() => {
+    let ativo = true;
     async function carregarVinculos() {
-      if (!pessoaId || !pessoaData) return;
+      if (!pessoaId || (!emailPessoaRef && !nomePessoaRef)) return;
       setCarregando(true);
       
       // Reseta estados para evitar que dados de um membro apareçam na ficha de outro
@@ -28,20 +32,18 @@ export default function SidebarVinculos({ pessoaId, pessoaData, matriculasEscola
       setInscricoes([]);
       
       try {
-        // 1. Busca escalas ministeriais
-        const { data: dataEscalas, error: errEscalas } = await supabase
-          .from('equipes_escala')
-          .select('tipo_escala')
-          .eq('pessoa_id', pessoaId);
-        
-        if (!errEscalas && dataEscalas) setMinisterios(dataEscalas);
+        const [
+          { data: dataEscalas, error: errEscalas },
+          { data: profData },
+          { data: dataInscricoes, error: errIns }
+        ] = await Promise.all([
+          supabase.from('equipes_escala').select('tipo_escala').eq('pessoa_id', pessoaId),
+          supabase.from('professores').select('id').eq('pessoa_id', pessoaId).maybeSingle(),
+          supabase.from('agenda_inscricoes').select('id, evento_id, dados_inscricao, status_pagamento, created_at, agenda_eventos(titulo, data_inicio)')
+        ]);
 
-        // 2. Busca docências (vínculo como professor no módulo Escolas)
-        const { data: profData } = await supabase
-          .from('professores')
-          .select('id')
-          .eq('pessoa_id', pessoaId)
-          .maybeSingle();
+        if (!ativo) return;
+        if (!errEscalas && dataEscalas) setMinisterios(dataEscalas);
 
         if (profData) {
           const { data: dataDocencias } = await supabase
@@ -52,19 +54,14 @@ export default function SidebarVinculos({ pessoaId, pessoaData, matriculasEscola
               turmas ( nome, escolas ( nome ) )
             `)
             .eq('professor_id', profData.id);
-          if (dataDocencias) setDocencias(dataDocencias);
+          if (ativo && dataDocencias) setDocencias(dataDocencias);
         }
-
-        // 3. Busca inscrições em eventos (cruzamento por nome ou email dentro do JSONB)
-        const { data: dataInscricoes, error: errIns } = await supabase
-          .from('agenda_inscricoes')
-          .select('*, agenda_eventos(titulo, data_inicio)');
 
         if (errIns) console.error('[SidebarVinculos] Erro ao buscar inscrições:', errIns);
 
         if (dataInscricoes) {
-          const emailMembro = normalizar(pessoaData?.email);
-          const nomeMembro  = normalizar(pessoaData?.nome);
+          const emailMembro = normalizar(emailPessoaRef);
+          const nomeMembro  = normalizar(nomePessoaRef);
 
           const extrairCampo = (dados, termosExatos, termosParciais, excluir = []) => {
             if (!dados) return '';
@@ -105,20 +102,21 @@ export default function SidebarVinculos({ pessoaId, pessoaData, matriculasEscola
             return bateEmail || bateNome;
           });
 
-          setInscricoes(filtradas);
+          if (ativo) setInscricoes(filtradas);
         }
       } catch (err) {
         console.error("Erro ao carregar vínculos da sidebar:", err);
       } finally {
-        setCarregando(false);
+        if (ativo) setCarregando(false);
       }
     }
 
     carregarVinculos();
-  }, [pessoaId, pessoaData, normalizar]);
+    return () => { ativo = false; };
+  }, [pessoaId, emailPessoaRef, nomePessoaRef, normalizar]);
 
   return (
-    <aside className="w-full lg:w-80 shrink-0 space-y-4 print:hidden">
+    <aside className="w-full space-y-4 print:hidden">
       <Card className="p-0 overflow-hidden shadow-sm border-slate-200/60 dark:border-slate-700 bg-white dark:bg-slate-800">
         <CardHeader titulo="Vínculos e Ministérios" subtitulo="Conexões ativas na igreja" />
         <div className="p-5 space-y-6">

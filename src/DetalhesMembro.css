@@ -1,5 +1,7 @@
 /* ── Member Header ── */
 .member-header {
+  width: 100%;
+  box-sizing: border-box;
   padding: 1.5rem 1.75rem;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-bottom: 0px solid #e2e8f0;
@@ -70,25 +72,27 @@ html.dark .tabs-sidebar {
 /* Desktop */
 @media (min-width: 1024px) {
   .ficha-body {
-    flex-direction: row;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
     gap: 1rem;
+    width: 100%;
   }
   .tabs-sidebar {
+    width: 100%;
     margin-bottom: 1rem;
   }
   .ficha-content {
-    flex: 1;
     min-width: 0;
+    width: 100%;
     padding: 0;
   }
   .vinculos-sidebar {
     display: block !important;
-    width: 300px;
-    flex-shrink: 0;
+    width: 100%;
     position: sticky;
     top: 1rem;
-    align-self: flex-start;
+    align-self: start;
   }
 }
 

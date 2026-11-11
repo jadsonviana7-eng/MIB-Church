@@ -73,21 +73,22 @@ export default function OverviewDashboard({
       try {
         const hoje = new Date().toISOString().split('T')[0];
 
-        // 1. Mural de Avisos
-        const { data: avisosData } = await supabase
-          .from('mural_avisos')
-          .select('*')
-          .eq('ativo', true)
-          .or(`data_expiracao.is.null,data_expiracao.gte.${hoje}`)
-          .order('prioridade', { ascending: false });
-
-        // 2. Agenda de Eventos
-        const { data: eventosData } = await supabase
-          .from('agenda_eventos')
-          .select('*')
-          .eq('publicado', true)
-          .order('data_inicio', { ascending: true })
-          .limit(5);
+        const [{ data: avisosData }, { data: eventosData }] = await Promise.all([
+          // 1. Mural de Avisos
+          supabase
+            .from('mural_avisos')
+            .select('*')
+            .eq('ativo', true)
+            .or(`data_expiracao.is.null,data_expiracao.gte.${hoje}`)
+            .order('prioridade', { ascending: false }),
+          // 2. Agenda de Eventos
+          supabase
+            .from('agenda_eventos')
+            .select('*')
+            .eq('publicado', true)
+            .order('data_inicio', { ascending: true })
+            .limit(5)
+        ]);
 
         const listaBanners = [];
 
@@ -726,7 +727,7 @@ export default function OverviewDashboard({
                 className="w-full lg:w-[276px] xl:w-[324px] shrink-0 space-y-6 lg:fixed lg:right-1 xl:right-5 lg:top-16 lg:bottom-6 lg:overflow-y-auto z-20 transition-all duration-300 scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 aria-label="Painéis laterais de aprovações e aniversariantes"
               >
-                <PainelAprovacoes onVerDetalhes={onVerMembro} onAprovado={() => {}} />
+                <PainelAprovacoes pessoas={pessoas} onVerDetalhes={onVerMembro} onAprovado={() => {}} />
                 
                 {/* Aniversariantes do Mês Estilizado */}
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">

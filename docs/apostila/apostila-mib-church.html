@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apostila Técnica — Plataforma MIB Church</title>
+  <style>
+
+    :root {
+      --navy: #0d1e52;
+      --indigo: #1e3a8a;
+      --blue: #2563eb;
+      --emerald: #059669;
+      --slate-900: #0f172a;
+      --slate-700: #334155;
+      --slate-500: #64748b;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @page {
+      size: A4 portrait;
+      margin: 14mm 14mm 16mm 14mm;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--slate-900);
+      background: #e2e8f0;
+      line-height: 1.55;
+      font-size: 10pt;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    .doc-container {
+      max-width: 210mm;
+      margin: 24px auto;
+      background: #ffffff;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+    }
+
+    @media print {
+      body { background: #ffffff; }
+      .doc-container { max-width: 100%; margin: 0; box-shadow: none; }
+      .no-print { display: none !important; }
+      .page-break { page-break-after: always; break-after: page; }
+      .avoid-break { break-inside: avoid; page-break-inside: avoid; }
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--navy);
+      color: #ffffff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .toolbar button {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Capa */
+    .cover {
+      min-height: 265mm;
+      padding: 28mm 22mm;
+      background: linear-gradient(155deg, #050d1a 0%, #0d1e52 45%, #1e3a8a 82%, #0f766e 100%);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+    .cover-badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      font-size: 9pt;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    .cover h1 {
+      font-size: 30pt;
+      font-weight: 900;
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+    }
+    .cover p.lead {
+      font-size: 12pt;
+      color: rgba(255, 255, 255, 0.86);
+      max-width: 520px;
+      line-height: 1.6;
+    }
+    .cover-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 26px;
+    }
+    .cover-box {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+    .cover-box span {
+      display: block;
+      font-size: 8pt;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #93c5fd;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .cover-box strong {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .cover-footer {
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      padding-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9pt;
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .page-body { padding: 16mm 16mm; }
+    @media print { .page-body { padding: 4mm 2mm; } }
+
+    .chapter-banner {
+      background: linear-gradient(135deg, #0d1e52, #1e3a8a);
+      color: #ffffff;
+      padding: 14px 18px;
+      border-radius: 14px;
+      margin-bottom: 16px;
+    }
+    .chapter-banner .tag {
+      font-size: 8pt;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #93c5fd;
+      font-weight: 800;
+    }
+    .chapter-banner h2 {
+      font-size: 18pt;
+      font-weight: 900;
+      margin-top: 2px;
+    }
+
+    h2.chapter-title {
+      font-size: 15.5pt;
+      font-weight: 900;
+      color: var(--navy);
+      border-bottom: 3px solid var(--blue);
+      padding-bottom: 6px;
+      margin: 20px 0 12px;
+      letter-spacing: -0.01em;
+    }
+    h2.chapter-title:first-child { margin-top: 0; }
+
+    h3.section-title {
+      font-size: 12pt;
+      font-weight: 800;
+      color: var(--indigo);
+      margin: 16px 0 8px;
+    }
+
+    p { margin-bottom: 9px; color: var(--slate-700); }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 8.5pt;
+      background: var(--slate-100);
+      color: #1e40af;
+      padding: 1.5px 5px;
+      border-radius: 5px;
+      border: 1px solid var(--slate-200);
+    }
+
+    .callout {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid var(--blue);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin: 12px 0;
+      font-size: 9.2pt;
+      color: #1e3a8a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: 8.8pt;
+    }
+    th {
+      background: var(--navy);
+      color: #ffffff;
+      text-align: left;
+      padding: 6.5px 9px;
+      font-size: 7.8pt;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      border-bottom: 1px solid var(--slate-200);
+      padding: 6.5px 9px;
+      vertical-align: top;
+      color: var(--slate-700);
+    }
+    tr:nth-child(even) td { background: var(--slate-50); }
+
+    .order-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 6px;
+      background: var(--indigo);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 8pt;
+    }
+
+    .figure {
+      margin: 10px 0 14px;
+      border: 1px solid var(--slate-200);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--slate-50);
+    }
+    .figure img { display: block; width: 100%; height: auto; }
+    .figure-caption {
+      padding: 6px 12px;
+      background: #ffffff;
+      border-top: 1px solid var(--slate-200);
+      font-size: 8.2pt;
+      color: var(--slate-500);
+      font-weight: 600;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 10px 0 14px;
+    }
+
+    .mobile-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 10px 0 14px;
+    }
+    .mobile-fig {
+      border: 1px solid var(--slate-200);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #ffffff;
+    }
+    .mobile-fig img { display: block; width: 100%; height: auto; }
+    .mobile-fig .cap {
+      padding: 5px 8px;
+      font-size: 8pt;
+      font-weight: 700;
+      color: var(--slate-700);
+      border-top: 1px solid var(--slate-200);
+      text-align: center;
+    }
+
+    .toc-list { list-style: none; margin: 10px 0 16px; }
+    .toc-list li {
+      padding: 6px 10px;
+      border-bottom: 1px dashed var(--slate-200);
+      display: flex;
+      justify-content: space-between;
+      font-size: 9.2pt;
+    }
+    .toc-list li strong { color: var(--navy); }
+    .badge-done {
+      font-size: 7.2pt; font-weight: 800; text-transform: uppercase;
+      background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;
+      padding: 2px 7px; border-radius: 999px;
+    }
+    .badge-next {
+      font-size: 7.2pt; font-weight: 800; text-transform: uppercase;
+      background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;
+      padding: 2px 7px; border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar no-print">
+    <span><strong>MIB Church</strong> — Apostila Técnica (Capítulos 1 e 2)</span>
+    <button onclick="window.print()">Imprimir / Salvar PDF (A4)</button>
+  </div>
+
+  <div class="doc-container">
+    <!-- CAPA -->
+    <section class="cover page-break">
+      <div>
+        <div class="cover-badge">Manual Técnico Completo • Versão 1.0</div>
+        <h1>Apostila Técnica<br/>Plataforma MIB Church</h1>
+        <p class="lead">
+          Mapeamento estrutural completo de cada componente React, fluxo de autenticação, ordem visual de exibição na tela e integração com o Supabase.<br/><br/>
+          <strong>Capítulos 1 &amp; 2: Tela de Login, Shell Global &amp; Home Page</strong>
+        </p>
+
+        <div class="cover-grid">
+          <div class="cover-box">
+            <span>Capítulo 1</span>
+            <strong>Tela de Login &amp; Autenticação (<code>TelaLogin.jsx</code>)</strong>
+          </div>
+          <div class="cover-box">
+            <span>Capítulo 2</span>
+            <strong>Shell Global &amp; Home Page (<code>App.jsx</code>, <code>OverviewDashboard.jsx</code>, <code>HomePage.jsx</code>)</strong>
+          </div>
+          <div class="cover-box">
+            <span>Resoluções Capturadas</span>
+            <strong>Desktop (1440×900) &amp; Mobile (390×844)</strong>
+          </div>
+          <div class="cover-box">
+            <span>Base de Captura</span>
+            <strong>Dados Demonstrativos Fictícios</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="cover-footer">
+        <span>MIB Church • Gestão Eclesiástica Integrada</span>
+        <span>Manual Técnico Modular • Capítulos 1–2</span>
+      </div>
+    </section>
+
+    <!-- ÍNDICE -->
+    <div class="page-body page-break">
+      <h2 class="chapter-title">Índice Geral do Manual Técnico (Separado por Módulos)</h2>
+      <ul class="toc-list avoid-break">
+        <li><span><strong>Capítulo 1:</strong> Tela de Login &amp; Autenticação (<code>TelaLogin.jsx</code>)</span><span class="badge-done">Documentado</span></li>
+        <li><span><strong>Capítulo 2:</strong> Shell Global &amp; Home Page — Desktop e Mobile (<code>App.jsx</code>, <code>OverviewDashboard.jsx</code>, <code>HomePage.jsx</code>, <code>PainelAprovacoes.jsx</code>)</span><span class="badge-done">Documentado</span></li>
+        <li><span><strong>Capítulo 3:</strong> Portais Públicos &amp; Painéis Restritos (<code>DashboardLider.jsx</code>, <code>DashboardMembro.jsx</code>, formulários públicos)</span><span class="badge-next">Planejado</span></li>
+        <li><span><strong>Capítulo 4:</strong> Módulo Pessoas (<code>PessoasModulo.jsx</code>, <code>DetalhesMembro.jsx</code>, <code>FormularioCadastro.jsx</code>, <code>PainelAtuacoes.jsx</code>)</span><span class="badge-next">Planejado</span></li>
+        <li><span><strong>Capítulo 5:</strong> Módulo Células (<code>CelulasModulo.jsx</code>, <code>PainelCelulas.jsx</code>, <code>FormularioCelula.jsx</code>, <code>ModalLancarReuniao.jsx</code>)</span><span class="badge-next">Planejado</span></li>
+        <li><span><strong>Capítulo 6:</strong> Módulo Financeiro (<code>ModuloFinanceiro.jsx</code>, <code>TransacoesFinanceiras.jsx</code>, <code>RelatoriosFinanceiros.jsx</code>, <code>ModalImportarNFCe.jsx</code>)</span><span class="badge-next">Planejado</span></li>
+        <li><span><strong>Capítulo 7:</strong> Módulo Escolas (<code>EscolasModulo.jsx</code>)</span><span class="badge-next">Planejado</span></li>
+        <li><span><strong>Capítulo 8:</strong> Gestão Ministerial (<code>GestaoMinisterial.jsx</code>, <code>EscalasMinisteriaisV2.jsx</code>, <code>RepertorioLouvor.jsx</code>)</span><span class="badge-next">Planejado</span></li>
+        <li><span><strong>Capítulo 9:</strong> Agenda &amp; Eventos (<code>AgendaModulo.jsx</code>, <code>LeitorQRCodeEvento.jsx</code>, <code>ModalReciboQuitacao.jsx</code>)</span><span class="badge-next">Planejado</span></li>
+        <li><span><strong>Capítulo 10:</strong> Utilitários, Configurações &amp; Biblioteca UI (<code>ModuloUtilitarios.jsx</code>, <code>TelaConfiguracoes.jsx</code>, <code>ui.jsx</code>)</span><span class="badge-next">Planejado</span></li>
+      </ul>
+
+      <div class="callout avoid-break">
+        <strong>Critério de Classificação:</strong> Todos os componentes listados em cada capítulo seguem rigorosamente a <strong>ordem visual de exibição</strong> na interface (de cima para baixo e da esquerda para a direita), detalhando classes, arquivos de origem e fluxo com o Supabase.
+      </div>
+    </div>
+
+    <!-- CAPÍTULO 1: TELA DE LOGIN -->
+    <div class="page-body page-break">
+      <div class="chapter-banner avoid-break">
+        <div class="tag">Capítulo 1 • Porta de Entrada do Sistema</div>
+        <h2>Tela de Login &amp; Autenticação (<code>TelaLogin.jsx</code>)</h2>
+      </div>
+
+      <p>
+        Renderizada em <code>src/App.jsx</code> sempre que não há usuário autenticado (exceto em rotas públicas como <code>/cadastro-publico</code>, <code>/inscricao-evento/:id</code> e <code>/confirmar-escala</code>). O componente <code>TelaLogin</code> organiza um cartão dividido (<code>.tl-card</code>, <code>max-width: 960px</code>) em duas colunas no desktop (<code>1fr 420px</code>).
+      </p>
+
+      <figure class="figure avoid-break">
+        <img src="screenshots/login/01-login-desktop.png" alt="Tela de Login Desktop" />
+        <figcaption class="figure-caption">Figura 1.1 — Tela de Login Desktop: Painel Institucional (esquerda) e Formulário de Acesso (direita).</figcaption>
+      </figure>
+
+      <h3 class="section-title">1.1 Painel Esquerdo (<code>.tl-left</code>) — Ordem de Camadas e Elementos</h3>
+      <table class="avoid-break">
+        <thead>
+          <tr><th style="width:48px">Ordem</th><th>Elemento</th><th>Classe / Implementação</th><th>Comportamento Visual</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="order-pill">01</span></td><td><strong>Canvas de Partículas</strong></td><td><code>.tl-canvas</code> (<code>canvasRef</code>)</td><td>Anima 38 partículas conectadas por linhas quando <code>dist &lt; 110px</code> via <code>requestAnimationFrame</code>.</td></tr>
+          <tr><td><span class="order-pill">02</span></td><td><strong>Ilustração Vetorial</strong></td><td><code>.tl-illustration</code> (SVG)</td><td>Círculo de 6 pessoas ligadas a uma chama central (<code>opacity: 0.10</code>). Oculta no mobile.</td></tr>
+          <tr><td><span class="order-pill">03</span></td><td><strong>Linha de Luz</strong></td><td><code>.tl-glow-line</code></td><td>Feixe horizontal azul translúcido decorativo (<code>top: 55%</code>). Oculto no mobile.</td></tr>
+          <tr><td><span class="order-pill">04</span></td><td><strong>Logotipo</strong></td><td><code>.tl-logo-wrap</code> → <code>.tl-logo-img</code></td><td>Exibe <code>/logo-betesda-mundau.png</code> no topo; centraliza no mobile.</td></tr>
+          <tr><td><span class="order-pill">05</span></td><td><strong>Badge do Sistema</strong></td><td><code>.tl-badge</code> + <code>.tl-badge-dot</code></td><td>Pílula com ponto pulsante <em>"Sistema de Gestão"</em>. Oculta no mobile.</td></tr>
+          <tr><td><span class="order-pill">06</span></td><td><strong>Lema &amp; Subtítulo</strong></td><td><code>.tl-headline</code> (<code>Cinzel</code>)</td><td><em>"Vivemos como família, crescendo na Palavra."</em> + descrição institucional.</td></tr>
+          <tr><td><span class="order-pill">07</span></td><td><strong>Card de Versículo</strong></td><td><code>.tl-verse</code></td><td>Citação bíblica de <em>Atos 2:42</em> com borda esquerda azul. Oculto no mobile.</td></tr>
+        </tbody>
+      </table>
+
+      <h3 class="section-title">1.2 Painel Direito (<code>.tl-right</code>) — Ordem do Formulário Principal (<code>MODO.LOGIN</code>)</h3>
+      <table class="avoid-break">
+        <thead>
+          <tr><th style="width:48px">Ordem</th><th>Elemento</th><th>ID / Classe</th><th>Ação e Integração</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="order-pill">01</span></td><td><strong>Título &amp; Subtítulo</strong></td><td><code>.tl-right-title</code>, <code>.tl-right-sub</code></td><td>Exibe <em>"Bem vindo ao MIB Church"</em> e instrução de acesso ministerial.</td></tr>
+          <tr><td><span class="order-pill">02</span></td><td><strong>Campo E-mail</strong></td><td><code>#email</code> (<code>.tl-input</code>)</td><td>Ao perder foco (<code>onBlur</code>), consulta <code>pessoas.permissao</code> via <code>buscarPerfilNoBanco()</code>.</td></tr>
+          <tr><td><span class="order-pill">03</span></td><td><strong>Chip "Perfil identificado"</strong></td><td><code>.tl-perfil-chip</code> *(condicional)*</td><td>Mostra sigla (<code>AD</code>, <code>PR</code>, <code>LC</code>, etc.) e nome do perfil quando localizado no banco.</td></tr>
+          <tr><td><span class="order-pill">04</span></td><td><strong>Campo Senha + Olho</strong></td><td><code>#senha</code> + <code>.tl-toggle-pwd</code></td><td>Input protegido com alternador visual (<code>Eye</code> / <code>EyeOff</code> do <code>lucide-react</code>).</td></tr>
+          <tr><td><span class="order-pill">05</span></td><td><strong>Ações Auxiliares</strong></td><td><code>.tl-actions-row</code></td><td>Checkbox <em>Manter acesso</em> à esquerda e link <em>Esqueceu a senha?</em> à direita.</td></tr>
+          <tr><td><span class="order-pill">06</span></td><td><strong>Alerta de Erro</strong></td><td><code>.tl-alert-err</code> *(condicional)*</td><td>Exibe mensagens traduzidas (credenciais inválidas, campos vazios, rate limit).</td></tr>
+          <tr><td><span class="order-pill">07</span></td><td><strong>Botão "Entrar no Sistema"</strong></td><td><code>.tl-btn-primary</code></td><td>Chama <code>supabase.auth.signInWithPassword</code>, lê permissões em <code>pessoas</code> e checa senhas padrão temporárias.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- CAPÍTULO 1 CONTINUAÇÃO: MODOS SECUNDÁRIOS E MOBILE -->
+    <div class="page-body page-break">
+      <h3 class="section-title">1.3 Modos de Recuperação e Primeiro Acesso (<code>MODO</code>)</h3>
+      <p>
+        Além da tela padrão (<code>MODO.LOGIN</code>), o painel direito alterna entre 4 fluxos adicionais: <code>ESQUECEU</code> (envio de e-mail via <code>resetPasswordForEmail</code>), <code>VERIFICAR_CODIGO</code> (validação de token OTP de 6–8 dígitos via <code>verifyOtp</code>), <code>NOVA_SENHA</code> (ativado após OTP ou parâmetro de URL/evento <code>PASSWORD_RECOVERY</code>) e <code>ALTERAR_SENHA_PADRAO</code> (obrigatório quando o login usa senha temporária como <code>mib123</code> ou <code>123456</code>).
+      </p>
+
+      <div class="two-col avoid-break">
+        <div class="figure" style="margin:0">
+          <img src="screenshots/login/03-login-desktop-redefinir.png" alt="Modo Redefinir Senha" />
+          <div class="figure-caption">Figura 1.2 — Modo <code>ESQUECEU</code>: solicitação de código/link por e-mail.</div>
+        </div>
+        <div class="figure" style="margin:0">
+          <img src="screenshots/login/04-login-desktop-codigo.png" alt="Modo Verificar Código" />
+          <div class="figure-caption">Figura 1.3 — Modo <code>VERIFICAR_CODIGO</code>: validação do OTP numérico.</div>
+        </div>
+      </div>
+
+      <h3 class="section-title">1.4 Adaptação Responsiva Mobile (<code>&lt;= 700px</code>)</h3>
+      <div class="two-col avoid-break" style="grid-template-columns: 220px 1fr; align-items: center;">
+        <div class="mobile-fig">
+          <img src="screenshots/login/05-login-mobile.png" alt="Login Mobile" />
+          <div class="cap">Fig. 1.4 — Login Mobile (390×844)</div>
+        </div>
+        <div>
+          <p>
+            Em telas até <code>700px</code>, o layout empilha verticalmente (<code>100dvh</code>):
+          </p>
+          <p>
+            • O painel superior azul reduz para <code>38vh</code>, ocultando partículas decorativas secundárias, badge, subtítulo e versículo, centralizando o <strong>logotipo</strong> e o <strong>lema principal</strong>.<br/>
+            • O painel inferior branco ocupa todo o restante da tela com campos e botões dimensionados para toque.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAPÍTULO 2: SHELL GLOBAL E HOME PAGE -->
+    <div class="page-body">
+      <div class="chapter-banner avoid-break">
+        <div class="tag">Capítulo 2 • Dashboard &amp; Navegação Central</div>
+        <h2>Shell Global &amp; Home Page (<code>App.jsx</code>, <code>OverviewDashboard.jsx</code>, <code>HomePage.jsx</code>)</h2>
+      </div>
+
+      <h2 class="chapter-title">2.1 Roteamento Inicial e Shell Global (<code>App.jsx</code>)</h2>
+      <p>
+        Ao concluir o login, <code>App.jsx</code> executa <code>obterDados()</code> carregando em paralelo (<code>Promise.all</code>) seis tabelas: <code>pessoas</code>, <code>cargos</code>, <code>atuacoes</code>, <code>celulas</code>, <code>zonas_moradia</code> e <code>relatorios_celula</code>. Conforme perfil e viewport (<code>isDesktop &gt;= 768px</code>), o módulo <code>'dashboard'</code> exibe <code>DashboardLider</code>, <code>DashboardMembro</code>, <code>OverviewDashboard</code> (Desktop) ou <code>HomePage</code> (Mobile).
+      </p>
+      <table class="avoid-break">
+        <thead>
+          <tr><th style="width:48px">Ordem</th><th>Componente do Shell</th><th>Posição</th><th>Responsabilidade</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="order-pill">01</span></td><td><strong>Logotipo MIB Church</strong></td><td>Header Topo • Esq.</td><td>Exibe <code>/logo-mib-mundau.png</code>; retorna para a Home Page.</td></tr>
+          <tr><td><span class="order-pill">02</span></td><td><strong><code>BuscaGlobal</code></strong></td><td>Header Topo • Centro</td><td>Pesquisa instantânea em <code>pessoasVisiveis</code> e <code>celulasVisiveis</code>.</td></tr>
+          <tr><td><span class="order-pill">03</span></td><td><strong>Tema &amp; Notificações &amp; Ajustes</strong></td><td>Header Topo • Dir.</td><td>Botões Claro/Escuro, sino com contador de alertas e atalho <em>Configurações</em>.</td></tr>
+          <tr><td><span class="order-pill">04</span></td><td><strong><code>UserAvatarDropdown</code></strong></td><td>Header Topo • Extremo Dir.</td><td>Avatar do usuário logado com opções <em>Meu Perfil</em> e <em>Sair</em>.</td></tr>
+          <tr><td><span class="order-pill">05</span></td><td><strong>Sidebar Retraída (<code>&lt;aside&gt;</code>)</strong></td><td>Esquerda Fixa (<code>w-16</code>)</td><td>Navegação modular (<em>Visão Geral, Pessoas, Células, Financeiro, Gestão Ministerial, Escolas, Agenda, Utilitários</em>) com submenus <em>flyout</em>.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 class="chapter-title">2.2 Home Page Desktop (<code>OverviewDashboard.jsx</code>)</h2>
+      <figure class="figure avoid-break">
+        <img src="screenshots/home/01-desktop-visao-geral-topo.png" alt="Home Desktop Visão Geral Topo" />
+        <figcaption class="figure-caption">Figura 2.1 — Home Desktop: Boas-vindas, Carrossel de Banners, Abas, Ações Rápidas, KPIs e Coluna Direita Fixa.</figcaption>
+      </figure>
+
+      <table class="avoid-break">
+        <thead>
+          <tr><th style="width:48px">Ordem</th><th>Bloco / Componente</th><th>Localização</th><th>Descrição e Dados</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="order-pill">01</span></td><td><strong>Cabeçalho de Boas-Vindas</strong></td><td>Topo Fixo</td><td>Saudação personalizada, avatar do usuário, badge de perfil e data atual.</td></tr>
+          <tr><td><span class="order-pill">02</span></td><td><strong>Carrossel de Banners</strong></td><td>Topo Fixo</td><td><code>agenda_eventos</code> + <code>mural_avisos</code> em paralelo; troca automática a cada 5s, setas e botão <em>Saiba mais</em>.</td></tr>
+          <tr><td><span class="order-pill">03</span></td><td><strong>Menu de Abas (Tabs)</strong></td><td>Topo Fixo</td><td>Alterna entre <em>Visão Geral</em>, <em>Células &amp; Engajamento</em>, <em>Crescimento &amp; Demografia</em> e <em>Painel Financeiro</em>.</td></tr>
+          <tr><td><span class="order-pill">04</span></td><td><strong>Ações e Atalhos Rápidos</strong></td><td>Topo Fixo</td><td>4 botões de fluxo imediato: <em>Cadastrar Membro</em>, <em>Lançar Reunião</em>, <em>Nova Transação</em> e <em>Escalas de Culto</em>.</td></tr>
+          <tr><td><span class="order-pill">05</span></td><td><strong>Grid 4 <code>StatCard</code>s KPI</strong></td><td>Aba 1 • Principal</td><td><em>Total de Pessoas</em>, <em>Células</em>, <em>Novos Convertidos (mês)</em> e <em>Taxa de Batismo</em> (todos clicáveis com filtro).</td></tr>
+          <tr><td><span class="order-pill">06</span></td><td><strong><code>CombinationCard</code></strong></td><td>Aba 1 • Esq.</td><td>Gráfico de <em>Novos convertidos</em> com alternância Meses/Anos e clique nas barras.</td></tr>
+          <tr><td><span class="order-pill">07</span></td><td><strong><code>ColumnChart</code></strong></td><td>Aba 1 • Dir.</td><td>Gráfico de <em>Aniversariantes por mês</em> (Jan–Dez) com filtro ao clicar na barra.</td></tr>
+          <tr><td><span class="order-pill">08</span></td><td><strong><code>PainelAprovacoes</code></strong></td><td>Coluna Direita Fixa</td><td>Lista cadastros <code>pendente</code> ou os <strong>8 últimos ativos</strong> via <code>pessoas</code> em memória (sem query extra).</td></tr>
+          <tr><td><span class="order-pill">09</span></td><td><strong>Card "Aniversariantes do Mês"</strong></td><td>Coluna Direita Fixa</td><td>Membros do mês ordenados por dia, com <code>Avatar</code> (<code>lazy</code>/<code>async</code>), célula e data <code>dd/mm</code>.</td></tr>
+        </tbody>
+      </table>
+
+      <figure class="figure avoid-break">
+        <img src="screenshots/home/02-desktop-visao-geral-graficos.png" alt="Home Desktop Gráficos" />
+        <figcaption class="figure-caption">Figura 2.2 — Detalhe dos 4 StatCards KPI, gráficos Recharts e coluna lateral direita fixa.</figcaption>
+      </figure>
+
+      <div class="page-break"></div>
+
+      <h3 class="section-title">2.3 Demais Abas da Home Desktop (Abas 2, 3 e 4)</h3>
+      <figure class="figure avoid-break">
+        <img src="screenshots/home/03-desktop-celulas-topo.png" alt="Aba Células Topo" />
+        <figcaption class="figure-caption">Figura 2.3 — Aba 2 (Células &amp; Engajamento): 4 KPIs de células e 3 gráficos Doughnut interativos.</figcaption>
+      </figure>
+      <figure class="figure avoid-break">
+        <img src="screenshots/home/04-desktop-celulas-reunioes.png" alt="Aba Células Reuniões" />
+        <figcaption class="figure-caption">Figura 2.4 — Aba 2 (Células &amp; Engajamento): Tabela de Relatório Recente de Reuniões.</figcaption>
+      </figure>
+      <figure class="figure avoid-break">
+        <img src="screenshots/home/05-desktop-demografia.png" alt="Aba Demografia" />
+        <figcaption class="figure-caption">Figura 2.5 — Aba 3 (Crescimento &amp; Demografia): Zonas, Faixa Etária, Perfil Demográfico, Estado Civil, Cargos e Atuações.</figcaption>
+      </figure>
+      <figure class="figure avoid-break">
+        <img src="screenshots/home/06-desktop-financas.png" alt="Aba Painel Financeiro" />
+        <figcaption class="figure-caption">Figura 2.6 — Aba 4 (Painel Financeiro): Saldo e fluxo mensal carregados sob demanda em <code>transacoes_financeiras</code>.</figcaption>
+      </figure>
+
+      <div class="page-break"></div>
+
+      <h2 class="chapter-title">2.4 Home Page Mobile (<code>HomePage.jsx</code>) — Ordem Visual</h2>
+      <p>
+        Em telas <code>&lt; 768px</code>, exibe em coluna única: <strong>(1)</strong> Cabeçalho Mobile compacto, <strong>(2)</strong> Abas segmentadas (<em>Geral, Células, Crescimento, Finanças</em>), <strong>(3)</strong> Grid 2×2 de <code>CardMobileIndicador</code>, <strong>(4)</strong> Carrossel <em>Mural de Avisos</em> com modal detalhado, <strong>(5)</strong> Grid <em>Módulos de Acesso</em> (Pessoas, Células, Financeiro, Escolas, Agenda, Utilitários, Gestor Ministerial), <strong>(6)</strong> <em>Aniversariantes do Mês</em> e <strong>(7)</strong> <code>PainelAprovacoes</code>.
+      </p>
+
+      <div class="mobile-grid avoid-break">
+        <div class="mobile-fig">
+          <img src="screenshots/home/07-mobile-geral-topo.png" alt="Mobile Topo" />
+          <div class="cap">Fig. 2.7 — Topo, Abas &amp; Mural</div>
+        </div>
+        <div class="mobile-fig">
+          <img src="screenshots/home/08-mobile-geral-modulos.png" alt="Mobile Módulos" />
+          <div class="cap">Fig. 2.8 — Módulos &amp; Anivers.</div>
+        </div>
+        <div class="mobile-fig">
+          <img src="screenshots/home/09-mobile-geral-lateral.png" alt="Mobile Recentes" />
+          <div class="cap">Fig. 2.9 — Cadastros Recentes</div>
+        </div>
+      </div>
+
+      <div class="mobile-grid avoid-break">
+        <div class="mobile-fig">
+          <img src="screenshots/home/10-mobile-celulas.png" alt="Mobile Células" />
+          <div class="cap">Fig. 2.10 — Aba Células</div>
+        </div>
+        <div class="mobile-fig">
+          <img src="screenshots/home/11-mobile-demografia.png" alt="Mobile Demografia" />
+          <div class="cap">Fig. 2.11 — Aba Crescimento</div>
+        </div>
+        <div class="mobile-fig">
+          <img src="screenshots/home/12-mobile-financas.png" alt="Mobile Finanças" />
+          <div class="cap">Fig. 2.12 — Aba Finanças</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+

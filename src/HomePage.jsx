@@ -616,7 +616,7 @@ export default function HomePage({
             </div>
 
             {/* Painel de Aprovações */}
-            <PainelAprovacoes onVerDetalhes={onVerMembro} onAprovado={() => {}} />
+            <PainelAprovacoes pessoas={pessoas} onVerDetalhes={onVerMembro} onAprovado={() => {}} />
           </div>
         )}
 

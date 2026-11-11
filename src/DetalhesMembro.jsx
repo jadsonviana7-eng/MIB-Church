@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Cropper from 'react-easy-crop';
 import { supabase } from './supabaseClient';
 import { Card, CardHeader, CampoLinha, CampoInput, uploadImagemCelula } from './ui';
@@ -340,12 +340,21 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
   const [irmaos, setIrmaos] = useState([]);
   const [celulas, setCelulas] = useState([]);
   const [zonas, setZonas] = useState([]);
-  const [cargos, setCargos] = useState([]);
-  const [atuacoes, setAtuacoes] = useState([]);
+  const [cargos, setCargos] = useState(() => cargosLista || []);
+  const [atuacoes, setAtuacoes] = useState(() => atuacoesLista || []);
   const [contribuicoes, setContribuicoes] = useState([]);
   const [abaAtiva, setAbaAtiva] = useState('informacoes');
   const [modoEdicao, setModoEdicao] = useState(false);
   const [salvando, setSalvando] = useState(false);
+
+  const listaPessoasRef = useRef(listaPessoas);
+  listaPessoasRef.current = listaPessoas;
+  const cargosListaRef = useRef(cargosLista);
+  cargosListaRef.current = cargosLista;
+  const atuacoesListaRef = useRef(atuacoesLista);
+  atuacoesListaRef.current = atuacoesLista;
+  const modoEdicaoRef = useRef(false);
+  modoEdicaoRef.current = modoEdicao;
 
   const [isModalReceitaAberto, setIsModalReceitaAberto] = useState(false);
   const [contasFinanceiras, setContasFinanceiras] = useState([]);
@@ -486,20 +495,30 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
     }
   }, [pessoaId, membro?.celula_id]);
 
+  const carregarAuxiliaresFinanceiro = useCallback(async () => {
+    if (contasFinanceiras.length > 0 && categoriasFinanceiras.length > 0) return;
+    try {
+      const [{ data: cFin }, { data: catFin }] = await Promise.all([
+        supabase.from('contas_financeiras').select('id, nome').order('nome'),
+        supabase.from('categorias_financeiras').select('id, nome, tipo').order('nome')
+      ]);
+      if (cFin) setContasFinanceiras(cFin);
+      if (catFin) setCategoriasFinanceiras(catFin);
+    } catch (err) {
+      console.warn('Erro ao carregar contas/categorias financeiras:', err?.message);
+    }
+  }, [contasFinanceiras.length, categoriasFinanceiras.length]);
+
   const carregarDadosEscolares = useCallback(async () => {
     if (!pessoaId) return;
 
     setMatriculasMembro([]); // Limpa antes de buscar novos dados
     try {
-      // 1. Carregar turmas abertas (Escolas)
-      const { data: listTurmas } = await supabase
-        .from('turmas')
-        .select('id, nome, escolas(nome)')
-        .eq('ativa', true);
+      const [{ data: listTurmas }, { data: alunoData }] = await Promise.all([
+        supabase.from('turmas').select('id, nome, escolas(nome)').eq('ativa', true),
+        supabase.from('alunos').select('id').eq('pessoa_id', pessoaId).maybeSingle()
+      ]);
       if (listTurmas) setTurmasDisponiveis(listTurmas);
-
-      // 2. Carregar matrículas atuais do membro
-      const { data: alunoData } = await supabase.from('alunos').select('id').eq('pessoa_id', pessoaId).maybeSingle();
 
       if (alunoData) {
         const { data: matriculas } = await supabase
@@ -522,8 +541,15 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
   useEffect(() => {
     if (abaAtiva === 'financeiro') {
       carregarFinanceiro();
+      carregarAuxiliaresFinanceiro();
     }
-  }, [abaAtiva, carregarFinanceiro]);
+  }, [abaAtiva, carregarFinanceiro, carregarAuxiliaresFinanceiro]);
+
+  useEffect(() => {
+    if (isModalReceitaAberto) {
+      carregarAuxiliaresFinanceiro();
+    }
+  }, [isModalReceitaAberto, carregarAuxiliaresFinanceiro]);
 
   useEffect(() => {
     if (abaAtiva === 'frequencia') {
@@ -841,109 +867,142 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
     setFotoFinalBlob(null);
   }
 
-  const [carregandoMembro, setCarregandoMembro] = useState(true);
+  const [carregandoMembro, setCarregandoMembro] = useState(() => {
+    const local = propPessoaId ? listaPessoas.find((lp) => String(lp.id) === String(propPessoaId)) : null;
+    return !local;
+  });
+
   useEffect(() => {
+    let ativo = true;
     async function carregarFichaDoMembro() {
       if (!pessoaId) return;
-      setCarregandoMembro(true);
-      setTestePersonalidade(null); // Limpa o teste anterior antes de buscar o novo
+
+      const pessoasAtuais = listaPessoasRef.current || [];
+      const membroLocal = pessoasAtuais.find((lp) => String(lp.id) === String(pessoaId)) || null;
+
+      if (membroLocal) {
+        preencherFormulario(membroLocal);
+        if (membroLocal.status === 'pendente') setModoEdicao(true);
+        setCarregandoMembro(false);
+      } else {
+        setCarregandoMembro(true);
+      }
+      setTestePersonalidade(null);
 
       try {
-        const { data: p, error: erroPessoa } = await supabase
-          .from('pessoas')
-          .select('*, celulas(nome, imagem_url)')
-          .eq('id', pessoaId).single();
-        if (erroPessoa) console.warn('Erro ao carregar pessoa:', erroPessoa);
-        if (p) preencherFormulario(p);
-        if (p?.status === 'pendente') setModoEdicao(true); // Cadastro pendente: abre direto para revisão e aprovação
+        const authIdInicial = membroLocal?.auth_user_id || null;
+        const precisaCargos = !cargosListaRef.current || cargosListaRef.current.length === 0;
+        const precisaAtuacoes = !atuacoesListaRef.current || atuacoesListaRef.current.length === 0;
 
-        // Busca teste de personalidade mais recente
-        if (p?.auth_user_id) {
-          const { data: testePers } = await supabase
-            .from('personality_tests')
-            .select('*')
-            .eq('member_id', p.auth_user_id)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          if (testePers) setTestePersonalidade(testePers);
-          setTestePersonalidade(testePers || null);
-        } else {
-          setTestePersonalidade(null);
+        const [
+          resPessoa,
+          resRelacoesFilhos,
+          resRelacoesPais,
+          resCelulas,
+          resZonas,
+          resCargos,
+          resAtuacoes,
+          resTesteInicial,
+        ] = await Promise.all([
+          supabase.from('pessoas').select('*, celulas(nome, imagem_url)').eq('id', pessoaId).single(),
+          supabase.from('relacoes_familiares').select('id_filho').eq('id_pai_mae', pessoaId),
+          supabase.from('relacoes_familiares').select('id_pai_mae').eq('id_filho', pessoaId),
+          supabase.from('celulas').select('id, nome'),
+          supabase.from('zonas_moradia').select('id, nome'),
+          precisaCargos ? supabase.from('cargos').select('id, nome').order('nome') : Promise.resolve({ data: cargosListaRef.current }),
+          precisaAtuacoes ? supabase.from('atuacoes').select('id, nome').order('nome') : Promise.resolve({ data: atuacoesListaRef.current }),
+          authIdInicial
+            ? supabase.from('personality_tests').select('*').eq('member_id', authIdInicial).order('created_at', { ascending: false }).limit(1).maybeSingle()
+            : Promise.resolve({ data: null }),
+        ]);
+
+        if (!ativo) return;
+
+        const { data: p, error: erroPessoa } = resPessoa;
+        if (erroPessoa) console.warn('Erro ao carregar pessoa:', erroPessoa);
+        if (p) {
+          if (!membroLocal || !modoEdicaoRef.current) {
+            preencherFormulario(p);
+          } else {
+            setMembro(p);
+          }
+          if (p.status === 'pendente' && !membroLocal) setModoEdicao(true);
         }
 
-        const { data: relacoes, error: erroRelacoes } = await supabase.from('relacoes_familiares').select('id_filho').eq('id_pai_mae', pessoaId);
+        const listaRef = listaPessoasRef.current || [];
+
+        const { data: relacoes, error: erroRelacoes } = resRelacoesFilhos;
         if (erroRelacoes) console.warn('Tabela "relacoes_familiares" não encontrada. Veja DATABASE_SCHEMA.md');
         if (relacoes?.length > 0) {
           const idsFilhos = relacoes.map((r) => r.id_filho);
           setIdsFilhosEdit(idsFilhos);
-          setFilhos(listaPessoas.filter((item) => idsFilhos.includes(item.id)));
+          setFilhos(listaRef.filter((item) => idsFilhos.includes(item.id)));
         } else {
           setIdsFilhosEdit([]);
           setFilhos([]);
         }
 
-        const { data: relacoesPais, error: erroRelacoesPais } = await supabase.from('relacoes_familiares').select('id_pai_mae').eq('id_filho', pessoaId);
-        let idsPais = [];
-        if (relacoesPais?.length > 0) {
-          idsPais = relacoesPais.map((r) => r.id_pai_mae);
+        const { data: relacoesPais } = resRelacoesPais;
+        const idsPais = relacoesPais?.length > 0 ? relacoesPais.map((r) => r.id_pai_mae) : [];
+        if (idsPais.length > 0) {
           setIdsPaisEdit(idsPais);
-          setPais(listaPessoas.filter((item) => idsPais.includes(item.id)));
+          setPais(listaRef.filter((item) => idsPais.includes(item.id)));
         } else {
           setIdsPaisEdit([]);
           setPais([]);
         }
 
-        if (idsPais.length > 0) {
-          const { data: relacoesIrmaos } = await supabase
-            .from('relacoes_familiares')
-            .select('id_filho')
-            .in('id_pai_mae', idsPais);
+        if (resCelulas.error) console.warn('Tabela "celulas" não encontrada. Veja DATABASE_SCHEMA.md');
+        if (resCelulas.data) setCelulas(resCelulas.data);
 
-          if (relacoesIrmaos?.length > 0) {
-            const idsIrmaosFiltrados = relacoesIrmaos
-              .map((r) => r.id_filho)
-              .filter((id) => String(id) !== String(pessoaId));
-            const idsIrmaosUnicos = [...new Set(idsIrmaosFiltrados)];
-            setIrmaos(listaPessoas.filter((item) => idsIrmaosUnicos.includes(item.id)));
-          } else {
-            setIrmaos([]);
-          }
+        if (resZonas.error) console.warn('Tabela "zonas_moradia" não encontrada. Veja DATABASE_SCHEMA.md');
+        if (resZonas.data) setZonas(resZonas.data);
+
+        if (resCargos.data) setCargos(resCargos.data);
+        if (resAtuacoes.data) setAtuacoes(resAtuacoes.data);
+
+        if (authIdInicial) {
+          setTestePersonalidade(resTesteInicial?.data || null);
+        }
+
+        // Consultas dependentes executadas em paralelo apenas se necessárias
+        const extraPromises = [];
+        if (idsPais.length > 0) {
+          extraPromises.push(
+            supabase.from('relacoes_familiares').select('id_filho').in('id_pai_mae', idsPais).then(({ data }) => {
+              if (!ativo) return;
+              if (data?.length > 0) {
+                const idsIrmaosUnicos = [...new Set(data.map((r) => r.id_filho).filter((id) => String(id) !== String(pessoaId)))];
+                setIrmaos((listaPessoasRef.current || []).filter((item) => idsIrmaosUnicos.includes(item.id)));
+              } else {
+                setIrmaos([]);
+              }
+            })
+          );
         } else {
           setIrmaos([]);
         }
 
-        const { data: c, error: erroCelulas } = await supabase.from('celulas').select('id, nome');
-        if (erroCelulas) console.warn('Tabela "celulas" não encontrada. Veja DATABASE_SCHEMA.md');
-        if (c) setCelulas(c);
+        if (!authIdInicial && p?.auth_user_id) {
+          extraPromises.push(
+            supabase.from('personality_tests').select('*').eq('member_id', p.auth_user_id).order('created_at', { ascending: false }).limit(1).maybeSingle().then(({ data }) => {
+              if (ativo) setTestePersonalidade(data || null);
+            })
+          );
+        }
 
-        const { data: z, error: erroZonas } = await supabase.from('zonas_moradia').select('id, nome');
-        if (erroZonas) console.warn('Tabela "zonas_moradia" não encontrada. Veja DATABASE_SCHEMA.md');
-        if (z) setZonas(z);
-
-        // Busca a lista de cargos para os selects
-        const { data: listCargos } = await supabase.from('cargos').select('id, nome').order('nome');
-        if (listCargos) setCargos(listCargos);
-
-        // Busca a lista de atuações para os checkboxes
-        const { data: listAtuacoes } = await supabase.from('atuacoes').select('id, nome').order('nome');
-        if (listAtuacoes) setAtuacoes(listAtuacoes);
-
-        await carregarFinanceiro();
-
-        const { data: cFin } = await supabase.from('contas_financeiras').select('id, nome').order('nome');
-        if (cFin) setContasFinanceiras(cFin);
-
-        const { data: catFin } = await supabase.from('categorias_financeiras').select('id, nome, tipo').order('nome');
-        if (catFin) setCategoriasFinanceiras(catFin);
+        if (extraPromises.length > 0) {
+          await Promise.all(extraPromises);
+        }
       } catch (err) {
         console.error('Erro ao carregar ficha do membro:', err);
       } finally {
-        setCarregandoMembro(false); // Já estava correto, mas mantendo para revisão
+        if (ativo) setCarregandoMembro(false);
       }
     }
     carregarFichaDoMembro();
-  }, [pessoaId, listaPessoas, carregarFinanceiro, isStudentCadernetaView]);
+    return () => { ativo = false; };
+  }, [pessoaId]);
 
   const listaCargosUnicos = useMemo(() => {
     const base = (cargos && cargos.length > 0 ? cargos : (cargosLista || []))

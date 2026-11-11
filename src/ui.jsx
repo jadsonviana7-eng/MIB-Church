@@ -417,7 +417,7 @@ export function PageHeader({ titulo, subtitulo, breadcrumb = [], onNavigate, chi
 export function Avatar({ pessoa, tamanho = 'w-10 h-10' }) {
   if (!pessoa) return null;
   return pessoa.foto_url ? (
-    <img src={pessoa.foto_url} alt={pessoa.nome} className={`${tamanho} rounded-xl object-cover border border-slate-200 dark:border-[#2b3954] bg-slate-100 dark:bg-[#1c2b4a] shrink-0`} />
+    <img src={pessoa.foto_url} alt={pessoa.nome} loading="lazy" decoding="async" className={`${tamanho} rounded-xl object-cover border border-slate-200 dark:border-[#2b3954] bg-slate-100 dark:bg-[#1c2b4a] shrink-0`} />
   ) : (
     <div className={`${tamanho} rounded-xl bg-slate-200 dark:bg-[#1c2b4a] flex items-center justify-center text-xs font-bold text-slate-500 dark:text-slate-200 border border-slate-300 dark:border-[#2b3954] shrink-0`}>
       {pessoa.nome ? pessoa.nome.charAt(0).toUpperCase() : '?'}

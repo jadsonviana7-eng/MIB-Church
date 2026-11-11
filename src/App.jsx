@@ -242,6 +242,18 @@ export default function App() {
 
   const [reunioesVistas, setReunioesVistas] = useState([]);
   const [isLiderMinisterio, setIsLiderMinisterio] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : true
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = (e) => setIsDesktop(e.matches);
+    setIsDesktop(mq.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   useEffect(() => {
     async function verificarLiderMinisterio() {
@@ -1018,10 +1030,21 @@ export default function App() {
         return;
       }
 
-      const { data: dadosPessoas, error: erroPessoas } = await supabase
-        .from('pessoas')
-        .select('*, celulas(nome)')
-        .order('nome', { ascending: true });
+      const [
+        { data: dadosPessoas, error: erroPessoas },
+        { data: dadosCargos, error: erroCargos },
+        { data: dadosAtuacoes, error: erroAtuacoes },
+        { data: dadosCelulas, error: erroCelulas },
+        { data: dadosZonas, error: erroZonas },
+        { data: dadosRelatorios, error: erroRelatorios }
+      ] = await Promise.all([
+        supabase.from('pessoas').select('*, celulas(nome)').order('nome', { ascending: true }),
+        supabase.from('cargos').select('*').order('nome'),
+        supabase.from('atuacoes').select('*').order('nome'),
+        supabase.from('celulas').select('*').order('nome'),
+        supabase.from('zonas_moradia').select('*').order('nome'),
+        supabase.from('relatorios_celula').select('*, celulas(nome), presencas_relatorio(count)').order('data_reuniao', { ascending: false })
+      ]);
 
       if (erroPessoas) {
         console.warn('Erro ao carregar pessoas:', erroPessoas);
@@ -1041,26 +1064,18 @@ export default function App() {
         console.warn('Nenhuma pessoa retornada do banco. Mantendo sessão ativa com perfil identificado...');
       }
 
-      const { data: dadosCargos, error: erroCargos } = await supabase.from('cargos').select('*').order('nome');
       if (erroCargos) console.warn('Erro ao carregar cargos:', erroCargos);
       if (dadosCargos) setCargosDisponiveis(dadosCargos);
 
-      const { data: dadosAtuacoes, error: erroAtuacoes } = await supabase.from('atuacoes').select('*').order('nome');
       if (erroAtuacoes) console.warn('Tabela "atuacoes" não encontrada. Veja DATABASE_SCHEMA.md');
       if (dadosAtuacoes) setAtuacoesDisponiveis(dadosAtuacoes);
 
-      const { data: dadosCelulas, error: erroCelulas } = await supabase.from('celulas').select('*').order('nome');
       if (erroCelulas) console.warn('Erro ao carregar células:', erroCelulas);
       if (dadosCelulas) setCelulas(dadosCelulas);
 
-      const { data: dadosZonas, error: erroZonas } = await supabase.from('zonas_moradia').select('*').order('nome');
       if (erroZonas) console.warn('Tabela "zonas_moradia" não encontrada. Veja DATABASE_SCHEMA.md');
       if (dadosZonas) setZonas(dadosZonas);
 
-      const { data: dadosRelatorios, error: erroRelatorios } = await supabase
-        .from('relatorios_celula')
-        .select('*, celulas(nome), presencas_relatorio(count)')
-        .order('data_reuniao', { ascending: false });
       if (erroRelatorios) console.warn('Tabela "relatorios_celula" não encontrada. Veja DATABASE_SCHEMA.md');
       if (dadosRelatorios) setRelatoriosCelula(dadosRelatorios);
     } catch (err) {
@@ -2139,61 +2154,59 @@ export default function App() {
                   onVerPerfil={() => setMembroSelecionadoId(membroLogado.id)} 
                 />
               )
-            ) : (
-              <>
-                {/* Mobile: Exibe os cartões de navegação rápida */}
-                <div className="md:hidden">
-                  <HomePage
-                onNavigate={navegar}
-                hasAccess={hasAccess}
-                membroLogado={membroLogado}
-                pessoas={pessoasVisiveis}
-                celulas={celulasVisiveis}
-                zonas={zonas}
-                relatoriosCelula={relatoriosCelulaVisiveis}
-                reunioesVistas={reunioesVistas}
-                onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
-                onVerReuniao={(id) => {
-                  marcarReuniaoComoVista(id);
-                  setOrigemVerReuniao('dashboard');
-                  setModuloAtual('celulas');
-                  setCelulasSubmenu('reunioes');
-                  handleSetReuniaoSelecionadaId(id);
-                }}
-                abaDashboard={abaDashboard}
-                setAbaDashboard={setAbaDashboard}
-                abrirPessoasFiltradas={abrirPessoasFiltradas}
-              />
-            </div>
-
-            {/* Desktop: Exibe os indicadores estatísticos (Dashboard de outrora) */}
-            <div className="hidden md:block">
-              <OverviewDashboard
-                pessoas={pessoasVisiveis}
-                celulas={celulasVisiveis}
-                zonas={zonas}
-                relatoriosCelula={relatoriosCelulaVisiveis}
-                indicadores={indicadores}
-                carregando={carregando}
-                periodoConvertidos={periodoConvertidos}
-                setPeriodoConvertidos={setPeriodoConvertidos}
-                reunioesVistas={reunioesVistas}
-                onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
-                onVerReuniao={(id) => {
-                  marcarReuniaoComoVista(id);
-                  setOrigemVerReuniao('dashboard');
-                  setModuloAtual('celulas');
-                  setCelulasSubmenu('reunioes');
-                  handleSetReuniaoSelecionadaId(id);
-                }}
-                membroLogado={membroLogado}
-                usuarioLogado={usuarioLogado}
-                hasAccess={hasAccess}
-                onNavigate={navegar}
-                abrirPessoasFiltradas={abrirPessoasFiltradas}
+            ) : !isDesktop ? (
+              /* Mobile: Exibe os cartões de navegação rápida */
+              <div>
+                <HomePage
+                  onNavigate={navegar}
+                  hasAccess={hasAccess}
+                  membroLogado={membroLogado}
+                  pessoas={pessoasVisiveis}
+                  celulas={celulasVisiveis}
+                  zonas={zonas}
+                  relatoriosCelula={relatoriosCelulaVisiveis}
+                  reunioesVistas={reunioesVistas}
+                  onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
+                  onVerReuniao={(id) => {
+                    marcarReuniaoComoVista(id);
+                    setOrigemVerReuniao('dashboard');
+                    setModuloAtual('celulas');
+                    setCelulasSubmenu('reunioes');
+                    handleSetReuniaoSelecionadaId(id);
+                  }}
+                  abaDashboard={abaDashboard}
+                  setAbaDashboard={setAbaDashboard}
+                  abrirPessoasFiltradas={abrirPessoasFiltradas}
                 />
               </div>
-            </>
+            ) : (
+              /* Desktop: Exibe os indicadores estatísticos */
+              <div>
+                <OverviewDashboard
+                  pessoas={pessoasVisiveis}
+                  celulas={celulasVisiveis}
+                  zonas={zonas}
+                  relatoriosCelula={relatoriosCelulaVisiveis}
+                  indicadores={indicadores}
+                  carregando={carregando}
+                  periodoConvertidos={periodoConvertidos}
+                  setPeriodoConvertidos={setPeriodoConvertidos}
+                  reunioesVistas={reunioesVistas}
+                  onVerMembro={(id) => { setModuloAtual('pessoas'); setPessoasSubmenu('todos'); setMembroSelecionadoId(id); }}
+                  onVerReuniao={(id) => {
+                    marcarReuniaoComoVista(id);
+                    setOrigemVerReuniao('dashboard');
+                    setModuloAtual('celulas');
+                    setCelulasSubmenu('reunioes');
+                    handleSetReuniaoSelecionadaId(id);
+                  }}
+                  membroLogado={membroLogado}
+                  usuarioLogado={usuarioLogado}
+                  hasAccess={hasAccess}
+                  onNavigate={navegar}
+                  abrirPessoasFiltradas={abrirPessoasFiltradas}
+                />
+              </div>
             )}
           </>
         )}

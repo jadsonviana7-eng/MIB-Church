@@ -1,30 +1,46 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabaseClient';
 import { Avatar } from './ui';
 
-export default function PainelAprovacoes({ onVerDetalhes, onAprovado }) {
-  const [pendentes, setPendentes] = useState([]);
-  const [recentes, setRecentes] = useState([]);
-  const [carregando, setCarregando] = useState(true);
+const ordenarPorCreatedAtDesc = (a, b) => {
+  const tA = a?.created_at ? Date.parse(a.created_at) : NaN;
+  const tB = b?.created_at ? Date.parse(b.created_at) : NaN;
+  const validA = Number.isFinite(tA);
+  const validB = Number.isFinite(tB);
+  if (!validA && !validB) return 0;
+  if (!validA) return 1;
+  if (!validB) return -1;
+  return tB - tA;
+};
+
+export default function PainelAprovacoes({ pessoas = null, onVerDetalhes, onAprovado }) {
+  const usaDadosLocais = Array.isArray(pessoas);
+  const [pendentesRemoto, setPendentesRemoto] = useState([]);
+  const [recentesRemoto, setRecentesRemoto] = useState([]);
+  const [carregandoRemoto, setCarregandoRemoto] = useState(!usaDadosLocais);
 
   useEffect(() => {
+    if (usaDadosLocais) {
+      setCarregandoRemoto(false);
+      return;
+    }
     buscarPendentes();
-  }, []);
+  }, [usaDadosLocais]);
 
   async function buscarPendentes() {
-    setCarregando(true);
+    setCarregandoRemoto(true);
     try {
       const { data, error } = await supabase
         .from('pessoas')
-        .select('*')
+        .select('id, nome, foto_url, cargo, created_at')
         .eq('status', 'pendente')
         .order('created_at', { ascending: false, nullsFirst: false });
 
       if (error) {
         console.error('Erro ao buscar pendentes:', error);
-        setPendentes([]);
+        setPendentesRemoto([]);
       } else {
-        setPendentes(data || []);
+        setPendentesRemoto(data || []);
       }
 
       // Sem pendentes: mostra os 8 cadastros mais recentes já aprovados
@@ -35,16 +51,40 @@ export default function PainelAprovacoes({ onVerDetalhes, onAprovado }) {
           .eq('status', 'ativo')
           .order('created_at', { ascending: false, nullsFirst: false })
           .limit(8);
-        if (!recentError) setRecentes(recentData || []);
+        if (!recentError) setRecentesRemoto(recentData || []);
       } else {
-        setRecentes([]);
+        setRecentesRemoto([]);
       }
     } catch (err) {
       console.error('Erro ao buscar aprovações:', err);
     } finally {
-      setCarregando(false);
+      setCarregandoRemoto(false);
     }
   }
+
+  const { pendentesLocais, recentesLocais } = useMemo(() => {
+    if (!usaDadosLocais) {
+      return { pendentesLocais: [], recentesLocais: [] };
+    }
+    const listaPendentes = pessoas
+      .filter((p) => (p.status || '').toLowerCase() === 'pendente')
+      .sort(ordenarPorCreatedAtDesc);
+
+    if (listaPendentes.length > 0) {
+      return { pendentesLocais: listaPendentes, recentesLocais: [] };
+    }
+
+    const listaRecentes = pessoas
+      .filter((p) => (p.status || '').toLowerCase() === 'ativo')
+      .sort(ordenarPorCreatedAtDesc)
+      .slice(0, 8);
+
+    return { pendentesLocais: [], recentesLocais: listaRecentes };
+  }, [usaDadosLocais, pessoas]);
+
+  const pendentes = usaDadosLocais ? pendentesLocais : pendentesRemoto;
+  const recentes = usaDadosLocais ? recentesLocais : recentesRemoto;
+  const carregando = usaDadosLocais ? false : carregandoRemoto;
 
   function handleClicar(pessoaId) {
     if (onVerDetalhes) onVerDetalhes(pessoaId);
@@ -55,7 +95,7 @@ export default function PainelAprovacoes({ onVerDetalhes, onAprovado }) {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 animate-pulse">
         <div className="h-3 bg-slate-100 rounded w-2/3 mb-3" />
         <div className="space-y-3">
-          {[1,2,3].map(i => <div key={i} className="h-16 bg-slate-50 rounded-2xl" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-16 bg-slate-50 rounded-2xl" />)}
         </div>
       </div>
     );

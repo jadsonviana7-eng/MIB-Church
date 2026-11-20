@@ -16,7 +16,8 @@ import {
   Shirt,
   Mic,
   RotateCcw,
-  CheckCheck
+  CheckCheck,
+  Share2
 } from 'lucide-react';
 
 export default function PublicConfirmarEscala() {

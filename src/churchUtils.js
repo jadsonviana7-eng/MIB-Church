@@ -188,3 +188,34 @@ export function valorCampoRelatorio(pessoa, campo, zonas = []) {
       return 'Outro';
   }
 }
+
+export function ehAniversarianteHoje(dataNascimento) {
+  if (!dataNascimento) return false;
+  const hoje = new Date();
+  const mesHoje = hoje.getMonth() + 1;
+  const diaHoje = hoje.getDate();
+  const str = String(dataNascimento).split('T')[0];
+  const parts = str.split('-');
+  if (parts.length === 3) {
+    return Number(parts[1]) === mesHoje && Number(parts[2]) === diaHoje;
+  }
+  const d = new Date(`${str}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return false;
+  return d.getMonth() + 1 === mesHoje && d.getDate() === diaHoje;
+}
+
+export function gerarLinkWhatsappAniversario(pessoa) {
+  const rawTel = String(pessoa?.telefone || pessoa?.whatsapp || pessoa?.celular || '').replace(/\D/g, '');
+  let telLimpo = rawTel;
+  if (telLimpo.length === 10 || telLimpo.length === 11) {
+    telLimpo = `55${telLimpo}`;
+  }
+  const primeiroNome = String(pessoa?.nome || '').trim().split(/\s+/)[0] || 'irmão(ã)';
+  const mensagem = `🎂🎈 Feliz aniversário, ${primeiroNome}! 🎉🎊\n\nA família MIB Church deseja que o Senhor abençoe grandemente a sua vida com muita saúde, paz, alegria e realizações neste novo ciclo! Que Deus continue guiando cada passo seu. 🙏💙`;
+  const textoCodificado = encodeURIComponent(mensagem);
+  const temTelefone = telLimpo.length >= 12;
+  const url = temTelefone
+    ? `https://api.whatsapp.com/send?phone=${telLimpo}&text=${textoCodificado}`
+    : `https://api.whatsapp.com/send?text=${textoCodificado}`;
+  return { url, temTelefone };
+}

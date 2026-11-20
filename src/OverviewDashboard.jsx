@@ -1,13 +1,13 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Avatar, DoughnutCard, CombinationCard, ColumnChart, Recentes, PageHeader, StatCard } from './ui';
-import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona, extrairDataInfo } from './churchUtils';
+import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona, extrairDataInfo, ehAniversarianteHoje, gerarLinkWhatsappAniversario } from './churchUtils';
 import PainelAprovacoes from './PainelAprovacoes';
 import { supabase } from './supabaseClient';
 import { 
   Users, Home, Calendar, DollarSign, Award, ArrowUpRight, 
   TrendingUp, TrendingDown, Target, UserCheck, Percent, 
   BookOpen, ChevronRight, ChevronLeft, Sparkles, Zap, Activity, Plus, ShieldAlert,
-  Smile, Coins, HelpCircle
+  Smile, Coins, HelpCircle, Cake, MessageCircle
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -164,19 +164,52 @@ export default function OverviewDashboard({
     return () => { isMounted = false; };
   }, []);
 
-  // Rotação automática dos Banners (a cada 5s com transição deslizar da direita para a esquerda)
-  useEffect(() => {
-    if (bannersEventos.length <= 1 || isBannerHovered) return;
-    const timer = setInterval(() => {
-      setBannerIndex(prev => (prev + 1) % bannersEventos.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [bannersEventos.length, isBannerHovered]);
-
   // 1. Processamento Geral de Pessoas Ativas
   const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo'), [pessoas]);
   const totalPessoasAtivas = pessoasAtivas.length;
   const totalCelulas = useMemo(() => celulas.length, [celulas]);
+
+  // Avisos automáticos para aniversariantes do dia (prioridade no início do carrossel)
+  const bannersAniversariantes = useMemo(() => {
+    return pessoasAtivas
+      .filter(p => ehAniversarianteHoje(p.data_nascimento))
+      .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
+      .map(pessoa => {
+        const { url, temTelefone } = gerarLinkWhatsappAniversario(pessoa);
+        return {
+          id: `aniversario-hoje-${pessoa.id}`,
+          isAniversario: true,
+          pessoa,
+          titulo: `Hoje é aniversário de ${pessoa.nome}!`,
+          subtitulo: temTelefone
+            ? `Clique neste aviso para enviar uma mensagem de felicitações no WhatsApp de ${pessoa.nome.split(' ')[0]}.`
+            : `Clique neste aviso para abrir o WhatsApp e enviar os parabéns para ${pessoa.nome.split(' ')[0]}.`,
+          tipo: pessoa.celulas?.nome ? `Célula ${pessoa.celulas.nome}` : 'Aniversariante do Dia',
+          badge: 'Aniversariante do Dia',
+          whatsappUrl: url,
+          temTelefone
+        };
+      });
+  }, [pessoasAtivas]);
+
+  const bannersExibidos = useMemo(() => {
+    return [...bannersAniversariantes, ...bannersEventos];
+  }, [bannersAniversariantes, bannersEventos]);
+
+  useEffect(() => {
+    if (bannerIndex >= bannersExibidos.length && bannersExibidos.length > 0) {
+      setBannerIndex(0);
+    }
+  }, [bannerIndex, bannersExibidos.length]);
+
+  // Rotação automática dos Banners (a cada 5s com transição deslizar da direita para a esquerda)
+  useEffect(() => {
+    if (bannersExibidos.length <= 1 || isBannerHovered) return;
+    const timer = setInterval(() => {
+      setBannerIndex(prev => (prev + 1) % bannersExibidos.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [bannersExibidos.length, isBannerHovered]);
 
   // 2. Taxa de Batismo
   const totalBatizados = useMemo(() => pessoasAtivas.filter(p => p.batizado_aguas === true).length, [pessoasAtivas]);
@@ -450,10 +483,10 @@ export default function OverviewDashboard({
         </div>
       </div>
 
-      {/* 2. BANNERS DE EVENTOS (CARROSSEL COM TRANSIÇÃO DESLIZAR DA DIREITA PARA A ESQUERDA) */}
-      {bannersEventos.length > 0 && (
+      {/* 2. BANNERS DE EVENTOS E AVISOS (CARROSSEL COM TRANSIÇÃO DESLIZAR DA DIREITA PARA A ESQUERDA) */}
+      {bannersExibidos.length > 0 && (
         <div 
-          className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-md group"
+          className="relative overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md group"
           onMouseEnter={() => setIsBannerHovered(true)}
           onMouseLeave={() => setIsBannerHovered(false)}
         >
@@ -462,68 +495,128 @@ export default function OverviewDashboard({
             className="flex transition-transform duration-500 ease-in-out w-full"
             style={{ transform: `translateX(-${bannerIndex * 100}%)` }}
           >
-            {bannersEventos.map((item, idx) => (
-              <div 
-                key={item.id || idx} 
-                className="w-full shrink-0 min-w-full relative h-48 sm:h-56 md:h-64 overflow-hidden"
-              >
-                <img 
-                  src={item.imagem_url} 
-                  alt={item.titulo}
-                  className="w-full h-full object-cover"
-                />
-                {/* Overlay gradiente escuro */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-transparent flex flex-col justify-end p-5 sm:p-7 text-white">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-blue-600/90 backdrop-blur-md text-white text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-wider shadow-sm">
-                      {item.badge || item.tipo || 'Evento'}
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-white/10 backdrop-blur-md px-2.5 py-0.5 rounded-full">
-                      {item.tipo}
-                    </span>
-                  </div>
-                  <h3 className="text-lg sm:text-2xl font-black tracking-tight leading-tight line-clamp-1">
-                    {item.titulo}
-                  </h3>
-                  {item.subtitulo && (
-                    <p className="text-xs sm:text-sm text-slate-200 mt-1 font-medium line-clamp-2 max-w-2xl">
-                      {item.subtitulo}
-                    </p>
-                  )}
-                  {item.link && (
-                    <div className="mt-3">
-                      <button 
-                        onClick={() => {
-                          if (item.link.startsWith('http')) {
-                            window.open(item.link, '_blank');
-                          } else if (item.isEvento) {
-                            onNavigate('agenda', 'eventos');
-                          }
-                        }}
-                        className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-blue-50 transition-all shadow-sm active:scale-95 cursor-pointer"
-                      >
-                        <span>Saiba mais</span>
-                        <ChevronRight size={14} />
-                      </button>
+            {bannersExibidos.map((item, idx) => (
+              item.isAniversario ? (
+                <div
+                  key={item.id || idx}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => window.open(item.whatsappUrl, '_blank', 'noopener,noreferrer')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      window.open(item.whatsappUrl, '_blank', 'noopener,noreferrer');
+                    }
+                  }}
+                  title="Clique para enviar felicitações no WhatsApp"
+                  className="w-full shrink-0 min-w-full relative h-48 sm:h-56 md:h-64 overflow-hidden bg-gradient-to-r from-[#1e3a8a] via-indigo-700 to-purple-800 dark:from-[#0f172a] dark:via-[#1e3a8a] dark:to-indigo-950 cursor-pointer select-none"
+                >
+                  <div className="absolute -right-12 -top-12 w-56 h-56 rounded-full bg-amber-400/20 blur-3xl pointer-events-none" />
+                  <div className="absolute left-1/3 -bottom-16 w-52 h-52 rounded-full bg-emerald-400/15 blur-3xl pointer-events-none" />
+                  <div className="relative h-full flex items-center justify-between gap-4 sm:gap-6 px-6 sm:px-10 py-5 text-white">
+                    <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+                      <div className="relative shrink-0">
+                        <Avatar pessoa={item.pessoa} tamanho="w-16 h-16 sm:w-24 sm:h-24 ring-4 ring-amber-300/60 shadow-xl" />
+                        <span className="absolute -bottom-1.5 -right-1.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center shadow-md border-2 border-indigo-900">
+                          <Cake size={15} />
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="inline-flex items-center gap-1.5 bg-amber-400 text-slate-950 text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-wider shadow-sm">
+                            <Cake size={12} />
+                            {item.badge}
+                          </span>
+                          <span className="text-[10px] font-bold text-blue-100 uppercase tracking-widest bg-white/15 backdrop-blur-md px-2.5 py-0.5 rounded-full">
+                            {item.tipo}
+                          </span>
+                        </div>
+                        <h3 className="text-lg sm:text-2xl font-black tracking-tight leading-tight line-clamp-1">
+                          {item.titulo}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-blue-100/90 mt-1 font-medium line-clamp-2 max-w-xl">
+                          {item.subtitulo}
+                        </p>
+                        <div className="mt-3">
+                          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs shadow-md transition-all">
+                            <MessageCircle size={15} />
+                            <span>Enviar Parabéns no WhatsApp</span>
+                            <ChevronRight size={14} />
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div 
+                  key={item.id || idx} 
+                  className="w-full shrink-0 min-w-full relative h-48 sm:h-56 md:h-64 overflow-hidden"
+                >
+                  <img 
+                    src={item.imagem_url} 
+                    alt={item.titulo}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Overlay gradiente escuro */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-transparent flex flex-col justify-end p-5 sm:p-7 text-white">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="bg-blue-600/90 backdrop-blur-md text-white text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-wider shadow-sm">
+                        {item.badge || item.tipo || 'Evento'}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest bg-white/10 backdrop-blur-md px-2.5 py-0.5 rounded-full">
+                        {item.tipo}
+                      </span>
+                    </div>
+                    <h3 className="text-lg sm:text-2xl font-black tracking-tight leading-tight line-clamp-1">
+                      {item.titulo}
+                    </h3>
+                    {item.subtitulo && (
+                      <p className="text-xs sm:text-sm text-slate-200 mt-1 font-medium line-clamp-2 max-w-2xl">
+                        {item.subtitulo}
+                      </p>
+                    )}
+                    {item.link && (
+                      <div className="mt-3">
+                        <button 
+                          onClick={() => {
+                            if (item.link.startsWith('http')) {
+                              window.open(item.link, '_blank');
+                            } else if (item.isEvento) {
+                              onNavigate('agenda', 'eventos');
+                            }
+                          }}
+                          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-white text-slate-900 font-bold text-xs hover:bg-blue-50 transition-all shadow-sm active:scale-95 cursor-pointer"
+                        >
+                          <span>Saiba mais</span>
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
             ))}
           </div>
 
           {/* Setas de Navegação Manual */}
-          {bannersEventos.length > 1 && (
+          {bannersExibidos.length > 1 && (
             <>
               <button
-                onClick={() => setBannerIndex(prev => (prev === 0 ? bannersEventos.length - 1 : prev - 1))}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setBannerIndex(prev => (prev === 0 ? bannersExibidos.length - 1 : prev - 1));
+                }}
                 className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/40 hover:bg-slate-900/80 backdrop-blur-md text-white border border-white/20 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-10 cursor-pointer active:scale-90"
                 aria-label="Banner anterior"
               >
                 <ChevronLeft size={20} strokeWidth={2.5} />
               </button>
               <button
-                onClick={() => setBannerIndex(prev => (prev + 1) % bannersEventos.length)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setBannerIndex(prev => (prev + 1) % bannersExibidos.length);
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/40 hover:bg-slate-900/80 backdrop-blur-md text-white border border-white/20 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 z-10 cursor-pointer active:scale-90"
                 aria-label="Próximo banner"
               >
@@ -532,10 +625,13 @@ export default function OverviewDashboard({
 
               {/* Bolinhas Indicadoras (Dots Pagination) */}
               <div className="absolute bottom-3 right-5 flex items-center gap-1.5 z-10 bg-slate-950/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-                {bannersEventos.map((_, i) => (
+                {bannersExibidos.map((_, i) => (
                   <button
                     key={i}
-                    onClick={() => setBannerIndex(i)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setBannerIndex(i);
+                    }}
                     className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
                       i === bannerIndex ? 'w-6 bg-white' : 'w-2 bg-white/40 hover:bg-white/70'
                     }`}
@@ -881,13 +977,13 @@ export default function OverviewDashboard({
                               key={relatorio.id} 
                               className={`border-b border-slate-50 dark:border-slate-800/50 last:border-0 transition-colors ${
                                 isNovo 
-                                  ? 'bg-blue-50/30 dark:bg-blue-950/20 hover:bg-blue-50/50' 
+                                  ? 'bg-blue-50/30 dark:bg-blue-950/25 hover:bg-blue-50/50 dark:hover:bg-blue-950/45' 
                                   : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/50'
                               }`}
                             >
                               <td 
                                 onClick={() => handleNavegarPessoas({ celula: relatorio.celula_id, celulaNome: relatorio.celulas?.nome })}
-                                className="py-3 px-3 font-bold text-slate-800 dark:text-slate-200 cursor-pointer hover:text-blue-600 flex items-center gap-2"
+                                className="py-3 px-3 font-bold text-slate-800 dark:text-slate-200 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2"
                                 title="Clique para filtrar pessoas desta célula"
                               >
                                 {isNovo && (

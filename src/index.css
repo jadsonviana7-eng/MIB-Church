@@ -302,7 +302,8 @@ html.dark .tab-btn.tabs-active {
 }
 
 /* Contêiner translúcido das abas do dashboard */
-html.dark .bg-white\/70 {
+html.dark .bg-white\/70,
+html.dark .bg-white\/80 {
   background-color: rgba(23, 34, 59, 0.85) !important;
   border-color: #2b3954 !important;
 }
@@ -315,8 +316,7 @@ html.dark button.bg-\[\#0f172a\]:not([disabled]),
 html.dark a.bg-\[\#0f172a\]:not([disabled]),
 html.dark .bg-\[\#0f172a\]:is(button, a):not([disabled]),
 html.dark button.bg-\[\#1e3a8a\]:not([disabled]),
-html.dark a.bg-\[\#1e3a8a\]:not([disabled]),
-html.dark [class*="bg-[#1e3a8a]"]:is(button, a):not([disabled]) {
+html.dark a.bg-\[\#1e3a8a\]:not([disabled]) {
   background-color: #2563eb !important;
   color: #ffffff !important;
   border-color: #3b82f6 !important;
@@ -524,6 +524,7 @@ html.dark .hover\:bg-amber-50:hover {
 
 /* ── 10. BADGES, ALERTS E CARDS COLORIDOS SUAVES ── */
 html.dark .bg-emerald-50,
+html.dark .bg-emerald-50\/90,
 html.dark .bg-emerald-50\/80,
 html.dark .bg-emerald-50\/70,
 html.dark .bg-emerald-50\/50,
@@ -542,6 +543,7 @@ html.dark .text-emerald-950 {
 }
 
 html.dark .bg-rose-50,
+html.dark .bg-rose-50\/90,
 html.dark .bg-rose-50\/80,
 html.dark .bg-rose-50\/70,
 html.dark .bg-rose-50\/50,
@@ -559,6 +561,7 @@ html.dark .text-rose-950 {
 }
 
 html.dark .bg-amber-50,
+html.dark .bg-amber-50\/90,
 html.dark .bg-amber-50\/80,
 html.dark .bg-amber-50\/70,
 html.dark .bg-amber-50\/50,
@@ -577,9 +580,12 @@ html.dark .text-amber-950 {
 }
 
 html.dark .bg-blue-50,
+html.dark .bg-blue-50\/90,
 html.dark .bg-blue-50\/80,
 html.dark .bg-blue-50\/70,
+html.dark .bg-blue-50\/60,
 html.dark .bg-blue-50\/50,
+html.dark .bg-blue-50\/30,
 html.dark .bg-blue-100 {
   background-color: rgba(30, 58, 138, 0.4) !important;
   border-color: rgba(59, 130, 246, 0.35) !important;
@@ -593,8 +599,10 @@ html.dark .text-blue-950 {
 }
 
 html.dark .bg-indigo-50,
+html.dark .bg-indigo-50\/90,
 html.dark .bg-indigo-50\/80,
 html.dark .bg-indigo-50\/70,
+html.dark .bg-indigo-50\/60,
 html.dark .bg-indigo-50\/50,
 html.dark .bg-indigo-50\/40,
 html.dark .bg-indigo-100 {
@@ -610,8 +618,11 @@ html.dark .text-indigo-950 {
 }
 
 html.dark .bg-purple-50,
+html.dark .bg-purple-50\/90,
 html.dark .bg-purple-50\/80,
+html.dark .bg-purple-50\/60,
 html.dark .bg-purple-50\/50,
+html.dark .bg-purple-50\/30,
 html.dark .bg-purple-100 {
   background-color: rgba(88, 28, 135, 0.35) !important;
   border-color: rgba(168, 85, 247, 0.35) !important;

@@ -2,12 +2,12 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { supabase } from './supabaseClient';
 import { Card, CardHeader, Avatar, DoughnutCard, CombinationCard, ColumnChart, StatCard, ModalWrapper } from './ui';
 import { MenuIcons } from './icons'; 
-import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona, extrairDataInfo } from './churchUtils';
+import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona, extrairDataInfo, ehAniversarianteHoje, gerarLinkWhatsappAniversario } from './churchUtils';
 import PainelAprovacoes from './PainelAprovacoes';
 import { 
   Users, Home, Flame, Calendar, DollarSign, Award, Sparkles,
   ChevronRight, ChevronLeft, Smile, MapPin, TrendingUp, BookOpen, AlertCircle,
-  Coins, Zap, Plus, ShieldAlert, TrendingDown, Activity
+  Coins, Zap, Plus, ShieldAlert, TrendingDown, Activity, Cake, MessageCircle
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -62,28 +62,6 @@ export default function HomePage({
   const [hasFinanceAccess, setHasFinanceAccess] = useState(true);
   const podeVerFinanceiro = hasAccess('Financeiro');
 
-  // Handlers para navegação do mural de avisos
-  const avisoAnterior = useCallback((e) => {
-    e.stopPropagation();
-    setAvisoAtivoIdx((prev) => (prev === 0 ? avisos.length - 1 : prev - 1));
-  }, [avisos.length]);
-
-  const proximoAviso = useCallback((e) => {
-    e.stopPropagation();
-    setAvisoAtivoIdx((prev) => (prev + 1) % avisos.length);
-  }, [avisos.length]);
-
-  // Rotação automática dinâmica do mural de avisos (a cada 6 segundos)
-  useEffect(() => {
-    if (avisos.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setAvisoAtivoIdx((prev) => (prev + 1) % avisos.length);
-    }, 6000);
-
-    return () => clearInterval(interval);
-  }, [avisos.length]);
-
   // Carrega avisos ativos
   useEffect(() => {
     let isMounted = true;
@@ -126,6 +104,60 @@ export default function HomePage({
   const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo'), [pessoas]);
   const totalPessoasAtivas = pessoasAtivas.length;
   const totalCelulasAtivas = useMemo(() => celulas.length, [celulas]);
+
+  // Avisos automáticos para aniversariantes do dia (exibidos no início do mural)
+  const avisosAniversariantes = useMemo(() => {
+    return pessoasAtivas
+      .filter(p => ehAniversarianteHoje(p.data_nascimento))
+      .sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
+      .map(pessoa => {
+        const { url, temTelefone } = gerarLinkWhatsappAniversario(pessoa);
+        return {
+          id: `aniversario-hoje-${pessoa.id}`,
+          isAniversario: true,
+          pessoa,
+          titulo: `Hoje é aniversário de ${pessoa.nome}!`,
+          subtitulo: temTelefone
+            ? `Toque para enviar felicitações no WhatsApp de ${pessoa.nome.split(' ')[0]}.`
+            : `Toque para abrir o WhatsApp e enviar parabéns para ${pessoa.nome.split(' ')[0]}.`,
+          link_externo: url,
+          temTelefone,
+          created_at: new Date().toISOString()
+        };
+      });
+  }, [pessoasAtivas]);
+
+  const avisosExibidos = useMemo(() => {
+    return [...avisosAniversariantes, ...avisos];
+  }, [avisosAniversariantes, avisos]);
+
+  useEffect(() => {
+    if (avisoAtivoIdx >= avisosExibidos.length && avisosExibidos.length > 0) {
+      setAvisoAtivoIdx(0);
+    }
+  }, [avisoAtivoIdx, avisosExibidos.length]);
+
+  // Handlers para navegação do mural de avisos
+  const avisoAnterior = useCallback((e) => {
+    e.stopPropagation();
+    setAvisoAtivoIdx((prev) => (prev === 0 ? avisosExibidos.length - 1 : prev - 1));
+  }, [avisosExibidos.length]);
+
+  const proximoAviso = useCallback((e) => {
+    e.stopPropagation();
+    setAvisoAtivoIdx((prev) => (prev + 1) % avisosExibidos.length);
+  }, [avisosExibidos.length]);
+
+  // Rotação automática dinâmica do mural de avisos (a cada 6 segundos)
+  useEffect(() => {
+    if (avisosExibidos.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setAvisoAtivoIdx((prev) => (prev + 1) % avisosExibidos.length);
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [avisosExibidos.length]);
 
   // 2. Taxa de Batismo
   const totalBatizados = useMemo(() => pessoasAtivas.filter(p => p.batizado_aguas === true).length, [pessoasAtivas]);
@@ -395,7 +427,7 @@ export default function HomePage({
       </div>
 
       {/* 2. MENU DE ABAS MOBILE (TABS NAVIGATION - GRID SEGMENTADO FIXO) */}
-      <div className={`grid ${podeVerFinanceiro ? 'grid-cols-4' : 'grid-cols-3'} bg-white/80 backdrop-blur-md p-1 rounded-xl shadow-xs border border-slate-200/80 gap-1 w-full`}>
+      <div className={`grid ${podeVerFinanceiro ? 'grid-cols-4' : 'grid-cols-3'} bg-white/80 dark:bg-slate-900/90 backdrop-blur-md p-1 rounded-xl shadow-xs border border-slate-200/80 dark:border-slate-800 gap-1 w-full`}>
         {[
           { id: 'visao_geral', label: 'Geral', icon: <Users size={14} /> },
           { id: 'celulas', label: 'Células', icon: <Home size={14} /> },
@@ -407,8 +439,8 @@ export default function HomePage({
             onClick={() => setAbaAtiva(tab.id)}
             className={`flex flex-col items-center justify-center gap-1 py-1.5 px-0.5 rounded-lg !text-[10px] font-bold uppercase tracking-tight transition-all duration-200 cursor-pointer ${
               abaAtiva === tab.id 
-                ? 'bg-[#1e3a8a] text-white shadow-xs' 
-                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50'
+                ? 'bg-[#1e3a8a] dark:bg-blue-600 text-white shadow-xs dark:shadow-blue-900/30' 
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/80'
             }`}
           >
             {tab.icon}
@@ -464,11 +496,11 @@ export default function HomePage({
 
             {/* MURAL DE AVISOS (Single active card with overlay arrows) */}
             <div className="w-full">
-              {carregandoAvisos ? (
+              {carregandoAvisos && avisosExibidos.length === 0 ? (
                 <div className="h-28 bg-white rounded-xl border border-slate-100 animate-pulse flex items-center justify-center text-[10px] text-slate-400">
                   Carregando comunicados...
                 </div>
-              ) : avisos.length === 0 ? (
+              ) : avisosExibidos.length === 0 ? (
                 <div className="p-4 bg-white border border-slate-100 rounded-xl text-center text-[10px] text-slate-400 italic">
                   Nenhum aviso ativo para exibição.
                 </div>
@@ -479,13 +511,34 @@ export default function HomePage({
                     className="flex transition-transform duration-500 ease-in-out w-full"
                     style={{ transform: `translateX(-${avisoAtivoIdx * 100}%)` }}
                   >
-                    {avisos.map((av) => (
+                    {avisosExibidos.map((av) => (
                       <div 
                         key={av.id}
                         onClick={() => handleActionAviso(av)}
-                        className="w-full shrink-0 min-w-full bg-white border border-slate-100 rounded-xl shadow-3xs overflow-hidden active:scale-[0.99] transition-all cursor-pointer relative"
+                        className="w-full shrink-0 min-w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl shadow-3xs overflow-hidden active:scale-[0.99] transition-all cursor-pointer relative"
                       >
-                        {av.imagem_url ? (
+                        {av.isAniversario ? (
+                          <div className="w-full h-52 sm:h-60 bg-gradient-to-br from-[#1e3a8a] via-indigo-700 to-purple-800 dark:from-[#0f172a] dark:via-[#1e3a8a] dark:to-indigo-950 p-5 flex flex-col items-center justify-center text-center text-white relative overflow-hidden">
+                            <div className="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-amber-400/20 blur-2xl pointer-events-none" />
+                            <span className="inline-flex items-center gap-1 bg-amber-400 text-slate-950 text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider mb-2.5 shadow-sm">
+                              <Cake size={11} />
+                              Aniversariante do Dia
+                            </span>
+                            <div className="relative mb-2">
+                              <Avatar pessoa={av.pessoa} tamanho="w-14 h-14 ring-3 ring-amber-300/70 shadow-lg" />
+                            </div>
+                            <h3 className="font-extrabold text-sm leading-tight line-clamp-1 max-w-full px-2">
+                              {av.pessoa?.nome}
+                            </h3>
+                            <p className="text-[10px] text-blue-100/90 mt-1 line-clamp-2 max-w-xs">
+                              {av.subtitulo}
+                            </p>
+                            <span className="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[10px] shadow-sm">
+                              <MessageCircle size={12} />
+                              Enviar Parabéns no WhatsApp
+                            </span>
+                          </div>
+                        ) : av.imagem_url ? (
                           <div className="w-full h-52 sm:h-60 overflow-hidden bg-slate-50 shrink-0 relative">
                             <img src={av.imagem_url} className="w-full h-full object-cover" alt="" />
                           </div>
@@ -495,10 +548,14 @@ export default function HomePage({
                             {av.subtitulo && <p className="text-xs text-blue-200 mt-2 line-clamp-3">{av.subtitulo}</p>}
                           </div>
                         )}
-                        <div className="p-3.5 flex items-center justify-between text-[8px] font-black uppercase text-slate-450 tracking-wider">
-                          <span>{new Date(av.created_at).toLocaleDateString('pt-BR')}</span>
-                          {(av.link_externo || av.conteudo_html) && (
-                            <span className="text-blue-650 font-bold">
+                        <div className="p-3.5 flex items-center justify-between text-[8px] font-black uppercase text-slate-450 dark:text-slate-400 tracking-wider">
+                          <span>{av.isAniversario ? (av.pessoa?.celulas?.nome || 'Hoje') : new Date(av.created_at).toLocaleDateString('pt-BR')}</span>
+                          {av.isAniversario ? (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                              <MessageCircle size={11} /> WhatsApp
+                            </span>
+                          ) : (av.link_externo || av.conteudo_html) && (
+                            <span className="text-blue-650 dark:text-blue-400 font-bold">
                               {av.link_externo ? 'Link' : 'Ler mais'}
                             </span>
                           )}
@@ -508,7 +565,7 @@ export default function HomePage({
                   </div>
 
                   {/* Setas de navegação (apenas se houver mais de um aviso) */}
-                  {avisos.length > 1 && (
+                  {avisosExibidos.length > 1 && (
                     <>
                       <button
                         onClick={avisoAnterior}
@@ -528,9 +585,9 @@ export default function HomePage({
                   )}
 
                   {/* Indicadores / Dots centralizados na imagem */}
-                  {avisos.length > 1 && (
+                  {avisosExibidos.length > 1 && (
                     <div className="absolute bottom-[48px] left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10 bg-black/10 px-2 py-1 rounded-full backdrop-blur-xs">
-                      {avisos.map((_, idx) => (
+                      {avisosExibidos.map((_, idx) => (
                         <button
                           key={idx}
                           onClick={(e) => {
@@ -563,11 +620,11 @@ export default function HomePage({
                       idx === filteredModules.length - 1 && filteredModules.length % 2 !== 0 ? 'col-span-2' : ''
                     }`}
                   >
-                    <div className="w-10 h-10 bg-linear-to-br from-[#202046]/5 to-[#2f2f80]/10 text-[#202046] rounded-lg flex items-center justify-center text-base mb-2 group-hover:scale-110 transition-transform">
+                    <div className="w-10 h-10 bg-linear-to-br from-[#202046]/5 to-[#2f2f80]/10 dark:from-blue-500/20 dark:to-indigo-500/25 text-[#202046] dark:text-blue-300 border border-transparent dark:border-blue-400/20 rounded-lg flex items-center justify-center text-base mb-2 group-hover:scale-110 transition-transform">
                       {mod.icon}
                     </div>
-                    <h4 className="font-extrabold text-slate-800 text-[10px] leading-none tracking-tight">{mod.label}</h4>
-                    <span className="block text-[8px] text-slate-400 font-medium mt-1 line-clamp-1">
+                    <h4 className="font-extrabold text-slate-800 dark:text-slate-100 text-[10px] leading-none tracking-tight">{mod.label}</h4>
+                    <span className="block text-[8px] text-slate-400 dark:text-slate-400 font-medium mt-1 line-clamp-1">
                       {mod.desc}
                     </span>
                   </button>
@@ -630,7 +687,7 @@ export default function HomePage({
                 valor={totalCelulasAtivas} 
                 detalhe="Ativas (toque)" 
                 onClick={() => onNavigate('celulas', 'todas')}
-                icone={<div className="p-1.5 rounded-lg bg-blue-50 border border-blue-100"><Home className="w-5 h-5 text-blue-600" /></div>}
+                icone={<div className="p-1.5 rounded-lg bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-800/60"><Home className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>}
                 className="p-3 flex-col"
               />
               <StatCard 
@@ -638,7 +695,7 @@ export default function HomePage({
                 valor={totalReunioes} 
                 detalhe="Relatórios (toque)" 
                 onClick={() => onNavigate('celulas', 'reunioes')}
-                icone={<div className="p-1.5 rounded-lg bg-purple-50 border border-purple-100"><BookOpen className="w-5 h-5 text-purple-600" /></div>}
+                icone={<div className="p-1.5 rounded-lg bg-purple-50 border border-purple-100 dark:bg-purple-950/60 dark:border-purple-800/60"><BookOpen className="w-5 h-5 text-purple-600 dark:text-purple-400" /></div>}
                 className="p-3 flex-col"
               />
               <StatCard 
@@ -646,7 +703,7 @@ export default function HomePage({
                 valor={mediaVisitantes} 
                 detalhe="Por Reunião (toque)" 
                 onClick={() => onNavigate('celulas', 'reunioes')}
-                icone={<div className="p-1.5 rounded-lg bg-pink-50 border border-pink-100"><Users className="w-5 h-5 text-pink-600" /></div>}
+                icone={<div className="p-1.5 rounded-lg bg-pink-50 border border-pink-100 dark:bg-pink-950/60 dark:border-pink-800/60"><Users className="w-5 h-5 text-pink-600 dark:text-pink-400" /></div>}
                 className="p-3 flex-col"
               />
               <StatCard 
@@ -654,7 +711,7 @@ export default function HomePage({
                 valor={formatarBRL(ofertasCelulasMes)} 
                 detalhe="Nas Células (toque)" 
                 onClick={() => onNavigate('financeiro', 'dashboard')}
-                icone={<div className="p-1.5 rounded-lg bg-emerald-50 border border-emerald-100"><Coins className="w-5 h-5 text-emerald-600" /></div>}
+                icone={<div className="p-1.5 rounded-lg bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/60 dark:border-emerald-800/60"><Coins className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /></div>}
                 className="p-3 flex-col font-medium"
               />
             </div>
@@ -697,9 +754,9 @@ export default function HomePage({
             />
 
             {/* Reuniões recentes adaptadas para mobile */}
-            <div className="bg-white rounded-xl border border-slate-150 p-4 shadow-3xs space-y-3">
-              <div className="border-b border-slate-50 pb-2">
-                <h4 className="font-bold text-slate-800 text-xs">Reuniões Recentes</h4>
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-150 dark:border-slate-800 p-4 shadow-3xs space-y-3">
+              <div className="border-b border-slate-50 dark:border-slate-800 pb-2">
+                <h4 className="font-bold text-slate-800 dark:text-slate-100 text-xs">Reuniões Recentes</h4>
                 <p className="text-[9px] text-slate-400">Toque para abrir o relatório ou toque em Membros para filtrar</p>
               </div>
 
@@ -715,20 +772,20 @@ export default function HomePage({
                       <div 
                         key={relatorio.id} 
                         onClick={() => onVerReuniao && onVerReuniao(relatorio.id)}
-                        className={`p-3 border rounded-xl space-y-2.5 active:bg-slate-100/85 transition-all cursor-pointer ${
+                        className={`p-3 border rounded-xl space-y-2.5 active:bg-slate-100/85 dark:active:bg-slate-800 transition-all cursor-pointer ${
                           isNovo 
-                            ? 'bg-blue-50/30 border-blue-200/85 shadow-3xs' 
-                            : 'bg-slate-50 border-slate-100'
+                            ? 'bg-blue-50/30 dark:bg-slate-800/90 border-blue-200/85 dark:border-blue-500/40 shadow-3xs' 
+                            : 'bg-slate-50 dark:bg-slate-800/60 border-slate-100 dark:border-slate-700/70'
                         }`}
                       >
                         <div className="flex justify-between items-center">
-                          <span className="font-extrabold text-slate-800 text-xs flex items-center gap-1.5">
+                          <span className="font-extrabold text-slate-800 dark:text-slate-100 text-xs flex items-center gap-1.5">
                             {isNovo && (
-                              <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse shrink-0" />
+                              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
                             )}
                             {relatorio.celulas?.nome || 'Célula'}
                           </span>
-                          <span className="text-[9px] text-slate-400 font-bold">
+                          <span className="text-[9px] text-slate-400 dark:text-slate-400 font-bold">
                             {relatorio.data_reuniao ? new Date(`${relatorio.data_reuniao}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
                           </span>
                         </div>
@@ -738,21 +795,21 @@ export default function HomePage({
                               e.stopPropagation();
                               handleNavegarPessoas({ celula: relatorio.celula_id, celulaNome: relatorio.celulas?.nome });
                             }}
-                            className="flex flex-col items-center justify-center p-2 rounded-xl bg-blue-50/60 border border-blue-100/60 shadow-3xs cursor-pointer active:scale-95 transition-all"
+                            className="flex flex-col items-center justify-center p-2 rounded-xl bg-blue-50/60 dark:bg-blue-950/60 border border-blue-100/60 dark:border-blue-800/60 shadow-3xs cursor-pointer active:scale-95 transition-all"
                             title="Toque para filtrar membros desta célula"
                           >
-                            <span className="text-base font-black text-blue-700 leading-none">
+                            <span className="text-base font-black text-blue-700 dark:text-blue-300 leading-none">
                               {relatorio.presencas_relatorio?.[0]?.count || 0}
                             </span>
-                            <span className="text-[9px] font-bold text-blue-500 uppercase mt-1.5 flex items-center gap-0.5">
+                            <span className="text-[9px] font-bold text-blue-500 dark:text-blue-400 uppercase mt-1.5 flex items-center gap-0.5">
                               Membros <span className="text-[8px]">🔍</span>
                             </span>
                           </div>
-                          <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-purple-50/60 border border-purple-100/60 shadow-3xs">
-                            <span className="text-base font-black text-purple-700 leading-none">
+                          <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-purple-50/60 dark:bg-purple-950/60 border border-purple-100/60 dark:border-purple-800/60 shadow-3xs">
+                            <span className="text-base font-black text-purple-700 dark:text-purple-300 leading-none">
                               {Number(relatorio.visitantes_presentes || 0)}
                             </span>
-                            <span className="text-[9px] font-bold text-purple-500 uppercase mt-1.5">Visitantes</span>
+                            <span className="text-[9px] font-bold text-purple-500 dark:text-purple-400 uppercase mt-1.5">Visitantes</span>
                           </div>
                         </div>
                       </div>

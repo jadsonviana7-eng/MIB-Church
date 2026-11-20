@@ -180,7 +180,7 @@ export const gerarMensagemInscricaoEvento = (evento, url) => {
       dataTexto = d.toLocaleDateString('pt-BR');
       const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
       if (hora && hora !== '00:00') dataTexto += ` às ${hora}`;
-    } catch (_) {}
+    } catch (_) { }
   }
 
   const dataInfo = dataTexto ? `\n• *Data:* ${dataTexto}` : '';
@@ -195,7 +195,7 @@ export const gerarMensagemInscricaoEvento = (evento, url) => {
   }
 
   return (
-    `Olá! Paz do Senhor!\n\n` +
+    `Olá! Graça e Paz!\n\n` +
     `Estão abertas as inscrições para o evento *${nomeEv}* da MIB Church!\n` +
     `${dataInfo}` +
     `${localTexto}` +

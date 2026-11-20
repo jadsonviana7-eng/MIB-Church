@@ -1843,22 +1843,22 @@ export default function App() {
           type="button"
           aria-label="Fechar menu"
           onClick={() => setMenuAberto(false)}
-          className="fixed inset-0 z-40 bg-slate-950/40 md:hidden print:hidden"
+          className="fixed inset-0 z-40 bg-slate-950/40 dark:bg-black/65 backdrop-blur-[1px] md:hidden print:hidden"
         />
       )}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-[#1e3a8a] to-[#1e40af] text-white flex flex-col border-r border-white/5 transition-transform duration-200 md:hidden print:hidden ${menuAberto ? 'translate-x-0' : '-translate-x-full'}`}> {/* <--- Altere o gradiente aqui */}
-        <div className="p-5 border-b border-white/5 flex items-center justify-between gap-3">
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-gradient-to-b from-[#1e3a8a] to-[#1e40af] dark:from-[#0f172a] dark:to-[#0b1120] text-white dark:text-slate-100 flex flex-col border-r border-white/5 dark:border-slate-800 transition-transform duration-200 md:hidden print:hidden ${menuAberto ? 'translate-x-0' : '-translate-x-full'}`}> {/* <--- Altere o gradiente aqui */}
+        <div className="p-5 border-b border-white/5 dark:border-slate-800 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <img src="/logo-mib-mundau.png" alt="Logo" className="h-12 w-20 object-contain bg-white rounded-lg p-1" />
+            <img src="/logo-mib-mundau.png" alt="Logo" className="h-12 w-20 object-contain bg-white dark:bg-transparent keep-white rounded-lg p-1" />
             <div>
               <h1 className="font-bold text-white text-base tracking-tight">MIB Church</h1>
-              <p className="text-[10px] font-medium text-teal-200/70 uppercase tracking-wider">Gestão da Igreja</p>
+              <p className="text-[10px] font-medium text-teal-200/70 dark:text-blue-300/80 uppercase tracking-wider">Gestão da Igreja</p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setMenuAberto(false)}
-            className="p-2 -mr-2 text-white/50 hover:text-white transition-colors cursor-pointer"
+            className="p-2 -mr-2 text-white/50 hover:text-white dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
             aria-label="Fechar menu"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -1886,10 +1886,10 @@ export default function App() {
                 Pessoas
               </MenuButton>
               {mobileDropdownAberto === 'pessoas' && (
-                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                <div className="bg-white/5 dark:bg-slate-950/60 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                   {submenusPessoas.map(([id, label]) => (
                     <button key={id} type="button" onClick={() => { if (id === 'todos') setFiltros(filtrosIniciais); navegar('pessoas', id); }}
-                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'pessoas' && pessoasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'pessoas' && pessoasSubmenu === id ? 'bg-white/15 dark:bg-blue-600 text-white rounded-lg' : 'text-slate-300 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/80 rounded-lg'}`}>
                       {MenuIcons[submenuIconKey.pessoas[id]]} {label}
                     </button>
                   ))}
@@ -1911,10 +1911,10 @@ export default function App() {
                 Células
               </MenuButton>
               {mobileDropdownAberto === 'celulas' && (
-                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                <div className="bg-white/5 dark:bg-slate-950/60 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                   {submenusCelulas.map(([id, label]) => (
                     <button key={id} type="button" onClick={() => navegar('celulas', id)}
-                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'celulas' && celulasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'celulas' && celulasSubmenu === id ? 'bg-white/15 dark:bg-blue-600 text-white rounded-lg' : 'text-slate-300 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/80 rounded-lg'}`}>
                       {MenuIcons[submenuIconKey.celulas[id]]} {label}
                     </button>
                   ))}
@@ -1936,10 +1936,10 @@ export default function App() {
                 Financeiro
               </MenuButton>
               {mobileDropdownAberto === 'financeiro' && (
-                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                <div className="bg-white/5 dark:bg-slate-950/60 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                   {submenusFinanceiro.map(([id, label]) => (
                     <button key={id} type="button" onClick={() => navegar('financeiro', id)}
-                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'financeiro' && financeiroSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'financeiro' && financeiroSubmenu === id ? 'bg-white/15 dark:bg-blue-600 text-white rounded-lg' : 'text-slate-300 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/80 rounded-lg'}`}>
                       {MenuIcons[submenuIconKey.financeiro[id]]} {label}
                     </button>
                   ))}
@@ -1961,10 +1961,10 @@ export default function App() {
                 Gestor Ministerial
               </MenuButton>
               {mobileDropdownAberto === 'gestao' && (
-                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                <div className="bg-white/5 dark:bg-slate-950/60 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                   {submenusGestao.map(([id, label]) => (
                     <button key={id} type="button" onClick={() => navegar('gestao', id)}
-                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'gestao' && gestaoMinisterialSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'gestao' && gestaoMinisterialSubmenu === id ? 'bg-white/15 dark:bg-blue-600 text-white rounded-lg' : 'text-slate-300 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/80 rounded-lg'}`}>
                       {MenuIcons[submenuIconKey.gestao[id]]} {label}
                     </button>
                   ))}
@@ -1986,10 +1986,10 @@ export default function App() {
                 Escolas
               </MenuButton>
               {mobileDropdownAberto === 'escolas' && (
-                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                <div className="bg-white/5 dark:bg-slate-950/60 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                   {submenusEscolas.map(([id, label]) => (
                     <button key={id} type="button" onClick={() => navegar('escolas', id)}
-                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'escolas' && escolasSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'escolas' && escolasSubmenu === id ? 'bg-white/15 dark:bg-blue-600 text-white rounded-lg' : 'text-slate-300 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/80 rounded-lg'}`}>
                       {MenuIcons[submenuIconKey.escolas[id]]} {label}
                     </button>
                   ))}
@@ -2011,10 +2011,10 @@ export default function App() {
                 Agenda
               </MenuButton>
               {mobileDropdownAberto === 'agenda' && (
-                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                <div className="bg-white/5 dark:bg-slate-950/60 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                   {submenusAgenda.map(([id, label]) => (
                     <button key={id} type="button" onClick={() => navegar('agenda', id)}
-                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'agenda' && agendaSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'agenda' && agendaSubmenu === id ? 'bg-white/15 dark:bg-blue-600 text-white rounded-lg' : 'text-slate-300 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/80 rounded-lg'}`}>
                       {MenuIcons[submenuIconKey.agenda[id]]} {label}
                     </button>
                   ))}
@@ -2036,10 +2036,10 @@ export default function App() {
                 Utilitários
               </MenuButton>
               {mobileDropdownAberto === 'utilitarios' && (
-                <div className="bg-white/5 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
+                <div className="bg-white/5 dark:bg-slate-950/60 py-2 px-6 space-y-1 animate-in slide-in-from-top-1 duration-200">
                   {submenusUtilitarios.map(([id, label]) => (
                     <button key={id} type="button" onClick={() => navegar('utilitarios', id)}
-                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'utilitarios' && utilitariosSubmenu === id ? 'bg-[#1e3a8a] text-white' : 'text-slate-300 hover:text-white hover:bg-[#1e3a8a]/30'}`}>
+                      className={`block w-full text-left px-3 py-2 text-sm font-bold transition flex items-center gap-2 ${moduloAtual === 'utilitarios' && utilitariosSubmenu === id ? 'bg-white/15 dark:bg-blue-600 text-white rounded-lg' : 'text-slate-300 hover:text-white hover:bg-white/10 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800/80 rounded-lg'}`}>
                       {MenuIcons[submenuIconKey.utilitarios[id]]} {label}
                     </button>
                   ))}
@@ -2048,7 +2048,7 @@ export default function App() {
             </div>
           )}
         </nav>
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-white/10 dark:border-slate-800 dark:bg-slate-900/50">
           <div className="flex items-center gap-3 mb-3">
             <UserAvatarImg usuarioLogado={usuarioLogado} membroLogado={membroLogado} tamanho="w-9 h-9" />
             <div className="flex-1 min-w-0">
@@ -2056,16 +2056,16 @@ export default function App() {
               <p className="text-[10px] text-slate-400 truncate">{usuarioLogado?.email || 'Sem e-mail'}</p>
             </div>
           </div>
-          <button type="button" onClick={handleSair} className="w-full px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition">
+          <button type="button" onClick={handleSair} className="w-full px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 dark:border dark:border-slate-700 text-xs font-bold transition">
             Sair
           </button>
         </div>
       </aside>
 
       {/* ── BOTTOM NAVIGATION — visível apenas no mobile ── */}
-      <nav className="fixed bottom-0 inset-x-0 z-40 h-16 bg-white border-t border-slate-200 flex items-center justify-around px-4 md:hidden print:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+      <nav className="fixed bottom-0 inset-x-0 z-40 h-16 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-around px-4 md:hidden print:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         {/* Botão Menu (Canto Esquerdo) */}
-        <button onClick={() => setMenuAberto(true)} className="flex flex-col items-center gap-1 text-slate-400 active:scale-95 transition-transform">
+        <button onClick={() => setMenuAberto(true)} className="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-400 active:scale-95 transition-transform">
           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
             <path fillRule="evenodd" d="M3 6.75A.75.75 0 0 1 3.75 6h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 6.75ZM3 12a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75A.75.75 0 0 1 3 12Zm0 5.25a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
           </svg>
@@ -2073,7 +2073,7 @@ export default function App() {
         </button>
 
         {/* Botão Início (Casinha no meio) */}
-        <button onClick={() => navegar('dashboard')} className={`flex flex-col items-center gap-1 transition-colors ${moduloAtual === 'dashboard' ? 'text-[#1e3a8a]' : 'text-slate-400'}`}>
+        <button onClick={() => navegar('dashboard')} className={`flex flex-col items-center gap-1 transition-colors ${moduloAtual === 'dashboard' ? 'text-[#1e3a8a] dark:text-blue-400' : 'text-slate-400 dark:text-slate-400'}`}>
           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
             <path d="M11.47 3.84a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.06l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 0 0 1.061 1.06l8.69-8.69Z" />
             <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.25 0 0 0 .091-.086L12 5.432Z" />
@@ -2096,7 +2096,7 @@ export default function App() {
 
         {/* Botão Configurações */}
         {hasAccess('Configurações') && (
-        <button onClick={() => navegar('configuracoes')} className={`flex flex-col items-center gap-1 transition-colors ${moduloAtual === 'configuracoes' ? 'text-[#1e3a8a]' : 'text-slate-400'}`}>
+        <button onClick={() => navegar('configuracoes')} className={`flex flex-col items-center gap-1 transition-colors ${moduloAtual === 'configuracoes' ? 'text-[#1e3a8a] dark:text-blue-400' : 'text-slate-400 dark:text-slate-400'}`}>
           <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
             <path fillRule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 0 0-.986.57c-.166.115-.334.11-.414.03L6.463 5.01a1.875 1.875 0 0 0-2.652 0l-.825.825a1.875 1.875 0 0 0 0 2.652l.828.828c.08.08.084.248-.03.414a7.446 7.446 0 0 0-.57.986c-.088.182-.228.277-.348.297L1.817 11.078a1.875 1.875 0 0 0-1.567 1.85v1.144c0 .917.663 1.699 1.567 1.85l1.051.176c.12.02.26.115.348.297.252.522.583 1.008.986 1.45a.447.447 0 0 1 .03.415l-.828.828a1.875 1.875 0 0 0 0 2.652l.825.825a1.875 1.875 0 0 0 2.652 0l.828-.828c.08-.08.248-.084.415-.03.442.403.928.734 1.45.986.182.088.277.228.297.348l.176 1.051a1.875 1.875 0 0 0 1.85 1.567h1.144a1.875 1.875 0 0 0 1.85-1.567l.176-1.051c.02-.12.115-.26.297-.348a7.493 7.493 0 0 0 .986-.57c.166-.115.334-.11.414-.03l.828.828a1.875 1.875 0 0 0 2.652 0l.825-.825a1.875 1.875 0 0 0 0-2.652l-.828-.828c-.08-.08-.084-.248.03-.414a7.446 7.446 0 0 0 .57-.986c.088-.182.228-.277.348-.297l1.051-.176a1.875 1.875 0 0 0 1.567-1.85v-1.144a1.875 1.875 0 0 0-1.567-1.85l-1.051-.176c-.12-.02-.26-.115-.348-.297a7.446 7.446 0 0 0-.57-.986.447.447 0 0 1-.03-.414l.828-.828a1.875 1.875 0 0 0 0-2.652l-.825-.825a1.875 1.875 0 0 0-2.652 0l-.828.828c-.08.08-.248.084-.414.03a7.493 7.493 0 0 0-1.45-.986c-.182-.088-.277-.228-.297-.348l-.176-1.051a1.875 1.875 0 0 0-1.85-1.567h-1.144ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
           </svg>
@@ -2784,20 +2784,22 @@ function SideNavBtn({ ativo, onClick, icon, label, submenu, submenuAtivo, onSubm
 
 function MenuButton({ ativo, onClick, contador, icon, children, hasSubmenu, expanded, onToggle }) {
   return (
-    <div className={`group flex flex-col w-full transition-all duration-200 ${expanded ? 'bg-white/5' : ''}`}>
+    <div className={`group flex flex-col w-full transition-all duration-200 ${expanded ? 'bg-white/5 dark:bg-slate-800/40' : ''}`}>
       <div className={`w-full flex items-center justify-between px-6 py-4 text-xl font-bold transition-all cursor-pointer ${ // Removida a borda inferior
-        ativo ? 'bg-[#1e3a8a] text-white' : 'text-slate-200 hover:bg-[#1e3a8a]/30 hover:text-white'
+        ativo
+          ? 'bg-[#1e3a8a] text-white dark:bg-blue-600/20 dark:text-blue-300 dark:border-l-4 dark:border-blue-500'
+          : 'text-slate-200 hover:bg-[#1e3a8a]/30 hover:text-white dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-white'
         }`}
       >
         <button type="button" onClick={onClick} className="flex flex-1 items-center gap-4 text-left outline-none">
-          {icon && <span className={`shrink-0 [&_svg]:w-6 [&_svg]:h-6 ${ativo ? 'opacity-100' : 'opacity-60'}`}>{icon}</span>}
+          {icon && <span className={`shrink-0 [&_svg]:w-6 [&_svg]:h-6 ${ativo ? 'opacity-100 dark:text-blue-400' : 'opacity-60 dark:opacity-80 dark:text-slate-400'}`}>{icon}</span>}
           <span className="truncate tracking-tight">{children}</span>
         </button>
         {hasSubmenu && (
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onToggle(); }}
-            className={`p-2 ml-1 transition-all duration-300 outline-none ${expanded ? 'rotate-180' : ''} ${ativo ? 'text-white/70' : 'text-slate-500 hover:text-white'}`}
+            className={`p-2 ml-1 transition-all duration-300 outline-none ${expanded ? 'rotate-180' : ''} ${ativo ? 'text-white/70 dark:text-blue-300' : 'text-slate-300/70 hover:text-white dark:text-slate-400 dark:hover:text-white'}`}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Calendar, Plus, X, Search, Check, AlertCircle, Share2, Printer, CheckCircle, XCircle, Trash2, ChevronLeft, ChevronRight, Pencil, Sparkles, Zap, UserCheck, RefreshCw } from 'lucide-react';
+import { Calendar, Plus, X, Search, Check, AlertCircle, Share2, Printer, CheckCircle, XCircle, Trash2, ChevronLeft, ChevronRight, Pencil, Sparkles, Zap, UserCheck, RefreshCw, MessageCircle } from 'lucide-react';
 import { escalasService, limparTextoJustificativa } from './services/escalasService';
 import { autoEscalaService } from './services/autoEscalaService';
 import { clarearCorParaModoEscuro } from './services/ministeriosService';
@@ -1559,16 +1559,17 @@ export default function EscalasMinisteriais({
     setJustificativaApontamento('');
   }
 
-  async function salvarApontamentoFrequencia(abrirSubstituicaoApos = false) {
+  async function salvarApontamentoFrequencia(abrirSubstituicaoApos = false, enviarWhatsappFaltaApos = false) {
     if (!modalApontamento?.escala?.id) return;
     const escalaSalva = modalApontamento.escala;
     const grupoSalvo = modalApontamento.grupo;
+    const justificativaSalva = justificativaApontamento.trim() || null;
     setSalvandoApontamento(true);
     try {
       await escalasService.atualizarStatusEscala(
         escalaSalva.id,
         statusApontamento,
-        justificativaApontamento.trim() || null,
+        justificativaSalva,
         {
           pedido_substituicao: statusApontamento === 'recusado' || statusApontamento === 'falta_justificada' || statusApontamento === 'falta'
         }
@@ -1592,12 +1593,20 @@ export default function EscalasMinisteriais({
       }
       carregarMinhasEscalas();
 
+      if (enviarWhatsappFaltaApos) {
+        enviarWhatsAppApontamentoFalta({
+          ...escalaSalva,
+          status: statusApontamento,
+          justificativa: justificativaSalva || escalaSalva.justificativa
+        }, grupoSalvo);
+      }
+
       if (abrirSubstituicaoApos) {
         setTimeout(() => {
           abrirModalSubstituicao({
             ...escalaSalva,
             status: statusApontamento,
-            justificativa: justificativaApontamento.trim() || escalaSalva.justificativa
+            justificativa: justificativaSalva || escalaSalva.justificativa
           }, grupoSalvo);
         }, 150);
       }
@@ -2142,7 +2151,7 @@ export default function EscalasMinisteriais({
             const jaTemPregaNoEvento = escalasPessoaMes.some(esc =>
               String(esc.evento_id) === String(ev.id) &&
               ((esc.ministerio_funcoes?.nome || '').toLowerCase().includes('prega') ||
-               (esc.ministerio_funcoes?.nome || '').toLowerCase().includes('palavra'))
+                (esc.ministerio_funcoes?.nome || '').toLowerCase().includes('palavra'))
             );
             if (!jaTemPregaNoEvento) {
               escalasPessoaMes.push({
@@ -2231,6 +2240,62 @@ export default function EscalasMinisteriais({
       const pregadorQuery = item.isPregadorManual ? `&pregador=${encodeURIComponent(nomePessoa)}` : '';
       const linkSimples = `${window.location.origin}/confirmar-escala?id=${encodeURIComponent(item.id)}${pregadorQuery}`;
       copiarEAbrirWhatsApp(`Olá, *${nomePessoa}*! Por favor, confirme sua escala na MIB Church no link: ${linkSimples}`, `✓ Link copiado!`);
+    }
+  }
+
+  // Enviar apontamento de falta injustificada / negativação para o WhatsApp do voluntário com versículo bíblico
+  function enviarWhatsAppApontamentoFalta(item, grupo) {
+    if (!item) return;
+
+    const nomesDiasLongos = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+    const nomesMeses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+    const nomePessoa = item.pessoas?.nome || 'irmão(ã)';
+    const primeiroNome = String(nomePessoa).trim().split(/\s+/)[0] || 'irmão(ã)';
+    const pessoaMatch = (todasPessoasSistema || []).find(p =>
+      (item.pessoa_id && String(p.id) === String(item.pessoa_id)) ||
+      (p.nome && p.nome.trim().toLowerCase() === nomePessoa.trim().toLowerCase())
+    );
+    const resolvedTelefone = item.pessoas?.telefone || pessoaMatch?.telefone || '';
+
+    const ev = eventoSelecionado || item.eventos_ministeriais;
+    const tituloEvento = ev?.titulo || 'Culto / Evento';
+    let dataFormatada = '';
+    if (ev?.data_evento) {
+      const dataInfo = obterInfoDataBrasilia(ev.data_evento);
+      const diaSemanaLong = nomesDiasLongos[dataInfo.diaSemanaIndex];
+      const mesNome = nomesMeses[dataInfo.mesIndex];
+      const horaStr = obterHoraExibicao(ev);
+      dataFormatada = `${diaSemanaLong ? diaSemanaLong.charAt(0).toUpperCase() + diaSemanaLong.slice(1) : ''}, ${Number(dataInfo.diaNum)} de ${mesNome} às ${horaStr}`;
+    }
+
+    const minNome = grupo?.nome || item.ministerios?.nome || '';
+    const funcNome = item.ministerio_funcoes?.nome || 'Voluntário';
+    const observacao = limparTextoJustificativa(item.justificativa);
+
+    let texto = `Graça e Paz, *${primeiroNome}*! 🙏\n\n`;
+    texto += `Passando com carinho para comunicar o registro de *apontamento de falta sem justificativa* na sua escala ministerial:\n\n`;
+    texto += `📅 *Evento:* ${tituloEvento}\n`;
+    if (dataFormatada) texto += `🗓️ *Data:* ${dataFormatada}\n`;
+    if (minNome) texto += `🏛️ *Ministério:* ${minNome}\n`;
+    texto += `🎯 *Função:* ${funcNome}\n`;
+    if (observacao) texto += `📝 *Observação:* ${observacao}\n`;
+    texto += `\nSentimos a sua falta servindo conosco! Quando houver qualquer imprevisto, por favor, avise a liderança com antecedência para que possamos organizar uma substituição e zelar juntos pela excelência na casa de Deus.\n\n`;
+    texto += `📖 _"Tudo o que fizerem, façam de todo o coração, como para o Senhor, e não para os homens."_ *(Colossenses 3:23)*\n\n`;
+    texto += `Contamos com você na obra do Senhor! 💙🙌`;
+
+    const rawTel = String(resolvedTelefone || '').replace(/\D/g, '');
+    const telLimpo = (rawTel.length === 10 || rawTel.length === 11) ? `55${rawTel}` : rawTel;
+
+    if (telLimpo && telLimpo.length >= 12) {
+      const urlWa = `https://api.whatsapp.com/send?phone=${telLimpo}&text=${encodeURIComponent(texto)}`;
+      try {
+        navigator.clipboard?.writeText?.(texto).catch(() => { });
+      } catch (_) { }
+      window.open(urlWa, '_blank', 'noopener,noreferrer');
+      mostrarToast(`✓ Mensagem de apontamento aberta no WhatsApp de ${primeiroNome}!`);
+    } else {
+      copiarEAbrirWhatsApp(texto, `✓ Mensagem de apontamento copiada (sem telefone cadastrado para ${primeiroNome}).`);
     }
   }
 
@@ -3202,17 +3267,30 @@ export default function EscalasMinisteriais({
                                     )}
 
                                     {(item.status === 'falta' || item.status === 'falta_injustificada' || item.status === 'ausente') && (
-                                      <div className="text-[10px] text-rose-900 bg-rose-50 border border-rose-200/70 px-2.5 py-1.5 rounded-xl flex items-start gap-1.5 animate-in fade-in">
-                                        <span className="shrink-0 text-rose-600">⚠️</span>
-                                        <span className="leading-snug">
-                                          <strong>Negativação:</strong> {limparTextoJustificativa(item.justificativa) || 'Não compareceu ao evento para cumprir a escala.'}
+                                      <div className="text-[10px] text-rose-900 dark:text-rose-200 bg-rose-50 dark:bg-rose-950/60 border border-rose-200/70 dark:border-rose-500/40 px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-2 animate-in fade-in">
+                                        <span className="flex items-start gap-1.5 min-w-0">
+                                          <span className="shrink-0 text-rose-600 dark:text-rose-400">⚠️</span>
+                                          <span className="leading-snug">
+                                            <strong>Negativação:</strong> {limparTextoJustificativa(item.justificativa) || 'Não compareceu ao evento para cumprir a escala.'}
+                                          </span>
                                         </span>
+                                        {!isMembroNormal && (
+                                          <button
+                                            type="button"
+                                            onClick={() => enviarWhatsAppApontamentoFalta(item, grupo)}
+                                            className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-md transition shadow-2xs active:scale-95 cursor-pointer shrink-0"
+                                            title="Enviar aviso do apontamento de falta sem justificativa no WhatsApp"
+                                          >
+                                            <MessageCircle size={11} />
+                                            <span>Notificar</span>
+                                          </button>
+                                        )}
                                       </div>
                                     )}
 
                                     {/* Info de Substituição: Já Substituído */}
                                     {jaFoiSubstituido && (
-                                      <div className="text-[10px] text-indigo-950 bg-indigo-50/90 border border-indigo-200/80 px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-1.5 animate-in fade-in">
+                                      <div className="text-[10px] text-indigo-950 dark:text-indigo-200 bg-indigo-50/90 dark:bg-indigo-950/50 border border-indigo-200/80 dark:border-indigo-500/35 px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-1.5 animate-in fade-in">
                                         <span className="flex items-center gap-1.5 min-w-0">
                                           <span className="text-xs shrink-0">🔄</span>
                                           <span className="truncate">
@@ -3223,7 +3301,7 @@ export default function EscalasMinisteriais({
                                           <button
                                             type="button"
                                             onClick={() => handleCancelarSubstituicao(item)}
-                                            className="text-[9px] font-bold text-indigo-600 hover:text-rose-600 underline cursor-pointer shrink-0"
+                                            className="text-[9px] font-bold text-indigo-600 dark:text-indigo-300 hover:text-rose-600 dark:hover:text-rose-300 underline cursor-pointer shrink-0"
                                             title="Desfazer substituição"
                                           >
                                             Desfazer
@@ -3234,7 +3312,7 @@ export default function EscalasMinisteriais({
 
                                     {/* Info de Substituição: Atuando como Substituto */}
                                     {eSubstituto && (
-                                      <div className="text-[10px] text-emerald-950 bg-emerald-50/90 border border-emerald-200/80 px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 animate-in fade-in">
+                                      <div className="text-[10px] text-emerald-950 dark:text-emerald-200 bg-emerald-50/90 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-500/35 px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 animate-in fade-in">
                                         <span className="text-xs shrink-0">🤝</span>
                                         <span className="truncate">
                                           <strong>Substituindo:</strong> {nomeSubstituindo}
@@ -3244,9 +3322,9 @@ export default function EscalasMinisteriais({
 
                                     {/* Alerta de Necessidade de Substituto: Exibido APENAS enquanto NÃO houver substituição */}
                                     {precisaSubstituto && (
-                                      <div className="text-[10px] text-amber-950 bg-amber-50/90 border border-amber-300/80 px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-1.5 animate-in fade-in">
+                                      <div className="text-[10px] text-amber-950 dark:text-amber-200 bg-amber-50/90 dark:bg-amber-950/50 border border-amber-300/80 dark:border-amber-500/40 px-2.5 py-1.5 rounded-xl flex items-center justify-between gap-1.5 animate-in fade-in">
                                         <span className="flex items-center gap-1.5 font-bold">
-                                          <span className="text-amber-600">⚠️</span>
+                                          <span className="text-amber-600 dark:text-amber-400">⚠️</span>
                                           <span>Necessita de substituto</span>
                                         </span>
                                         {!isMembroNormal && (
@@ -3307,8 +3385,8 @@ export default function EscalasMinisteriais({
                                           type="button"
                                           onClick={() => abrirModalSubstituicao(item, grupo)}
                                           className={`group flex flex-col items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 rounded-xl transition-all duration-200 cursor-pointer w-[72px] sm:w-[78px] h-[54px] sm:h-[58px] shrink-0 active:scale-95 ${precisaSubstituto
-                                              ? 'bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black border border-amber-400 shadow-xs shadow-amber-500/25 animate-pulse'
-                                              : 'bg-white hover:bg-amber-50/90 text-amber-900 hover:text-amber-950 border border-amber-200/90 hover:border-amber-300 shadow-2xs hover:shadow-xs'
+                                            ? 'bg-gradient-to-b from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black border border-amber-400 shadow-xs shadow-amber-500/25 animate-pulse'
+                                            : 'bg-white hover:bg-amber-50/90 text-amber-900 hover:text-amber-950 border border-amber-200/90 hover:border-amber-300 shadow-2xs hover:shadow-xs'
                                             }`}
                                           title="Substituir este voluntário preservando o histórico"
                                         >
@@ -4834,6 +4912,18 @@ export default function EscalasMinisteriais({
                   <span>{salvandoApontamento ? 'Salvando...' : 'Salvar e Substituir'}</span>
                 </button>
               )}
+              {statusApontamento === 'falta' && (
+                <button
+                  type="button"
+                  onClick={() => salvarApontamentoFrequencia(false, true)}
+                  disabled={salvandoApontamento}
+                  className="w-full sm:flex-1 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-500/25 border border-emerald-400/30 transition-all duration-200 active:scale-95 disabled:opacity-50 cursor-pointer text-center flex items-center justify-center gap-1.5"
+                  title="Salvar a negativação e enviar aviso pastoral no WhatsApp da pessoa"
+                >
+                  <MessageCircle size={14} />
+                  <span>{salvandoApontamento ? 'Salvando...' : 'Salvar e WhatsApp'}</span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => salvarApontamentoFrequencia(false)}
@@ -4974,8 +5064,8 @@ export default function EscalasMinisteriais({
                           type="button"
                           onClick={() => setSubstitutoSelecionado(cand)}
                           className={`w-full text-left p-2.5 rounded-xl border transition-all duration-200 flex items-center justify-between cursor-pointer ${isSel
-                              ? 'bg-blue-50/80 border-blue-400 text-blue-900 shadow-2xs ring-1 ring-blue-300'
-                              : 'bg-white border-slate-200/70 hover:border-slate-300 hover:bg-slate-50/60 text-slate-700'
+                            ? 'bg-blue-50/80 border-blue-400 text-blue-900 shadow-2xs ring-1 ring-blue-300'
+                            : 'bg-white border-slate-200/70 hover:border-slate-300 hover:bg-slate-50/60 text-slate-700'
                             }`}
                         >
                           <div className="min-w-0 flex-1">
@@ -5021,8 +5111,8 @@ export default function EscalasMinisteriais({
                   <label
                     onClick={() => setStatusInicialSubstituto('pendente')}
                     className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${statusInicialSubstituto === 'pendente'
-                        ? 'border-blue-500 bg-blue-50 text-blue-900 font-bold'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                      ? 'border-blue-500 bg-blue-50 text-blue-900 font-bold'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                       }`}
                   >
                     <input
@@ -5038,8 +5128,8 @@ export default function EscalasMinisteriais({
                   <label
                     onClick={() => setStatusInicialSubstituto('confirmado')}
                     className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${statusInicialSubstituto === 'confirmado'
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold'
-                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                      ? 'border-emerald-500 bg-emerald-50 text-emerald-900 font-bold'
+                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                       }`}
                   >
                     <input

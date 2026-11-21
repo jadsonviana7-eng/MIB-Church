@@ -21,6 +21,7 @@ import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from '@tiptap/extension-table-header';
 import { mascaraTelefone, mascaraCPF } from './mascaras';
+import { faixasEtarias, faixaDaIdade } from './churchUtils';
 import { findInJsonGlobal, parseMoeda, extrairValorInscricao, extrairParcelasInscricao, gerarMensagemInscricaoEvento } from './eventoInscricaoUtils';
 import ModalExportarInscritos from './ModalExportarInscritos';
 import ModalReciboQuitacao from './ModalReciboQuitacao';
@@ -1654,6 +1655,8 @@ function RoscaGraficoCard({ titulo, subtitulo, dados = [], onSliceClick, totalLa
 
 /* ─── DashboardEvento ──────────────────────────────────────────────────────── */
 function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar, onExcluir, onAlternarPublicacao, podeEditar, onVerMembro, onAbrirLeitor, onGerarCarne, membroLogado }) {
+  const isGratuito = evento?.valor_tipo !== 'pago';
+  const temTransporte = Number(evento?.valor_transporte) > 0;
   const [inscritos, setInscritos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modalInscrito, setModalInscrito] = useState({ aberto: false, dados: null });
@@ -1671,6 +1674,11 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
   const [formatoExportarInicial, setFormatoExportarInicial] = useState('pdf');
   const [incluirTransporteNoTotal, setIncluirTransporteNoTotal] = useState(true);
   const [modalRecibo, setModalRecibo] = useState({ aberto: false, inscrito: null });
+  const sincronizadosDemogRef = useRef(new Set());
+
+  useEffect(() => {
+    sincronizadosDemogRef.current.clear();
+  }, [evento?.id]);
 
   useEffect(() => {
     if (zonas && zonas.length > 0) {
@@ -1782,6 +1790,155 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
     return Object.entries(grupos).map(([name, value]) => ({ name, value }));
   }, [inscritos]);
 
+  // Helper robusto para cruzar inscrito com a base de membros (CPF, E-mail, Telefone/WhatsApp ou Nome)
+  const encontrarMembroDoInscrito = useCallback((ins) => {
+    if (!ins || !pessoas.length) return null;
+    const dados = ins.dados_inscricao || {};
+
+    const normalizarTexto = (s) =>
+      String(s || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const normalizarCPF = (v) => {
+      const d = String(v || '').replace(/\D/g, '');
+      return d.length === 11 ? d : '';
+    };
+
+    const normalizarTel = (v) => {
+      const d = String(v || '').replace(/\D/g, '');
+      if (d.length < 10) return '';
+      return d.startsWith('55') && d.length >= 12 ? d.slice(2) : d;
+    };
+
+    const cpfIns = normalizarCPF(findInJsonGlobal(dados, ['cpf', 'documento']));
+    if (cpfIns) {
+      const porCpf = pessoas.find(p => normalizarCPF(p.cpf) === cpfIns);
+      if (porCpf) return porCpf;
+    }
+
+    const emailIns = String(findInJsonGlobal(dados, ['email', 'e-mail']) || '').toLowerCase().trim();
+    if (emailIns && emailIns.includes('@')) {
+      const porEmail = pessoas.find(p => p.email && p.email.toLowerCase().trim() === emailIns);
+      if (porEmail) return porEmail;
+    }
+
+    const telIns = normalizarTel(findInJsonGlobal(dados, ['telefone', 'celular', 'whatsapp', 'contato']));
+    if (telIns) {
+      const porTel = pessoas.find(p => {
+        const telP = normalizarTel(p.telefone);
+        return telP && (telP === telIns || telP.slice(-10) === telIns.slice(-10));
+      });
+      if (porTel) return porTel;
+    }
+
+    const nomeIns = normalizarTexto(findInJsonGlobal(dados, ['nome', 'nome completo', 'completo']));
+    if (nomeIns) {
+      const porNomeExato = pessoas.find(p => normalizarTexto(p.nome) === nomeIns);
+      if (porNomeExato) return porNomeExato;
+
+      const preposicoes = new Set(['de', 'da', 'do', 'dos', 'das', 'e']);
+      const palavrasIns = nomeIns.split(' ').filter(w => w.length > 1 && !preposicoes.has(w));
+      if (palavrasIns.length >= 2) {
+        const porNomeParcial = pessoas.find(p => {
+          const palavrasMembro = normalizarTexto(p.nome).split(' ').filter(w => w.length > 1 && !preposicoes.has(w));
+          if (palavrasMembro.length < 2) return false;
+          if (palavrasIns[0] !== palavrasMembro[0]) return false;
+          const matches = palavrasIns.filter(w => palavrasMembro.includes(w));
+          return (matches.length / palavrasIns.length) >= 0.7;
+        });
+        if (porNomeParcial) return porNomeParcial;
+      }
+    }
+
+    return null;
+  }, [pessoas]);
+
+  // Cruzamento automático: identifica membros e preenche dados demográficos ausentes na inscrição
+  useEffect(() => {
+    if (!inscritos.length || !pessoas.length) return;
+
+    const zonasProntas = listaZonas.length > 0;
+    const atualizacoes = [];
+
+    inscritos.forEach((ins) => {
+      const chaveSync = `${ins.id}:${zonasProntas ? 'z1' : 'z0'}`;
+      if (sincronizadosDemogRef.current.has(chaveSync)) return;
+      sincronizadosDemogRef.current.add(chaveSync);
+
+      const membro = encontrarMembroDoInscrito(ins);
+      if (!membro) return;
+
+      const dados = ins.dados_inscricao || {};
+      const novosCampos = {};
+
+      // 1. Data de Nascimento
+      const temNasc = findInJsonGlobal(dados, ['data_nascimento', 'data de nascimento', 'nascimento', 'idade']);
+      if ((!temNasc || !String(temNasc).trim()) && membro.data_nascimento) {
+        const raw = String(membro.data_nascimento).trim();
+        const matchIso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        novosCampos['Data de Nascimento'] = matchIso ? `${matchIso[3]}/${matchIso[2]}/${matchIso[1]}` : raw;
+      }
+
+      // 2. Gênero
+      const temGenero = findInJsonGlobal(dados, ['genero', 'gênero', 'sexo']);
+      if ((!temGenero || !String(temGenero).trim()) && membro.genero) {
+        novosCampos['Gênero'] = String(membro.genero).trim();
+      }
+
+      // 3. Estado Civil
+      const temEstadoCivil = findInJsonGlobal(dados, ['estado civil', 'estado_civil', 'estadocivil']);
+      if ((!temEstadoCivil || !String(temEstadoCivil).trim()) && membro.estado_civil) {
+        novosCampos['Estado Civil'] = String(membro.estado_civil).trim();
+      }
+
+      // 4. Zona de Moradia
+      const temZona = findInJsonGlobal(dados, ['zona de moradia', 'zona moradia', 'zona', 'regiao', 'região']);
+      if (!temZona || !String(temZona).trim()) {
+        if (membro.zona_id && zonasProntas) {
+          const z = listaZonas.find(item => String(item.id) === String(membro.zona_id));
+          if (z?.nome) novosCampos['Zona de Moradia'] = z.nome;
+        } else if (!membro.zona_id && membro.bairro) {
+          novosCampos['Zona de Moradia'] = `Bairro ${String(membro.bairro).trim()}`;
+        }
+      }
+
+      if (Object.keys(novosCampos).length > 0) {
+        atualizacoes.push({
+          id: ins.id,
+          novosDados: { ...dados, ...novosCampos }
+        });
+      }
+    });
+
+    if (atualizacoes.length === 0) return;
+
+    const mapaAtualizacoes = new Map(atualizacoes.map(a => [a.id, a.novosDados]));
+
+    setInscritos(prev => prev.map(item =>
+      mapaAtualizacoes.has(item.id)
+        ? { ...item, dados_inscricao: mapaAtualizacoes.get(item.id) }
+        : item
+    ));
+
+    setModalInscrito(prev =>
+      prev.aberto && prev.dados && mapaAtualizacoes.has(prev.dados.id)
+        ? { ...prev, dados: { ...prev.dados, dados_inscricao: mapaAtualizacoes.get(prev.dados.id) } }
+        : prev
+    );
+
+    if (podeEditar) {
+      Promise.all(
+        atualizacoes.map(({ id, novosDados }) =>
+          supabase.from('agenda_inscricoes').update({ dados_inscricao: novosDados }).eq('id', id)
+        )
+      ).catch(err => console.error('Erro ao preencher dados demográficos do membro:', err));
+    }
+  }, [inscritos, pessoas, listaZonas, encontrarMembroDoInscrito, podeEditar]);
+
   // Mapeia a zona de moradia do participante (via formulário ou cadastro de membro)
   const obterZonaParticipante = useCallback((inscrito) => {
     const dados = inscrito.dados_inscricao || {};
@@ -1795,12 +1952,7 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
     }
 
     // 2. Vínculo com membro na base
-    const email = findInJsonGlobal(dados, 'email');
-    const nome = findInJsonGlobal(dados, ['nome', 'nome completo', 'completo']);
-    const membro = pessoas.find(p =>
-      (email && p.email?.toLowerCase().trim() === email.toLowerCase().trim()) ||
-      (nome && p.nome?.toLowerCase().trim() === nome.toLowerCase().trim())
-    );
+    const membro = encontrarMembroDoInscrito(inscrito);
 
     if (membro) {
       if (membro.zona_id) {
@@ -1817,7 +1969,7 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
     }
 
     return 'Não informada';
-  }, [pessoas, listaZonas]);
+  }, [encontrarMembroDoInscrito, listaZonas]);
 
   // Dados para o Gráfico Rosca de Opção de Transporte
   const dadosTransporteRosca = useMemo(() => {
@@ -1892,6 +2044,132 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
         participantes: lista
       }));
   }, [inscritos, obterZonaParticipante]);
+
+  // Extrai Faixa Etária (dos dados da inscrição ou do cadastro de membro)
+  const obterFaixaEtariaParticipante = useCallback((ins) => {
+    const dados = ins?.dados_inscricao || {};
+    const membro = encontrarMembroDoInscrito(ins);
+    let dataNasc = findInJsonGlobal(dados, ['data_nascimento', 'data de nascimento', 'nascimento']) || membro?.data_nascimento || '';
+
+    if (dataNasc && typeof dataNasc === 'string') {
+      const limpo = dataNasc.trim();
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(limpo)) {
+        const [d, m, y] = limpo.split('/');
+        dataNasc = `${y}-${m}-${d}`;
+      }
+      const faixaId = faixaDaIdade(dataNasc);
+      const faixaObj = faixasEtarias.find(f => f.id === faixaId);
+      if (faixaObj) return faixaObj.curto;
+    }
+
+    const idadeRaw = findInJsonGlobal(dados, ['idade']);
+    if (idadeRaw !== undefined && idadeRaw !== null && idadeRaw !== '') {
+      const idadeNum = parseInt(String(idadeRaw).replace(/\D/g, ''), 10);
+      if (!Number.isNaN(idadeNum)) {
+        const faixaObj = faixasEtarias.find(f => idadeNum >= f.min && idadeNum <= f.max);
+        if (faixaObj) return faixaObj.curto;
+      }
+    }
+
+    return 'Não informada';
+  }, [encontrarMembroDoInscrito]);
+
+  // Extrai Gênero (da inscrição ou do cadastro de membro)
+  const obterGeneroParticipante = useCallback((ins) => {
+    const dados = ins?.dados_inscricao || {};
+    const membro = encontrarMembroDoInscrito(ins);
+    const raw = findInJsonGlobal(dados, ['genero', 'gênero', 'sexo']) || membro?.genero || '';
+    const norm = String(raw).trim().toLowerCase();
+    if (!norm) return 'Não informado';
+    if (norm === 'm' || norm.startsWith('masc')) return 'Masculino';
+    if (norm === 'f' || norm.startsWith('fem')) return 'Feminino';
+    return String(raw).trim();
+  }, [encontrarMembroDoInscrito]);
+
+  // Extrai Estado Civil (da inscrição ou do cadastro de membro)
+  const obterEstadoCivilParticipante = useCallback((ins) => {
+    const dados = ins?.dados_inscricao || {};
+    const membro = encontrarMembroDoInscrito(ins);
+    const raw = findInJsonGlobal(dados, ['estado civil', 'estado_civil', 'estadocivil']) || membro?.estado_civil || '';
+    const str = String(raw).trim();
+    if (!str) return 'Não informado';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }, [encontrarMembroDoInscrito]);
+
+  // Dados para Gráfico Rosca: Faixa Etária
+  const dadosFaixaEtariaRosca = useMemo(() => {
+    const ativos = inscritos.filter(i => i.status_pagamento !== 'cancelado');
+    const grupos = {};
+    ativos.forEach(i => {
+      const faixa = obterFaixaEtariaParticipante(i);
+      if (!grupos[faixa]) grupos[faixa] = [];
+      grupos[faixa].push(i);
+    });
+
+    const PALETA_FAIXAS = ['#6366f1', '#2563eb', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#94a3b8'];
+    return Object.entries(grupos)
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([nome, lista], idx) => ({
+        name: nome,
+        value: lista.length,
+        color: nome === 'Não informada' ? '#94a3b8' : PALETA_FAIXAS[idx % PALETA_FAIXAS.length],
+        tipo: 'faixa_etaria',
+        chave: nome,
+        participantes: lista
+      }));
+  }, [inscritos, obterFaixaEtariaParticipante]);
+
+  // Dados para Gráfico Rosca: Gênero
+  const dadosGeneroRosca = useMemo(() => {
+    const ativos = inscritos.filter(i => i.status_pagamento !== 'cancelado');
+    const grupos = {};
+    ativos.forEach(i => {
+      const gen = obterGeneroParticipante(i);
+      if (!grupos[gen]) grupos[gen] = [];
+      grupos[gen].push(i);
+    });
+
+    const corGenero = (g) => {
+      if (g === 'Masculino') return '#2563eb';
+      if (g === 'Feminino') return '#ec4899';
+      if (g === 'Não informado') return '#94a3b8';
+      return '#8b5cf6';
+    };
+
+    return Object.entries(grupos)
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([nome, lista]) => ({
+        name: nome,
+        value: lista.length,
+        color: corGenero(nome),
+        tipo: 'genero',
+        chave: nome,
+        participantes: lista
+      }));
+  }, [inscritos, obterGeneroParticipante]);
+
+  // Dados para Gráfico Rosca: Estado Civil
+  const dadosEstadoCivilRosca = useMemo(() => {
+    const ativos = inscritos.filter(i => i.status_pagamento !== 'cancelado');
+    const grupos = {};
+    ativos.forEach(i => {
+      const ec = obterEstadoCivilParticipante(i);
+      if (!grupos[ec]) grupos[ec] = [];
+      grupos[ec].push(i);
+    });
+
+    const PALETA_EC = ['#14b8a6', '#f59e0b', '#8b5cf6', '#ef4444', '#2563eb', '#ec4899', '#94a3b8'];
+    return Object.entries(grupos)
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([nome, lista], idx) => ({
+        name: nome,
+        value: lista.length,
+        color: nome === 'Não informado' ? '#94a3b8' : PALETA_EC[idx % PALETA_EC.length],
+        tipo: 'estado_civil',
+        chave: nome,
+        participantes: lista
+      }));
+  }, [inscritos, obterEstadoCivilParticipante]);
 
   // Abertura do modal ao clicar nas divisões/fatias do gráfico
   const handleAbrirModalGrafico = useCallback((entry) => {
@@ -2130,14 +2408,25 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
 
       {/* LINHA DE INDICADORES RÁPIDOS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 print:hidden">
-        <StatCard label="Confirmados" valor={stats.confirmados} detalhe="Inscrições pagas" icone="✅" />
-        <StatCard label="Pendentes" valor={stats.pendentes} detalhe="Aguardando PG" icone="⏳" />
+        <StatCard
+          label={isGratuito ? 'Presentes' : 'Confirmados'}
+          valor={stats.confirmados}
+          detalhe={isGratuito ? 'Presença confirmada' : 'Inscrições pagas'}
+          icone="✅"
+        />
+        <StatCard
+          label={isGratuito ? 'Ausentes' : 'Pendentes'}
+          valor={stats.pendentes}
+          detalhe={isGratuito ? 'Ainda não confirmou' : 'Aguardando PG'}
+          icone="⏳"
+        />
         <StatCard label="Cancelados" valor={stats.cancelados} detalhe="Desistentes" icone="🚫" />
         <StatCard label="Disponíveis" valor={stats.disponiveis} detalhe="Vagas abertas" icone="🎟️" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 print:hidden">
-        {/* CARD TOTAL RECEBIDO DESTACADO */}
+        {/* CARD TOTAL RECEBIDO DESTACADO (Apenas para eventos pagos) */}
+        {!isGratuito && (
         <div
           className="lg:col-span-1 p-7 sm:p-8 rounded-[24px] shadow-xl flex flex-col justify-between relative overflow-hidden"
           style={{ background: 'linear-gradient(135deg, #059669 0%, #0d9488 100%)', color: '#ffffff' }}
@@ -2150,7 +2439,8 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
               <h3 style={{ margin: 0, fontSize: 12, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', opacity: 0.9 }}>
                 Total Recebido
               </h3>
-              {/* Alternador com / sem transporte */}
+              {/* Alternador com / sem transporte (apenas quando cobrança de transporte está ativa) */}
+              {temTransporte && (
               <div className="inline-flex items-center bg-black/20 p-0.5 rounded-xl backdrop-blur-xs text-[10px] font-bold">
                 <button
                   type="button"
@@ -2177,23 +2467,27 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                   Sem Transp.
                 </button>
               </div>
+              )}
             </div>
             <div style={{ fontSize: 38, fontWeight: 900, marginTop: 4, letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-              {(incluirTransporteNoTotal ? stats.totalComTransporte : stats.totalSemTransporte).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              {(temTransporte && incluirTransporteNoTotal ? stats.totalComTransporte : stats.totalSemTransporte).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-white/20 flex items-center justify-between text-[11px] font-bold opacity-90">
             <span>{stats.confirmados} confirmações</span>
-            <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-md">
-              {incluirTransporteNoTotal
-                ? (stats.totalTransporteArrecadado > 0 ? `🚌 + ${stats.totalTransporteArrecadado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} transporte` : '🚌 Sem taxa extra')
-                : '🎟️ Apenas Ingressos'}
-            </span>
+            {temTransporte && (
+              <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-md">
+                {incluirTransporteNoTotal
+                  ? (stats.totalTransporteArrecadado > 0 ? `🚌 + ${stats.totalTransporteArrecadado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} transporte` : '🚌 Sem taxa extra')
+                  : '🎟️ Apenas Ingressos'}
+              </span>
+            )}
           </div>
         </div>
+        )}
 
         {/* GRÁFICO DE INSCRIÇÕES POR PERÍODO */}
-        <Card className="lg:col-span-2 p-0 overflow-hidden">
+        <Card className={`${isGratuito ? 'lg:col-span-3' : 'lg:col-span-2'} p-0 overflow-hidden`}>
           <CardHeader titulo="Inscrições por Período" subtitulo="Tendência de novas adesões ao longo do tempo." />
           <div className="h-64 p-6 pt-2 min-w-0">
             {chartData.length === 0 ? (
@@ -2255,8 +2549,8 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
           </Card>
         )}
 
-        {/* Card Opção de Transporte (Gráfico Tipo Rosca Clicável) */}
-        {(Number(evento.valor_transporte) > 0 || stats.transporteSim > 0 || stats.transporteNao > 0) && (
+        {/* Card Opção de Transporte (Gráfico Tipo Rosca Clicável — apenas se cobrança de transporte estiver ativa) */}
+        {temTransporte && (
           <RoscaGraficoCard
             titulo="Opção de Transporte"
             subtitulo="Adesão ao transporte oferecido para o evento."
@@ -2273,6 +2567,33 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
           dados={dadosZonasRosca}
           onSliceClick={handleAbrirModalGrafico}
           totalLabel="Residentes"
+        />
+
+        {/* Card Faixa Etária (Gráfico Tipo Rosca Clicável) */}
+        <RoscaGraficoCard
+          titulo="Faixa Etária"
+          subtitulo="Clique em uma faixa para filtrar os participantes."
+          dados={dadosFaixaEtariaRosca}
+          onSliceClick={handleAbrirModalGrafico}
+          totalLabel="Inscritos"
+        />
+
+        {/* Card Gênero (Gráfico Tipo Rosca Clicável) */}
+        <RoscaGraficoCard
+          titulo="Gênero"
+          subtitulo="Distribuição por gênero entre os inscritos ativos."
+          dados={dadosGeneroRosca}
+          onSliceClick={handleAbrirModalGrafico}
+          totalLabel="Inscritos"
+        />
+
+        {/* Card Estado Civil (Gráfico Tipo Rosca Clicável) */}
+        <RoscaGraficoCard
+          titulo="Estado Civil"
+          subtitulo="Clique para visualizar os inscritos por estado civil."
+          dados={dadosEstadoCivilRosca}
+          onSliceClick={handleAbrirModalGrafico}
+          totalLabel="Inscritos"
         />
       </div>
 
@@ -2291,21 +2612,28 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
 
         <div className="grid grid-cols-4 gap-4 mt-8">
           <div className="border border-slate-200 p-4 rounded-2xl">
-            <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">Confirmados</p>
+            <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">{isGratuito ? 'Presentes' : 'Confirmados'}</p>
             <p className="text-2xl font-black text-emerald-600 leading-none">{stats.confirmados}</p>
           </div>
           <div className="border border-slate-200 p-4 rounded-2xl">
-            <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">Pendentes</p>
+            <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">{isGratuito ? 'Ausentes' : 'Pendentes'}</p>
             <p className="text-2xl font-black text-amber-600 leading-none">{stats.pendentes}</p>
           </div>
-          <div className="border border-slate-200 p-4 rounded-2xl">
-            <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">
-              Arrecadado {incluirTransporteNoTotal ? '(Com Transp.)' : '(Sem Transp.)'}
-            </p>
-            <p className="text-2xl font-black text-slate-800 leading-none">
-              {(incluirTransporteNoTotal ? stats.totalComTransporte : stats.totalSemTransporte).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </p>
-          </div>
+          {isGratuito ? (
+            <div className="border border-slate-200 p-4 rounded-2xl">
+              <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">Cancelados</p>
+              <p className="text-2xl font-black text-rose-600 leading-none">{stats.cancelados}</p>
+            </div>
+          ) : (
+            <div className="border border-slate-200 p-4 rounded-2xl">
+              <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">
+                Arrecadado {incluirTransporteNoTotal ? '(Com Transp.)' : '(Sem Transp.)'}
+              </p>
+              <p className="text-2xl font-black text-slate-800 leading-none">
+                {(incluirTransporteNoTotal ? stats.totalComTransporte : stats.totalSemTransporte).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </p>
+            </div>
+          )}
           <div className="border border-slate-200 p-4 rounded-2xl">
             <p className="text-[10px] font-black uppercase text-slate-400 mb-1 tracking-wider">Total Geral</p>
             <p className="text-2xl font-black text-blue-600 leading-none">{inscritos.length}</p>
@@ -2350,7 +2678,7 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                     const rawPhone = findInJsonGlobal(i.dados_inscricao, 'telefone') || findInJsonGlobal(i.dados_inscricao, 'celular') || findInJsonGlobal(i.dados_inscricao, 'whatsapp') || findInJsonGlobal(i.dados_inscricao, 'contato');
                     const email = findInJsonGlobal(i.dados_inscricao, 'email');
                     const contato = rawPhone ? mascaraTelefone(rawPhone) : (email || '—');
-                    const membroFound = pessoas.find(p => (email && p.email?.toLowerCase() === email.toLowerCase()) || (nome && p.nome?.toLowerCase() === nome.toLowerCase()));
+                    const membroFound = encontrarMembroDoInscrito(i);
                     const totalParcelas = Number(findInJsonGlobal(i.dados_inscricao, 'parcelas')) || 1;
                     const pagas = i.dados_inscricao?.parcelas_pagas || [];
 
@@ -2363,35 +2691,43 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                         <td className="text-xs text-slate-500 dark:text-slate-400">{contato}</td>
                         <td style={{ textAlign: 'right' }}>
                           {i.status_pagamento === 'pago' ? (
-                            <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">pago</span>
+                            <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
+                              {isGratuito ? 'presente' : 'pago'}
+                            </span>
                           ) : i.status_pagamento === 'cancelado' ? (
                             <span className="badge bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">cancelado</span>
-                          ) : (totalParcelas > 1 && pagas.length > 0) ? (
+                          ) : (!isGratuito && totalParcelas > 1 && pagas.length > 0) ? (
                             <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800 whitespace-nowrap">
                               {pagas.length}/{totalParcelas} Parc.
                             </span>
                           ) : (
-                            <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">pendente</span>
+                            <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
+                              {isGratuito ? 'ausente' : 'pendente'}
+                            </span>
                           )}
                         </td>
                         <td style={{ textAlign: 'right', paddingRight: '24px' }} className="print:hidden">
                           <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              type="button"
-                              onClick={() => setModalRecibo({ aberto: true, inscrito: i })}
-                              className="text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition p-1.5 rounded-lg cursor-pointer"
-                              title="Recibo Especial de Quitação"
-                            >
-                              <Icon.Recibo />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onGerarCarne({ inscricaoId: i.id, pessoaId: membroFound?.id || null })}
-                              className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition p-1.5 rounded-lg cursor-pointer"
-                              title="Gerar Carnê"
-                            >
-                              <Icon.Carne />
-                            </button>
+                            {!isGratuito && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setModalRecibo({ aberto: true, inscrito: i })}
+                                  className="text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 transition p-1.5 rounded-lg cursor-pointer"
+                                  title="Recibo Especial de Quitação"
+                                >
+                                  <Icon.Recibo />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onGerarCarne({ inscricaoId: i.id, pessoaId: membroFound?.id || null })}
+                                  className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition p-1.5 rounded-lg cursor-pointer"
+                                  title="Gerar Carnê"
+                                >
+                                  <Icon.Carne />
+                                </button>
+                              </>
+                            )}
                             <button
                               type="button"
                               onClick={(e) => handleExcluirInscricao(e, i.id)}
@@ -2415,7 +2751,7 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                   const email = findInJsonGlobal(i.dados_inscricao, 'email');
                   const rawPhone = findInJsonGlobal(i.dados_inscricao, 'telefone') || findInJsonGlobal(i.dados_inscricao, 'celular') || findInJsonGlobal(i.dados_inscricao, 'whatsapp') || findInJsonGlobal(i.dados_inscricao, 'contato');
                   const contato = rawPhone ? mascaraTelefone(rawPhone) : (email || '—');
-                  const membroFound = pessoas.find(p => (email && p.email?.toLowerCase() === email.toLowerCase()) || (nome && p.nome?.toLowerCase() === nome.toLowerCase()));
+                  const membroFound = encontrarMembroDoInscrito(i);
                   const totalParcelas = Number(findInJsonGlobal(i.dados_inscricao, 'parcelas')) || 1;
                   const pagas = i.dados_inscricao?.parcelas_pagas || [];
 
@@ -2425,33 +2761,41 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(i.created_at).toLocaleDateString('pt-BR')}</span>
                         <div className="flex items-center gap-2">
                           {i.status_pagamento === 'pago' ? (
-                            <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">pago</span>
+                            <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
+                              {isGratuito ? 'presente' : 'pago'}
+                            </span>
                           ) : i.status_pagamento === 'cancelado' ? (
                             <span className="badge bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">cancelado</span>
-                          ) : (totalParcelas > 1 && pagas.length > 0) ? (
+                          ) : (!isGratuito && totalParcelas > 1 && pagas.length > 0) ? (
                             <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800 whitespace-nowrap">
                               {pagas.length}/{totalParcelas} Parc.
                             </span>
                           ) : (
-                            <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">pendente</span>
+                            <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
+                              {isGratuito ? 'ausente' : 'pendente'}
+                            </span>
                           )}
                           <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              type="button"
-                              onClick={() => setModalRecibo({ aberto: true, inscrito: i })}
-                              className="p-1.5 text-emerald-600 active:scale-95 cursor-pointer print:hidden"
-                              title="Recibo Especial de Quitação"
-                            >
-                              <Icon.Recibo />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onGerarCarne({ inscricaoId: i.id, pessoaId: membroFound?.id || null })}
-                              className="p-1.5 text-blue-600 active:scale-95 cursor-pointer print:hidden"
-                              title="Gerar Carnê"
-                            >
-                              <Icon.Carne />
-                            </button>
+                            {!isGratuito && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setModalRecibo({ aberto: true, inscrito: i })}
+                                  className="p-1.5 text-emerald-600 active:scale-95 cursor-pointer print:hidden"
+                                  title="Recibo Especial de Quitação"
+                                >
+                                  <Icon.Recibo />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onGerarCarne({ inscricaoId: i.id, pessoaId: membroFound?.id || null })}
+                                  className="p-1.5 text-blue-600 active:scale-95 cursor-pointer print:hidden"
+                                  title="Gerar Carnê"
+                                >
+                                  <Icon.Carne />
+                                </button>
+                              </>
+                            )}
                             <button
                               type="button"
                               onClick={(e) => handleExcluirInscricao(e, i.id)}
@@ -2482,8 +2826,8 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
               <button className="btn-icon" onClick={() => setModalInscrito({ aberto: false, dados: null })}><Icon.Close /></button>
             </div>
             <div className="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
-              {/* Resumo Financeiro da Inscrição (Garante que o valor histórico do lote seja destacado e imutável) */}
-              {(() => {
+              {/* Resumo Financeiro da Inscrição (Apenas para eventos pagos) */}
+              {!isGratuito && (() => {
                 const dados = modalInscrito.dados.dados_inscricao || {};
                 const valorTotal = extrairValorInscricao(dados, evento);
                 const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || extrairParcelasInscricao(dados) || 1;
@@ -2541,29 +2885,29 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
 
               {/* Vínculo com Membro */}
               {(() => {
-                const email = findInJsonGlobal(modalInscrito.dados.dados_inscricao, 'email');
-                const nome = findInJsonGlobal(modalInscrito.dados.dados_inscricao, 'nome');
-                const membro = pessoas.find(p => (email && p.email?.toLowerCase() === email.toLowerCase()) || (nome && p.nome?.toLowerCase() === nome.toLowerCase()));
+                const membro = encontrarMembroDoInscrito(modalInscrito.dados);
 
                 if (membro) {
                   return (
-                    <div className="p-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 rounded-2xl flex items-center justify-between">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/50 rounded-2xl flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="text-2xl">👤</div>
                         <div>
                           <p className="text-xs font-black text-blue-800 dark:text-blue-200 uppercase">Membro Identificado</p>
-                          <p className="text-[11px] text-blue-600 dark:text-blue-400">Este inscrito consta na sua base de membros.</p>
+                          <p className="text-[11px] text-blue-600 dark:text-blue-400">
+                            Vínculo com <strong className="font-bold">{membro.nome}</strong>. Dados demográficos ausentes foram sincronizados automaticamente do cadastro.
+                          </p>
                         </div>
                       </div>
-                      <button className="btn-primary" style={{ fontSize: 11, padding: '6px 12px' }} onClick={() => onVerMembro(membro.id)}>Abrir Ficha ➔</button>
+                      <button className="btn-primary shrink-0" style={{ fontSize: 11, padding: '6px 12px' }} onClick={() => onVerMembro(membro.id)}>Abrir Ficha ➔</button>
                     </div>
                   );
                 }
                 return null;
               })()}
 
-              {/* Controle de Parcelas Manuais */}
-              {(() => {
+              {/* Controle de Parcelas Manuais (Apenas para eventos pagos) */}
+              {!isGratuito && (() => {
                 const dados = modalInscrito.dados.dados_inscricao || {};
                 const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || extrairParcelasInscricao(dados) || 1;
                 if (totalParc <= 1) return null;
@@ -2604,14 +2948,23 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
               })()}
 
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Alterar Status de Pagamento</p>
+                <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                  {isGratuito ? 'Alterar Status de Presença' : 'Alterar Status de Pagamento'}
+                </p>
                 <div className="flex gap-2">
-                  <button onClick={() => handleUpdateStatus(modalInscrito.dados.id, 'pago')} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-100">Confirmar Pagamento</button>
-                  <button onClick={() => handleUpdateStatus(modalInscrito.dados.id, 'pendente')} className="flex-1 py-3 bg-amber-500 text-white rounded-xl text-xs font-black uppercase tracking-wider">Deixar Pendente</button>
-                  <button onClick={() => handleUpdateStatus(modalInscrito.dados.id, 'cancelado')} className="flex-1 py-3 bg-rose-600 text-white rounded-xl text-xs font-black uppercase tracking-wider">Cancelar</button>
+                  <button onClick={() => handleUpdateStatus(modalInscrito.dados.id, 'pago')} className="flex-1 py-3 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-emerald-100 cursor-pointer">
+                    {isGratuito ? 'Marcar Presente' : 'Confirmar Pagamento'}
+                  </button>
+                  <button onClick={() => handleUpdateStatus(modalInscrito.dados.id, 'pendente')} className="flex-1 py-3 bg-amber-500 text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer">
+                    {isGratuito ? 'Marcar Ausente' : 'Deixar Pendente'}
+                  </button>
+                  <button onClick={() => handleUpdateStatus(modalInscrito.dados.id, 'cancelado')} className="flex-1 py-3 bg-rose-600 text-white rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer">
+                    Cancelar
+                  </button>
                 </div>
               </div>
 
+              {!isGratuito && (
               <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Geração de Documentos</p>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -2642,6 +2995,7 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                   </button>
                 </div>
               </div>
+              )}
             </div>
           </div>
         </div>
@@ -2658,7 +3012,15 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                     Filtro Aplicado
                   </span>
                   <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                    {modalFiltroGrafico.tipo === 'transporte' ? '🚌 Transporte' : '📍 Zona de Moradia'}
+                    {modalFiltroGrafico.tipo === 'transporte'
+                      ? '🚌 Transporte'
+                      : modalFiltroGrafico.tipo === 'faixa_etaria'
+                        ? '🎂 Faixa Etária'
+                        : modalFiltroGrafico.tipo === 'genero'
+                          ? '⚧ Gênero'
+                          : modalFiltroGrafico.tipo === 'estado_civil'
+                            ? '💍 Estado Civil'
+                            : '📍 Zona de Moradia'}
                   </span>
                 </div>
                 <h3 className="text-lg sm:text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">
@@ -2684,12 +3046,13 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                 const pendentesQtd = lista.filter(i => i.status_pagamento === 'pendente').length;
 
                 return (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className={`grid grid-cols-2 ${isGratuito ? 'sm:grid-cols-3' : 'sm:grid-cols-4'} gap-3`}>
                     <div className="p-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-100 dark:border-slate-700/80 rounded-2xl">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Quantidade</p>
                       <p className="text-xl font-black text-slate-800 dark:text-slate-100 mt-0.5">{totalQtd}</p>
                       <p className="text-[10px] text-slate-400 font-bold">{totalQtd === 1 ? 'participante' : 'participantes'}</p>
                     </div>
+                    {!isGratuito && (
                     <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-2xl">
                       <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider">Valor Total</p>
                       <p className="text-xl font-black text-blue-700 dark:text-blue-300 mt-0.5">
@@ -2697,15 +3060,16 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                       </p>
                       <p className="text-[10px] text-blue-500 font-bold">Lote da inscrição</p>
                     </div>
+                    )}
                     <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 rounded-2xl">
-                      <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Confirmados</p>
+                      <p className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">{isGratuito ? 'Presentes' : 'Confirmados'}</p>
                       <p className="text-xl font-black text-emerald-700 dark:text-emerald-300 mt-0.5">{pagosQtd}</p>
-                      <p className="text-[10px] text-emerald-600 font-bold">Status Pago</p>
+                      <p className="text-[10px] text-emerald-600 font-bold">{isGratuito ? 'Presença confirmada' : 'Status Pago'}</p>
                     </div>
                     <div className="p-3 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 rounded-2xl">
-                      <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider">Pendentes</p>
+                      <p className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wider">{isGratuito ? 'Ausentes' : 'Pendentes'}</p>
                       <p className="text-xl font-black text-amber-700 dark:text-amber-300 mt-0.5">{pendentesQtd}</p>
-                      <p className="text-[10px] text-amber-600 font-bold">Aguardando baixa</p>
+                      <p className="text-[10px] text-amber-600 font-bold">{isGratuito ? 'Ainda não confirmou' : 'Aguardando baixa'}</p>
                     </div>
                   </div>
                 );
@@ -2735,7 +3099,13 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
 
                 <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl shrink-0 overflow-x-auto">
                   {['todos', 'pago', 'pendente', 'cancelado'].map(st => {
-                    const label = st === 'todos' ? 'Todos' : st === 'pago' ? 'Pagos' : st === 'pendente' ? 'Pendentes' : 'Cancelados';
+                    const label = st === 'todos'
+                      ? 'Todos'
+                      : st === 'pago'
+                        ? (isGratuito ? 'Presentes' : 'Pagos')
+                        : st === 'pendente'
+                          ? (isGratuito ? 'Ausentes' : 'Pendentes')
+                          : 'Cancelados';
                     const ativo = filtroStatusModal === st;
                     return (
                       <button
@@ -2780,8 +3150,8 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                           <tr>
                             <th>Participante</th>
                             <th>Zona de Moradia</th>
-                            <th>Transporte</th>
-                            <th style={{ textAlign: 'right' }}>Valor</th>
+                            {temTransporte && <th>Transporte</th>}
+                            {!isGratuito && <th style={{ textAlign: 'right' }}>Valor</th>}
                             <th style={{ textAlign: 'center' }}>Status</th>
                             <th style={{ textAlign: 'right', paddingRight: '16px' }}>Ação</th>
                           </tr>
@@ -2793,7 +3163,7 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                             const email = findInJsonGlobal(dados, 'email');
                             const tel = findInJsonGlobal(dados, ['telefone', 'celular', 'whatsapp', 'contato']);
                             const contato = tel ? mascaraTelefone(tel) : (email || '—');
-                            const membroFound = pessoas.find(p => (email && p.email?.toLowerCase() === email.toLowerCase()) || (nome && p.nome?.toLowerCase() === nome.toLowerCase()));
+                            const membroFound = encontrarMembroDoInscrito(i);
                             const valorReal = extrairValorInscricao(dados, evento);
                             const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || extrairParcelasInscricao(dados) || 1;
                             const pagas = dados.parcelas_pagas || [];
@@ -2816,6 +3186,7 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                                 <td className="text-slate-600 dark:text-slate-300 font-medium">
                                   {zonaNome}
                                 </td>
+                                {temTransporte && (
                                 <td>
                                   {comTransp ? (
                                     <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800">
@@ -2827,6 +3198,8 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                                     </span>
                                   )}
                                 </td>
+                                )}
+                                {!isGratuito && (
                                 <td style={{ textAlign: 'right' }} className="font-black text-slate-800 dark:text-slate-100 whitespace-nowrap">
                                   {valorReal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                                   {totalParc > 1 && (
@@ -2835,13 +3208,18 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                                     </div>
                                   )}
                                 </td>
+                                )}
                                 <td style={{ textAlign: 'center' }}>
                                   {i.status_pagamento === 'pago' ? (
-                                    <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">pago</span>
+                                    <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
+                                      {isGratuito ? 'presente' : 'pago'}
+                                    </span>
                                   ) : i.status_pagamento === 'cancelado' ? (
                                     <span className="badge bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">cancelado</span>
                                   ) : (
-                                    <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">pendente</span>
+                                    <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
+                                      {isGratuito ? 'ausente' : 'pendente'}
+                                    </span>
                                   )}
                                 </td>
                                 <td style={{ textAlign: 'right', paddingRight: '16px' }}>
@@ -2869,7 +3247,7 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                         const email = findInJsonGlobal(dados, 'email');
                         const tel = findInJsonGlobal(dados, ['telefone', 'celular', 'whatsapp', 'contato']);
                         const contato = tel ? mascaraTelefone(tel) : (email || '—');
-                        const membroFound = pessoas.find(p => (email && p.email?.toLowerCase() === email.toLowerCase()) || (nome && p.nome?.toLowerCase() === nome.toLowerCase()));
+                        const membroFound = encontrarMembroDoInscrito(i);
                         const valorReal = extrairValorInscricao(dados, evento);
                         const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || extrairParcelasInscricao(dados) || 1;
                         const pagas = dados.parcelas_pagas || [];
@@ -2891,29 +3269,37 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                               </div>
                               <div>
                                 {i.status_pagamento === 'pago' ? (
-                                  <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">pago</span>
+                                  <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
+                                    {isGratuito ? 'presente' : 'pago'}
+                                  </span>
                                 ) : i.status_pagamento === 'cancelado' ? (
                                   <span className="badge bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">cancelado</span>
                                 ) : (
-                                  <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">pendente</span>
+                                  <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
+                                    {isGratuito ? 'ausente' : 'pendente'}
+                                  </span>
                                 )}
                               </div>
                             </div>
 
                             <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-50 dark:border-slate-800/60">
                               <span className="truncate">📍 {zonaNome}</span>
-                              <span className="shrink-0">{comTransp ? '🚌 Com Transporte' : '🚶 Sem Transporte'}</span>
+                              {temTransporte && <span className="shrink-0">{comTransp ? '🚌 Com Transporte' : '🚶 Sem Transporte'}</span>}
                             </div>
 
                             <div className="flex items-center justify-between pt-1">
-                              <span className="text-xs font-black text-slate-800 dark:text-slate-200">
-                                {valorReal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                                {totalParc > 1 && (
-                                  <span className="text-[10px] text-slate-400 ml-1 font-normal">
-                                    ({pagas.length}/{totalParc}x)
-                                  </span>
-                                )}
-                              </span>
+                              {!isGratuito ? (
+                                <span className="text-xs font-black text-slate-800 dark:text-slate-200">
+                                  {valorReal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                                  {totalParc > 1 && (
+                                    <span className="text-[10px] text-slate-400 ml-1 font-normal">
+                                      ({pagas.length}/{totalParc}x)
+                                    </span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Evento Gratuito</span>
+                              )}
                               <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
                                 Detalhes ➔
                               </span>
@@ -2952,7 +3338,8 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
         modoTransporteInicial={incluirTransporteNoTotal ? 'com_transporte' : 'sem_transporte'}
       />
 
-      {/* MODAL RECIBO ESPECIAL DE QUITAÇÃO */}
+      {/* MODAL RECIBO ESPECIAL DE QUITAÇÃO (Apenas para eventos pagos) */}
+      {!isGratuito && (
       <ModalReciboQuitacao
         aberto={modalRecibo.aberto}
         onFechar={() => setModalRecibo({ aberto: false, inscrito: null })}
@@ -2961,6 +3348,7 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
         pessoas={pessoas}
         obterZonaParticipante={obterZonaParticipante}
       />
+      )}
 
     </div>
   );
@@ -2981,6 +3369,7 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
   const [tipoValor, setTipoValor] = useState(eventoParaEditar?.valor_tipo || 'gratuito');
   const [vagas, setVagas] = useState(eventoParaEditar?.vagas || 0);
   const [valor, setValor] = useState(eventoParaEditar?.valor || 0);
+  const [cobrarTransporte, setCobrarTransporte] = useState(Number(eventoParaEditar?.valor_transporte || 0) > 0);
   const [valorTransporte, setValorTransporte] = useState(eventoParaEditar?.valor_transporte || 0);
   const [formasDisponiveis, setFormasDisponiveis] = useState([]);
   const [formasPagamento, setFormasPagamento] = useState(eventoParaEditar?.formas_pagamento || []);
@@ -3140,8 +3529,8 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
       const payload = {
         titulo, subtitulo, data_inicio: dataIni, data_fim: dataFim,
         receber_notificacoes: notifEmail, email_notificacao: emailAlerta,
-        valor_tipo: tipoValor, vagas: Number(vagas), valor: Number(valor),
-        valor_transporte: Number(valorTransporte),
+        valor_tipo: tipoValor, vagas: Number(vagas), valor: tipoValor === 'pago' ? Number(valor) : 0,
+        valor_transporte: cobrarTransporte ? (Number(valorTransporte) || 0) : 0,
         formas_pagamento: formasPagamento,
         programacao, campos_inscricao: camposInscricao,
         detalhes_ricos: detalhes, local_nome: localNome, local_url: localUrl,
@@ -3293,13 +3682,54 @@ function FormularioEvento({ onVoltar, onSucesso, eventoParaEditar }) {
                 <button className={`tab-btn ${tipoValor === 'pago' ? 'active' : ''}`} onClick={() => setTipoValor('pago')}>Pago</button>
               </div>
             </Campo>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: tipoValor === 'pago' ? '1fr 1fr' : '1fr', gap: 14 }}>
               <InputField label="Quantidade de Vagas" type="number" value={vagas} onChange={setVagas} />
               {tipoValor === 'pago' && <InputField label="Valor Base (R$)" type="number" value={valor} onChange={setValor} placeholder="0,00" />}
             </div>
-            {tipoValor === 'pago' && (
-              <InputField label="Valor do Transporte (Opcional R$)" type="number" value={valorTransporte} onChange={setValorTransporte} placeholder="0,00" />
-            )}
+
+            {/* Opção de Ativar / Desativar Cobrança de Transporte (disponível para eventos gratuitos e pagos) */}
+            <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-900/50 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                    <span>🚌</span> Cobrança de Transporte (Opcional)
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {cobrarTransporte
+                      ? 'Ativado — o participante poderá optar pelo transporte na inscrição.'
+                      : 'Desativado — nenhuma opção de transporte será exibida nos detalhes do evento.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={cobrarTransporte}
+                  onClick={() => {
+                    const proximo = !cobrarTransporte;
+                    setCobrarTransporte(proximo);
+                    if (!proximo) setValorTransporte(0);
+                  }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer ${
+                    cobrarTransporte ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                      cobrarTransporte ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              {cobrarTransporte && (
+                <InputField
+                  label="Valor do Transporte (R$)"
+                  type="number"
+                  value={valorTransporte}
+                  onChange={setValorTransporte}
+                  placeholder="0,00"
+                />
+              )}
+            </div>
             {tipoValor === 'pago' && (
               <div style={{ background: 'var(--blue-50)', borderRadius: 12, border: '1.5px solid var(--blue-700)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

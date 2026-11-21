@@ -1255,7 +1255,7 @@ function DetalhesMembro({ pessoaId, onFechar, listaPessoas = [], onDadosAtualiza
 
               {/* Novo Ambiente: Personalidade (Temperamentos) */}
               <div className="section-group">
-                <div><h3 className="section-title">Personalidade</h3><p className="section-subtitle">Temperamentos baseados no último teste realizado (Escala 7-35).</p></div>
+                <div><h3 className="section-title">Temperamentos</h3><p className="section-subtitle">Temperamentos baseados no último teste realizado (Escala 7-35).</p></div>
                 <div className="section-body">
                   {testePersonalidade ? (
                     <div className="space-y-4">

@@ -1227,6 +1227,188 @@ html.dark .card-voluntario-item:hover {
   transform: translateY(-2px);
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   OTIMIZAÇÃO DE IMPRESSÃO / EXPORTAÇÃO PDF — PERFIL COMPORTAMENTAL
+   Garante alto contraste, economia de tinta e fidelidade de cores mesmo
+   quando o usuário está com o Modo Escuro (html.dark) ativado.
+══════════════════════════════════════════════════════════════════════ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 11mm;
+  }
+
+  html,
+  html.dark,
+  body,
+  html.dark body {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    color-scheme: light !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .perfil-print-root,
+  .perfil-print-root * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Neutraliza regras do modo escuro dentro do relatório impresso */
+  html.dark .perfil-print-root .card,
+  html.dark .perfil-print-root .bg-white,
+  .perfil-print-root .card {
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+  }
+
+  html.dark .perfil-print-root .bg-slate-50,
+  html.dark .perfil-print-root .bg-slate-50\/80,
+  html.dark .perfil-print-root .bg-slate-900\/70,
+  html.dark .perfil-print-root .bg-slate-900\/50 {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  html.dark .perfil-print-root .bg-slate-100,
+  .perfil-print-root .bg-slate-100 {
+    background-color: #e2e8f0 !important;
+  }
+
+  html.dark .perfil-print-root .text-slate-900,
+  html.dark .perfil-print-root .text-slate-800,
+  html.dark .perfil-print-root .text-slate-700,
+  .perfil-print-root .text-slate-900,
+  .perfil-print-root .text-slate-800 {
+    color: #0f172a !important;
+  }
+
+  html.dark .perfil-print-root .text-slate-600,
+  html.dark .perfil-print-root .text-slate-500,
+  .perfil-print-root .text-slate-700,
+  .perfil-print-root .text-slate-600 {
+    color: #334155 !important;
+  }
+
+  html.dark .perfil-print-root .text-slate-400,
+  .perfil-print-root .text-slate-400 {
+    color: #475569 !important;
+  }
+
+  /* Hero do perfil dominante otimizado para impressão (alto contraste + economia de tinta) */
+  .perfil-print-root .perfil-print-hero {
+    background: #f8fafc !important;
+    background-image: none !important;
+    color: #0f172a !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-left-width: 6px !important;
+    border-radius: 14px !important;
+    padding: 14px 18px !important;
+  }
+
+  .perfil-print-root .perfil-print-hero h2 {
+    color: #0f172a !important;
+  }
+
+  .perfil-print-root .perfil-print-hero p {
+    color: #334155 !important;
+  }
+
+  .perfil-print-root .perfil-print-hero .perfil-print-emoji-box {
+    background: #ffffff !important;
+    border: 1.5px solid #cbd5e1 !important;
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 32px !important;
+  }
+
+  .perfil-print-root .perfil-print-hero .perfil-print-badge {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  /* Quadrantes cerebrais e boxes temáticos com cores suaves e texto nítido */
+  .perfil-print-root .perfil-box-blue {
+    background-color: #eff6ff !important;
+    border-color: #93c5fd !important;
+  }
+  .perfil-print-root .perfil-box-blue * {
+    color: #1e40af !important;
+  }
+
+  .perfil-print-root .perfil-box-emerald {
+    background-color: #ecfdf5 !important;
+    border-color: #6ee7b7 !important;
+  }
+  .perfil-print-root .perfil-box-emerald h5,
+  .perfil-print-root .perfil-box-emerald .perfil-box-accent {
+    color: #047857 !important;
+  }
+
+  .perfil-print-root .perfil-box-rose {
+    background-color: #fff1f2 !important;
+    border-color: #fda4af !important;
+  }
+  .perfil-print-root .perfil-box-rose * {
+    color: #be123c !important;
+  }
+
+  .perfil-print-root .perfil-box-amber {
+    background-color: #fffbeb !important;
+    border-color: #fcd34d !important;
+  }
+  .perfil-print-root .perfil-box-amber h5,
+  .perfil-print-root .perfil-box-amber .perfil-box-accent {
+    color: #b45309 !important;
+  }
+
+  .perfil-print-root .perfil-box-indigo {
+    background-color: #eef2ff !important;
+    border-color: #a5b4fc !important;
+  }
+  .perfil-print-root .perfil-box-indigo h5 {
+    color: #3730a3 !important;
+  }
+
+  .perfil-print-root .perfil-box-valores {
+    background: #eff6ff !important;
+    border-color: #93c5fd !important;
+  }
+  .perfil-print-root .perfil-box-valores span {
+    color: #1d4ed8 !important;
+  }
+  .perfil-print-root .perfil-box-valores p {
+    color: #0f172a !important;
+  }
+
+  /* Gráficos SVG legíveis no papel */
+  .perfil-print-root .recharts-text,
+  .perfil-print-root svg text {
+    fill: #1e293b !important;
+  }
+  .perfil-print-root .recharts-polar-grid-concentric-polygon,
+  .perfil-print-root .recharts-polar-grid-angle line {
+    stroke: #94a3b8 !important;
+  }
+
+  /* Controle de quebra de página */
+  .perfil-print-avoid-break {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .perfil-print-page-break {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+}
+
 
 
 

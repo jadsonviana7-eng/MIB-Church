@@ -39,7 +39,7 @@ export default function SidebarVinculos({ pessoaId, pessoaData, matriculasEscola
         ] = await Promise.all([
           supabase.from('equipes_escala').select('tipo_escala').eq('pessoa_id', pessoaId),
           supabase.from('professores').select('id').eq('pessoa_id', pessoaId).maybeSingle(),
-          supabase.from('agenda_inscricoes').select('id, evento_id, dados_inscricao, status_pagamento, created_at, agenda_eventos(titulo, data_inicio)')
+          supabase.from('agenda_inscricoes').select('id, evento_id, dados_inscricao, status_pagamento, created_at, agenda_eventos(titulo, data_inicio, valor_tipo)')
         ]);
 
         if (!ativo) return;
@@ -203,9 +203,26 @@ export default function SidebarVinculos({ pessoaId, pessoaData, matriculasEscola
                         </p>
                       </div>
                     </div>
-                    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md ${ins.status_pagamento === 'pago' ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300' : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300'}`}>
-                      {ins.status_pagamento || 'pendente'}
-                    </span>
+                    {(() => {
+                      const isGratuito = ins.agenda_eventos?.valor_tipo !== 'pago';
+                      const isCancelado = ins.status_pagamento === 'cancelado';
+                      const isConfirmado = ins.status_pagamento === 'pago' || (isGratuito && !isCancelado);
+                      const labelStatus = isCancelado
+                        ? 'cancelado'
+                        : isConfirmado
+                          ? 'confirmado'
+                          : (ins.status_pagamento || 'pendente');
+                      const clsStatus = isCancelado
+                        ? 'bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300'
+                        : isConfirmado
+                          ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300';
+                      return (
+                        <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md ${clsStatus}`}>
+                          {labelStatus}
+                        </span>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>

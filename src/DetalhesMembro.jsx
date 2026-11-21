@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Cropper from 'react-easy-crop';
 import { supabase } from './supabaseClient';
 import { Card, CardHeader, CampoLinha, CampoInput, uploadImagemCelula } from './ui';
-import { Eye, EyeOff, X, Sparkles, CheckCircle2, TrendingUp, Flame, Compass, ChevronRight, Brain, Target } from 'lucide-react';
+import { Eye, EyeOff, X, Sparkles, CheckCircle2, TrendingUp, Flame, Compass, ChevronRight, Brain, Target, History } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import SidebarVinculos from './SidebarVinculos';
 import { calcularIdade } from './churchUtils';
 import { ModalLancarTransacao } from './TransacoesFinanceiras';
@@ -430,6 +431,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
   const [perfilEmocao, setPerfilEmocao] = useState('');
   const [perfilAtuante, setPerfilAtuante] = useState('');
   const [testePersonalidade, setTestePersonalidade] = useState(null);
+  const [historicoPerfil, setHistoricoPerfil] = useState([]);
   const [permissoesJson, setPermissoesJson] = useState({});
 
   const analiseInteligente = useMemo(
@@ -1080,6 +1082,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
         setCarregandoMembro(true);
       }
       setTestePersonalidade(null);
+      setHistoricoPerfil([]);
 
       try {
         const authIdInicial = membroLocal?.auth_user_id || null;
@@ -1180,6 +1183,22 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
             supabase.from('personality_tests').select('*').eq('member_id', p.auth_user_id).order('created_at', { ascending: false }).limit(1).maybeSingle().then(({ data }) => {
               if (ativo) setTestePersonalidade(data || null);
             })
+          );
+        }
+
+        if (pessoaId) {
+          extraPromises.push(
+            supabase
+              .from('historico_perfil_comportamental')
+              .select('*')
+              .eq('pessoa_id', pessoaId)
+              .order('created_at', { ascending: false })
+              .then(({ data, error }) => {
+                if (ativo && !error && Array.isArray(data)) {
+                  setHistoricoPerfil(data);
+                }
+              })
+              .catch(() => {})
           );
         }
 
@@ -1728,11 +1747,10 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                           key={cod}
                           type="button"
                           onClick={() => setPerfilModalAberto(cod)}
-                          className={`px-2 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1 border ${
-                            ativo
+                          className={`px-2 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1 border ${ativo
                               ? 'bg-white text-slate-900 border-white shadow-sm'
                               : 'bg-black/15 hover:bg-black/25 text-white/90 border-white/15'
-                          }`}
+                            }`}
                         >
                           <span>{item.emoji}</span>
                           <span className="hidden sm:inline truncate">{item.nome}</span>
@@ -1934,11 +1952,10 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                           key={k}
                           type="button"
                           onClick={() => setCerebralModalAberto(k)}
-                          className={`px-2 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1 border ${
-                            ativo
+                          className={`px-2 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1 border ${ativo
                               ? 'bg-white text-slate-900 border-white shadow-sm'
                               : 'bg-black/15 hover:bg-black/25 text-white/90 border-white/15'
-                          }`}
+                            }`}
                         >
                           <span>{item.emoji}</span>
                           <span className="hidden sm:inline truncate">{item.nome}</span>
@@ -2087,11 +2104,10 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                         key={k}
                         type="button"
                         onClick={() => setTemperamentoModalAberto(k)}
-                        className={`px-2 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1 border ${
-                          ativo
+                        className={`px-2 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1 border ${ativo
                             ? 'bg-white text-slate-900 border-white shadow-sm'
                             : 'bg-black/15 hover:bg-black/25 text-white/90 border-white/15'
-                        }`}
+                          }`}
                       >
                         <span>{item.emoji}</span>
                         <span className="hidden sm:inline truncate">{item.nome}</span>
@@ -2481,11 +2497,10 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                                   key={cNome}
                                   type="button"
                                   onClick={() => toggleCargo(cNome)}
-                                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 border cursor-pointer ${
-                                    selecionado
+                                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 border cursor-pointer ${selecionado
                                       ? 'bg-teal-50 dark:bg-blue-950/60 border-[#055F6D] dark:border-blue-500 text-[#055F6D] dark:text-blue-300 font-bold shadow-xs'
                                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-100/70 dark:hover:bg-slate-800'
-                                  }`}
+                                    }`}
                                 >
                                   <span className={`w-1.5 h-1.5 rounded-full ${selecionado ? 'bg-[#055F6D] dark:bg-blue-400' : 'bg-slate-300 dark:bg-slate-600'}`} />
                                   {cNome}
@@ -2861,7 +2876,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                 {/* Novo Ambiente: Personalidade (Temperamentos clicáveis) */}
                 <div className="section-group">
                   <div>
-                    <h3 className="section-title">Personalidade</h3>
+                    <h3 className="section-title">Temperamentos</h3>
                     <p className="section-subtitle">Clique em um temperamento para ver detalhes, forças e aptidões (Escala 7–35).</p>
                   </div>
                   <div className="section-body">
@@ -3134,11 +3149,10 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                                     <span className="text-base shrink-0">{ap.icone}</span>
                                     <span className="truncate">{ap.nome}</span>
                                   </span>
-                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
-                                    i === 0
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${i === 0
                                       ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
                                       : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
-                                  }`}>
+                                    }`}>
                                     {ap.afinidade}% afinidade
                                   </span>
                                 </div>
@@ -3192,6 +3206,124 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                             </ul>
                           </div>
                         )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Evolução Histórica do Perfil Comportamental */}
+                {historicoPerfil.length > 0 && (
+                  <div className="section-group">
+                    <div>
+                      <h3 className="section-title flex items-center gap-2">
+                        <History size={16} className="text-indigo-600 dark:text-indigo-400" />
+                        Evolução do Perfil Comportamental
+                      </h3>
+                      <p className="section-subtitle">
+                        Histórico de {historicoPerfil.length} {historicoPerfil.length === 1 ? 'avaliação registrada' : 'avaliações registradas'} ao longo do tempo.
+                      </p>
+                    </div>
+                    <div className="section-body space-y-4">
+                      {historicoPerfil.length >= 2 && (() => {
+                        const dadosEvolucao = [...historicoPerfil].reverse().map((h) => ({
+                          data: h.created_at
+                            ? new Date(h.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+                            : '—',
+                          Águia: Number(h.perfil_aguia) || 0,
+                          Gato: Number(h.perfil_gato) || 0,
+                          Lobo: Number(h.perfil_lobo) || 0,
+                          Tubarão: Number(h.perfil_tubarao) || 0,
+                        }));
+                        return (
+                          <div className="p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                                Curva de Evolução dos 4 Arquétipos (%)
+                              </span>
+                              <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold">
+                                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Águia</span>
+                                <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Gato</span>
+                                <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Lobo</span>
+                                <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Tubarão</span>
+                              </div>
+                            </div>
+                            <div className="h-52 w-full">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={dadosEvolucao} margin={{ top: 8, right: 12, left: -20, bottom: 0 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#94a3b833" />
+                                  <XAxis dataKey="data" tick={{ fill: '#64748b', fontSize: 11, fontWeight: 600 }} />
+                                  <YAxis domain={[0, 100]} tick={{ fill: '#64748b', fontSize: 10 }} />
+                                  <Tooltip formatter={(val) => [`${val}%`]} />
+                                  <Line type="monotone" dataKey="Águia" stroke="#10b981" strokeWidth={2.5} dot={{ r: 4 }} />
+                                  <Line type="monotone" dataKey="Gato" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 4 }} />
+                                  <Line type="monotone" dataKey="Lobo" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 4 }} />
+                                  <Line type="monotone" dataKey="Tubarão" stroke="#ef4444" strokeWidth={2.5} dot={{ r: 4 }} />
+                                </LineChart>
+                              </ResponsiveContainer>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      <div className="space-y-2.5">
+                        {historicoPerfil.map((reg, idx) => {
+                          const anterior = historicoPerfil[idx + 1] || null;
+                          const dataFmt = reg.created_at
+                            ? new Date(reg.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })
+                            : '—';
+                          const renderDelta = (atual, prev) => {
+                            if (prev === null || prev === undefined) return null;
+                            const diff = (Number(atual) || 0) - (Number(prev) || 0);
+                            if (diff === 0) return null;
+                            return (
+                              <span className={`ml-1 text-[10px] font-black ${diff > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
+                                ({diff > 0 ? `+${diff}%` : `${diff}%`})
+                              </span>
+                            );
+                          };
+                          return (
+                            <div
+                              key={reg.id}
+                              className="p-3.5 rounded-2xl bg-white dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-2"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-xs font-black text-slate-800 dark:text-slate-100">
+                                    {reg.dominante || 'Perfil'}{reg.secundario ? ` / ${reg.secundario}` : ''}
+                                  </span>
+                                  {idx === 0 && (
+                                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                      Atual
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="text-[11px] font-semibold text-slate-400">{dataFmt}</span>
+                              </div>
+
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-bold">
+                                <div className="px-2.5 py-1.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/50 text-emerald-700 dark:text-emerald-300">
+                                  🦅 Águia: {reg.perfil_aguia}%{renderDelta(reg.perfil_aguia, anterior?.perfil_aguia)}
+                                </div>
+                                <div className="px-2.5 py-1.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/50 text-amber-700 dark:text-amber-300">
+                                  🐈 Gato: {reg.perfil_gato}%{renderDelta(reg.perfil_gato, anterior?.perfil_gato)}
+                                </div>
+                                <div className="px-2.5 py-1.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/50 text-blue-700 dark:text-blue-300">
+                                  🐺 Lobo: {reg.perfil_lobo}%{renderDelta(reg.perfil_lobo, anterior?.perfil_lobo)}
+                                </div>
+                                <div className="px-2.5 py-1.5 rounded-xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-800/50 text-rose-700 dark:text-rose-300">
+                                  🦈 Tubarão: {reg.perfil_tubarao}%{renderDelta(reg.perfil_tubarao, anterior?.perfil_tubarao)}
+                                </div>
+                              </div>
+
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex flex-wrap gap-x-3 gap-y-1">
+                                <span>🧠 Pensante: <strong>{reg.perfil_pensante}%</strong></span>
+                                <span>💪 Atuante: <strong>{reg.perfil_atuante}%</strong></span>
+                                <span>⚖️ Razão: <strong>{reg.perfil_razao}%</strong></span>
+                                <span>❤️ Emoção: <strong>{reg.perfil_emocao}%</strong></span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -3270,13 +3402,12 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                               key={m.id}
                               type="button"
                               onClick={() => m.turmas?.id && carregarBoletimEscola(m.turmas.id)}
-                              className={`text-left p-3.5 rounded-2xl border flex justify-between items-center gap-3 transition-all cursor-pointer ${
-                                selecionada
+                              className={`text-left p-3.5 rounded-2xl border flex justify-between items-center gap-3 transition-all cursor-pointer ${selecionada
                                   ? 'ring-2 ring-blue-500/40 border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 shadow-sm'
                                   : isDesistente
                                     ? 'border-rose-100 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/30 hover:border-rose-300'
                                     : 'border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-700'
-                              }`}
+                                }`}
                             >
                               <div className="min-w-0">
                                 <p className={`text-[10px] font-bold uppercase truncate ${isDesistente ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
@@ -3494,11 +3625,10 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                                       </p>
                                     </div>
                                     <span
-                                      className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 uppercase ${
-                                        aula.presente
+                                      className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 uppercase ${aula.presente
                                           ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
                                           : 'bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300'
-                                      }`}
+                                        }`}
                                     >
                                       {aula.presente ? 'Presente' : 'Falta'}
                                     </span>
@@ -3679,11 +3809,10 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-150 dark:border-slate-700">
                           <p className="text-[10px] font-bold text-slate-400 uppercase">Média Geral</p>
-                          <p className={`text-xl font-black ${
-                            cadernetaDados?.mediaGeral === null ? 'text-slate-400' :
-                            cadernetaDados.mediaGeral >= 7.0 ? 'text-emerald-600 dark:text-emerald-400' :
-                            cadernetaDados.mediaGeral >= 5.0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'
-                          }`}>
+                          <p className={`text-xl font-black ${cadernetaDados?.mediaGeral === null ? 'text-slate-400' :
+                              cadernetaDados.mediaGeral >= 7.0 ? 'text-emerald-600 dark:text-emerald-400' :
+                                cadernetaDados.mediaGeral >= 5.0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'
+                            }`}>
                             {cadernetaDados?.mediaGeral !== null ? cadernetaDados.mediaGeral.toFixed(1) : '---'}
                           </p>
                         </div>
@@ -4207,17 +4336,17 @@ function AcessoSistemaPanel({
             <div>
               <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Senha inicial</label>
               <div className="relative flex items-center">
-                <input 
-                  type={mostrarSenhaNovoAcesso ? "text" : "password"} 
-                  value={senhaNovoAcesso} 
-                  onChange={(e) => setSenhaNovoAcesso(e.target.value)} 
+                <input
+                  type={mostrarSenhaNovoAcesso ? "text" : "password"}
+                  value={senhaNovoAcesso}
+                  onChange={(e) => setSenhaNovoAcesso(e.target.value)}
                   disabled={dis}
-                  minLength={6} 
-                  className="w-full pl-3 pr-9 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed" 
+                  minLength={6}
+                  className="w-full pl-3 pr-9 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed"
                 />
-                <button 
-                  type="button" 
-                  onClick={() => setMostrarSenhaNovoAcesso(!mostrarSenhaNovoAcesso)} 
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenhaNovoAcesso(!mostrarSenhaNovoAcesso)}
                   className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
                   title={mostrarSenhaNovoAcesso ? "Ocultar senha" : "Visualizar senha"}
                   aria-label={mostrarSenhaNovoAcesso ? "Ocultar senha" : "Visualizar senha"}
@@ -4229,17 +4358,17 @@ function AcessoSistemaPanel({
             <div>
               <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">Confirmar senha</label>
               <div className="relative flex items-center">
-                <input 
-                  type={mostrarSenhaNovoAcesso ? "text" : "password"} 
-                  value={confirmarSenhaNovoAcesso} 
-                  onChange={(e) => setConfirmarSenhaNovoAcesso(e.target.value)} 
+                <input
+                  type={mostrarSenhaNovoAcesso ? "text" : "password"}
+                  value={confirmarSenhaNovoAcesso}
+                  onChange={(e) => setConfirmarSenhaNovoAcesso(e.target.value)}
                   disabled={dis}
-                  minLength={6} 
-                  className="w-full pl-3 pr-9 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed" 
+                  minLength={6}
+                  className="w-full pl-3 pr-9 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:cursor-not-allowed"
                 />
-                <button 
-                  type="button" 
-                  onClick={() => setMostrarSenhaNovoAcesso(!mostrarSenhaNovoAcesso)} 
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenhaNovoAcesso(!mostrarSenhaNovoAcesso)}
                   className="absolute right-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 cursor-pointer"
                   title={mostrarSenhaNovoAcesso ? "Ocultar senha" : "Visualizar senha"}
                   aria-label={mostrarSenhaNovoAcesso ? "Ocultar senha" : "Visualizar senha"}

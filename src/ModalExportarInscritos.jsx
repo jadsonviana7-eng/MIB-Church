@@ -19,6 +19,8 @@ export default function ModalExportarInscritos({
   formatoInicial = 'pdf',
   modoTransporteInicial = 'com_transporte'
 }) {
+  const isGratuito = evento?.valor_tipo !== 'pago';
+  const temTransporte = Number(evento?.valor_transporte) > 0;
   const [formato, setFormato] = useState(formatoInicial || 'pdf'); // 'pdf' | 'xlsx' | 'csv'
   const [orientacaoA4, setOrientacaoA4] = useState('auto'); // 'auto' | 'portrait' | 'landscape'
   const [filtroStatus, setFiltroStatus] = useState('todos'); // 'todos' | 'pago' | 'pendente' | 'transporte_sim' | 'transporte_nao'
@@ -54,27 +56,38 @@ export default function ModalExportarInscritos({
   }, [inscritos]);
 
   // Definição das colunas padrão do sistema com pesos proporcionais para layout A4
-  const colunasSistema = useMemo(() => [
-    { id: 'data_inscricao', rotulo: 'Data Inscrição', categoria: 'pessoal', peso: 1.0, padrao: true },
-    { id: 'nome', rotulo: 'Nome do Inscrito', categoria: 'pessoal', peso: 2.2, padrao: true },
-    { id: 'tipo_pessoa', rotulo: 'Tipo (Membro/Visitante)', categoria: 'pessoal', peso: 1.1, padrao: true },
-    { id: 'telefone', rotulo: 'Telefone / WhatsApp', categoria: 'pessoal', peso: 1.3, padrao: true },
-    { id: 'email', rotulo: 'E-mail', categoria: 'pessoal', peso: 1.8, padrao: true },
-    { id: 'cpf', rotulo: 'CPF', categoria: 'pessoal', peso: 1.2, padrao: false },
-    { id: 'zona', rotulo: 'Zona de Moradia', categoria: 'pessoal', peso: 1.3, padrao: true },
+  const colunasSistema = useMemo(() => {
+    const base = [
+      { id: 'data_inscricao', rotulo: 'Data Inscrição', categoria: 'pessoal', peso: 1.0, padrao: true },
+      { id: 'nome', rotulo: 'Nome do Inscrito', categoria: 'pessoal', peso: 2.2, padrao: true },
+      { id: 'tipo_pessoa', rotulo: 'Tipo (Membro/Visitante)', categoria: 'pessoal', peso: 1.1, padrao: true },
+      { id: 'telefone', rotulo: 'Telefone / WhatsApp', categoria: 'pessoal', peso: 1.3, padrao: true },
+      { id: 'email', rotulo: 'E-mail', categoria: 'pessoal', peso: 1.8, padrao: true },
+      { id: 'cpf', rotulo: 'CPF', categoria: 'pessoal', peso: 1.2, padrao: false },
+      { id: 'zona', rotulo: 'Zona de Moradia', categoria: 'pessoal', peso: 1.3, padrao: true },
+      ...(temTransporte ? [{ id: 'transporte_opcao', rotulo: 'Transporte', categoria: 'transporte', peso: 1.1, padrao: true }] : []),
+    ];
 
-    { id: 'transporte_opcao', rotulo: 'Transporte', categoria: 'transporte', peso: 1.1, padrao: true },
-    { id: 'transporte_valor', rotulo: 'Valor Transp. (R$)', categoria: 'transporte', peso: 1.0, padrao: modoTransporte === 'ambos' },
+    if (isGratuito) {
+      return [
+        ...base,
+        { id: 'status_pagamento', rotulo: 'Presença', categoria: 'pessoal', peso: 0.9, padrao: true },
+      ];
+    }
 
-    { id: 'status_pagamento', rotulo: 'Status PG', categoria: 'financeiro', peso: 0.9, padrao: true },
-    { id: 'forma_pagamento', rotulo: 'Forma Pagamento', categoria: 'financeiro', peso: 1.2, padrao: true },
-    { id: 'valor_base', rotulo: 'Valor Base (R$)', categoria: 'financeiro', peso: 1.0, padrao: modoTransporte !== 'com_transporte' },
-    { id: 'valor_total', rotulo: 'Valor Total (R$)', categoria: 'financeiro', peso: 1.0, padrao: modoTransporte !== 'sem_transporte' },
-    { id: 'parcelas', rotulo: 'Parcelas', categoria: 'financeiro', peso: 0.8, padrao: false },
-    { id: 'parcelas_pagas', rotulo: 'Parc. Pagas', categoria: 'financeiro', peso: 0.8, padrao: false },
-    { id: 'valor_pago', rotulo: 'Valor Pago (R$)', categoria: 'financeiro', peso: 1.0, padrao: true },
-    { id: 'valor_pendente', rotulo: 'Saldo Devedor (R$)', categoria: 'financeiro', peso: 1.0, padrao: true }
-  ], [modoTransporte]);
+    return [
+      ...base,
+      ...(temTransporte ? [{ id: 'transporte_valor', rotulo: 'Valor Transp. (R$)', categoria: 'transporte', peso: 1.0, padrao: modoTransporte === 'ambos' }] : []),
+      { id: 'status_pagamento', rotulo: 'Status PG', categoria: 'financeiro', peso: 0.9, padrao: true },
+      { id: 'forma_pagamento', rotulo: 'Forma Pagamento', categoria: 'financeiro', peso: 1.2, padrao: true },
+      { id: 'valor_base', rotulo: 'Valor Base (R$)', categoria: 'financeiro', peso: 1.0, padrao: modoTransporte !== 'com_transporte' },
+      { id: 'valor_total', rotulo: 'Valor Total (R$)', categoria: 'financeiro', peso: 1.0, padrao: modoTransporte !== 'sem_transporte' },
+      { id: 'parcelas', rotulo: 'Parcelas', categoria: 'financeiro', peso: 0.8, padrao: false },
+      { id: 'parcelas_pagas', rotulo: 'Parc. Pagas', categoria: 'financeiro', peso: 0.8, padrao: false },
+      { id: 'valor_pago', rotulo: 'Valor Pago (R$)', categoria: 'financeiro', peso: 1.0, padrao: true },
+      { id: 'valor_pendente', rotulo: 'Saldo Devedor (R$)', categoria: 'financeiro', peso: 1.0, padrao: true },
+    ];
+  }, [modoTransporte, isGratuito, temTransporte]);
 
   // Estado das colunas selecionadas
   const [colunasSelecionadas, setColunasSelecionadas] = useState(() => {
@@ -131,8 +144,8 @@ export default function ModalExportarInscritos({
 
   const obterTextoFiltro = (f) => {
     switch (f) {
-      case 'pago': return 'Apenas Confirmados (Pagos)';
-      case 'pendente': return 'Apenas Pendentes';
+      case 'pago': return isGratuito ? 'Apenas Presentes' : 'Apenas Confirmados (Pagos)';
+      case 'pendente': return isGratuito ? 'Apenas Ausentes' : 'Apenas Pendentes';
       case 'transporte_sim': return 'Apenas Com Transporte';
       case 'transporte_nao': return 'Apenas Sem Transporte';
       default: return 'Todos os Inscritos';
@@ -269,7 +282,9 @@ export default function ModalExportarInscritos({
             linha[col.rotulo] = valorTransporteItem;
             break;
           case 'status_pagamento':
-            linha[col.rotulo] = ins.status_pagamento === 'pago' ? 'Pago' : (ins.status_pagamento === 'cancelado' ? 'Cancelado' : 'Pendente');
+            linha[col.rotulo] = ins.status_pagamento === 'pago'
+              ? (isGratuito ? 'Presente' : 'Pago')
+              : (ins.status_pagamento === 'cancelado' ? 'Cancelado' : (isGratuito ? 'Ausente' : 'Pendente'));
             break;
           case 'forma_pagamento':
             linha[col.rotulo] = findInJsonGlobal(dados, ['forma de pagamento', 'forma_pagamento', 'pagamento', 'metodo']) || 'Não especificada';
@@ -625,24 +640,34 @@ export default function ModalExportarInscritos({
       <div class="meta">
         <div>Extraído em: <strong>${dataHoje} às ${horaHoje}</strong></div>
         <div>Filtro: <strong>${obterTextoFiltro(filtroStatus)}</strong></div>
-        <div>Cálculo Financeiro: <strong>${modoTransporte === 'sem_transporte' ? 'Sem Transporte' : (modoTransporte === 'com_transporte' ? 'Com Transporte' : 'Ambos (Separados)')}</strong></div>
+        ${isGratuito
+          ? `<div>Modalidade: <strong>Evento Gratuito</strong></div>`
+          : `<div>Cálculo Financeiro: <strong>${modoTransporte === 'sem_transporte' ? 'Sem Transporte' : (modoTransporte === 'com_transporte' ? 'Com Transporte' : 'Ambos (Separados)')}</strong></div>`
+        }
       </div>
     </div>
 
     <!-- 4 Indicadores no Topo -->
     <div class="cards-row">
       <div class="card card-confirmados">
-        <div class="card-label">Confirmados (Pagos)</div>
+        <div class="card-label">${isGratuito ? 'Presentes' : 'Confirmados (Pagos)'}</div>
         <div class="card-value">${totais.confirmados}</div>
       </div>
       <div class="card card-pendentes">
-        <div class="card-label">Pendentes</div>
+        <div class="card-label">${isGratuito ? 'Ausentes' : 'Pendentes'}</div>
         <div class="card-value">${totais.pendentes}</div>
       </div>
+      ${isGratuito ? `
+      <div class="card card-arrecadado">
+        <div class="card-label">Cancelados</div>
+        <div class="card-value">${totais.cancelados}</div>
+      </div>
+      ` : `
       <div class="card card-arrecadado">
         <div class="card-label">${labelArrecadado}</div>
         <div class="card-value">${valorArrecadado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
       </div>
+      `}
       <div class="card card-total">
         <div class="card-label">Total de Inscritos</div>
         <div class="card-value">${inscritosFiltrados.length}</div>
@@ -662,7 +687,7 @@ export default function ModalExportarInscritos({
             ${colunasAtivas.map(c => {
               const v = linha[c.rotulo];
               if (c.id === 'status_pagamento') {
-                const cls = v === 'Pago' ? 'badge-pago' : (v === 'Cancelado' ? 'badge-cancelado' : 'badge-pendente');
+                const cls = (v === 'Pago' || v === 'Presente') ? 'badge-pago' : (v === 'Cancelado' ? 'badge-cancelado' : 'badge-pendente');
                 return `<td><span class="badge ${cls}">${v}</span></td>`;
               }
               if (typeof v === 'number' && ['valor_base', 'transporte_valor', 'valor_total', 'valor_pago', 'valor_pendente'].includes(c.id)) {
@@ -755,14 +780,17 @@ export default function ModalExportarInscritos({
     doc.text(`Extraído em: ${dataHoje} | Filtro: ${obterTextoFiltro(filtroStatus)}`, pageWidth - margin, y, { align: 'right' });
     y += 7.5;
 
-    // Faixa com Indicadores e Modo de Transporte
-    const labelArrec = modoTransporte === 'sem_transporte' ? 'Sem Transp.' : (modoTransporte === 'com_transporte' ? 'Com Transp.' : 'Total');
-    const valArrec = (modoTransporte === 'sem_transporte' ? totais.somaBase : totais.somaTotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
+    // Faixa com Indicadores
     doc.setFont('Helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(51, 65, 85);
-    doc.text(`Confirmados: ${totais.confirmados}  |  Pendentes: ${totais.pendentes}  |  Arrecadado (${labelArrec}): ${valArrec}  |  Total: ${inscritosFiltrados.length} inscritos`, margin, y);
+    if (isGratuito) {
+      doc.text(`Presentes: ${totais.confirmados}  |  Ausentes: ${totais.pendentes}  |  Cancelados: ${totais.cancelados}  |  Total: ${inscritosFiltrados.length} inscritos`, margin, y);
+    } else {
+      const labelArrec = modoTransporte === 'sem_transporte' ? 'Sem Transp.' : (modoTransporte === 'com_transporte' ? 'Com Transp.' : 'Total');
+      const valArrec = (modoTransporte === 'sem_transporte' ? totais.somaBase : totais.somaTotal).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      doc.text(`Confirmados: ${totais.confirmados}  |  Pendentes: ${totais.pendentes}  |  Arrecadado (${labelArrec}): ${valArrec}  |  Total: ${inscritosFiltrados.length} inscritos`, margin, y);
+    }
     y += 6;
 
     // Tabela com largura proporcional baseada em pesos
@@ -1091,7 +1119,8 @@ export default function ModalExportarInscritos({
             )}
           </div>
 
-          {/* 2. CÁLCULO E TOTAL ARRECADADO COM / SEM TRANSPORTE */}
+          {/* 2. CÁLCULO E TOTAL ARRECADADO COM / SEM TRANSPORTE (Apenas para eventos pagos) */}
+          {!isGratuito && (
           <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40">
             <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
               <label className="text-[11px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-300 block">
@@ -1164,19 +1193,22 @@ export default function ModalExportarInscritos({
               </label>
             </div>
           </div>
+          )}
 
           {/* 3. FILTRO DE INSCRIÇÕES */}
           <div>
             <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block mb-2">
-              3. Filtrar Quem Exportar
+              {isGratuito ? '2. Filtrar Quem Exportar' : '3. Filtrar Quem Exportar'}
             </label>
             <div className="flex flex-wrap gap-1.5">
               {[
                 { id: 'todos', label: `Todos (${inscritos.length})` },
-                { id: 'pago', label: 'Apenas Confirmados' },
-                { id: 'pendente', label: 'Apenas Pendentes' },
-                { id: 'transporte_sim', label: 'Com Transporte' },
-                { id: 'transporte_nao', label: 'Sem Transporte' }
+                { id: 'pago', label: isGratuito ? 'Apenas Presentes' : 'Apenas Confirmados' },
+                { id: 'pendente', label: isGratuito ? 'Apenas Ausentes' : 'Apenas Pendentes' },
+                ...(temTransporte ? [
+                  { id: 'transporte_sim', label: 'Com Transporte' },
+                  { id: 'transporte_nao', label: 'Sem Transporte' }
+                ] : [])
               ].map(f => (
                 <button
                   key={f.id}
@@ -1199,7 +1231,7 @@ export default function ModalExportarInscritos({
             <div className="flex items-center justify-between flex-wrap gap-2 mb-2.5">
               <div>
                 <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
-                  4. Escolha das Colunas ({totalColunasAtivas} ativas)
+                  {isGratuito ? `3. Escolha das Colunas (${totalColunasAtivas} ativas)` : `4. Escolha das Colunas (${totalColunasAtivas} ativas)`}
                 </label>
               </div>
               <div className="flex items-center gap-2 text-xs">
@@ -1259,7 +1291,8 @@ export default function ModalExportarInscritos({
                 </div>
               </div>
 
-              {/* Categoria: Transporte */}
+              {/* Categoria: Transporte (apenas quando cobrança de transporte está ativa) */}
+              {temTransporte && (
               <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800">
                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-2">
                   🚌 Transporte
@@ -1285,8 +1318,10 @@ export default function ModalExportarInscritos({
                   ))}
                 </div>
               </div>
+              )}
 
-              {/* Categoria: Financeiro */}
+              {/* Categoria: Financeiro (Apenas para eventos pagos) */}
+              {!isGratuito && (
               <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800">
                 <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-2">
                   💰 Valores & Pagamento
@@ -1312,6 +1347,7 @@ export default function ModalExportarInscritos({
                   ))}
                 </div>
               </div>
+              )}
 
               {/* Categoria: Perguntas Personalizadas do Formulário */}
               {camposPersonalizados.length > 0 && (

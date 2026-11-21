@@ -7,6 +7,7 @@ import LeitorQRCode from './LeitorQRCode';
 import RelatorioSemanal from './RelatorioSemanal';
 import CalculadoraTributos from './CalculadoraTributos';
 import QuizPersonalidade from './QuizPersonalidade';
+import TestePerfilComportamental from './TestePerfilComportamental';
 import PedidoOracao from './PedidoOracao';
 import MuralOracao from './MuralOracao';
 import FormularioVisitante from './FormularioVisitante';
@@ -67,9 +68,17 @@ function getUtilitarios({ membroLogado, temVinculoEscala }) {
     {
       id: 'quiz',
       label: 'Teste de Temperamento',
-      desc: 'Identifique seu perfil comportamental e descubra como servir melhor no Reino.',
+      desc: 'Identifique seu temperamento e descubra como servir melhor no Reino.',
       icon: MenuIcons['u-quiz'],
       gradient: 'from-emerald-500 to-teal-500',
+      show: true,
+    },
+    {
+      id: 'perfil-comportamental',
+      label: 'Perfil Comportamental',
+      desc: 'Avaliação completa (Águia, Gato, Lobo e Tubarão) com dominância cerebral.',
+      icon: MenuIcons['u-perfil-comportamental'],
+      gradient: 'from-blue-600 via-indigo-600 to-violet-600',
       show: true,
     },
     {
@@ -209,6 +218,15 @@ export default function ModuloUtilitarios(props) {
     conteudo = <LeitorQRCode onVoltar={() => onNavigate('resumo')} />;
   } else if (submenu === 'quiz') {
     conteudo = <QuizPersonalidade usuarioLogado={usuarioLogado} />;
+  } else if (submenu === 'perfil-comportamental') {
+    conteudo = (
+      <TestePerfilComportamental
+        membroLogado={membroLogado}
+        pessoas={props.pessoas}
+        onDadosAtualizados={props.onDadosAtualizados}
+        onVoltar={() => onNavigate('resumo')}
+      />
+    );
   } else if (submenu === 'pedido-oracao') {
     conteudo = <PedidoOracao usuarioLogado={usuarioLogado} />;
   } else if (submenu === 'mural-oracao') {

@@ -85,9 +85,17 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
   });
   const [tipoTransacaoFiltro, setTipoTransacaoFiltro] = useState('');
   const [statusTransacaoFiltro, setStatusTransacaoFiltro] = useState('');
-  const [contaFiltro, setContaFiltro] = useState('');
-  const [categoriaFiltro, setCategoriaFiltro] = useState('');
+  const [contaFiltro, setContaFiltro] = useState([]);
+  const [categoriaFiltro, setCategoriaFiltro] = useState([]);
   const [buscaNome, setBuscaNome] = useState('');
+
+  const contasSelecionadas = useMemo(() => (
+    Array.isArray(contaFiltro) ? contaFiltro : (contaFiltro ? [contaFiltro] : [])
+  ), [contaFiltro]);
+
+  const categoriasSelecionadas = useMemo(() => (
+    Array.isArray(categoriaFiltro) ? categoriaFiltro : (categoriaFiltro ? [categoriaFiltro] : [])
+  ), [categoriaFiltro]);
 
   const handleMudarAba = useCallback((novaAba) => {
     setAbaAtiva(novaAba);
@@ -155,12 +163,12 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
       setDataInicioFiltro('');
       setDataFimFiltro('');
     } else if (preset === 'limpar') {
-      setDataInicioFiltro('');
-      setDataFimFiltro('');
+      setDataInicioFiltro(`${y}-${String(m + 1).padStart(2, '0')}-01`);
+      setDataFimFiltro(`${y}-${String(m + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`);
       setTipoTransacaoFiltro('');
       setStatusTransacaoFiltro('');
-      setContaFiltro('');
-      setCategoriaFiltro('');
+      setContaFiltro([]);
+      setCategoriaFiltro([]);
       setBuscaNome('');
     }
   };
@@ -202,13 +210,13 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
       }
 
       // Conta
-      if (contaFiltro) {
-        if (t.conta_id !== contaFiltro) return false;
+      if (contasSelecionadas.length > 0) {
+        if (!contasSelecionadas.includes(t.conta_id)) return false;
       }
 
       // Categoria
-      if (categoriaFiltro) {
-        if (t.categoria_id !== categoriaFiltro) return false;
+      if (categoriasSelecionadas.length > 0) {
+        if (!categoriasSelecionadas.includes(t.categoria_id)) return false;
       }
 
       // Pesquisa por Nome / Descrição / Contribuinte / Anotações
@@ -231,7 +239,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
 
       return true;
     });
-  }, [transacoes, dataInicioFiltro, dataFimFiltro, tipoTransacaoFiltro, statusTransacaoFiltro, contaFiltro, categoriaFiltro, buscaNome]);
+  }, [transacoes, dataInicioFiltro, dataFimFiltro, tipoTransacaoFiltro, statusTransacaoFiltro, contasSelecionadas, categoriasSelecionadas, buscaNome]);
 
   // Metric Cards em tempo real das transações filtradas
   const statsFiltradas = useMemo(() => {
@@ -391,7 +399,7 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
   const formatMoeda = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const formatMoedaValor = (val) => val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  const temFiltroAtivo = Boolean(dataInicioFiltro || dataFimFiltro || tipoTransacaoFiltro || statusTransacaoFiltro || contaFiltro || categoriaFiltro || buscaNome);
+  const temFiltroAtivo = Boolean(dataInicioFiltro || dataFimFiltro || tipoTransacaoFiltro || statusTransacaoFiltro || contasSelecionadas.length > 0 || categoriasSelecionadas.length > 0 || buscaNome);
 
   if (!hasAccess('Financeiro')) {
     return (
@@ -744,8 +752,8 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Conta / Caixa</label>
                   <select
-                    value={contaFiltro}
-                    onChange={(e) => setContaFiltro(e.target.value)}
+                    value={contasSelecionadas[0] || ''}
+                    onChange={(e) => setContaFiltro(e.target.value ? [e.target.value] : [])}
                     className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
                   >
                     <option value="">Todas as Contas</option>
@@ -758,8 +766,8 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Categoria</label>
                   <select
-                    value={categoriaFiltro}
-                    onChange={(e) => setCategoriaFiltro(e.target.value)}
+                    value={categoriasSelecionadas[0] || ''}
+                    onChange={(e) => setCategoriaFiltro(e.target.value ? [e.target.value] : [])}
                     className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
                   >
                     <option value="">Todas as Categorias</option>

@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
+import { Cake, Calendar, MessageCircle } from 'lucide-react';
 import { Card, CardHeader, Avatar, SelectFiltro, ColumnChart, DoughnutCard, PageHeader, ModalLinkCopiado } from './ui';
 import { supabase } from './supabaseClient';
 import DetalhesMembro from './DetalhesMembro';
 import FormularioCadastro from './FormularioCadastro';
-import { meses, agrupamentoPor, valorCampoRelatorio, faixasEtarias } from './churchUtils';
+import { meses, agrupamentoPor, valorCampoRelatorio, faixasEtarias, ehAniversarianteHoje, gerarLinkWhatsappAniversario } from './churchUtils';
 import PainelAtuacoes from './PainelAtuacoes';
 import { verificarDuplicidadeLocal, interpretarErroDuplicidadeBanco } from './duplicateUtils';
 
@@ -74,7 +75,15 @@ export default function PessoasModulo(props) {
   }
 
   if (submenu === 'aniversariantes') {
-    return <AniversariantesPessoas pessoas={pessoas} mesSelecionado={mesSelecionado} setMesSelecionado={setMesSelecionado} onNavigate={onNavigate} />;
+    return (
+      <AniversariantesPessoas
+        pessoas={pessoas}
+        mesSelecionado={mesSelecionado}
+        setMesSelecionado={setMesSelecionado}
+        onNavigate={onNavigate}
+        onVerMembro={setMembroSelecionadoId}
+      />
+    );
   }
 
   if (submenu === 'cargo') {
@@ -674,50 +683,245 @@ function FiltrosPessoas({ filtros, alterarFiltro, limparFiltros, zonas, cargosDi
   );
 }
 
-function AniversariantesPessoas({ pessoas, mesSelecionado, setMesSelecionado, onNavigate }) {
-  const pessoasAtivas = useMemo(() => pessoas.filter(p => p.status !== 'inativo' && p.status !== 'contribuinte'), [pessoas]);
-  const contagemMeses = meses.map((_, index) =>
-    pessoasAtivas.filter((p) => p.data_nascimento && new Date(`${p.data_nascimento}T00:00:00`).getMonth() === index).length
+function AniversariantesPessoas({ pessoas, mesSelecionado, setMesSelecionado, onNavigate, onVerMembro }) {
+  const mesAtual = new Date().getMonth();
+  const pessoasAtivas = useMemo(
+    () => pessoas.filter(p => p.status !== 'inativo' && p.status !== 'contribuinte'),
+    [pessoas]
   );
+
+  const contagemMeses = useMemo(
+    () => meses.map((_, index) =>
+      pessoasAtivas.filter((p) => p.data_nascimento && new Date(`${p.data_nascimento}T00:00:00`).getMonth() === index).length
+    ),
+    [pessoasAtivas]
+  );
+
+  const maxContagemMes = useMemo(() => Math.max(1, ...contagemMeses), [contagemMeses]);
+  const totalAnual = useMemo(() => contagemMeses.reduce((acc, n) => acc + n, 0), [contagemMeses]);
+
   const aniversariantes = useMemo(() => {
-    return pessoasAtivas.filter((p) => p.data_nascimento && new Date(`${p.data_nascimento}T00:00:00`).getMonth() === mesSelecionado)
+    return pessoasAtivas
+      .filter((p) => p.data_nascimento && new Date(`${p.data_nascimento}T00:00:00`).getMonth() === mesSelecionado)
       .sort((a, b) => new Date(`${a.data_nascimento}T00:00:00`).getDate() - new Date(`${b.data_nascimento}T00:00:00`).getDate());
   }, [pessoasAtivas, mesSelecionado]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader titulo="Aniversariantes" breadcrumb={['Pessoas', 'Aniversariantes']} onNavigate={() => onNavigate('todos')} />
-      <div className="grid grid-cols-4 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-3">
-        {meses.map((mes, index) => (
-          <button
-            key={mes}
-            onClick={() => setMesSelecionado(index)}
-            className={`rounded-2xl border p-4 text-left transition cursor-pointer ${
-              mesSelecionado === index
-                ? 'bg-gradient-to-br from-blue-600 to-indigo-600 border-blue-400/50 text-white shadow-md shadow-blue-600/25'
-                : 'bg-[#ffffff] dark:bg-[#17223b] border-slate-200/80 dark:border-[#2b3954] text-slate-700 dark:text-slate-200 hover:border-blue-300 dark:hover:border-blue-500/50 hover:bg-blue-50/30 dark:hover:bg-[#1c2b4a]'
-            }`}
-          >
-            <span className="block text-xs font-semibold uppercase opacity-70">{mes}</span>
-            <span className="block mt-2 text-2xl font-bold text-center">{contagemMeses[index]}</span>
-          </button>
-        ))}
+
+      {/* Seletor de Meses compacto no Mobile / Tablet */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 lg:hidden">
+        {meses.map((mes, index) => {
+          const selecionado = mesSelecionado === index;
+          const isMesAtual = index === mesAtual;
+          return (
+            <button
+              key={mes}
+              type="button"
+              onClick={() => setMesSelecionado(index)}
+              className={`rounded-2xl border p-3 text-left transition cursor-pointer ${
+                selecionado
+                  ? 'bg-gradient-to-br from-[#1e3a8a] via-blue-600 to-indigo-600 border-blue-400/50 text-white shadow-md shadow-blue-600/25'
+                  : 'bg-white dark:bg-[#17223b] border-slate-200/80 dark:border-[#2b3954] text-slate-700 dark:text-slate-200 hover:border-blue-300 dark:hover:border-blue-500/50'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider opacity-80 truncate">{mes.slice(0, 3)}</span>
+                {isMesAtual && (
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${selecionado ? 'bg-amber-300' : 'bg-blue-500'}`} title="Mês atual" />
+                )}
+              </div>
+              <span className="block mt-1.5 text-xl font-black text-center">{contagemMeses[index]}</span>
+            </button>
+          );
+        })}
       </div>
-      <Card className="p-0 bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954]">
-        {aniversariantes.length === 0 ? <p className="p-10 text-center text-sm text-slate-400">Ninguém faz aniversário em {meses[mesSelecionado]}.</p> : (
-          <div className="divide-y divide-slate-100 dark:divide-[#2b3954]">
-            {aniversariantes.map((p) => (
-              <div key={p.id} className="p-4 flex items-center gap-3 hover:bg-slate-50/60 dark:hover:bg-[#1c2b4a]/60 transition-colors">
-                <Avatar pessoa={p} />
+
+      {/* Layout Desktop: Card de Aniversariantes à esquerda + Card de Meses à direita alinhados pelo topo */}
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_350px] lg:items-start gap-6">
+        <Card className="p-0 overflow-hidden bg-white dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] shadow-sm">
+          <div className="px-5 py-4 border-b border-slate-100 dark:border-[#2b3954] bg-gradient-to-r from-slate-50/90 via-white to-blue-50/40 dark:from-[#1c2b4a]/80 dark:via-[#17223b] dark:to-blue-950/30 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-sm shadow-amber-500/25 shrink-0">
+                <Cake size={19} />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight truncate">
+                  Aniversariantes de {meses[mesSelecionado]}
+                </h2>
+                <p className="text-[11px] font-medium text-slate-400">
+                  {mesSelecionado === mesAtual ? 'Mês atual • ' : ''}Ordenados por dia do mês
+                </p>
+              </div>
+            </div>
+            <span className="px-3 py-1 rounded-full text-xs font-black bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60 shrink-0">
+              {aniversariantes.length} {aniversariantes.length === 1 ? 'pessoa' : 'pessoas'}
+            </span>
+          </div>
+
+          {aniversariantes.length === 0 ? (
+            <div className="p-12 text-center space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto">
+                <Cake size={22} />
+              </div>
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                Ninguém faz aniversário em {meses[mesSelecionado]}.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100 dark:divide-[#2b3954]">
+              {aniversariantes.map((p) => {
+                const hoje = ehAniversarianteHoje(p.data_nascimento);
+                const dataNasc = new Date(`${p.data_nascimento}T00:00:00`);
+                const diaNum = String(dataNasc.getDate()).padStart(2, '0');
+                const { url: whatsappUrl } = gerarLinkWhatsappAniversario(p);
+
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => onVerMembro && onVerMembro(p.id)}
+                    className={`p-4 flex items-center justify-between gap-3 transition-colors ${
+                      onVerMembro ? 'cursor-pointer' : ''
+                    } ${
+                      hoje
+                        ? 'bg-amber-50/60 dark:bg-amber-950/25 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                        : 'hover:bg-slate-50/70 dark:hover:bg-[#1c2b4a]/60'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <Avatar pessoa={p} tamanho="w-11 h-11" />
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-bold text-slate-900 dark:text-slate-100 truncate">{p.nome}</p>
+                          {hoje && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-400 text-slate-950 shadow-2xs">
+                              🎂 Hoje
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          {dataNasc.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                          {p.celulas?.nome ? ` • ${p.celulas.nome}` : ''}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+                        }}
+                        title={`Enviar parabéns no WhatsApp para ${p.nome}`}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer active:scale-95 ${
+                          hoje
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm'
+                            : 'bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60'
+                        }`}
+                      >
+                        <MessageCircle size={14} />
+                        <span className="hidden sm:inline">Parabéns</span>
+                      </button>
+
+                      <div className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center border ${
+                        hoje
+                          ? 'bg-amber-400/20 border-amber-400/60 text-amber-700 dark:text-amber-300'
+                          : 'bg-slate-50 dark:bg-slate-900/70 border-slate-200/80 dark:border-slate-700/80 text-slate-700 dark:text-slate-200'
+                      }`}>
+                        <span className="text-sm font-black leading-none">{diaNum}</span>
+                        <span className="text-[9px] font-bold uppercase opacity-70 mt-0.5">{meses[mesSelecionado].slice(0, 3)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
+        {/* Coluna Direita (Desktop): Seletor Elegante de Meses alinhado ao topo do card */}
+        <aside className="hidden lg:block lg:sticky lg:top-6">
+          <Card className="p-0 overflow-hidden bg-white dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] shadow-sm">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-[#2b3954] bg-gradient-to-r from-[#1e3a8a]/5 via-transparent to-indigo-500/5 dark:from-blue-500/10 dark:to-indigo-500/10 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <Calendar size={16} />
+                </div>
                 <div>
-                  <p className="font-bold text-slate-900 dark:text-slate-100">{p.nome}</p>
-                  <p className="text-xs text-slate-400">{new Date(`${p.data_nascimento}T00:00:00`).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}</p>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100">
+                    Meses do Ano
+                  </h3>
+                  <p className="text-[10px] font-semibold text-slate-400">
+                    {totalAnual} cadastrados no ano
+                  </p>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </Card>
+              {mesSelecionado !== mesAtual && (
+                <button
+                  type="button"
+                  onClick={() => setMesSelecionado(mesAtual)}
+                  className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/70 border border-blue-200/70 dark:border-blue-800/60 transition cursor-pointer"
+                >
+                  Mês atual
+                </button>
+              )}
+            </div>
+
+            <div className="p-3.5 grid grid-cols-2 gap-2.5">
+              {meses.map((mes, index) => {
+                const selecionado = mesSelecionado === index;
+                const isMesAtual = index === mesAtual;
+                const qtd = contagemMeses[index];
+                const pct = Math.round((qtd / maxContagemMes) * 100);
+
+                return (
+                  <button
+                    key={mes}
+                    type="button"
+                    onClick={() => setMesSelecionado(index)}
+                    className={`group relative overflow-hidden rounded-2xl border p-3 text-left transition-all duration-200 cursor-pointer active:scale-[0.98] ${
+                      selecionado
+                        ? 'bg-gradient-to-br from-[#1e3a8a] via-blue-600 to-indigo-600 border-blue-400/60 text-white shadow-md shadow-blue-600/25'
+                        : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200/70 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-300 dark:hover:border-blue-500/50 hover:bg-blue-50/40 dark:hover:bg-[#1c2b4a]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1.5">
+                      <span className={`text-[11px] font-extrabold tracking-tight truncate ${selecionado ? 'text-white' : 'text-slate-700 dark:text-slate-200'}`}>
+                        {mes}
+                      </span>
+                      {isMesAtual && (
+                        <span
+                          className={`w-2 h-2 rounded-full shrink-0 ${selecionado ? 'bg-amber-300 ring-2 ring-white/30' : 'bg-blue-500'}`}
+                          title="Mês atual"
+                        />
+                      )}
+                    </div>
+
+                    <div className="mt-2 flex items-baseline justify-between">
+                      <span className={`text-xl font-black leading-none ${selecionado ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
+                        {qtd}
+                      </span>
+                      <span className={`text-[9px] font-bold uppercase tracking-wider ${selecionado ? 'text-blue-100/90' : 'text-slate-400'}`}>
+                        {qtd === 1 ? 'aniv.' : 'anivs.'}
+                      </span>
+                    </div>
+
+                    {/* Barra proporcional sutil */}
+                    <div className={`mt-2.5 h-1 w-full rounded-full overflow-hidden ${selecionado ? 'bg-white/20' : 'bg-slate-200/80 dark:bg-slate-800'}`}>
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${selecionado ? 'bg-amber-300' : 'bg-blue-500/70 dark:bg-blue-400/70 group-hover:bg-blue-500'}`}
+                        style={{ width: `${qtd > 0 ? Math.max(12, pct) : 0}%` }}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        </aside>
+      </div>
     </div>
   );
 }

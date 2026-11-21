@@ -765,8 +765,13 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
     );
   }
 
+  const podeVerCalendario = hasAccess('Agenda', 'Calendário');
+  const podeVerEventos = hasAccess('Agenda', 'Eventos');
+  const podeVerMural = hasAccess('Agenda', 'Mural de Avisos');
+  const mostrarColunaLateral = submenu === 'calendario' || submenu === 'mural' || (submenu === 'eventos' && view === 'lista');
+
   return (
-    <div className="agenda-root space-y-6">
+    <div className="agenda-root space-y-5">
       <RobotoStyle /> {/* Mantido para estilos internos */}
       <div className="print:hidden">
         <PageHeader
@@ -805,34 +810,131 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
         />
       </div>
 
-      {/* ── CALENDÁRIO ── */}
-      {submenu === 'calendario' && (
-        <div className="ag-card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1.5px solid var(--card-border)', background: 'var(--slate-50)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button className="btn-icon" onClick={() => mudarMes(-1)}><Icon.ChevL /></button>
-              <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--slate-900)', textTransform: 'capitalize', minWidth: 160, textAlign: 'center' }}>
-                {dataAtual.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
-              </h3>
-              <button className="btn-icon" onClick={() => mudarMes(1)}><Icon.ChevR /></button>
-            </div>
-            {podeEditar && (
-              <button
-                className="btn-primary"
-                onClick={() => setModalEvento({ aberto: true, dados: { data_inicio: new Date().toISOString().slice(0, 16) } })}
-              >
-                <Icon.Plus /> Novo Evento
-              </button>
-            )}
-          </div>
-          <CalendarioMensal
-            data={dataAtual}
-            eventos={eventosExibidos}
-            onEditarEvento={(ev) => setModalEvento({ aberto: true, dados: ev })}
-            podeEditar={podeEditar}
-          />
+      {/* Atalhos rápidos compactos no Mobile / Tablet */}
+      {mostrarColunaLateral && (podeVerEventos || podeVerMural || podeVerCalendario) && (
+        <div className="flex flex-wrap gap-2 lg:hidden print:hidden">
+          {podeVerCalendario && (
+            <button
+              type="button"
+              onClick={() => onNavigate('calendario')}
+              className={`flex-1 min-w-[100px] px-3 py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                submenu === 'calendario'
+                  ? 'bg-[#1e3a8a] dark:bg-blue-600 text-white border-transparent shadow-sm'
+                  : 'bg-white dark:bg-[#17223b] text-slate-700 dark:text-slate-200 border-slate-200 dark:border-[#2b3954]'
+              }`}
+            >
+              <Icon.Calendar />
+              <span>Calendário</span>
+            </button>
+          )}
+          {podeVerEventos && (
+            <button
+              type="button"
+              onClick={() => { setView('lista'); setEventoSelecionado(null); onNavigate('eventos'); }}
+              className={`flex-1 min-w-[100px] px-3 py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                submenu === 'eventos'
+                  ? 'bg-[#1e3a8a] dark:bg-blue-600 text-white border-transparent shadow-sm'
+                  : 'bg-white dark:bg-[#17223b] text-slate-700 dark:text-slate-200 border-slate-200 dark:border-[#2b3954]'
+              }`}
+            >
+              <Icon.Calendar />
+              <span>Eventos</span>
+            </button>
+          )}
+          {podeVerMural && (
+            <button
+              type="button"
+              onClick={() => onNavigate('mural')}
+              className={`flex-1 min-w-[120px] px-3 py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                submenu === 'mural'
+                  ? 'bg-[#1e3a8a] dark:bg-blue-600 text-white border-transparent shadow-sm'
+                  : 'bg-white dark:bg-[#17223b] text-slate-700 dark:text-slate-200 border-slate-200 dark:border-[#2b3954]'
+              }`}
+            >
+              <Icon.Mural />
+              <span>Mural</span>
+            </button>
+          )}
         </div>
       )}
+
+      <div className={mostrarColunaLateral ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px] lg:items-start gap-6' : ''}>
+        <div className="min-w-0">
+
+      {/* ── CALENDÁRIO ── */}
+      {submenu === 'calendario' && (() => {
+        const eventosNoMes = eventosExibidos.filter(ev => {
+          if (!ev.data_inicio) return false;
+          const [y, m] = ev.data_inicio.split('T')[0].split('-').map(Number);
+          return y === dataAtual.getFullYear() && (m - 1) === dataAtual.getMonth();
+        }).length;
+        const hojeRef = new Date();
+        const estaNoMesAtual = dataAtual.getMonth() === hojeRef.getMonth() && dataAtual.getFullYear() === hojeRef.getFullYear();
+
+        return (
+          <Card className="p-0 overflow-hidden bg-white dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] shadow-sm">
+            {/* Cabeçalho moderno do Calendário */}
+            <div className="px-4 sm:px-6 py-4 border-b border-slate-200/80 dark:border-[#2b3954] bg-gradient-to-r from-[#1e3a8a]/5 via-white to-blue-50/50 dark:from-[#1c2b4a] dark:via-[#17223b] dark:to-blue-950/40 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="inline-flex items-center bg-slate-100/90 dark:bg-[#0f172a] border border-slate-200/90 dark:border-[#2b3954] rounded-xl p-1 gap-1 shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => mudarMes(-1)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-[#1c2b4a] hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer"
+                    title="Mês anterior"
+                  >
+                    <Icon.ChevL />
+                  </button>
+                  <h3 className="text-sm sm:text-base font-black text-slate-800 dark:text-white capitalize min-w-[148px] sm:min-w-[175px] text-center tracking-tight px-1">
+                    {dataAtual.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => mudarMes(1)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-[#1c2b4a] hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer"
+                    title="Próximo mês"
+                  >
+                    <Icon.ChevR />
+                  </button>
+                </div>
+
+                {!estaNoMesAtual && (
+                  <button
+                    type="button"
+                    onClick={() => setDataAtual(new Date())}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-700/60 hover:bg-blue-100 dark:hover:bg-blue-900/70 transition cursor-pointer"
+                  >
+                    Hoje
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-extrabold bg-slate-100 dark:bg-[#0f172a] text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-[#2b3954]">
+                  <span className="w-2 h-2 rounded-full bg-blue-500" />
+                  {eventosNoMes} {eventosNoMes === 1 ? 'evento' : 'eventos'}
+                </span>
+                {podeEditar && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#1e3a8a] via-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-500 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-blue-600/25 transition-all active:scale-95 cursor-pointer"
+                    onClick={() => setModalEvento({ aberto: true, dados: { data_inicio: new Date().toISOString().slice(0, 16) } })}
+                  >
+                    <Icon.Plus /> Novo Evento
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <CalendarioMensal
+              data={dataAtual}
+              eventos={eventosExibidos}
+              onEditarEvento={(ev) => setModalEvento({ aberto: true, dados: ev })}
+              podeEditar={podeEditar}
+            />
+          </Card>
+        );
+      })()}
 
 
       {/* ── EVENTOS LISTA / FORM ── */}
@@ -1014,6 +1116,134 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
           membroLogado={membroLogado}
         />
       )}
+        </div>
+
+        {/* Coluna Direita (Desktop): Atalhos para Eventos, Mural de Eventos e Calendário */}
+        {mostrarColunaLateral && (podeVerEventos || podeVerMural || podeVerCalendario) && (
+          <aside className="hidden lg:block lg:sticky lg:top-6 print:hidden">
+            <Card className="p-0 overflow-hidden bg-white dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] shadow-sm">
+              <div className="px-5 py-4 border-b border-slate-100 dark:border-[#2b3954] bg-gradient-to-r from-[#1e3a8a]/5 via-transparent to-indigo-500/5 dark:from-blue-500/10 dark:to-indigo-500/10 flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <Icon.Calendar />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100">
+                    Atalhos da Agenda
+                  </h3>
+                  <p className="text-[10px] font-semibold text-slate-400">
+                    Acesso rápido aos painéis
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3.5 space-y-2.5">
+                {podeVerEventos && (
+                  <button
+                    type="button"
+                    onClick={() => { setView('lista'); setEventoSelecionado(null); onNavigate('eventos'); }}
+                    className={`w-full group rounded-2xl border p-3.5 text-left transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 active:scale-[0.98] ${
+                      submenu === 'eventos'
+                        ? 'bg-gradient-to-br from-[#1e3a8a] via-blue-600 to-indigo-600 border-blue-400/60 text-white shadow-md shadow-blue-600/25'
+                        : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200/70 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-300 dark:hover:border-blue-500/50 hover:bg-blue-50/40 dark:hover:bg-[#1c2b4a]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
+                        submenu === 'eventos'
+                          ? 'bg-white/15 text-white'
+                          : 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800/60'
+                      }`}>
+                        <Icon.Calendar />
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-extrabold leading-tight truncate ${submenu === 'eventos' ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
+                          Eventos
+                        </p>
+                        <p className={`text-[11px] mt-0.5 truncate ${submenu === 'eventos' ? 'text-blue-100/90' : 'text-slate-400'}`}>
+                          Inscrições e programação
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-black shrink-0 ${
+                      submenu === 'eventos'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-200/70 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                    }`}>
+                      {eventosExibidos.length}
+                    </span>
+                  </button>
+                )}
+
+                {podeVerMural && (
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('mural')}
+                    className={`w-full group rounded-2xl border p-3.5 text-left transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 active:scale-[0.98] ${
+                      submenu === 'mural'
+                        ? 'bg-gradient-to-br from-[#1e3a8a] via-blue-600 to-indigo-600 border-blue-400/60 text-white shadow-md shadow-blue-600/25'
+                        : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200/70 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-300 dark:hover:border-blue-500/50 hover:bg-blue-50/40 dark:hover:bg-[#1c2b4a]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
+                        submenu === 'mural'
+                          ? 'bg-white/15 text-white'
+                          : 'bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-800/60'
+                      }`}>
+                        <Icon.Mural />
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-extrabold leading-tight truncate ${submenu === 'mural' ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
+                          Mural de Eventos
+                        </p>
+                        <p className={`text-[11px] mt-0.5 truncate ${submenu === 'mural' ? 'text-blue-100/90' : 'text-slate-400'}`}>
+                          Avisos e banners da home
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`shrink-0 ${submenu === 'mural' ? 'text-white/80' : 'text-slate-400 group-hover:text-blue-500'}`}>
+                      <Icon.ChevR />
+                    </span>
+                  </button>
+                )}
+
+                {podeVerCalendario && (
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('calendario')}
+                    className={`w-full group rounded-2xl border p-3.5 text-left transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 active:scale-[0.98] ${
+                      submenu === 'calendario'
+                        ? 'bg-gradient-to-br from-[#1e3a8a] via-blue-600 to-indigo-600 border-blue-400/60 text-white shadow-md shadow-blue-600/25'
+                        : 'bg-slate-50/70 dark:bg-slate-900/50 border-slate-200/70 dark:border-slate-800 text-slate-700 dark:text-slate-200 hover:border-blue-300 dark:hover:border-blue-500/50 hover:bg-blue-50/40 dark:hover:bg-[#1c2b4a]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
+                        submenu === 'calendario'
+                          ? 'bg-white/15 text-white'
+                          : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/60'
+                      }`}>
+                        <Icon.Calendar />
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-extrabold leading-tight truncate ${submenu === 'calendario' ? 'text-white' : 'text-slate-800 dark:text-slate-100'}`}>
+                          Calendário
+                        </p>
+                        <p className={`text-[11px] mt-0.5 truncate ${submenu === 'calendario' ? 'text-blue-100/90' : 'text-slate-400'}`}>
+                          Visão mensal da agenda
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`shrink-0 ${submenu === 'calendario' ? 'text-white/80' : 'text-slate-400 group-hover:text-blue-500'}`}>
+                      <Icon.ChevR />
+                    </span>
+                  </button>
+                )}
+              </div>
+            </Card>
+          </aside>
+        )}
+      </div>
 
     </div>
   );
@@ -1106,9 +1336,11 @@ function GerenciadorMural({ onVoltar, membroLogado }) {
                     <td>
                       <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{av.prioridade || 0}</span>
                     </td>
-                    <td className="text-right pr-6 space-x-2">
-                      <button className="btn-icon" onClick={() => { setEditando(av); setView('form'); }}><Icon.Edit /></button>
-                      <button className="btn-icon danger" onClick={() => handleExcluir(av.id)}><Icon.Trash /></button>
+                    <td className="text-right pr-6 whitespace-nowrap">
+                      <div className="inline-flex items-center justify-end gap-2">
+                        <button type="button" className="btn-icon" onClick={() => { setEditando(av); setView('form'); }} title="Editar aviso"><Icon.Edit /></button>
+                        <button type="button" className="btn-icon danger" onClick={() => handleExcluir(av.id)} title="Excluir aviso"><Icon.Trash /></button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -3496,7 +3728,15 @@ function CampoSimple({ label, value, onChange, type = 'text', placeholder }) {
 
 /* ─── CalendarioMensal ─────────────────────────────────────────────────────── */
 function CalendarioMensal({ data, eventos, onEditarEvento, podeEditar }) {
-  const diasSemana = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+  const diasSemana = [
+    { label: 'Seg', weekend: false },
+    { label: 'Ter', weekend: false },
+    { label: 'Qua', weekend: false },
+    { label: 'Qui', weekend: false },
+    { label: 'Sex', weekend: false },
+    { label: 'Sáb', weekend: true },
+    { label: 'Dom', weekend: true },
+  ];
 
   const matriz = useMemo(() => {
     const ano = data.getFullYear();
@@ -3505,56 +3745,166 @@ function CalendarioMensal({ data, eventos, onEditarEvento, podeEditar }) {
     const ultimoDia = new Date(ano, mes + 1, 0);
     let start = primeiroDia.getDay();
     start = start === 0 ? 6 : start - 1;
-    const dias = [];
-    for (let i = 0; i < start; i++) dias.push(null);
-    for (let d = 1; d <= ultimoDia.getDate(); d++) dias.push(new Date(ano, mes, d));
-    return dias;
+
+    const celulas = [];
+    // Dias finais do mês anterior para preencher a primeira semana
+    for (let i = start - 1; i >= 0; i--) {
+      celulas.push({ date: new Date(ano, mes, -i), outroMes: true });
+    }
+    // Dias do mês atual
+    for (let d = 1; d <= ultimoDia.getDate(); d++) {
+      celulas.push({ date: new Date(ano, mes, d), outroMes: false });
+    }
+    // Dias iniciais do próximo mês para fechar a última semana em múltiplos de 7
+    const restante = (7 - (celulas.length % 7)) % 7;
+    for (let d = 1; d <= restante; d++) {
+      celulas.push({ date: new Date(ano, mes + 1, d), outroMes: true });
+    }
+    return celulas;
   }, [data]);
 
+  const hoje = new Date();
+
+  const extrairHoraEvento = (dataInicio) => {
+    if (!dataInicio || !String(dataInicio).includes('T')) return '';
+    const parteHora = String(dataInicio).split('T')[1];
+    return parteHora ? parteHora.slice(0, 5) : '';
+  };
+
+  const formatarLocalDateTime = (diaDate) => {
+    const y = diaDate.getFullYear();
+    const m = String(diaDate.getMonth() + 1).padStart(2, '0');
+    const d = String(diaDate.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}T19:00`;
+  };
+
   return (
-    <div style={{ padding: '8px 12px 12px' }} className="agenda-root">
-      <RobotoStyle />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1.5px solid var(--card-border)', marginBottom: 4 }}>
-        {diasSemana.map(d => (
-          <div key={d} style={{ textAlign: 'center', padding: '8px 0', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--slate-500)' }}>{d}</div>
+    <div className="agenda-root">
+      {/* Cabeçalho dos dias da semana com alto contraste */}
+      <div className="grid grid-cols-7 bg-slate-100/90 dark:bg-[#0f172a] border-b border-slate-200 dark:border-[#2b3954]">
+        {diasSemana.map((d) => (
+          <div
+            key={d.label}
+            className={`text-center py-2.5 text-[11px] font-black uppercase tracking-widest ${
+              d.weekend
+                ? 'text-blue-700 dark:text-blue-400'
+                : 'text-slate-600 dark:text-slate-300'
+            }`}
+          >
+            {d.label}
+          </div>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 1, background: 'var(--card-border)' }}>
-        {matriz.map((dia, idx) => {
-          if (!dia) return <div key={`e${idx}`} style={{ background: 'var(--white)', minHeight: 90 }} />;
-          const eventosDia = eventos.filter(ev => {
+
+      {/* Grade do calendário com divisórias nítidas e contraste elevado */}
+      <div className="grid grid-cols-7 gap-px bg-slate-200 dark:bg-[#2b3954]">
+        {matriz.map(({ date: dia, outroMes }, idx) => {
+          const isFimDeSemana = idx % 7 === 5 || idx % 7 === 6;
+          const isHoje =
+            dia.getDate() === hoje.getDate() &&
+            dia.getMonth() === hoje.getMonth() &&
+            dia.getFullYear() === hoje.getFullYear();
+
+          const eventosDia = eventos.filter((ev) => {
             if (!ev.data_inicio) return false;
             const [y, m, d] = ev.data_inicio.split('T')[0].split('-').map(Number);
-            return y === dia.getFullYear() && (m - 1) === dia.getMonth() && d === dia.getDate();
+            return y === dia.getFullYear() && m - 1 === dia.getMonth() && d === dia.getDate();
           });
-          const hoje = new Date();
-          const isHoje = dia.getDate() === hoje.getDate() && dia.getMonth() === hoje.getMonth() && dia.getFullYear() === hoje.getFullYear();
+
           return (
-            <div key={dia.toISOString()}
-              onClick={() => podeEditar && onEditarEvento({ data_inicio: new Date(dia.setHours(19, 0)).toISOString().slice(0, 16) })}
-              style={{ background: 'var(--white)', minHeight: 90, padding: '6px 6px 4px', cursor: podeEditar ? 'pointer' : 'default', transition: 'background .15s' }}
-              onMouseEnter={e => { if (podeEditar) e.currentTarget.style.background = 'var(--slate-50)'; }}
-              onMouseLeave={e => e.currentTarget.style.background = 'var(--white)'}
+            <div
+              key={`${dia.getFullYear()}-${dia.getMonth()}-${dia.getDate()}`}
+              onClick={() => podeEditar && onEditarEvento({ data_inicio: formatarLocalDateTime(dia) })}
+              className={`group relative min-h-[88px] sm:min-h-[112px] p-1.5 sm:p-2 transition-colors flex flex-col ${
+                podeEditar ? 'cursor-pointer' : 'cursor-default'
+              } ${
+                isHoje
+                  ? 'bg-blue-50/90 dark:bg-blue-950/50 ring-2 ring-inset ring-blue-500/80 dark:ring-blue-400/80'
+                  : outroMes
+                    ? 'bg-slate-50/90 dark:bg-[#0b1222]/90'
+                    : isFimDeSemana
+                      ? 'bg-slate-50/70 dark:bg-[#0f182d] hover:bg-blue-50/40 dark:hover:bg-[#1c2b4a]/80'
+                      : 'bg-white dark:bg-[#141f38] hover:bg-blue-50/40 dark:hover:bg-[#1c2b4a]/80'
+              }`}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <span style={isHoje ? { width: 22, height: 22, borderRadius: '50%', background: 'var(--blue-500)', color: '#fff', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' } : { fontSize: 11, fontWeight: 700, color: 'var(--slate-500)' }}>
+              {/* Topo do dia: número + badge Hoje / botão + no hover */}
+              <div className="flex items-center justify-between gap-1 mb-1.5">
+                <span
+                  className={
+                    isHoje
+                      ? 'w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white text-xs font-black flex items-center justify-center shadow-sm shadow-blue-500/40'
+                      : `text-xs font-extrabold px-1 leading-6 ${
+                          outroMes
+                            ? 'text-slate-400/70 dark:text-slate-600'
+                            : isFimDeSemana
+                              ? 'text-blue-700 dark:text-blue-400'
+                              : 'text-slate-700 dark:text-slate-200'
+                        }`
+                  }
+                >
                   {dia.getDate()}
                 </span>
+
+                {isHoje ? (
+                  <span className="hidden sm:inline-block text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-blue-600/15 dark:bg-blue-400/20 text-blue-700 dark:text-blue-300">
+                    Hoje
+                  </span>
+                ) : podeEditar ? (
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 flex items-center justify-center text-xs font-black leading-none">
+                    +
+                  </span>
+                ) : null}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {eventosDia.map(ev => (
-                  <button key={ev.id}
-                    onClick={e => { e.stopPropagation(); onEditarEvento(ev); }}
-                    style={{ width: '100%', textAlign: 'left', padding: '3px 6px', borderRadius: 4, fontSize: 10, fontWeight: 700, color: '#fff', background: ev.cor, border: 'none', cursor: 'pointer', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                    title={ev.titulo}
-                  >
-                    {ev.titulo}
-                  </button>
-                ))}
+
+              {/* Lista de eventos do dia com pílulas vibrantes */}
+              <div className="flex flex-col gap-1 flex-1">
+                {eventosDia.map((ev) => {
+                  const hora = extrairHoraEvento(ev.data_inicio);
+                  const cor = ev.cor || '#2563eb';
+                  return (
+                    <button
+                      key={ev.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditarEvento(ev);
+                      }}
+                      style={{ backgroundColor: cor }}
+                      className="w-full text-left px-1.5 sm:px-2 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold text-white shadow-xs hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer truncate flex items-center gap-1 border border-white/15"
+                      title={`${hora ? `${hora} • ` : ''}${ev.titulo}`}
+                    >
+                      {hora && (
+                        <span className="hidden sm:inline text-[9px] font-black opacity-90 shrink-0 bg-black/20 px-1 rounded">
+                          {hora}
+                        </span>
+                      )}
+                      <span className="truncate">{ev.titulo}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
         })}
+      </div>
+
+      {/* Rodapé de legenda sutil */}
+      <div className="px-4 py-2.5 bg-slate-50/90 dark:bg-[#0f172a] border-t border-slate-200/80 dark:border-[#2b3954] flex flex-wrap items-center justify-between gap-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-4">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-600" />
+            Dia atual
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-sm bg-blue-500/20 border border-blue-500/50" />
+            Fim de semana
+          </span>
+        </div>
+        {podeEditar && (
+          <span className="text-slate-400 dark:text-slate-500">
+            Clique em qualquer dia para agendar um evento
+          </span>
+        )}
       </div>
     </div>
   );

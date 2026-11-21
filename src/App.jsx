@@ -767,7 +767,7 @@ export default function App() {
 
       if (modulo === 'Utilitários') {
         if (!bloco) return true;
-        return ['Calculadora de Tributos', 'Teste de Temperamento', 'Pedido de Oração'].includes(bloco);
+        return ['Calculadora de Tributos', 'Teste de Temperamento', 'Perfil Comportamental', 'Pedido de Oração'].includes(bloco);
       }
       if (modulo === 'Pessoas') {
         if (!bloco) return true;
@@ -1012,6 +1012,7 @@ export default function App() {
     ['pedido-oracao', 'Pedido de Oração'],
     ['mural-oracao', 'Mural de Orações'],
     ['quiz', 'Teste de Temperamento'],
+    ['perfil-comportamental', 'Perfil Comportamental'],
     ['carne-generator', 'Gerador de Carnê'],
     ['leitor-carne', 'Leitor de Carnê'],
     ['escalas', 'Escalas Ministerial']
@@ -2346,6 +2347,8 @@ export default function App() {
             onNavigate={(sub) => navegar('utilitarios', sub)}
             usuarioLogado={usuarioLogado}
             membroLogado={membroLogado}
+            pessoas={pessoas}
+            onDadosAtualizados={obterDados}
             hasAccess={hasAccess}
             temVinculoEscala={temVinculoEscala}
           />

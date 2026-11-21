@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Check } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Check, ChevronDown, RotateCcw } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import { PageHeader, Card, CardHeader, SelectFiltro } from './ui';
 import { registrarLogFinanceiro } from './financeiroUtils';
@@ -31,6 +31,15 @@ export default function TransacoesFinanceiras({
   const [filtroPix, setFiltroPix] = useState(''); // '' (todos), 'pix' (apenas pix), 'outros' (não pix)
 
   const podeEditar = hasAccess('Financeiro', 'Transações', 'editar');
+
+  // Normaliza filtros de Conta e Categoria como arrays para suportar multi-seleção
+  const contasSelecionadas = useMemo(() => (
+    Array.isArray(contaFiltro) ? contaFiltro : (contaFiltro ? [contaFiltro] : [])
+  ), [contaFiltro]);
+
+  const categoriasSelecionadas = useMemo(() => (
+    Array.isArray(categoriaFiltro) ? categoriaFiltro : (categoriaFiltro ? [categoriaFiltro] : [])
+  ), [categoriaFiltro]);
 
   // Lógica para o seletor de período simplificado (Mobile)
   const labelPeriodoMobile = useMemo(() => {
@@ -214,8 +223,10 @@ export default function TransacoesFinanceiras({
       if (dataFimFiltro) query = query.lte('data', dataFimFiltro);
       if (tipoTransacaoFiltro) query = query.eq('tipo', tipoTransacaoFiltro.toLowerCase());
       if (statusTransacaoFiltro) query = query.eq('status', statusTransacaoFiltro.toLowerCase());
-      if (contaFiltro) query = query.eq('conta_id', contaFiltro);
-      if (categoriaFiltro) query = query.eq('categoria_id', categoriaFiltro);
+      if (contasSelecionadas.length === 1) query = query.eq('conta_id', contasSelecionadas[0]);
+      else if (contasSelecionadas.length > 1) query = query.in('conta_id', contasSelecionadas);
+      if (categoriasSelecionadas.length === 1) query = query.eq('categoria_id', categoriasSelecionadas[0]);
+      else if (categoriasSelecionadas.length > 1) query = query.in('categoria_id', categoriasSelecionadas);
       if (!hasAccess('Financeiro') && membroLogado?.id) query = query.eq('pessoa_id', membroLogado.id);
 
       const { data, error } = await query;
@@ -232,7 +243,7 @@ export default function TransacoesFinanceiras({
     } finally {
       setCarregando(false);
     }
-  }, [dataInicioFiltro, dataFimFiltro, tipoTransacaoFiltro, statusTransacaoFiltro, contaFiltro, categoriaFiltro, hasAccess, membroLogado?.id]);
+  }, [dataInicioFiltro, dataFimFiltro, tipoTransacaoFiltro, statusTransacaoFiltro, contasSelecionadas, categoriasSelecionadas, hasAccess, membroLogado?.id]);
 
   useEffect(() => {
     // Carrega dados auxiliares apenas uma vez ao montar o componente
@@ -328,6 +339,22 @@ export default function TransacoesFinanceiras({
     setDataFimFiltro(formatarParaISO(fim));
   };
 
+  // Limpa todos os filtros e retorna ao período padrão: 1º dia do mês atual até a data atual
+  const limparFiltros = () => {
+    const hoje = new Date();
+    const inicioMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    setDataInicioFiltro(formatarParaISO(inicioMesAtual));
+    setDataFimFiltro(formatarParaISO(hoje));
+    setTipoTransacaoFiltro('');
+    setStatusTransacaoFiltro('');
+    setContaFiltro([]);
+    setCategoriaFiltro([]);
+    setBuscaNome('');
+    setFiltroPix('');
+    setViewDate(hoje);
+    setCalendarioAberto(false);
+  };
+
   // Helper para normalizar textos removendo acentos e convertendo para minúsculas
   const normalizarTexto = (str) => {
     if (!str) return '';
@@ -399,16 +426,20 @@ export default function TransacoesFinanceiras({
     }, { recebido: 0, pago: 0, aPagar: 0 });
   }, [transacoesFiltradas]);
 
-  // Efeito para limpar a categoria selecionada se ela não pertencer mais ao tipo escolhido
+  // Efeito para remover categorias selecionadas que não pertençam mais ao tipo escolhido
   useEffect(() => {
-    if (categoriaFiltro && tipoTransacaoFiltro) {
+    if (categoriasSelecionadas.length > 0 && tipoTransacaoFiltro) {
       const tipoAtual = tipoTransacaoFiltro.toLowerCase();
-      const categoriaPertenceAoTipo = categoriasDisponiveis.find(c => c.id === categoriaFiltro)?.tipo === tipoAtual;
-      if (!categoriaPertenceAoTipo && (tipoAtual === 'receita' || tipoAtual === 'despesa')) {
-        setCategoriaFiltro('');
+      if (tipoAtual === 'receita' || tipoAtual === 'despesa') {
+        const validas = categoriasSelecionadas.filter(
+          (catId) => categoriasDisponiveis.find(c => c.id === catId)?.tipo === tipoAtual
+        );
+        if (validas.length !== categoriasSelecionadas.length) {
+          setCategoriaFiltro(validas);
+        }
       }
     }
-  }, [tipoTransacaoFiltro, categoriasDisponiveis, categoriaFiltro, setCategoriaFiltro]);
+  }, [tipoTransacaoFiltro, categoriasDisponiveis, categoriasSelecionadas, setCategoriaFiltro]);
 
   return (
     <div className="space-y-6 mx-1">
@@ -460,8 +491,24 @@ export default function TransacoesFinanceiras({
           </div>
           <div className="flex-1 min-w-[120px]"><SelectFiltro label="Tipo" valor={tipoTransacaoFiltro} onChange={setTipoTransacaoFiltro} opcoes={['Receita', 'Despesa', 'Transferência']} /></div>
           <div className="flex-1 min-w-[120px]"><SelectFiltro label="Status" valor={statusTransacaoFiltro} onChange={setStatusTransacaoFiltro} opcoes={['Pago', 'Pendente', 'Cancelado']} /></div>
-          <div className="flex-1 min-w-[130px]"><SelectFiltro label="Conta" valor={contaFiltro} onChange={setContaFiltro} opcoes={contasDisponiveis.map(c => ({ valor: c.id, label: c.nome }))} /></div>
-          <div className="flex-1 min-w-[130px]"><SelectFiltro label="Categoria" valor={categoriaFiltro} onChange={setCategoriaFiltro} opcoes={categoriasFiltradas.map(c => ({ valor: c.id, label: c.nome }))} /></div>
+          <div className="flex-1 min-w-[150px]">
+            <MultiSelectCheckboxFiltro
+              label="Conta"
+              selecionados={contasSelecionadas}
+              onChange={setContaFiltro}
+              opcoes={contasDisponiveis.map(c => ({ valor: c.id, label: c.nome }))}
+              placeholder="Todas"
+            />
+          </div>
+          <div className="flex-1 min-w-[150px]">
+            <MultiSelectCheckboxFiltro
+              label="Categoria"
+              selecionados={categoriasSelecionadas}
+              onChange={setCategoriaFiltro}
+              opcoes={categoriasFiltradas.map(c => ({ valor: c.id, label: c.nome }))}
+              placeholder="Todas"
+            />
+          </div>
           <div className="flex-1 min-w-[120px]">
             <SelectFiltro
               label="Via PIX"
@@ -482,7 +529,6 @@ export default function TransacoesFinanceiras({
             <BtnAtalho label="Ontem" onClick={() => setPeriodoRapido('ontem')} />
             <BtnAtalho label="7 Dias" onClick={() => setPeriodoRapido('7dias')} />
             <BtnAtalho label="30 Dias" onClick={() => setPeriodoRapido('30dias')} />
-            <BtnAtalho label="Mês Atual" onClick={() => setPeriodoRapido('mes_atual')} />
             <BtnAtalho label="Mês Anterior" onClick={() => setPeriodoRapido('mes_anterior')} />
             <BtnAtalho label="Todo o período" onClick={() => setPeriodoRapido('limpar')} destaque />
 
@@ -491,15 +537,23 @@ export default function TransacoesFinanceiras({
             <button
               type="button"
               onClick={() => setFiltroPix(prev => prev === 'pix' ? '' : 'pix')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 ${
-                filtroPix === 'pix'
+              className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 ${filtroPix === 'pix'
                   ? 'bg-teal-600 text-white shadow-teal-600/30 ring-2 ring-teal-300 dark:ring-teal-800'
                   : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/40'
-              }`}
+                }`}
               title="Filtrar apenas entradas via PIX"
             >
-              <span className="text-[10px] font-black">PIX</span>
               <span>{filtroPix === 'pix' ? '✓ Apenas PIX' : 'Filtrar PIX'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={limparFiltros}
+              className="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/70 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60"
+              title="Limpar todos os filtros e voltar ao período do mês atual até hoje"
+            >
+              <RotateCcw size={13} strokeWidth={2.5} />
+              <span>Limpar Filtros</span>
             </button>
           </div>
 
@@ -587,8 +641,20 @@ export default function TransacoesFinanceiras({
 
             <SelectFiltro label="Tipo" valor={tipoTransacaoFiltro} onChange={setTipoTransacaoFiltro} opcoes={['Receita', 'Despesa', 'Transferência']} />
             <SelectFiltro label="Status" valor={statusTransacaoFiltro} onChange={setStatusTransacaoFiltro} opcoes={['Pago', 'Pendente', 'Cancelado']} />
-            <SelectFiltro label="Conta" valor={contaFiltro} onChange={setContaFiltro} opcoes={contasDisponiveis.map(c => ({ valor: c.id, label: c.nome }))} />
-            <SelectFiltro label="Categoria" valor={categoriaFiltro} onChange={setCategoriaFiltro} opcoes={categoriasFiltradas.map(c => ({ valor: c.id, label: c.nome }))} />
+            <MultiSelectCheckboxFiltro
+              label="Conta"
+              selecionados={contasSelecionadas}
+              onChange={setContaFiltro}
+              opcoes={contasDisponiveis.map(c => ({ valor: c.id, label: c.nome }))}
+              placeholder="Todas"
+            />
+            <MultiSelectCheckboxFiltro
+              label="Categoria"
+              selecionados={categoriasSelecionadas}
+              onChange={setCategoriaFiltro}
+              opcoes={categoriasFiltradas.map(c => ({ valor: c.id, label: c.nome }))}
+              placeholder="Todas"
+            />
             <SelectFiltro
               label="Via PIX"
               valor={filtroPix}
@@ -602,16 +668,21 @@ export default function TransacoesFinanceiras({
             <div className="flex flex-wrap gap-2 pt-4 border-t border-slate-100 dark:border-[#2b3954]">
               <BtnAtalho label="Hoje" onClick={() => setPeriodoRapido('hoje')} />
               <BtnAtalho label="7 Dias" onClick={() => setPeriodoRapido('7dias')} />
-              <BtnAtalho label="Mês Atual" onClick={() => setPeriodoRapido('mes_atual')} />
-              <BtnAtalho label="Limpar" onClick={() => setPeriodoRapido('limpar')} destaque />
+              <button
+                type="button"
+                onClick={limparFiltros}
+                className="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/70 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/60"
+              >
+                <RotateCcw size={13} strokeWidth={2.5} />
+                <span>Limpar Filtros</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setFiltroPix(prev => prev === 'pix' ? '' : 'pix')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
-                  filtroPix === 'pix'
+                className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${filtroPix === 'pix'
                     ? 'bg-teal-600 text-white shadow-sm'
                     : 'bg-slate-100 dark:bg-slate-800 text-teal-700 dark:text-teal-400 border border-teal-300 dark:border-teal-700'
-                }`}
+                  }`}
               >
                 <span className="text-[10px] font-black">PIX</span>
                 <span>{filtroPix === 'pix' ? '✓ Apenas PIX' : 'Filtrar PIX'}</span>
@@ -655,7 +726,7 @@ export default function TransacoesFinanceiras({
       </div>
 
       {/* Sumário de Transações (Baseado no filtro atual) */}
-      <div className="bg-white dark:bg-[#17223b] md:bg-transparent dark:md:bg-transparent p-[5px] md:p-0 rounded-[16px] md:rounded-none border border-slate-100 dark:border-[#2b3954] md:border-none shadow-sm md:shadow-none mt-[-19px] md:mt-0">
+      <div className="max-md:bg-white max-md:dark:bg-[#17223b] max-md:p-[5px] max-md:rounded-[16px] max-md:border max-md:border-slate-100 max-md:dark:border-[#2b3954] max-md:shadow-sm max-md:mt-[-19px]">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-1 md:gap-4">
           {/* Total Recebido */}
           <div className="flex items-center gap-4 p-1 md:p-5 md:bg-white dark:md:bg-[#17223b] md:rounded-2xl md:border md:border-slate-200 dark:md:border-[#2b3954] md:shadow-sm">
@@ -806,8 +877,8 @@ export default function TransacoesFinanceiras({
                       <td className="text-slate-700 dark:text-slate-300">{t.conta}</td>
                       <td>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${t.status?.toLowerCase() === 'pago' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' :
-                            t.status?.toLowerCase() === 'pendente' ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300' :
-                              'bg-red-100 dark:bg-rose-950/60 text-red-800 dark:text-rose-300'
+                          t.status?.toLowerCase() === 'pendente' ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300' :
+                            'bg-red-100 dark:bg-rose-950/60 text-red-800 dark:text-rose-300'
                           }`}>
                           {t.status}
                         </span>
@@ -897,8 +968,8 @@ export default function TransacoesFinanceiras({
                       </span>
                       <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
                       <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider ${tipoNormalizado === 'receita' ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300' :
-                          tipoNormalizado === 'despesa' ? 'bg-red-100 dark:bg-rose-950/60 text-red-800 dark:text-rose-300' :
-                            'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300'
+                        tipoNormalizado === 'despesa' ? 'bg-red-100 dark:bg-rose-950/60 text-red-800 dark:text-rose-300' :
+                          'bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300'
                         }`}>
                         {t.tipo}
                       </span>
@@ -1311,19 +1382,17 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
           {isReceita && (
             <div
               onClick={() => setViaPix(!viaPix)}
-              className={`p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between gap-3 ${
-                viaPix
+              className={`p-3 sm:p-3.5 rounded-2xl border transition-all cursor-pointer select-none flex items-center justify-between gap-3 ${viaPix
                   ? 'bg-gradient-to-r from-teal-50/90 via-emerald-50/50 to-teal-50/30 dark:from-teal-950/40 dark:via-emerald-950/20 dark:to-transparent border-teal-300 dark:border-teal-700/80 shadow-xs'
                   : 'bg-slate-50/60 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-[11px] tracking-wider shrink-0 transition-all ${
-                    viaPix
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-[11px] tracking-wider shrink-0 transition-all ${viaPix
                       ? 'bg-teal-600 text-white shadow-sm shadow-teal-600/30 ring-2 ring-teal-200 dark:ring-teal-900'
                       : 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                  }`}
+                    }`}
                 >
                   PIX
                 </div>
@@ -1347,14 +1416,12 @@ export function ModalLancarTransacao({ tipo, onFechar, contas, categorias, pesso
               {/* Toggle Switch */}
               <div className="shrink-0 flex items-center">
                 <div
-                  className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
-                    viaPix ? 'bg-teal-600' : 'bg-slate-300 dark:bg-slate-700'
-                  }`}
+                  className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${viaPix ? 'bg-teal-600' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
                 >
                   <div
-                    className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
-                      viaPix ? 'translate-x-5' : 'translate-x-0'
-                    }`}
+                    className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${viaPix ? 'translate-x-5' : 'translate-x-0'
+                      }`}
                   />
                 </div>
               </div>
@@ -1552,5 +1619,122 @@ function BtnAtalho({ label, onClick, destaque }) {
     >
       {label}
     </button>
+  );
+}
+
+function MultiSelectCheckboxFiltro({ label, selecionados = [], onChange, opcoes = [], placeholder = 'Todas' }) {
+  const [aberto, setAberto] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!aberto) return;
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setAberto(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [aberto]);
+
+  const toggleValor = (valor) => {
+    if (selecionados.includes(valor)) {
+      onChange(selecionados.filter((v) => v !== valor));
+    } else {
+      onChange([...selecionados, valor]);
+    }
+  };
+
+  const textoResumo = useMemo(() => {
+    if (selecionados.length === 0) return placeholder;
+    if (selecionados.length === 1) {
+      return opcoes.find((o) => o.valor === selecionados[0])?.label || '1 selecionada';
+    }
+    return `${selecionados.length} selecionadas`;
+  }, [selecionados, opcoes, placeholder]);
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      {label && (
+        <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+          {label}
+        </label>
+      )}
+      <button
+        type="button"
+        onClick={() => setAberto((prev) => !prev)}
+        className={`w-full h-[42px] px-3 bg-white dark:bg-slate-900 border rounded-xl text-xs flex items-center justify-between gap-2 transition-all shadow-sm cursor-pointer ${aberto
+            ? 'border-[#1e3a8a] dark:border-blue-500 ring-2 ring-[#1e3a8a]/10'
+            : selecionados.length > 0
+              ? 'border-blue-400 dark:border-blue-500/70'
+              : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+          }`}
+      >
+        <span className={`truncate ${selecionados.length > 0 ? 'font-bold text-slate-800 dark:text-blue-300' : 'text-slate-600 dark:text-slate-300'}`}>
+          {textoResumo}
+        </span>
+        <span className="flex items-center gap-1.5 shrink-0">
+          {selecionados.length > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-black leading-none">
+              {selecionados.length}
+            </span>
+          )}
+          <ChevronDown
+            size={15}
+            className={`text-slate-400 transition-transform duration-200 ${aberto ? 'rotate-180' : ''}`}
+          />
+        </span>
+      </button>
+
+      {aberto && (
+        <div className="absolute left-0 right-0 sm:min-w-[230px] top-full mt-1.5 z-[90] bg-white dark:bg-[#17223b] border border-slate-200 dark:border-[#2b3954] rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-[#2b3954] bg-slate-50/80 dark:bg-[#1c2b4a]">
+            <button
+              type="button"
+              onClick={() => onChange(opcoes.map((o) => o.valor))}
+              className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+            >
+              Todas
+            </button>
+            <span className="text-[10px] font-semibold text-slate-400">
+              {selecionados.length}/{opcoes.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+            >
+              Limpar
+            </button>
+          </div>
+          <div className="max-h-56 overflow-y-auto p-1.5 space-y-0.5">
+            {opcoes.length === 0 ? (
+              <p className="text-xs text-slate-400 italic text-center py-4">Nenhuma opção disponível</p>
+            ) : (
+              opcoes.map((op) => {
+                const marcado = selecionados.includes(op.valor);
+                return (
+                  <label
+                    key={op.valor}
+                    className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs cursor-pointer transition-colors select-none ${marcado
+                        ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200 font-bold'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/70'
+                      }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={marcado}
+                      onChange={() => toggleValor(op.valor)}
+                      className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer shrink-0"
+                    />
+                    <span className="truncate">{op.label}</span>
+                  </label>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

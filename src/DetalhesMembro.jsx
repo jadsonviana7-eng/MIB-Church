@@ -2,10 +2,12 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Cropper from 'react-easy-crop';
 import { supabase } from './supabaseClient';
 import { Card, CardHeader, CampoLinha, CampoInput, uploadImagemCelula } from './ui';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, X, Sparkles, CheckCircle2, TrendingUp, Flame, Compass, ChevronRight, Brain, Target } from 'lucide-react';
 import SidebarVinculos from './SidebarVinculos';
 import { calcularIdade } from './churchUtils';
 import { ModalLancarTransacao } from './TransacoesFinanceiras';
+import { PERFIS_INFO } from './TestePerfilComportamental';
+import { ATIVIDADE_CEREBRAL_INFO, TEMPERAMENTOS_INFO, gerarAnaliseInteligente } from './perfilInteligenteUtils';
 import {
   mascaraCPF,
   mascaraCNPJ,
@@ -407,12 +409,56 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
   const [perfilGato, setPerfilGato] = useState('');
   const [perfilLobo, setPerfilLobo] = useState('');
   const [perfilTubarao, setPerfilTubarao] = useState('');
+  const [perfilModalAberto, setPerfilModalAberto] = useState(null); // 'I' | 'C' | 'O' | 'A' | null
+  const [cerebralModalAberto, setCerebralModalAberto] = useState(null); // 'pensante' | 'razao' | 'emocao' | 'atuante' | null
+  const [temperamentoModalAberto, setTemperamentoModalAberto] = useState(null); // 'colerico' | 'melancolico' | 'sanguineo' | 'fleumatico' | null
+
+  useEffect(() => {
+    if (!perfilModalAberto && !cerebralModalAberto && !temperamentoModalAberto) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setPerfilModalAberto(null);
+        setCerebralModalAberto(null);
+        setTemperamentoModalAberto(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [perfilModalAberto, cerebralModalAberto, temperamentoModalAberto]);
   const [perfilPensante, setPerfilPensante] = useState('');
   const [perfilRazao, setPerfilRazao] = useState('');
   const [perfilEmocao, setPerfilEmocao] = useState('');
   const [perfilAtuante, setPerfilAtuante] = useState('');
   const [testePersonalidade, setTestePersonalidade] = useState(null);
   const [permissoesJson, setPermissoesJson] = useState({});
+
+  const analiseInteligente = useMemo(
+    () =>
+      gerarAnaliseInteligente({
+        nome,
+        perfilAguia,
+        perfilGato,
+        perfilLobo,
+        perfilTubarao,
+        perfilPensante,
+        perfilRazao,
+        perfilEmocao,
+        perfilAtuante,
+        testePersonalidade,
+      }),
+    [
+      nome,
+      perfilAguia,
+      perfilGato,
+      perfilLobo,
+      perfilTubarao,
+      perfilPensante,
+      perfilRazao,
+      perfilEmocao,
+      perfilAtuante,
+      testePersonalidade,
+    ]
+  );
   const [modulosExpandidos, setModulosExpandidos] = useState({});
 
   const isMembro = membroLogado?.permissao === 'membro';
@@ -422,6 +468,9 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
   // Estados para Gestão Escolar
   const [turmasDisponiveis, setTurmasDisponiveis] = useState([]);
   const [matriculasMembro, setMatriculasMembro] = useState([]);
+  const [turmaBoletimSelecionadaId, setTurmaBoletimSelecionadaId] = useState(null);
+  const [boletimEscola, setBoletimEscola] = useState(null);
+  const [carregandoBoletimEscola, setCarregandoBoletimEscola] = useState(false);
 
   const [imageSrc, setImageSrc] = useState(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -556,6 +605,149 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
       carregarHistoricoPresenca();
     }
   }, [abaAtiva, carregarHistoricoPresenca]);
+
+  const carregarBoletimEscola = useCallback(async (turmaIdOverride = null) => {
+    if (!pessoaId || isStudentCadernetaView) return;
+    const turmasEnroladas = (matriculasMembro || []).filter(m => m.turmas?.id);
+    if (turmasEnroladas.length === 0) {
+      setBoletimEscola(null);
+      setTurmaBoletimSelecionadaId(null);
+      return;
+    }
+
+    const alvoId = turmaIdOverride
+      || (turmaBoletimSelecionadaId && turmasEnroladas.some(m => m.turmas.id === turmaBoletimSelecionadaId) ? turmaBoletimSelecionadaId : turmasEnroladas[0].turmas.id);
+
+    setTurmaBoletimSelecionadaId(alvoId);
+    setCarregandoBoletimEscola(true);
+    try {
+      const [{ data: alunoData }, { data: turmasDiscs }] = await Promise.all([
+        supabase.from('alunos').select('id, matricula').eq('pessoa_id', pessoaId).maybeSingle(),
+        supabase
+          .from('turmas_disciplinas')
+          .select('id, turma_id, disciplina_id, disciplinas(id, nome), professores(pessoas(nome))')
+          .eq('turma_id', alvoId),
+      ]);
+
+      if (!alunoData) {
+        setBoletimEscola(null);
+        return;
+      }
+
+      const tdList = turmasDiscs || [];
+      const tdIds = tdList.map(td => td.id);
+      const mapTdNome = Object.fromEntries(tdList.map(td => [td.id, td.disciplinas?.nome || 'Disciplina']));
+
+      let dataAvaliacoes = [];
+      let dataAulas = [];
+      if (tdIds.length > 0) {
+        const [resAv, resAulas] = await Promise.all([
+          supabase.from('avaliacoes').select('*').eq('aluno_id', alunoData.id).in('turma_disciplina_id', tdIds),
+          supabase.from('aulas').select('id, turma_disciplina_id, data_aula, titulo, presencas').in('turma_disciplina_id', tdIds).order('data_aula', { ascending: false }),
+        ]);
+        dataAvaliacoes = resAv.data || [];
+        dataAulas = resAulas.data || [];
+      }
+
+      const mapNotas = {};
+      const mapObs = {};
+      dataAvaliacoes.forEach(av => {
+        mapNotas[av.turma_disciplina_id] = av.nota !== null && av.nota !== undefined ? Number(av.nota) : null;
+        mapObs[av.turma_disciplina_id] = av.observacao || '';
+      });
+
+      const mapFaltas = {};
+      const mapTotalAulas = {};
+      const historicoAulas = [];
+
+      dataAulas.forEach(aula => {
+        const tdId = aula.turma_disciplina_id;
+        mapTotalAulas[tdId] = (mapTotalAulas[tdId] || 0) + 1;
+        let pObj = aula.presencas || {};
+        if (typeof pObj === 'string') {
+          try { pObj = JSON.parse(pObj); } catch (_) { pObj = {}; }
+        }
+        const presente = pObj[alunoData.id] === true || pObj[pessoaId] === true;
+        if (!presente) {
+          mapFaltas[tdId] = (mapFaltas[tdId] || 0) + 1;
+        }
+        historicoAulas.push({
+          id: aula.id,
+          data: aula.data_aula,
+          disciplina: mapTdNome[tdId] || 'Disciplina',
+          titulo: aula.titulo || '',
+          presente,
+        });
+      });
+
+      const disciplinas = tdList.map(td => {
+        const nota = mapNotas[td.id] !== undefined ? mapNotas[td.id] : null;
+        const totalAulas = mapTotalAulas[td.id] || 0;
+        const faltas = mapFaltas[td.id] || 0;
+        const presencas = Math.max(0, totalAulas - faltas);
+        const frequencia = totalAulas > 0 ? Math.round((presencas / totalAulas) * 100) : null;
+
+        let situacao = 'Em andamento';
+        if (nota !== null && (frequencia === null || frequencia >= 75)) {
+          situacao = nota >= 7 ? 'Aprovado' : nota >= 5 ? 'Recuperação' : 'Reprovado';
+        } else if (frequencia !== null && frequencia < 75) {
+          situacao = 'Baixa Frequência';
+        }
+
+        return {
+          id: td.id,
+          nome: td.disciplinas?.nome || 'Disciplina',
+          professor: td.professores?.pessoas?.nome || 'Não atribuído',
+          nota,
+          observacao: mapObs[td.id] || '',
+          totalAulas,
+          presencas,
+          faltas,
+          frequencia,
+          situacao,
+        };
+      });
+
+      const notasValidas = disciplinas.filter(d => d.nota !== null).map(d => d.nota);
+      const mediaGeral = notasValidas.length > 0
+        ? notasValidas.reduce((acc, n) => acc + n, 0) / notasValidas.length
+        : null;
+      const totalAulasGeral = disciplinas.reduce((acc, d) => acc + d.totalAulas, 0);
+      const totalPresencasGeral = disciplinas.reduce((acc, d) => acc + d.presencas, 0);
+      const totalFaltasGeral = disciplinas.reduce((acc, d) => acc + d.faltas, 0);
+      const frequenciaGeral = totalAulasGeral > 0
+        ? Math.round((totalPresencasGeral / totalAulasGeral) * 100)
+        : null;
+
+      const matAtual = turmasEnroladas.find(m => m.turmas.id === alvoId);
+
+      setBoletimEscola({
+        turmaId: alvoId,
+        turmaNome: matAtual?.turmas?.nome || 'Turma',
+        escolaNome: matAtual?.turmas?.escolas?.nome || 'Escola',
+        matriculaCodigo: alunoData.matricula || null,
+        statusMatricula: matAtual?.status || 'ativo',
+        mediaGeral,
+        frequenciaGeral,
+        totalAulasGeral,
+        totalPresencasGeral,
+        totalFaltasGeral,
+        disciplinas,
+        historicoAulas: historicoAulas.slice(0, 12),
+      });
+    } catch (err) {
+      console.warn('Erro ao carregar boletim escolar do membro:', err.message);
+      setBoletimEscola(null);
+    } finally {
+      setCarregandoBoletimEscola(false);
+    }
+  }, [pessoaId, isStudentCadernetaView, matriculasMembro, turmaBoletimSelecionadaId]);
+
+  useEffect(() => {
+    if (abaAtiva === 'escola' && !isStudentCadernetaView) {
+      carregarBoletimEscola();
+    }
+  }, [abaAtiva, isStudentCadernetaView, matriculasMembro, carregarBoletimEscola]);
 
   const carregarDadosAcademicos = useCallback(async (turmaIdOverride) => {
     if (!pessoaId || !isStudentCadernetaView) return;
@@ -1447,6 +1639,538 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
 
   return (
     <div className="w-full space-y-5 max-w-[1600px] mx-auto px-2 md:px-4">
+      {/* Modal Moderno e Interativo de Detalhes do Perfil Comportamental */}
+      {perfilModalAberto && PERFIS_INFO[perfilModalAberto] && (() => {
+        const info = PERFIS_INFO[perfilModalAberto];
+        const valoresMapa = {
+          I: perfilAguia,
+          C: perfilGato,
+          O: perfilLobo,
+          A: perfilTubarao,
+        };
+        const valorAtual = valoresMapa[perfilModalAberto];
+        const temValor = valorAtual !== '' && valorAtual !== null && valorAtual !== undefined;
+        const pctNum = Math.min(100, Math.max(0, Number(valorAtual) || 0));
+
+        return (
+          <div
+            onClick={() => setPerfilModalAberto(null)}
+            className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#131d33] rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+            >
+              {/* Cabeçalho Hero com Gradiente do Arquétipo */}
+              <div className={`relative overflow-hidden bg-gradient-to-br ${info.corGrad} p-5 sm:p-6 text-white shrink-0`}>
+                <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-white/15 blur-3xl pointer-events-none" />
+                <div className="absolute left-1/4 -bottom-14 w-36 h-36 rounded-full bg-black/15 blur-2xl pointer-events-none" />
+
+                <div className="relative flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center text-4xl shadow-lg shrink-0">
+                      {info.emoji}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest bg-black/20 px-2.5 py-0.5 rounded-full">
+                          <Sparkles size={11} />
+                          {info.eixo}
+                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2.5 py-0.5 rounded-full">
+                          "{info.lema}"
+                        </span>
+                      </div>
+                      <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-tight">
+                        Perfil {info.nome}
+                      </h3>
+                      <p className="text-xs text-white/90 font-semibold mt-0.5 truncate">
+                        {nome ? `${nome} • ` : ''}
+                        {temValor ? `Pontuação atual: ${valorAtual}%` : 'Ainda não avaliado neste arquétipo'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setPerfilModalAberto(null)}
+                    className="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white flex items-center justify-center transition cursor-pointer shrink-0"
+                    aria-label="Fechar modal"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Barra de pontuação do membro + Seletor rápido dos 4 perfis */}
+                <div className="relative mt-5 space-y-3">
+                  {temValor && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-white/90">
+                        <span>Intensidade em {info.nome}</span>
+                        <span className="font-black">{pctNum}%</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-black/25 overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-white transition-all duration-500"
+                          style={{ width: `${pctNum}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-4 gap-1.5 pt-1">
+                    {['I', 'C', 'O', 'A'].map((cod) => {
+                      const item = PERFIS_INFO[cod];
+                      const ativo = perfilModalAberto === cod;
+                      const v = valoresMapa[cod];
+                      return (
+                        <button
+                          key={cod}
+                          type="button"
+                          onClick={() => setPerfilModalAberto(cod)}
+                          className={`px-2 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1 border ${
+                            ativo
+                              ? 'bg-white text-slate-900 border-white shadow-sm'
+                              : 'bg-black/15 hover:bg-black/25 text-white/90 border-white/15'
+                          }`}
+                        >
+                          <span>{item.emoji}</span>
+                          <span className="hidden sm:inline truncate">{item.nome}</span>
+                          {v !== '' && v !== null && v !== undefined && (
+                            <span className={`text-[10px] font-black ${ativo ? 'text-blue-700' : 'text-white/80'}`}>
+                              {v}%
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Conteúdo Rolável */}
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
+                {/* Sobre o Perfil */}
+                <div className="p-4 rounded-2xl bg-slate-50/90 dark:bg-[#17223b] border border-slate-200/70 dark:border-[#2b3954] space-y-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    Visão Geral do Arquétipo
+                  </span>
+                  <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">
+                    {info.descricaoCompleta}
+                  </p>
+                </div>
+
+                {/* Comportamentos em Pills */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <Compass size={15} className="text-blue-600 dark:text-blue-400" />
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100">
+                      Comportamentos Característicos
+                    </h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {info.comportamentos.map((comp) => (
+                      <span
+                        key={comp}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-[#1c2b4a] text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-[#2b3954]"
+                      >
+                        {comp}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Grid Bento: Pontos Fortes, Melhoria e Motivações */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-2.5">
+                    <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                      <CheckCircle2 size={16} />
+                      <h4 className="text-xs font-black uppercase tracking-wider">Pontos Fortes</h4>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {info.pontosFortes.map((pt) => (
+                        <li key={pt} className="text-xs text-slate-700 dark:text-slate-200 flex items-start gap-2 leading-snug">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-black mt-0.5">•</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 space-y-2.5">
+                    <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                      <TrendingUp size={16} />
+                      <h4 className="text-xs font-black uppercase tracking-wider">Pontos de Melhoria</h4>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {info.pontosMelhoria.map((pt) => (
+                        <li key={pt} className="text-xs text-slate-700 dark:text-slate-200 flex items-start gap-2 leading-snug">
+                          <span className="text-amber-600 dark:text-amber-400 font-black mt-0.5">•</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Motivações */}
+                <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/50 space-y-2.5">
+                  <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
+                    <Flame size={16} />
+                    <h4 className="text-xs font-black uppercase tracking-wider">O que Motiva esse Perfil</h4>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {info.motivacoes.map((mot) => (
+                      <div key={mot} className="text-xs text-slate-700 dark:text-slate-200 flex items-start gap-2 leading-snug">
+                        <span className="text-indigo-600 dark:text-indigo-400 font-black mt-0.5">✦</span>
+                        <span>{mot}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Valores Principais */}
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-[#1e3a8a]/10 via-blue-500/10 to-indigo-500/10 dark:from-blue-950/50 dark:to-indigo-950/50 border border-blue-200/70 dark:border-blue-800/50 flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-300 block">
+                      Valores Principais
+                    </span>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5">
+                      {info.valores}
+                    </p>
+                  </div>
+                  <span className="text-2xl shrink-0">{info.emoji}</span>
+                </div>
+              </div>
+
+              {/* Rodapé */}
+              <div className="px-5 py-3.5 border-t border-slate-100 dark:border-[#2b3954] bg-slate-50/70 dark:bg-[#0f172a]/70 flex justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setPerfilModalAberto(null)}
+                  className="px-5 py-2 rounded-xl bg-slate-800 dark:bg-blue-600 hover:bg-slate-700 dark:hover:bg-blue-500 text-white text-xs font-bold transition cursor-pointer"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Modal Interativo de Atividade Cerebral */}
+      {cerebralModalAberto && ATIVIDADE_CEREBRAL_INFO[cerebralModalAberto] && (() => {
+        const info = ATIVIDADE_CEREBRAL_INFO[cerebralModalAberto];
+        const valoresMapa = {
+          pensante: perfilPensante,
+          razao: perfilRazao,
+          emocao: perfilEmocao,
+          atuante: perfilAtuante,
+        };
+        const valorAtual = valoresMapa[cerebralModalAberto];
+        const temValor = valorAtual !== '' && valorAtual !== null && valorAtual !== undefined;
+        const pctNum = Math.min(100, Math.max(0, Number(valorAtual) || 0));
+
+        return (
+          <div
+            onClick={() => setCerebralModalAberto(null)}
+            className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#131d33] rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+            >
+              <div className={`relative overflow-hidden bg-gradient-to-br ${info.corGrad} p-5 sm:p-6 text-white shrink-0`}>
+                <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-white/15 blur-3xl pointer-events-none" />
+                <div className="relative flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center text-4xl shadow-lg shrink-0">
+                      {info.emoji}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest bg-black/20 px-2.5 py-0.5 rounded-full mb-1">
+                        <Brain size={11} />
+                        {info.subtitulo}
+                      </span>
+                      <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-tight">
+                        Atividade Cerebral: {info.nome}
+                      </h3>
+                      <p className="text-xs text-white/90 font-semibold mt-0.5 truncate">
+                        {nome ? `${nome} • ` : ''}
+                        {temValor ? `Índice atual: ${valorAtual}%` : 'Sem pontuação informada'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCerebralModalAberto(null)}
+                    className="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white flex items-center justify-center transition cursor-pointer shrink-0"
+                    aria-label="Fechar modal"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="relative mt-5 space-y-3">
+                  {temValor && (
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-white/90">
+                        <span>Dominância em {info.nome}</span>
+                        <span className="font-black">{pctNum}%</span>
+                      </div>
+                      <div className="h-2 w-full rounded-full bg-black/25 overflow-hidden">
+                        <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${pctNum}%` }} />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-4 gap-1.5 pt-1">
+                    {['pensante', 'razao', 'emocao', 'atuante'].map((k) => {
+                      const item = ATIVIDADE_CEREBRAL_INFO[k];
+                      const ativo = cerebralModalAberto === k;
+                      const v = valoresMapa[k];
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => setCerebralModalAberto(k)}
+                          className={`px-2 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1 border ${
+                            ativo
+                              ? 'bg-white text-slate-900 border-white shadow-sm'
+                              : 'bg-black/15 hover:bg-black/25 text-white/90 border-white/15'
+                          }`}
+                        >
+                          <span>{item.emoji}</span>
+                          <span className="hidden sm:inline truncate">{item.nome}</span>
+                          {v !== '' && v !== null && v !== undefined && (
+                            <span className={`text-[10px] font-black ${ativo ? 'text-blue-700' : 'text-white/80'}`}>{v}%</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
+                <div className="p-4 rounded-2xl bg-slate-50/90 dark:bg-[#17223b] border border-slate-200/70 dark:border-[#2b3954] space-y-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sobre este Quadrante</span>
+                  <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">{info.descricaoCompleta}</p>
+                </div>
+
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-2">
+                    <Compass size={15} className="text-blue-600 dark:text-blue-400" />
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100">Características Principais</h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {info.caracteristicas.map((c) => (
+                      <span key={c} className="px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-[#1c2b4a] text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-[#2b3954]">
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-2.5">
+                    <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                      <CheckCircle2 size={16} />
+                      <h4 className="text-xs font-black uppercase tracking-wider">Pontos Fortes</h4>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {info.pontosFortes.map((pt) => (
+                        <li key={pt} className="text-xs text-slate-700 dark:text-slate-200 flex items-start gap-2 leading-snug">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-black mt-0.5">•</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 space-y-2.5">
+                    <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                      <TrendingUp size={16} />
+                      <h4 className="text-xs font-black uppercase tracking-wider">Pontos de Atenção</h4>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {info.pontosAtencao.map((pt) => (
+                        <li key={pt} className="text-xs text-slate-700 dark:text-slate-200 flex items-start gap-2 leading-snug">
+                          <span className="text-amber-600 dark:text-amber-400 font-black mt-0.5">•</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/50 space-y-2.5">
+                  <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
+                    <Target size={16} />
+                    <h4 className="text-xs font-black uppercase tracking-wider">Aptidões Ministeriais Sugeridas</h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {info.aptidoes.map((ap) => (
+                      <span key={ap} className="px-3 py-1 rounded-xl text-xs font-bold bg-white/80 dark:bg-slate-900/70 text-indigo-800 dark:text-indigo-200 border border-indigo-200/70 dark:border-indigo-800/60">
+                        ✦ {ap}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-5 py-3.5 border-t border-slate-100 dark:border-[#2b3954] bg-slate-50/70 dark:bg-[#0f172a]/70 flex justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setCerebralModalAberto(null)}
+                  className="px-5 py-2 rounded-xl bg-slate-800 dark:bg-blue-600 hover:bg-slate-700 dark:hover:bg-blue-500 text-white text-xs font-bold transition cursor-pointer"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Modal Interativo de Temperamento / Personalidade */}
+      {temperamentoModalAberto && TEMPERAMENTOS_INFO[temperamentoModalAberto] && (() => {
+        const info = TEMPERAMENTOS_INFO[temperamentoModalAberto];
+        const valAtual = testePersonalidade ? Number(testePersonalidade[temperamentoModalAberto]) || 0 : 0;
+        const pctEscala = Math.min(100, Math.round((valAtual / 35) * 100));
+
+        return (
+          <div
+            onClick={() => setTemperamentoModalAberto(null)}
+            className="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#131d33] rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200"
+            >
+              <div className={`relative overflow-hidden bg-gradient-to-br ${info.corGrad} p-5 sm:p-6 text-white shrink-0`}>
+                <div className="relative flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center text-4xl shadow-lg shrink-0">
+                      {info.emoji}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest bg-black/20 px-2.5 py-0.5 rounded-full mb-1">
+                        <Sparkles size={11} />
+                        Temperamento • Escala 7–35
+                      </span>
+                      <h3 className="text-xl sm:text-2xl font-black tracking-tight leading-tight">
+                        Temperamento {info.nome}
+                      </h3>
+                      <p className="text-xs text-white/90 font-semibold mt-0.5 truncate">
+                        {nome ? `${nome} • ` : ''}Pontuação: {valAtual} / 35 ({pctEscala}%)
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setTemperamentoModalAberto(null)}
+                    className="w-9 h-9 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white flex items-center justify-center transition cursor-pointer shrink-0"
+                    aria-label="Fechar modal"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="relative mt-4 grid grid-cols-4 gap-1.5">
+                  {['colerico', 'melancolico', 'sanguineo', 'fleumatico'].map((k) => {
+                    const item = TEMPERAMENTOS_INFO[k];
+                    const ativo = temperamentoModalAberto === k;
+                    const v = testePersonalidade ? testePersonalidade[k] : null;
+                    return (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setTemperamentoModalAberto(k)}
+                        className={`px-2 py-1.5 rounded-xl text-[11px] font-bold transition cursor-pointer flex items-center justify-center gap-1 border ${
+                          ativo
+                            ? 'bg-white text-slate-900 border-white shadow-sm'
+                            : 'bg-black/15 hover:bg-black/25 text-white/90 border-white/15'
+                        }`}
+                      >
+                        <span>{item.emoji}</span>
+                        <span className="hidden sm:inline truncate">{item.nome}</span>
+                        {v !== null && v !== undefined && (
+                          <span className={`text-[10px] font-black ${ativo ? 'text-blue-700' : 'text-white/80'}`}>{v}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
+                <div className="p-4 rounded-2xl bg-slate-50/90 dark:bg-[#17223b] border border-slate-200/70 dark:border-[#2b3954] space-y-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sobre este Temperamento</span>
+                  <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 leading-relaxed">{info.descricaoCompleta}</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-2.5">
+                    <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                      <CheckCircle2 size={16} />
+                      <h4 className="text-xs font-black uppercase tracking-wider">Pontos Fortes</h4>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {info.pontosFortes.map((pt) => (
+                        <li key={pt} className="text-xs text-slate-700 dark:text-slate-200 flex items-start gap-2 leading-snug">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-black mt-0.5">•</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 space-y-2.5">
+                    <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300">
+                      <TrendingUp size={16} />
+                      <h4 className="text-xs font-black uppercase tracking-wider">Pontos de Melhoria</h4>
+                    </div>
+                    <ul className="space-y-1.5">
+                      {info.pontosMelhoria.map((pt) => (
+                        <li key={pt} className="text-xs text-slate-700 dark:text-slate-200 flex items-start gap-2 leading-snug">
+                          <span className="text-amber-600 dark:text-amber-400 font-black mt-0.5">•</span>
+                          <span>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-800/50 space-y-2.5">
+                  <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
+                    <Target size={16} />
+                    <h4 className="text-xs font-black uppercase tracking-wider">Aptidões Ministeriais</h4>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {info.aptidoes.map((ap) => (
+                      <span key={ap} className="px-3 py-1 rounded-xl text-xs font-bold bg-white/80 dark:bg-slate-900/70 text-indigo-800 dark:text-indigo-200 border border-indigo-200/70 dark:border-indigo-800/60">
+                        ✦ {ap}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-5 py-3.5 border-t border-slate-100 dark:border-[#2b3954] bg-slate-50/70 dark:bg-[#0f172a]/70 flex justify-end shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setTemperamentoModalAberto(null)}
+                  className="px-5 py-2 rounded-xl bg-slate-800 dark:bg-blue-600 hover:bg-slate-700 dark:hover:bg-blue-500 text-white text-xs font-bold transition cursor-pointer"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {modalExclusaoAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 dark:bg-slate-950/75 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl w-full max-w-md p-5 space-y-4">
@@ -2014,92 +2738,174 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
 
             {abaAtiva === 'adicionais' && !isStudentCadernetaView && (
               <div className="space-y-6">
-                {/* Novo Ambiente: Perfil Comportamental */}
+                {/* Novo Ambiente: Perfil Comportamental (Cards clicáveis com modal detalhado) */}
                 <div className="section-group">
-                  <div><h3 className="section-title">Perfil Comportamental</h3><p className="section-subtitle">Valores numéricos baseados no teste de perfil (0 a 100).</p></div>
+                  <div>
+                    <h3 className="section-title">Perfil Comportamental</h3>
+                    <p className="section-subtitle">Clique em qualquer arquétipo para explorar comportamentos, pontos fortes, melhorias e motivações.</p>
+                  </div>
                   <div className="section-body grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/30">
-                      <span className="text-xl">🦅</span>
-                      <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Águia</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={perfilAguia}
-                        onChange={(e) => setPerfilAguia(e.target.value)}
-                        disabled={dis}
-                        className="w-20 px-2 py-1 border border-blue-200 dark:border-blue-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-blue-500/20 outline-none"
-                      />
-                    </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-100 dark:border-purple-900/50 bg-purple-50/30 dark:bg-purple-950/30">
-                      <span className="text-xl">🐈</span>
-                      <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Gato</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={perfilGato}
-                        onChange={(e) => setPerfilGato(e.target.value)}
-                        disabled={dis}
-                        className="w-20 px-2 py-1 border border-purple-200 dark:border-purple-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-purple-500/20 outline-none"
-                      />
-                    </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/30 dark:bg-slate-800/40">
-                      <span className="text-xl">🐺</span>
-                      <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Lobo</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={perfilLobo}
-                        onChange={(e) => setPerfilLobo(e.target.value)}
-                        disabled={dis}
-                        className="w-20 px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-gray-500/20 outline-none"
-                      />
-                    </div>
-                    <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/30">
-                      <span className="text-xl">🦈</span>
-                      <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Tubarão</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={perfilTubarao}
-                        onChange={(e) => setPerfilTubarao(e.target.value)}
-                        disabled={dis}
-                        className="w-20 px-2 py-1 border border-red-200 dark:border-red-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
-                      />
-                    </div>
+                    {[
+                      {
+                        codigo: 'I',
+                        nome: 'Águia',
+                        subtitulo: 'Idealização • Fazer Diferente',
+                        emoji: '🦅',
+                        valor: perfilAguia,
+                        setter: setPerfilAguia,
+                        barCor: '#10b981',
+                        cardCls: 'border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/25 hover:border-emerald-400 dark:hover:border-emerald-500/70',
+                        inputCls: 'border-emerald-200 dark:border-emerald-800/70 focus:ring-emerald-500/20',
+                        badgeCls: 'text-emerald-700 dark:text-emerald-300',
+                      },
+                      {
+                        codigo: 'C',
+                        nome: 'Gato',
+                        subtitulo: 'Comunicação • Fazer Junto',
+                        emoji: '🐈',
+                        valor: perfilGato,
+                        setter: setPerfilGato,
+                        barCor: '#f59e0b',
+                        cardCls: 'border-amber-200/80 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/25 hover:border-amber-400 dark:hover:border-amber-500/70',
+                        inputCls: 'border-amber-200 dark:border-amber-800/70 focus:ring-amber-500/20',
+                        badgeCls: 'text-amber-700 dark:text-amber-300',
+                      },
+                      {
+                        codigo: 'O',
+                        nome: 'Lobo',
+                        subtitulo: 'Organização • Fazer Certo',
+                        emoji: '🐺',
+                        valor: perfilLobo,
+                        setter: setPerfilLobo,
+                        barCor: '#3b82f6',
+                        cardCls: 'border-blue-200/80 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/25 hover:border-blue-400 dark:hover:border-blue-500/70',
+                        inputCls: 'border-blue-200 dark:border-blue-800/70 focus:ring-blue-500/20',
+                        badgeCls: 'text-blue-700 dark:text-blue-300',
+                      },
+                      {
+                        codigo: 'A',
+                        nome: 'Tubarão',
+                        subtitulo: 'Ação • Fazer Rápido',
+                        emoji: '🦈',
+                        valor: perfilTubarao,
+                        setter: setPerfilTubarao,
+                        barCor: '#ef4444',
+                        cardCls: 'border-rose-200/80 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/25 hover:border-rose-400 dark:hover:border-rose-500/70',
+                        inputCls: 'border-rose-200 dark:border-rose-800/70 focus:ring-rose-500/20',
+                        badgeCls: 'text-rose-700 dark:text-rose-300',
+                      },
+                    ].map((card) => {
+                      const pctNum = Math.min(100, Math.max(0, Number(card.valor) || 0));
+                      return (
+                        <div
+                          key={card.codigo}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setPerfilModalAberto(card.codigo)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setPerfilModalAberto(card.codigo);
+                            }
+                          }}
+                          title={`Ver perfil detalhado de ${card.nome}`}
+                          className={`group relative overflow-hidden p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] ${card.cardCls}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl shrink-0 transition-transform duration-200 group-hover:scale-110">{card.emoji}</span>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-extrabold text-slate-800 dark:text-slate-100 text-sm leading-tight">{card.nome}</span>
+                                <ChevronRight size={14} className={`opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all ${card.badgeCls}`} />
+                              </div>
+                              <p className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 truncate mt-0.5">{card.subtitulo}</p>
+                            </div>
+
+                            {dis ? (
+                              <span className={`text-lg font-black tabular-nums shrink-0 ${card.badgeCls}`}>
+                                {card.valor !== '' && card.valor !== null && card.valor !== undefined ? `${card.valor}%` : '—'}
+                              </span>
+                            ) : (
+                              <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  value={card.valor}
+                                  onChange={(e) => card.setter(e.target.value)}
+                                  className={`w-16 px-2 py-1 border rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs font-bold focus:ring-2 outline-none ${card.inputCls}`}
+                                />
+                                <span className="text-[11px] font-bold text-slate-400">%</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Barra de intensidade sutil + dica clicável */}
+                          <div className="mt-3 flex items-center gap-2">
+                            <div className="h-1.5 flex-1 rounded-full bg-slate-200/80 dark:bg-slate-800/90 overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{ width: `${pctNum}%`, backgroundColor: card.barCor }}
+                              />
+                            </div>
+                            <span className={`text-[9px] font-black uppercase tracking-wider opacity-70 group-hover:opacity-100 transition-opacity ${card.badgeCls}`}>
+                              Ver perfil
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Novo Ambiente: Personalidade (Temperamentos) */}
+                {/* Novo Ambiente: Personalidade (Temperamentos clicáveis) */}
                 <div className="section-group">
-                  <div><h3 className="section-title">Personalidade</h3><p className="section-subtitle">Temperamentos baseados no último teste realizado (Escala 7-35).</p></div>
+                  <div>
+                    <h3 className="section-title">Personalidade</h3>
+                    <p className="section-subtitle">Clique em um temperamento para ver detalhes, forças e aptidões (Escala 7–35).</p>
+                  </div>
                   <div className="section-body">
                     {testePersonalidade ? (
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-red-100 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/30">
-                            <span className="text-xl">🔥</span>
-                            <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Colérico</span>
-                            <span className="text-lg font-black text-red-600 dark:text-red-400">{testePersonalidade.colerico}</span>
-                          </div>
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-purple-100 dark:border-purple-900/50 bg-purple-50/30 dark:bg-purple-950/30">
-                            <span className="text-xl">📋</span>
-                            <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Melancólico</span>
-                            <span className="text-lg font-black text-purple-600 dark:text-purple-400">{testePersonalidade.melancolico}</span>
-                          </div>
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-amber-100 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-950/30">
-                            <span className="text-xl">☀️</span>
-                            <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Sanguíneo</span>
-                            <span className="text-lg font-black text-amber-600 dark:text-amber-400">{testePersonalidade.sanguineo}</span>
-                          </div>
-                          <div className="flex items-center gap-3 p-3 rounded-xl border border-cyan-100 dark:border-cyan-900/50 bg-cyan-50/30 dark:bg-cyan-950/30">
-                            <span className="text-xl">💧</span>
-                            <span className="font-bold text-slate-700 dark:text-slate-200 text-sm flex-1">Fleumático</span>
-                            <span className="text-lg font-black text-cyan-600 dark:text-cyan-400">{testePersonalidade.fleumatico}</span>
-                          </div>
+                          {[
+                            { chave: 'colerico', nome: 'Colérico', emoji: '🔥', val: testePersonalidade.colerico, cor: '#dc2626', cardCls: 'border-red-200/80 dark:border-red-900/60 bg-red-50/40 dark:bg-red-950/25 hover:border-red-400 dark:hover:border-red-500/70', txtCls: 'text-red-600 dark:text-red-400' },
+                            { chave: 'melancolico', nome: 'Melancólico', emoji: '📋', val: testePersonalidade.melancolico, cor: '#9333ea', cardCls: 'border-purple-200/80 dark:border-purple-900/60 bg-purple-50/40 dark:bg-purple-950/25 hover:border-purple-400 dark:hover:border-purple-500/70', txtCls: 'text-purple-600 dark:text-purple-400' },
+                            { chave: 'sanguineo', nome: 'Sanguíneo', emoji: '☀️', val: testePersonalidade.sanguineo, cor: '#d97706', cardCls: 'border-amber-200/80 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/25 hover:border-amber-400 dark:hover:border-amber-500/70', txtCls: 'text-amber-600 dark:text-amber-400' },
+                            { chave: 'fleumatico', nome: 'Fleumático', emoji: '💧', val: testePersonalidade.fleumatico, cor: '#0891b2', cardCls: 'border-cyan-200/80 dark:border-cyan-900/60 bg-cyan-50/40 dark:bg-cyan-950/25 hover:border-cyan-400 dark:hover:border-cyan-500/70', txtCls: 'text-cyan-600 dark:text-cyan-400' },
+                          ].map((t) => {
+                            const pct = Math.min(100, Math.round(((Number(t.val) || 0) / 35) * 100));
+                            return (
+                              <div
+                                key={t.chave}
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => setTemperamentoModalAberto(t.chave)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setTemperamentoModalAberto(t.chave);
+                                  }
+                                }}
+                                className={`group p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] ${t.cardCls}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="text-2xl transition-transform group-hover:scale-110">{t.emoji}</span>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-1">
+                                      <span className="font-extrabold text-slate-800 dark:text-slate-100 text-sm">{t.nome}</span>
+                                      <ChevronRight size={14} className={`opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all ${t.txtCls}`} />
+                                    </div>
+                                    <span className="text-[10px] font-semibold text-slate-400">Clique para detalhes</span>
+                                  </div>
+                                  <span className={`text-lg font-black tabular-nums ${t.txtCls}`}>{t.val}</span>
+                                </div>
+                                <div className="mt-2.5 h-1.5 w-full rounded-full bg-slate-200/80 dark:bg-slate-800/90 overflow-hidden">
+                                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: t.cor }} />
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                         <div className="p-3 bg-[#055F6D]/5 dark:bg-slate-800/60 rounded-xl border border-[#055F6D]/10 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
@@ -2115,79 +2921,281 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                   </div>
                 </div>
 
-                {/* Novo Ambiente: Atividade Cerebral */}
+                {/* Novo Ambiente: Atividade Cerebral (Quadrantes clicáveis) */}
                 <div className="section-group">
-                  <div><h3 className="section-title">Atividade Cerebral</h3><p className="section-subtitle">Valores numéricos para os quadrantes cerebrais (0 a 100).</p></div>
+                  <div>
+                    <h3 className="section-title">Atividade Cerebral</h3>
+                    <p className="section-subtitle">Clique em qualquer quadrante cerebral para ver análise detalhada e aptidões (0 a 100).</p>
+                  </div>
                   <div className="section-body flex flex-col items-center justify-center gap-3">
-                    {/* Pensante (Topo) */}
-                    <div className="flex flex-col items-center gap-2 w-full max-w-xs">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pensante</span>
-                      <div className="flex items-center gap-2 p-2 rounded-xl border border-blue-100 dark:border-blue-900/50 bg-blue-50/30 dark:bg-blue-950/30 w-full">
-                        <span className="text-xl">🧠</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={perfilPensante}
-                          onChange={(e) => setPerfilPensante(e.target.value)}
-                          disabled={dis}
-                          className="flex-1 px-2 py-1 border border-blue-200 dark:border-blue-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-blue-500/20 outline-none"
-                        />
-                      </div>
-                    </div>
+                    {(() => {
+                      const renderCardCerebral = ({ chave, titulo, subtitulo, emoji, valor, setter, barCor, cardCls, inputCls, badgeCls }) => {
+                        const pctNum = Math.min(100, Math.max(0, Number(valor) || 0));
+                        return (
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => setCerebralModalAberto(chave)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setCerebralModalAberto(chave);
+                              }
+                            }}
+                            title={`Ver análise completa de ${titulo}`}
+                            className={`group w-full p-3 rounded-2xl border transition-all duration-200 cursor-pointer hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] ${cardCls}`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="text-xl shrink-0 transition-transform group-hover:scale-110">{emoji}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 uppercase tracking-wider truncate">{titulo}</span>
+                                  <ChevronRight size={13} className={`opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0 ${badgeCls}`} />
+                                </div>
+                                <span className="block text-[9px] font-semibold text-slate-400 truncate">{subtitulo}</span>
+                              </div>
+                              {dis ? (
+                                <span className={`text-base font-black tabular-nums shrink-0 ${badgeCls}`}>
+                                  {valor !== '' && valor !== null && valor !== undefined ? `${valor}%` : '—'}
+                                </span>
+                              ) : (
+                                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={valor}
+                                    onChange={(e) => setter(e.target.value)}
+                                    className={`w-14 px-2 py-1 border rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs font-bold focus:ring-2 outline-none ${inputCls}`}
+                                  />
+                                  <span className="text-[10px] font-bold text-slate-400">%</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-2.5 flex items-center gap-2">
+                              <div className="h-1.5 flex-1 rounded-full bg-slate-200/80 dark:bg-slate-800/90 overflow-hidden">
+                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pctNum}%`, backgroundColor: barCor }} />
+                              </div>
+                              <span className={`text-[9px] font-black uppercase tracking-wider opacity-70 group-hover:opacity-100 ${badgeCls}`}>
+                                Análise
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      };
 
-                    {/* Razão (Esquerda) e Emoção (Direita) */}
-                    <div className="flex items-center justify-between w-full max-w-md gap-4">
-                      <div className="flex flex-col items-center gap-2 flex-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Razão</span>
-                        <div className="flex items-center gap-2 p-2 rounded-xl border border-green-100 dark:border-emerald-900/50 bg-green-50/30 dark:bg-emerald-950/30 w-full">
-                          <span className="text-xl">⚖️</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={perfilRazao}
-                            onChange={(e) => setPerfilRazao(e.target.value)}
-                            disabled={dis}
-                            className="flex-1 px-2 py-1 border border-green-200 dark:border-emerald-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-green-500/20 outline-none"
-                          />
+                      return (
+                        <>
+                          {/* Pensante (Topo) */}
+                          <div className="w-full max-w-xs">
+                            {renderCardCerebral({
+                              chave: 'pensante',
+                              titulo: 'Pensante',
+                              subtitulo: 'Anterior • O + I',
+                              emoji: '🧠',
+                              valor: perfilPensante,
+                              setter: setPerfilPensante,
+                              barCor: '#3b82f6',
+                              cardCls: 'border-blue-200/80 dark:border-blue-900/60 bg-blue-50/40 dark:bg-blue-950/25 hover:border-blue-400 dark:hover:border-blue-500/70',
+                              inputCls: 'border-blue-200 dark:border-blue-800/70 focus:ring-blue-500/20',
+                              badgeCls: 'text-blue-700 dark:text-blue-300',
+                            })}
+                          </div>
+
+                          {/* Razão (Esquerda) e Emoção (Direita) */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 w-full max-w-lg gap-3">
+                            {renderCardCerebral({
+                              chave: 'razao',
+                              titulo: 'Razão',
+                              subtitulo: 'Esquerdo • A + O',
+                              emoji: '⚖️',
+                              valor: perfilRazao,
+                              setter: setPerfilRazao,
+                              barCor: '#10b981',
+                              cardCls: 'border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/25 hover:border-emerald-400 dark:hover:border-emerald-500/70',
+                              inputCls: 'border-emerald-200 dark:border-emerald-800/70 focus:ring-emerald-500/20',
+                              badgeCls: 'text-emerald-700 dark:text-emerald-300',
+                            })}
+                            {renderCardCerebral({
+                              chave: 'emocao',
+                              titulo: 'Emoção',
+                              subtitulo: 'Direito • I + C',
+                              emoji: '❤️',
+                              valor: perfilEmocao,
+                              setter: setPerfilEmocao,
+                              barCor: '#e11d48',
+                              cardCls: 'border-rose-200/80 dark:border-rose-900/60 bg-rose-50/40 dark:bg-rose-950/25 hover:border-rose-400 dark:hover:border-rose-500/70',
+                              inputCls: 'border-rose-200 dark:border-rose-800/70 focus:ring-rose-500/20',
+                              badgeCls: 'text-rose-700 dark:text-rose-300',
+                            })}
+                          </div>
+
+                          {/* Atuante (Inferior) */}
+                          <div className="w-full max-w-xs">
+                            {renderCardCerebral({
+                              chave: 'atuante',
+                              titulo: 'Atuante',
+                              subtitulo: 'Posterior • C + A',
+                              emoji: '💪',
+                              valor: perfilAtuante,
+                              setter: setPerfilAtuante,
+                              barCor: '#f59e0b',
+                              cardCls: 'border-amber-200/80 dark:border-amber-900/60 bg-amber-50/40 dark:bg-amber-950/25 hover:border-amber-400 dark:hover:border-amber-500/70',
+                              inputCls: 'border-amber-200 dark:border-amber-800/70 focus:ring-amber-500/20',
+                              badgeCls: 'text-amber-700 dark:text-amber-300',
+                            })}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Novo Ambiente: Consideração Inteligente & Aptidão Ministerial (Cruzamento dos 3 Testes) */}
+                {analiseInteligente && (
+                  <div className="section-group">
+                    <div>
+                      <h3 className="section-title flex items-center gap-2">
+                        <Sparkles size={16} className="text-blue-600 dark:text-blue-400" />
+                        Consideração Inteligente &amp; Aptidão Ministerial
+                      </h3>
+                      <p className="section-subtitle">
+                        Leitura integrada combinando os resultados disponíveis ({analiseInteligente.fontesAtivas.join(' + ')}).
+                      </p>
+                    </div>
+                    <div className="section-body space-y-5">
+                      {/* Cabeçalho da Síntese Integrada */}
+                      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#1e3a8a] via-indigo-800 to-slate-900 p-5 text-white shadow-md border border-white/10">
+                        <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-blue-400/20 blur-3xl pointer-events-none" />
+                        <div className="relative space-y-2.5">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {analiseInteligente.fontesAtivas.map((f) => (
+                              <span key={f} className="text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/15 text-blue-100 border border-white/15">
+                                ✓ {f}
+                              </span>
+                            ))}
+                          </div>
+                          <h4 className="text-lg sm:text-xl font-black tracking-tight leading-snug">
+                            {analiseInteligente.tituloSintese}
+                          </h4>
+                          {analiseInteligente.paragrafosSintese.map((p, idx) => (
+                            <p key={idx} className="text-xs sm:text-sm text-blue-100/90 leading-relaxed">
+                              {p}
+                            </p>
+                          ))}
                         </div>
                       </div>
-                      <div className="flex flex-col items-center gap-2 flex-1">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Emoção</span>
-                        <div className="flex items-center gap-2 p-2 rounded-xl border border-red-100 dark:border-red-900/50 bg-red-50/30 dark:bg-red-950/30 w-full">
-                          <span className="text-xl">❤️</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={perfilEmocao}
-                            onChange={(e) => setPerfilEmocao(e.target.value)}
-                            disabled={dis}
-                            className="flex-1 px-2 py-1 border border-red-200 dark:border-red-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-red-500/20 outline-none"
-                          />
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* Atuante (Inferior) */}
-                    <div className="flex flex-col items-center gap-2 w-full max-w-xs">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Atuante</span>
-                      <div className="flex items-center gap-2 p-2 rounded-xl border border-yellow-100 dark:border-amber-900/50 bg-yellow-50/30 dark:bg-amber-950/30 w-full">
-                        <span className="text-xl">💪</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={perfilAtuante}
-                          onChange={(e) => setPerfilAtuante(e.target.value)}
-                          disabled={dis}
-                          className="flex-1 px-2 py-1 border border-yellow-200 dark:border-amber-900/60 rounded-lg text-right bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-yellow-500/20 outline-none"
-                        />
+                      {/* Leitura Inteligente da Atividade Cerebral */}
+                      {(analiseInteligente.hemisferioDominante || analiseInteligente.eixoAcaoDominante) && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {analiseInteligente.hemisferioDominante && (
+                            <div className="p-4 rounded-2xl bg-slate-50/90 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-1.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+                                <span>{analiseInteligente.hemisferioDominante.emoji}</span>
+                                {analiseInteligente.hemisferioDominante.titulo}
+                              </span>
+                              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                                {analiseInteligente.hemisferioDominante.desc}
+                              </p>
+                            </div>
+                          )}
+                          {analiseInteligente.eixoAcaoDominante && (
+                            <div className="p-4 rounded-2xl bg-slate-50/90 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 space-y-1.5">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                                <span>{analiseInteligente.eixoAcaoDominante.emoji}</span>
+                                {analiseInteligente.eixoAcaoDominante.titulo}
+                              </span>
+                              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                                {analiseInteligente.eixoAcaoDominante.desc}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Aptidões Ministeriais Ranqueadas */}
+                      {analiseInteligente.aptidoesRanqueadas.length > 0 && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Target size={15} className="text-emerald-600 dark:text-emerald-400" />
+                            <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100">
+                              Aptidões Ministeriais com Maior Afinidade
+                            </h4>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {analiseInteligente.aptidoesRanqueadas.map((ap, i) => (
+                              <div
+                                key={ap.nome}
+                                className="p-3.5 rounded-2xl bg-white dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] space-y-2 shadow-2xs"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 flex items-center gap-2 min-w-0">
+                                    <span className="text-base shrink-0">{ap.icone}</span>
+                                    <span className="truncate">{ap.nome}</span>
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black shrink-0 ${
+                                    i === 0
+                                      ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
+                                      : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
+                                  }`}>
+                                    {ap.afinidade}% afinidade
+                                  </span>
+                                </div>
+                                <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${i === 0 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                                    style={{ width: `${ap.afinidade}%` }}
+                                  />
+                                </div>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                                  {ap.motivo}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Recomendações de Pastoreio/Liderança + Pontos de Equilíbrio */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {analiseInteligente.recomendacoesLideranca.length > 0 && (
+                          <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/25 border border-emerald-200/70 dark:border-emerald-800/50 space-y-2">
+                            <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300">
+                              <CheckCircle2 size={15} />
+                              <h4 className="text-[11px] font-black uppercase tracking-wider">Como Potencializar &amp; Motivar</h4>
+                            </div>
+                            <ul className="space-y-1.5">
+                              {analiseInteligente.recomendacoesLideranca.map((rec) => (
+                                <li key={rec} className="text-xs text-slate-700 dark:text-slate-200 flex items-start gap-2 leading-snug">
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-black mt-0.5">•</span>
+                                  <span>{rec}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {analiseInteligente.pontosEquilibrio.length > 0 && (
+                          <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/25 border border-amber-200/70 dark:border-amber-800/50 space-y-2">
+                            <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-300">
+                              <TrendingUp size={15} />
+                              <h4 className="text-[11px] font-black uppercase tracking-wider">Pontos de Atenção &amp; Discipulado</h4>
+                            </div>
+                            <ul className="space-y-1.5">
+                              {analiseInteligente.pontosEquilibrio.map((pt) => (
+                                <li key={pt} className="text-xs text-slate-700 dark:text-slate-200 flex items-start gap-2 leading-snug">
+                                  <span className="text-amber-600 dark:text-amber-400 font-black mt-0.5">•</span>
+                                  <span>{pt}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Novo Ambiente: Área de Atuação */}
                 <div className="section-group">
@@ -2245,7 +3253,10 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
             {abaAtiva === 'escola' && !isStudentCadernetaView && (
               <div className="space-y-6">
                 <div className="section-group">
-                  <div><h3 className="section-title">Matrículas Ativas</h3><p className="section-subtitle">Cursos e turmas que o membro está frequentando.</p></div>
+                  <div>
+                    <h3 className="section-title">Matrículas Ativas</h3>
+                    <p className="section-subtitle">Clique em uma turma para visualizar o boletim, notas e frequência detalhada.</p>
+                  </div>
                   <div className="section-body">
                     {matriculasMembro.length === 0 ? (
                       <p className="text-sm text-slate-400 italic">Este membro não possui matrículas ativas.</p>
@@ -2253,25 +3264,254 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {matriculasMembro.map(m => {
                           const isDesistente = m.status === 'desistente';
+                          const selecionada = m.turmas?.id && turmaBoletimSelecionadaId === m.turmas.id;
                           return (
-                            <div key={m.id} className={`p-3 rounded-xl border flex justify-between items-center ${isDesistente ? 'border-rose-100 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/30' : 'border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-950/30'
-                              }`}>
-                              <div>
-                                <p className={`text-[10px] font-bold uppercase ${isDesistente ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
-                                  }`}>{m.turmas?.escolas?.nome}</p>
-                                <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{m.turmas?.nome}</p>
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => m.turmas?.id && carregarBoletimEscola(m.turmas.id)}
+                              className={`text-left p-3.5 rounded-2xl border flex justify-between items-center gap-3 transition-all cursor-pointer ${
+                                selecionada
+                                  ? 'ring-2 ring-blue-500/40 border-blue-400 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 shadow-sm'
+                                  : isDesistente
+                                    ? 'border-rose-100 dark:border-rose-900/50 bg-rose-50/30 dark:bg-rose-950/30 hover:border-rose-300'
+                                    : 'border-emerald-100 dark:border-emerald-900/50 bg-emerald-50/30 dark:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-700'
+                              }`}
+                            >
+                              <div className="min-w-0">
+                                <p className={`text-[10px] font-bold uppercase truncate ${isDesistente ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                  {m.turmas?.escolas?.nome}
+                                </p>
+                                <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">{m.turmas?.nome}</p>
+                                {selecionada && (
+                                  <span className="inline-block text-[9px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 mt-0.5">
+                                    ● Exibindo boletim
+                                  </span>
+                                )}
                               </div>
-                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${isDesistente ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300' : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'
-                                }`}>
+                              <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase shrink-0 ${isDesistente ? 'bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300' : 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300'}`}>
                                 {m.status}
                               </span>
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
                     )}
                   </div>
                 </div>
+
+                {/* Boletim Escolar, Notas e Frequência */}
+                {matriculasMembro.length > 0 && (
+                  <div className="section-group">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <h3 className="section-title">Boletim &amp; Frequência Escolar</h3>
+                        <p className="section-subtitle">
+                          {boletimEscola
+                            ? `${boletimEscola.escolaNome} • ${boletimEscola.turmaNome}${boletimEscola.matriculaCodigo ? ` (Matrícula: ${boletimEscola.matriculaCodigo})` : ''}`
+                            : 'Desempenho acadêmico e presença nas aulas do módulo Escolas.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="section-body space-y-5">
+                      {carregandoBoletimEscola ? (
+                        <p className="text-sm text-slate-400 italic py-6 text-center animate-pulse">
+                          Carregando boletim e histórico de frequência...
+                        </p>
+                      ) : !boletimEscola ? (
+                        <p className="text-sm text-slate-400 italic py-6 text-center">
+                          Nenhum dado acadêmico encontrado para esta turma.
+                        </p>
+                      ) : (
+                        <>
+                          {/* 4 Cards Resumo Acadêmico */}
+                          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div className="p-3.5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/35 border border-blue-200/70 dark:border-blue-800/50">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-300 block">
+                                Média Geral
+                              </span>
+                              <p className="text-2xl font-black text-blue-700 dark:text-blue-300 mt-1 leading-none">
+                                {boletimEscola.mediaGeral !== null ? boletimEscola.mediaGeral.toFixed(1) : '—'}
+                              </p>
+                              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1 block">
+                                Escala 0 a 10
+                              </span>
+                            </div>
+
+                            <div className="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/35 border border-emerald-200/70 dark:border-emerald-800/50">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300 block">
+                                Frequência
+                              </span>
+                              <p className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-1 leading-none">
+                                {boletimEscola.frequenciaGeral !== null ? `${boletimEscola.frequenciaGeral}%` : '—'}
+                              </p>
+                              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1 block">
+                                {boletimEscola.totalAulasGeral > 0
+                                  ? `${boletimEscola.totalPresencasGeral}/${boletimEscola.totalAulasGeral} aulas`
+                                  : 'Sem aulas lançadas'}
+                              </span>
+                            </div>
+
+                            <div className="p-3.5 rounded-2xl bg-rose-50/60 dark:bg-rose-950/35 border border-rose-200/70 dark:border-rose-800/50">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300 block">
+                                Faltas
+                              </span>
+                              <p className="text-2xl font-black text-rose-700 dark:text-rose-300 mt-1 leading-none">
+                                {boletimEscola.totalFaltasGeral}
+                              </p>
+                              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1 block">
+                                {boletimEscola.totalFaltasGeral === 1 ? 'ausência registrada' : 'ausências registradas'}
+                              </span>
+                            </div>
+
+                            <div className="p-3.5 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/35 border border-indigo-200/70 dark:border-indigo-800/50">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300 block">
+                                Situação
+                              </span>
+                              <p className="text-base font-black text-indigo-700 dark:text-indigo-300 mt-1.5 leading-tight">
+                                {boletimEscola.frequenciaGeral !== null && boletimEscola.frequenciaGeral < 75
+                                  ? 'Atenção Freq.'
+                                  : boletimEscola.mediaGeral !== null
+                                    ? boletimEscola.mediaGeral >= 7
+                                      ? 'Bom Desempenho'
+                                      : 'Em Recuperação'
+                                    : 'Em Andamento'}
+                              </p>
+                              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mt-1 block">
+                                {boletimEscola.disciplinas.length} {boletimEscola.disciplinas.length === 1 ? 'disciplina' : 'disciplinas'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Tabela do Boletim por Disciplina */}
+                          {boletimEscola.disciplinas.length === 0 ? (
+                            <p className="text-xs text-slate-400 italic py-4 text-center">
+                              Nenhuma disciplina vinculada a esta turma até o momento.
+                            </p>
+                          ) : (
+                            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden">
+                              <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                  <thead>
+                                    <tr className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                      <th className="p-3">Disciplina</th>
+                                      <th className="p-3 text-center">Nota</th>
+                                      <th className="p-3 text-center">Frequência</th>
+                                      <th className="p-3 text-center">Faltas</th>
+                                      <th className="p-3 text-right">Situação</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                                    {boletimEscola.disciplinas.map((d) => {
+                                      const notaCls =
+                                        d.nota === null
+                                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                                          : d.nota >= 7
+                                            ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
+                                            : d.nota >= 5
+                                              ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300'
+                                              : 'bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300';
+
+                                      const sitCls =
+                                        d.situacao === 'Aprovado'
+                                          ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
+                                          : d.situacao === 'Baixa Frequência' || d.situacao === 'Reprovado'
+                                            ? 'bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300'
+                                            : d.situacao === 'Recuperação'
+                                              ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300'
+                                              : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300';
+
+                                      return (
+                                        <tr key={d.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+                                          <td className="p-3">
+                                            <p className="font-bold text-slate-800 dark:text-slate-100">{d.nome}</p>
+                                            <p className="text-[10px] text-slate-400">Prof.: {d.professor}</p>
+                                            {d.observacao && (
+                                              <p className="text-[10px] italic text-blue-600 dark:text-blue-400 mt-0.5">
+                                                Obs.: {d.observacao}
+                                              </p>
+                                            )}
+                                          </td>
+                                          <td className="p-3 text-center">
+                                            <span className={`inline-block px-2.5 py-1 rounded-lg font-black tabular-nums ${notaCls}`}>
+                                              {d.nota !== null ? d.nota.toFixed(1) : '—'}
+                                            </span>
+                                          </td>
+                                          <td className="p-3 text-center">
+                                            {d.frequencia !== null ? (
+                                              <div className="inline-flex flex-col items-center gap-1 min-w-[72px]">
+                                                <span className={`font-black text-xs ${d.frequencia >= 75 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                                  {d.frequencia}%
+                                                </span>
+                                                <div className="w-16 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                                                  <div
+                                                    className={`h-full rounded-full ${d.frequencia >= 75 ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                                                    style={{ width: `${d.frequencia}%` }}
+                                                  />
+                                                </div>
+                                              </div>
+                                            ) : (
+                                              <span className="text-slate-400">—</span>
+                                            )}
+                                          </td>
+                                          <td className="p-3 text-center font-bold text-slate-600 dark:text-slate-300">
+                                            {d.faltas}
+                                          </td>
+                                          <td className="p-3 text-right">
+                                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${sitCls}`}>
+                                              {d.situacao}
+                                            </span>
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Histórico Recente de Aulas */}
+                          {boletimEscola.historicoAulas.length > 0 && (
+                            <div className="space-y-2.5">
+                              <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                                Últimas Aulas Registradas ({boletimEscola.historicoAulas.length})
+                              </h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {boletimEscola.historicoAulas.map((aula) => (
+                                  <div
+                                    key={aula.id}
+                                    className="px-3.5 py-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/70 dark:border-slate-800 flex items-center justify-between gap-2"
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
+                                        {aula.disciplina}
+                                      </p>
+                                      <p className="text-[10px] text-slate-400 truncate">
+                                        {aula.data ? new Date(`${String(aula.data).split('T')[0]}T00:00:00`).toLocaleDateString('pt-BR') : 'Sem data'}
+                                        {aula.titulo ? ` • ${aula.titulo}` : ''}
+                                      </p>
+                                    </div>
+                                    <span
+                                      className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 uppercase ${
+                                        aula.presente
+                                          ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300'
+                                          : 'bg-rose-100 dark:bg-rose-950/70 text-rose-700 dark:text-rose-300'
+                                      }`}
+                                    >
+                                      {aula.presente ? 'Presente' : 'Falta'}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 <div className="section-group">
                   <div><h3 className="section-title">Nova Matrícula</h3><p className="section-subtitle">Vincular membro a uma turma aberta.</p></div>

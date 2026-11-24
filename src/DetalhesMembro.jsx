@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Cropper from 'react-easy-crop';
 import { supabase } from './supabaseClient';
 import { Card, CardHeader, CampoLinha, CampoInput, uploadImagemCelula } from './ui';
-import { Eye, EyeOff, X, Sparkles, CheckCircle2, TrendingUp, Flame, Compass, ChevronRight, Brain, Target, History } from 'lucide-react';
+import { Eye, EyeOff, X, Sparkles, CheckCircle2, TrendingUp, Flame, Compass, ChevronRight, Brain, Target, History, CreditCard } from 'lucide-react';
+import CarteirinhaMembroModal from './CarteirinhaMembroModal';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import SidebarVinculos from './SidebarVinculos';
 import { calcularIdade } from './churchUtils';
@@ -432,6 +433,7 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
   const [perfilAtuante, setPerfilAtuante] = useState('');
   const [testePersonalidade, setTestePersonalidade] = useState(null);
   const [historicoPerfil, setHistoricoPerfil] = useState([]);
+  const [carteirinhaAberta, setCarteirinhaAberta] = useState(false);
   const [permissoesJson, setPermissoesJson] = useState({});
 
   const analiseInteligente = useMemo(
@@ -2225,6 +2227,27 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
           </div>
         </div>
       )}
+
+      {carteirinhaAberta && (
+        <CarteirinhaMembroModal
+          pessoa={{
+            ...(membro || {}),
+            id: pessoaId || membro?.id,
+            nome,
+            cpf,
+            rg,
+            cidade,
+            estado,
+            cargo,
+            genero,
+            foto_url: fotoExibir || membro?.foto_url,
+            data_batismo: dataBatismo || membro?.data_batismo,
+            permissao: membro?.permissao,
+            created_at: membro?.created_at,
+          }}
+          onFechar={() => setCarteirinhaAberta(false)}
+        />
+      )}
       <div className="member-header flex flex-col lg:flex-row gap-6 items-start lg:items-center justify-between">
         <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start w-full">
           <div className="relative shrink-0 w-36 h-36 rounded-2xl border-2 border-[var(--border)] dark:border-slate-700 overflow-hidden bg-[var(--surface-muted)] dark:bg-slate-800 shadow-sm">
@@ -2293,6 +2316,15 @@ function DetalhesMembro({ pessoaId: propPessoaId, turmaId: propTurmaId, onFechar
         <div className="flex flex-wrap gap-2 shrink-0 w-full lg:w-auto justify-center lg:justify-end">
           {!modoEdicao ? (
             <>
+              <button
+                type="button"
+                onClick={() => setCarteirinhaAberta(true)}
+                className="flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-700 dark:bg-sky-600 dark:hover:bg-sky-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition shadow-sm cursor-pointer"
+                title="Visualizar e imprimir carteirinha de membro"
+              >
+                <CreditCard size={16} />
+                <span>Carteirinha</span>
+              </button>
               {hasAccess && (hasAccess('Pessoas', 'Ficha do membro', 'editar') || String(membroLogado?.id) === String(pessoaId)) && (
                 <button
                   type="button"

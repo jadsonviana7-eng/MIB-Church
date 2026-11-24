@@ -98,6 +98,8 @@ export const MenuIcons = {
   'u-carne-generator': <Receipt className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
   'u-quiz': <Brain className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
   'u-perfil-comportamental': <Award className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
+  'u-gerador-documentos': <FileText className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
+  'u-certificados': <Award className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
   'u-pedido-oracao': <Heart className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
   'u-mural-oracao': <MessageSquare className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
   'u-visitante-recepcao': <UserPlus className="w-3.5 h-3.5 shrink-0" strokeWidth={1.8} />,
@@ -119,7 +121,7 @@ export const submenuIconKey = {
   agenda: { calendario: 'a-calendario', eventos: 'a-eventos', mural: 'a-mural' },
   utilitarios: { 
     resumo: 'u-resumo', escalas: 'u-escalas', 'relatorio-semanal': 'u-relatorio-semanal', calculadora: 'u-calculadora',
-    quiz: 'u-quiz', 'perfil-comportamental': 'u-perfil-comportamental', 'pedido-oracao': 'u-pedido-oracao', 'mural-oracao': 'u-mural-oracao',
+    quiz: 'u-quiz', 'perfil-comportamental': 'u-perfil-comportamental', 'gerador-documentos': 'u-gerador-documentos', certificados: 'u-certificados', 'pedido-oracao': 'u-pedido-oracao', 'mural-oracao': 'u-mural-oracao',
     'carne-generator': 'u-carne-generator', 'leitor-carne': 'u-leitor-carne', 'visitante-recepcao': 'u-visitante-recepcao',
     repertorio: 'u-repertorio'
   },

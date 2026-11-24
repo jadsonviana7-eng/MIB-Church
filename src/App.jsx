@@ -18,6 +18,7 @@ import DetalhesMembro from './DetalhesMembro';
 import HomePage from './HomePage'; // Novo componente HomePage
 import PublicRegistrationForm from './PublicRegistrationForm'; // Importar o novo componente
 import PublicConfirmarEscala from './PublicConfirmarEscala';
+import PublicValidarCredencial from './PublicValidarCredencial';
 import { MenuIcons, submenuIconKey } from './icons'; // Importa MenuIcons e submenuIconKey do novo arquivo
 import { Settings, Bell, ChevronLeft, Sun, Moon } from 'lucide-react';
 import { alternarTemaModo, obterTemaCarregado } from './themeUtils';
@@ -1013,6 +1014,8 @@ export default function App() {
     ['mural-oracao', 'Mural de Orações'],
     ['quiz', 'Teste de Temperamento'],
     ['perfil-comportamental', 'Perfil Comportamental'],
+    ['gerador-documentos', 'Gerador de Documentos'],
+    ['certificados', 'Certificados'],
     ['carne-generator', 'Gerador de Carnê'],
     ['leitor-carne', 'Leitor de Carnê'],
     ['escalas', 'Escalas Ministerial']
@@ -1215,6 +1218,7 @@ export default function App() {
       window.location.pathname.startsWith('/confirmar-escala/') ||
       window.location.pathname === '/cadastro-publico' ||
       window.location.pathname.startsWith('/inscricao-evento') ||
+      window.location.pathname.startsWith('/validar-credencial') ||
       window.location.search.includes('confirmar-escala') ||
       window.location.search.includes('escala=') ||
       window.location.search.includes('escala_id=');
@@ -1398,6 +1402,10 @@ export default function App() {
 
   if (window.location.pathname.startsWith('/inscricao-evento/')) {
     return <PublicEventRegistration />;
+  }
+
+  if (window.location.pathname === '/validar-credencial' || window.location.pathname.startsWith('/validar-credencial/')) {
+    return <PublicValidarCredencial />;
   }
 
   if (

@@ -2381,27 +2381,27 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 dark:bg-slate-950/75 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white dark:bg-[#17223b] rounded-2xl border border-slate-200 dark:border-[#2b3954] shadow-xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] text-slate-800 dark:text-slate-100">
 
         {/* Header */}
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="p-5 border-b border-slate-100 dark:border-[#2b3954] flex items-center justify-between bg-slate-50/50 dark:bg-[#131d31]">
           <div>
-            <h4 className="font-semibold text-slate-950 text-base">
+            <h4 className="font-bold text-slate-950 dark:text-slate-100 text-base">
               {modoEdicao ? 'Editar Reunião do Histórico' : 'Detalhes do Encontro'}
             </h4>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">
               {modoEdicao ? (
-                <>Ajuste os dados do encontro da célula <strong className="text-emerald-700">{celula?.nome}</strong></>
+                <>Ajuste os dados do encontro da célula <strong className="text-emerald-700 dark:text-emerald-400">{celula?.nome}</strong></>
               ) : (
-                <>Relatório de atividades da célula <strong className="text-emerald-700">{celula?.nome}</strong></>
+                <>Relatório de atividades da célula <strong className="text-emerald-700 dark:text-emerald-400">{celula?.nome}</strong></>
               )}
             </p>
           </div>
           <button
             type="button"
             onClick={onFechar}
-            className="text-slate-400 hover:text-slate-600 font-bold p-1 text-sm cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-[#1c2b4a] font-bold text-sm transition cursor-pointer"
           >
             ✕
           </button>
@@ -2414,37 +2414,37 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
 
               {/* Cards de Indicadores com Números Maiores */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-blue-50/60 border border-blue-100/70 p-3.5 rounded-xl text-center flex flex-col justify-center shadow-3xs">
-                  <span className="text-2xl font-black text-blue-700 leading-none">
+                <div className="bg-blue-50/60 dark:bg-blue-950/45 border border-blue-100/70 dark:border-blue-800/60 p-3.5 rounded-xl text-center flex flex-col justify-center shadow-3xs">
+                  <span className="text-2xl font-black text-blue-700 dark:text-blue-300 leading-none">
                     {Object.values(editPresencas).filter(Boolean).length}
                   </span>
-                  <span className="text-[10px] font-bold text-blue-500 uppercase mt-1.5 tracking-wider">Membros</span>
+                  <span className="text-[10px] font-bold text-blue-500 dark:text-blue-400 uppercase mt-1.5 tracking-wider">Membros</span>
                 </div>
-                <div className="bg-purple-50/60 border border-purple-100/70 p-3.5 rounded-xl text-center flex flex-col justify-center shadow-3xs">
-                  <span className="text-2xl font-black text-purple-700 leading-none">
+                <div className="bg-purple-50/60 dark:bg-purple-950/45 border border-purple-100/70 dark:border-purple-800/60 p-3.5 rounded-xl text-center flex flex-col justify-center shadow-3xs">
+                  <span className="text-2xl font-black text-purple-700 dark:text-purple-300 leading-none">
                     {editNomesVisitantes.length}
                   </span>
-                  <span className="text-[10px] font-bold text-purple-500 uppercase mt-1.5 tracking-wider">Visitantes</span>
+                  <span className="text-[10px] font-bold text-purple-500 dark:text-purple-400 uppercase mt-1.5 tracking-wider">Visitantes</span>
                 </div>
-                <div className="bg-emerald-50/60 border border-emerald-100/70 p-3.5 rounded-xl text-center flex flex-col justify-center shadow-3xs">
-                  <span className="text-base font-black text-emerald-700 leading-tight">
+                <div className="bg-emerald-50/60 dark:bg-emerald-950/45 border border-emerald-100/70 dark:border-emerald-800/60 p-3.5 rounded-xl text-center flex flex-col justify-center shadow-3xs">
+                  <span className="text-base font-black text-emerald-700 dark:text-emerald-300 leading-tight">
                     {editOferta ? editOferta : 'R$ 0,00'}
                   </span>
-                  <span className="text-[10px] font-bold text-emerald-500 uppercase mt-1.5 tracking-wider">Oferta</span>
+                  <span className="text-[10px] font-bold text-emerald-500 dark:text-emerald-400 uppercase mt-1.5 tracking-wider">Oferta</span>
                 </div>
               </div>
 
               {/* Data e Tema */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-slate-50/50 dark:bg-[#131d31] p-4 rounded-xl border border-slate-100 dark:border-[#24334f]">
                 <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Data</span>
-                  <span className="text-sm font-bold text-slate-700">
+                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-0.5">Data</span>
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-100">
                     {editData ? new Date(`${editData}T00:00:00`).toLocaleDateString('pt-BR') : '—'}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Tema / Assunto</span>
-                  <span className="text-sm font-bold text-slate-700 break-words block">
+                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-0.5">Tema / Assunto</span>
+                  <span className="text-sm font-bold text-slate-700 dark:text-slate-100 break-words block">
                     {editTema || '—'}
                   </span>
                 </div>
@@ -2452,13 +2452,13 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
 
               {/* Visitantes */}
               <div>
-                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Visitantes do Encontro</span>
+                <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Visitantes do Encontro</span>
                 {editNomesVisitantes.length === 0 ? (
                   <p className="text-xs text-slate-400 italic">Nenhum visitante registrado.</p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
                     {editNomesVisitantes.map((nome, index) => (
-                      <span key={index} className="bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 flex items-center gap-1.5 shadow-3xs">
+                      <span key={index} className="bg-slate-50 dark:bg-[#131d31] border border-slate-200 dark:border-[#2b3954] px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shadow-3xs">
                         👤 {nome}
                       </span>
                     ))}
@@ -2468,24 +2468,24 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
 
               {/* Chamada / Presença */}
               <div className="space-y-2">
-                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lista de Chamada ({membros.length})</span>
-                <div className="border border-slate-100 rounded-2xl p-2 bg-slate-50/30 space-y-1">
+                <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Lista de Chamada ({membros.length})</span>
+                <div className="border border-slate-100 dark:border-[#24334f] rounded-2xl p-2 bg-slate-50/30 dark:bg-[#131d31] space-y-1">
                   {membros.length === 0 ? (
                     <p className="text-xs text-slate-400 italic p-2">Nenhum membro vinculado.</p>
                   ) : (
                     membros.map((m) => {
                       const isPresente = !!editPresencas[m.id];
                       return (
-                        <div key={m.id} className="flex items-center justify-between p-2 hover:bg-white rounded-xl hover:shadow-3xs transition">
+                        <div key={m.id} className="flex items-center justify-between p-2 hover:bg-white dark:hover:bg-[#1c2b4a] rounded-xl hover:shadow-3xs transition">
                           <div className="flex items-center gap-3">
                             <Avatar pessoa={m} tamanho="w-8 h-8" />
-                            <span className="text-sm font-semibold text-slate-700">{m.nome}</span>
+                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{m.nome}</span>
                           </div>
                           <input
                             type="checkbox"
                             checked={isPresente}
                             disabled
-                            className="w-5 h-5 rounded-md border-slate-300 text-[#055F6D] focus:ring-[#055F6D]/20 cursor-not-allowed"
+                            className="w-5 h-5 rounded-md border-slate-300 dark:border-slate-600 text-[#055F6D] dark:accent-blue-500 focus:ring-[#055F6D]/20 cursor-not-allowed"
                           />
                         </div>
                       );
@@ -2496,8 +2496,8 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
 
               {/* Observações */}
               <div>
-                <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Observações Pastorais / Gerais</span>
-                <div className="bg-slate-50/80 border border-slate-200 p-3 rounded-xl text-xs text-slate-600 min-h-[50px] whitespace-pre-wrap">
+                <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Observações Pastorais / Gerais</span>
+                <div className="bg-slate-50/80 dark:bg-[#131d31] border border-slate-200 dark:border-[#24334f] p-3 rounded-xl text-xs text-slate-600 dark:text-slate-300 min-h-[50px] whitespace-pre-wrap">
                   {editObservacoes || 'Nenhuma observação registrada.'}
                 </div>
               </div>
@@ -2505,11 +2505,11 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
             </div>
 
             {/* Footer Visualização */}
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-end gap-2 shrink-0">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-[#2b3954] bg-slate-50/60 dark:bg-[#131d31] flex items-center justify-end gap-2 shrink-0">
               <button
                 type="button"
                 onClick={onFechar}
-                className="px-5 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-600 font-bold hover:bg-slate-100 transition cursor-pointer"
+                className="px-5 py-2 text-xs border border-slate-200 dark:border-[#2b3954] rounded-xl bg-white dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-200 font-bold hover:bg-slate-100 dark:hover:bg-[#24375c] transition cursor-pointer"
               >
                 Fechar
               </button>
@@ -2531,42 +2531,42 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Data da Reunião</label>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Data da Reunião</label>
                   <input
                     type="date"
                     value={editData}
                     onChange={(e) => setEditData(e.target.value)}
                     required
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl text-slate-800 dark:text-slate-100 text-sm bg-white dark:bg-[#0b1329] focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:[color-scheme:dark]"
                   />
                 </div>
 
                 <div className="sm:col-span-1">
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Tema / Assunto</label>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Tema / Assunto</label>
                   <input
                     type="text"
                     value={editTema}
                     onChange={(e) => setEditTema(e.target.value)}
                     placeholder="Ex: Fruto do Espírito"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 text-sm bg-white dark:bg-[#0b1329] focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1">Valor da Oferta (R$)</label>
+                  <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">Valor da Oferta (R$)</label>
                   <input
                     type="text"
                     value={editOferta}
                     onChange={(e) => setEditOferta(mascaraMoeda(e.target.value))}
                     placeholder="R$ 0,00"
-                    className="w-full px-3 py-2 border border-slate-200 rounded-xl text-slate-800 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 text-sm bg-white dark:bg-[#0b1329] focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-3">
+              <div className="bg-slate-50 dark:bg-[#131d31] p-3.5 rounded-xl border border-slate-200 dark:border-[#24334f] space-y-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wider mb-1">
                     Visitantes Presentes
                     <span className="ml-2 bg-amber-500 text-white font-semibold px-2 py-0.5 rounded-md text-[10px]">
                       Contagem: {editNomesVisitantes.length}
@@ -2575,8 +2575,8 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
 
                   {visitantesCadastrados.length > 0 && (
                     <div className="space-y-1 mb-3">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cadastrados na célula</span>
-                      <div className="max-h-36 overflow-y-auto space-y-1 border border-slate-100 rounded-xl p-1.5 bg-white">
+                      <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider">Cadastrados na célula</span>
+                      <div className="max-h-36 overflow-y-auto space-y-1 border border-slate-100 dark:border-[#24334f] rounded-xl p-1.5 bg-white dark:bg-[#0b1329]">
                         {visitantesCadastrados.map((v) => {
                           const selecionado = visitantesCadastradosSelecionados.includes(v.id);
                           return (
@@ -2584,18 +2584,20 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
                               key={v.id}
                               onClick={() => toggleVisitanteCadastradoEdicao(v)}
                               className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition select-none ${
-                                selecionado ? 'bg-amber-50 border border-amber-200' : 'hover:bg-slate-50 border border-transparent'
+                                selecionado
+                                  ? 'bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60'
+                                  : 'hover:bg-slate-50 dark:hover:bg-[#1c2b4a]/60 border border-transparent'
                               }`}
                             >
                               <div className="min-w-0">
-                                <span className="text-xs font-semibold text-slate-700 block truncate">{v.nome}</span>
+                                <span className="text-xs font-semibold text-slate-700 dark:text-slate-200 block truncate">{v.nome}</span>
                                 {v.telefone && <span className="text-[10px] text-slate-400">{v.telefone}</span>}
                               </div>
                               <input
                                 type="checkbox"
                                 checked={selecionado}
                                 readOnly
-                                className="w-4 h-4 rounded border-slate-300 text-amber-500 cursor-pointer shrink-0 ml-2"
+                                className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-amber-500 cursor-pointer shrink-0 ml-2"
                               />
                             </div>
                           );
@@ -2604,7 +2606,7 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
                     </div>
                   )}
 
-                  <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Outros visitantes (nome avulso)</span>
+                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1">Outros visitantes (nome avulso)</span>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -2612,7 +2614,7 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
                       onChange={(e) => setEditNovoVisitante(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdicionarVisitanteEdicao(); } }}
                       placeholder="Digite o nome completo do visitante"
-                      className="flex-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-800 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      className="flex-1 px-3 py-1.5 border border-slate-200 dark:border-[#2b3954] rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 text-xs bg-white dark:bg-[#0b1329] focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     />
                     <button type="button" onClick={handleAdicionarVisitanteEdicao} className="btn-primary text-xs px-3 rounded-xl cursor-pointer">+</button>
                   </div>
@@ -2621,9 +2623,9 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
                 {editNomesVisitantes.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 pt-1">
                     {editNomesVisitantes.map((nome, index) => (
-                      <div key={index} className="bg-white border border-slate-200 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-700 flex items-center gap-1.5 shadow-sm">
+                      <div key={index} className="bg-white dark:bg-[#1c2b4a] border border-slate-200 dark:border-[#2b3954] px-2.5 py-1 rounded-lg text-[11px] font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-1.5 shadow-sm">
                         👤 {nome}
-                        <button type="button" onClick={() => removerNomeVisitanteEdicao(index)} className="text-slate-400 hover:text-rose-500 font-bold text-[12px] pl-0.5 cursor-pointer">×</button>
+                        <button type="button" onClick={() => removerNomeVisitanteEdicao(index)} className="text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 font-bold text-[12px] pl-0.5 cursor-pointer">×</button>
                       </div>
                     ))}
                   </div>
@@ -2632,8 +2634,8 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
 
               <div>
                 <div className="space-y-2 sm:space-y-0">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Chamada da Célula</label>
-                  <div className="sm:border sm:border-slate-100 sm:rounded-2xl sm:p-2 sm:bg-slate-50/30 sm:space-y-1">
+                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-1.5">Chamada da Célula</label>
+                  <div className="sm:border sm:border-slate-100 dark:sm:border-[#24334f] sm:rounded-2xl sm:p-2 sm:bg-slate-50/30 dark:sm:bg-[#131d31] sm:space-y-1">
                     {membros.length === 0 ? (
                       <p className="text-xs text-slate-400 italic p-2">Nenhum membro vinculado para fazer a chamada.</p>
                     ) : (
@@ -2642,19 +2644,19 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
                         return (
                           <div key={m.id}
                             onClick={() => togglePresencaEdicao(m.id)}
-                            className="mb-1 bg-white border border-slate-100 rounded-xl p-3 shadow-sm
+                            className="mb-1 bg-white dark:bg-[#1c2b4a] border border-slate-100 dark:border-[#2b3954] rounded-xl p-3 shadow-sm
                                        flex items-center justify-between cursor-pointer transition active:scale-[0.98] select-none
-                                       sm:mb-0 sm:bg-transparent sm:border-transparent sm:shadow-none sm:p-2 sm:hover:bg-white sm:hover:shadow-sm sm:hover:border-slate-100"
+                                       sm:mb-0 sm:bg-transparent dark:sm:bg-transparent sm:border-transparent dark:sm:border-transparent sm:shadow-none sm:p-2 sm:hover:bg-white dark:sm:hover:bg-[#1c2b4a] sm:hover:shadow-sm sm:hover:border-slate-100 dark:sm:hover:border-[#2b3954]"
                           >
                             <div className="flex items-center gap-3">
                               <Avatar pessoa={m} tamanho="w-8 h-8" />
-                              <span className="text-sm font-bold text-slate-700">{m.nome}</span>
+                              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{m.nome}</span>
                             </div>
                             <input
                               type="checkbox"
                               checked={isPresente}
                               readOnly
-                              className="w-5 h-5 rounded-md border-slate-300 text-[#055F6D] focus:ring-[#055F6D]/20 cursor-pointer"
+                              className="w-5 h-5 rounded-md border-slate-300 dark:border-slate-600 text-[#055F6D] dark:accent-blue-500 focus:ring-[#055F6D]/20 cursor-pointer"
                             />
                           </div>
                         );
@@ -2665,17 +2667,17 @@ function ModalVerReuniao({ reuniao, celula, membros, onFechar, onSalvo, membroLo
               </div>
 
               <div>
-                <label className="block text-xs font-medium mb-1">Observações</label>
-                <textarea value={editObservacoes} onChange={(e) => setEditObservacoes(e.target.value)} rows={2} className="w-full px-3 py-2 border rounded-xl text-sm bg-white" />
+                <label className="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Observações</label>
+                <textarea value={editObservacoes} onChange={(e) => setEditObservacoes(e.target.value)} rows={2} className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl text-sm bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
               </div>
 
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-end gap-2 shrink-0">
+            <div className="px-6 py-4 border-t border-slate-100 dark:border-[#2b3954] bg-slate-50/60 dark:bg-[#131d31] flex items-center justify-end gap-2 shrink-0">
               <button
                 type="button"
                 onClick={handleCancelarEdicao}
-                className="px-4 py-2 text-xs border border-slate-200 rounded-xl bg-white text-slate-600 font-semibold hover:bg-slate-100 transition cursor-pointer"
+                className="px-4 py-2 text-xs border border-slate-200 dark:border-[#2b3954] rounded-xl bg-white dark:bg-[#1c2b4a] text-slate-600 dark:text-slate-200 font-semibold hover:bg-slate-100 dark:hover:bg-[#24375c] transition cursor-pointer"
               >
                 Cancelar
               </button>

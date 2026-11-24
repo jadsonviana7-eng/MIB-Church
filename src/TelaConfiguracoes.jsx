@@ -9,7 +9,7 @@ import {
 } from './mascaras';
 import {
   Building2, MapPin, Briefcase, CreditCard, Search, X, Check, Trash2, Edit2, Palette, Sun, Moon, Globe, Activity, Bell, Smartphone,
-  ArrowRight, User, Clock, FileText, Database, ShieldCheck, Filter, LayoutGrid, List
+  ArrowRight, User, Clock, FileText, Database, ShieldCheck, Filter, LayoutGrid, List, ChevronLeft, Award
 } from 'lucide-react';
 import { aplicarTema } from './themeUtils';
 import { isBadgingSupported, getBadgePermissionStatus, requestBadgePermission, setAppBadge, clearAppBadge, isStandalone, syncAndroidNotificationBadge } from './badgeUtils';
@@ -182,6 +182,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
 
   // Novos estados para aprimoramento profissional
   const [abaAtiva, setAbaAtiva] = useState('institucional');
+  const [mobileTelaAberta, setMobileTelaAberta] = useState(false);
   const [filtroZonas, setFiltroZonas] = useState('');
   const [filtroAtuacoes, setFiltroAtuacoes] = useState('');
   const [filtroCargos, setFiltroCargos] = useState('');
@@ -530,60 +531,224 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
     localStorage.setItem('mib-language', lang);
   };
 
+  const abasConfig = [
+    {
+      id: 'institucional',
+      label: t[idioma].institucional,
+      desc: 'Dados da igreja, logo e endereço',
+      icon: Building2,
+      corIcone: 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-200/70 dark:border-blue-800/60',
+      corBordaHover: 'hover:border-blue-300 dark:hover:border-blue-600/70',
+      badge: null,
+    },
+    {
+      id: 'localizacao',
+      label: t[idioma].localizacao,
+      desc: 'Zonas de moradia e regiões',
+      icon: MapPin,
+      corIcone: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200/70 dark:border-emerald-800/60',
+      corBordaHover: 'hover:border-emerald-300 dark:hover:border-emerald-600/70',
+      badge: zonas.length > 0 ? String(zonas.length) : null,
+    },
+    {
+      id: 'atuacoes',
+      label: t[idioma].atuacoes,
+      desc: 'Ministérios e áreas de serviço',
+      icon: Briefcase,
+      corIcone: 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200/70 dark:border-amber-800/60',
+      corBordaHover: 'hover:border-amber-300 dark:hover:border-amber-600/70',
+      badge: atuacoes.length > 0 ? String(atuacoes.length) : null,
+    },
+    {
+      id: 'cargos',
+      label: t[idioma].cargos,
+      desc: 'Cargos e funções ministeriais',
+      icon: Award,
+      corIcone: 'bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 border-violet-200/70 dark:border-violet-800/60',
+      corBordaHover: 'hover:border-violet-300 dark:hover:border-violet-600/70',
+      badge: cargos.length > 0 ? String(cargos.length) : null,
+    },
+    {
+      id: 'financeiro',
+      label: t[idioma].financeiro,
+      desc: 'Pagamentos e regras de carnê',
+      icon: CreditCard,
+      corIcone: 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 border-cyan-200/70 dark:border-cyan-800/60',
+      corBordaHover: 'hover:border-cyan-300 dark:hover:border-cyan-600/70',
+      badge: formasPagamentoDisponiveis.length > 0 ? String(formasPagamentoDisponiveis.length) : null,
+    },
+    {
+      id: 'aparencia',
+      label: t[idioma].aparencia,
+      desc: 'Tema, cor, idioma e alertas',
+      icon: Palette,
+      corIcone: 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200/70 dark:border-rose-800/60',
+      corBordaHover: 'hover:border-rose-300 dark:hover:border-rose-600/70',
+      badge: null,
+    },
+    ...(eAdminOuPastor
+      ? [
+          {
+            id: 'logs',
+            label: 'Logs do Sistema',
+            desc: 'Auditoria e sessões ativas',
+            icon: Activity,
+            corIcone: 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border-indigo-200/70 dark:border-indigo-800/60',
+            corBordaHover: 'hover:border-indigo-300 dark:hover:border-indigo-600/70',
+            badge: null,
+          },
+        ]
+      : []),
+  ];
+
+  const abaAtualObj = abasConfig.find((a) => a.id === abaAtiva) || abasConfig[0];
+
   return (
     <div className="w-full max-w-full sm:max-w-5xl space-y-5 px-2">
-      <PageHeader titulo={t[idioma].configuracoes} subtitulo={t[idioma].subtitulo}>
-        <button
-          type="button"
-          onClick={onFechar}
-          className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-3xs cursor-pointer transition-all active:scale-95"
-        >
-          {t[idioma].voltar}
-        </button>
-      </PageHeader>
+      <div className={mobileTelaAberta ? 'hidden md:block' : 'block'}>
+        <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-transparent">
+          <div className="text-center sm:text-left">
+            <h2 className="text-lg sm:text-2xl font-black tracking-tight text-slate-800 dark:text-white">
+              {t[idioma].configuracoes}
+            </h2>
+            <p className="mt-1 text-xs sm:text-sm text-[var(--text-muted)] dark:text-slate-400 max-w-3xl">
+              {t[idioma].subtitulo}
+            </p>
+          </div>
+          <div className="flex justify-center sm:justify-end shrink-0">
+            <button
+              type="button"
+              onClick={onFechar}
+              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#17223b] hover:bg-slate-50 dark:hover:bg-[#1c2b4a] text-slate-700 dark:text-slate-200 text-xs font-semibold shadow-3xs cursor-pointer transition-all active:scale-95"
+            >
+              {t[idioma].voltar}
+            </button>
+          </div>
+        </div>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
-        {/* NAVEGAÇÃO POR ABAS - Sidebar no desktop / Menu horizontal no mobile */}
-        <div className="md:col-span-3 bg-white border border-slate-100 rounded-2xl p-2.5 shadow-3xs space-y-1">
-          <p className="hidden md:block text-[9px] font-black text-slate-400 uppercase tracking-widest px-3.5 py-2">
-            {t[idioma].categorias}
-          </p>
-          <div className="flex md:flex-col overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 gap-1.5 scrollbar-hide">
-            {(() => {
-              const abas = [
-                { id: 'institucional', label: t[idioma].institucional, icon: <Building2 size={16} /> },
-                { id: 'localizacao', label: t[idioma].localizacao, icon: <MapPin size={16} /> },
-                { id: 'atuacoes', label: t[idioma].atuacoes, icon: <Briefcase size={16} /> },
-                { id: 'cargos', label: t[idioma].cargos, icon: <Briefcase size={16} /> },
-                { id: 'financeiro', label: t[idioma].financeiro, icon: <CreditCard size={16} /> },
-                { id: 'aparencia', label: t[idioma].aparencia, icon: <Palette size={16} /> }
-              ];
-              if (eAdminOuPastor) {
-                abas.push({ id: 'logs', label: "Logs do Sistema", icon: <Activity size={16} /> });
-              }
-              return abas;
-            })().map((tab) => (
+      {/* ── HUB MOBILE: GRADE DE BOTÕES QUADRADOS ESTÁTICOS (SEM SCROLL HORIZONTAL) ── */}
+      {!mobileTelaAberta && (
+        <div className="md:hidden grid grid-cols-2 gap-3.5 animate-in fade-in duration-200">
+          {abasConfig.map((tab) => {
+            const Icone = tab.icon;
+            return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => {
                   setAbaAtiva(tab.id);
                   setEditandoId(null);
                   setEditandoTexto('');
+                  setMobileTelaAberta(true);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className={`flex items-center gap-2.5 py-2.5 px-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none shrink-0 md:w-full ${abaAtiva === tab.id
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
+                className={`group relative aspect-square p-4 rounded-3xl bg-white dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.97] flex flex-col justify-between text-left overflow-hidden cursor-pointer ${tab.corBordaHover}`}
               >
-                {tab.icon}
-                <span>{tab.label}</span>
+                <div className="flex items-start justify-between gap-2 w-full">
+                  <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105 ${tab.corIcone}`}>
+                    <Icone size={22} />
+                  </div>
+                  {tab.badge && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-slate-100 dark:bg-[#131d31] text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-[#2b3954] tabular-nums">
+                      {tab.badge}
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-1 min-w-0">
+                  <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 leading-tight line-clamp-2">
+                    {tab.label}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug line-clamp-2">
+                    {tab.desc}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end w-full pt-1">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 opacity-80 group-hover:opacity-100">
+                    Abrir
+                    <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+                  </span>
+                </div>
               </button>
-            ))}
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── BARRA DE RETORNO MOBILE (QUANDO UMA PÁGINA ESTÁ ABERTA) ── */}
+      {mobileTelaAberta && abaAtualObj && (
+        <div className="md:hidden flex items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] shadow-xs animate-in fade-in duration-200">
+          <button
+            type="button"
+            onClick={() => {
+              setMobileTelaAberta(false);
+              setEditandoId(null);
+              setEditandoTexto('');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-[#131d31] hover:bg-slate-200/80 dark:hover:bg-[#1c2b4a] border border-slate-200/80 dark:border-[#2b3954] text-slate-700 dark:text-slate-200 text-xs font-extrabold transition active:scale-95 cursor-pointer shrink-0"
+          >
+            <ChevronLeft size={16} />
+            <span>Configurações</span>
+          </button>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 ${abaAtualObj.corIcone}`}>
+              <abaAtualObj.icon size={16} />
+            </div>
+            <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 truncate">
+              {abaAtualObj.label}
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+        {/* NAVEGAÇÃO POR ABAS - Sidebar apenas no desktop (md+) */}
+        <div className="hidden md:block md:col-span-3 bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] rounded-2xl p-2.5 shadow-3xs space-y-1">
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-3.5 py-2">
+            {t[idioma].categorias}
+          </p>
+          <div className="flex flex-col gap-1.5">
+            {abasConfig.map((tab) => {
+              const Icone = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setAbaAtiva(tab.id);
+                    setEditandoId(null);
+                    setEditandoTexto('');
+                  }}
+                  className={`flex items-center justify-between gap-2.5 py-2.5 px-3.5 rounded-xl text-xs font-bold transition-all cursor-pointer select-none w-full ${
+                    abaAtiva === tab.id
+                      ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-650 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1c2b4a] hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <Icone size={16} className="shrink-0" />
+                    <span className="truncate">{tab.label}</span>
+                  </span>
+                  {tab.badge && (
+                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black tabular-nums ${
+                      abaAtiva === tab.id
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-100 dark:bg-[#131d31] text-slate-500 dark:text-slate-400'
+                    }`}>
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* PAINEL DE CONTEÚDO */}
-        <div className="md:col-span-9 space-y-4">
+        {/* PAINEL DE CONTEÚDO (no mobile aparece apenas quando uma categoria é clicada) */}
+        <div className={`${mobileTelaAberta ? 'block' : 'hidden md:block'} md:col-span-9 space-y-4`}>
 
           {/* ── ABA 1: INSTITUCIONAL ── */}
           {abaAtiva === 'institucional' && (
@@ -595,23 +760,27 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
               <div className="p-5 border-t border-slate-50 bg-slate-50/10">
 
                 {/* PREVIEW DO LOGOTIPO */}
-                <div className="mb-6 p-4 bg-white border border-slate-100 rounded-2xl flex flex-col sm:flex-row items-center gap-4 shadow-3xs">
-                  <div className="w-16 h-16 rounded-2xl border border-slate-100 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 shadow-3xs">
+                <div className="mb-6 p-4 sm:p-5 bg-white dark:bg-[#131d31] border border-slate-100 dark:border-[#24334f] rounded-2xl flex flex-col sm:flex-row items-center gap-5 shadow-3xs">
+                  <div className="min-w-[104px] min-h-[104px] max-w-full sm:max-w-[260px] p-3 rounded-2xl border border-slate-200/80 dark:border-[#2b3954] bg-slate-50 dark:bg-[#0b1329] flex items-center justify-center shrink-0 shadow-3xs">
                     {logoUrl ? (
-                      <img src={logoUrl} alt="Logo da Igreja" className="w-full h-full object-contain" />
+                      <img
+                        src={logoUrl}
+                        alt="Logo da Igreja"
+                        className="max-h-28 sm:max-h-32 max-w-[220px] sm:max-w-[236px] w-auto h-auto object-contain"
+                      />
                     ) : (
-                      <Building2 size={24} className="text-slate-400" />
+                      <Building2 size={32} className="text-slate-400" />
                     )}
                   </div>
                   <div className="text-center sm:text-left space-y-1 flex-1 min-w-0 w-full">
-                    <h4 className="font-extrabold text-slate-800 text-xs">{t[idioma].logo}</h4>
+                    <h4 className="font-extrabold text-slate-800 dark:text-slate-100 text-xs">{t[idioma].logo}</h4>
                     <p className="text-[10px] text-slate-400 font-medium">{t[idioma].logoSub}</p>
                     <input
                       type="url"
                       placeholder="https://exemplo.com/logo.png"
                       value={logoUrl}
                       onChange={(e) => setLogoUrl(e.target.value)}
-                      className="w-full mt-1.5 px-3 py-1.5 border border-slate-200 rounded-xl text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none"
+                      className="w-full mt-1.5 px-3 py-2 border border-slate-200 dark:border-[#2b3954] rounded-xl text-xs bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 focus:ring-1 focus:ring-slate-900 dark:focus:ring-blue-500 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -798,7 +967,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                   <button
                     type="submit"
                     disabled={carregando || !novaZona.trim()}
-                    className="px-4 py-2 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-bold shadow-sm disabled:bg-slate-300 transition-all shrink-0 cursor-pointer select-none active:scale-95"
+                    className="px-4 py-2 bg-slate-900 dark:bg-blue-600 hover:bg-slate-850 dark:hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-sm disabled:bg-slate-300 dark:disabled:bg-[#1c2b4a] dark:disabled:text-slate-500 dark:disabled:border dark:disabled:border-[#2b3954] disabled:cursor-not-allowed transition-all shrink-0 cursor-pointer select-none active:scale-95"
                   >
                     + {t[idioma].adicionar}
                   </button>
@@ -828,14 +997,14 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                 )}
 
                 {/* Lista de zonas */}
-                <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto bg-white">
+                <div className="divide-y divide-slate-100 dark:divide-[#24334f] max-h-60 overflow-y-auto bg-white dark:bg-[#17223b]">
                   {(() => {
                     const filtradas = zonas.filter(z => z.nome.toLowerCase().includes((filtroZonas || '').toLowerCase()));
                     if (filtradas.length === 0) {
                       return <p className="p-4 text-xs text-slate-450 italic text-center">Nenhuma zona encontrada.</p>;
                     }
                     return filtradas.map((z) => (
-                      <div key={z.id} className="px-4 py-3 flex justify-between items-center text-xs group hover:bg-slate-50/50 transition-colors">
+                      <div key={z.id} className="px-4 py-3 flex justify-between items-center text-xs group hover:bg-slate-50/50 dark:hover:bg-[#1c2b4a]/70 transition-colors">
                         {editandoId === z.id ? (
                           <div className="flex items-center gap-2 flex-1 mr-3">
                             <input
@@ -869,14 +1038,14 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                               <button
                                 type="button"
                                 onClick={() => { setEditandoId(z.id); setEditandoTexto(z.nome); }}
-                                className="px-2.5 py-1 text-slate-555 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                                className="px-2.5 py-1 text-slate-555 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#24375c] rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
                               >
                                 <Edit2 size={12} /> {t[idioma].editar}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleExcluirZona(z.id)}
-                                className="px-2.5 py-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                                className="px-2.5 py-1 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
                               >
                                 <Trash2 size={12} /> {t[idioma].excluir}
                               </button>
@@ -912,7 +1081,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                 <button
                   type="submit"
                   disabled={carregando || !novaAtuacao.trim()}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-bold shadow-sm disabled:bg-slate-300 transition-all shrink-0 cursor-pointer select-none active:scale-95"
+                  className="px-4 py-2 bg-slate-900 dark:bg-blue-600 hover:bg-slate-850 dark:hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-sm disabled:bg-slate-300 dark:disabled:bg-[#1c2b4a] dark:disabled:text-slate-500 dark:disabled:border dark:disabled:border-[#2b3954] disabled:cursor-not-allowed transition-all shrink-0 cursor-pointer select-none active:scale-95"
                 >
                   + {t[idioma].adicionar}
                 </button>
@@ -942,14 +1111,14 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
               )}
 
               {/* Lista de atuações */}
-              <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto bg-white">
+              <div className="divide-y divide-slate-100 dark:divide-[#24334f] max-h-96 overflow-y-auto bg-white dark:bg-[#17223b]">
                 {(() => {
                   const filtradas = atuacoes.filter(a => a.nome.toLowerCase().includes((filtroAtuacoes || '').toLowerCase()));
                   if (filtradas.length === 0) {
                     return <p className="p-4 text-xs text-slate-450 italic text-center">Nenhuma atuação encontrada.</p>;
                   }
                   return filtradas.map((a) => (
-                    <div key={a.id} className="px-4 py-3 flex justify-between items-center text-xs group hover:bg-slate-50/50 transition-colors">
+                    <div key={a.id} className="px-4 py-3 flex justify-between items-center text-xs group hover:bg-slate-50/50 dark:hover:bg-[#1c2b4a]/70 transition-colors">
                       {editandoId === a.id ? (
                         <div className="flex items-center gap-2 flex-1 mr-3">
                           <input
@@ -983,14 +1152,14 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                             <button
                               type="button"
                               onClick={() => { setEditandoId(a.id); setEditandoTexto(a.nome); }}
-                              className="px-2.5 py-1 text-slate-555 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                              className="px-2.5 py-1 text-slate-555 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#24375c] rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
                             >
                               <Edit2 size={12} /> {t[idioma].editar}
                             </button>
                             <button
                               type="button"
                               onClick={() => handleExcluirAtuacao(a.id)}
-                              className="px-2.5 py-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                              className="px-2.5 py-1 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
                             >
                               <Trash2 size={12} /> {t[idioma].excluir}
                             </button>
@@ -1025,7 +1194,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                 <button
                   type="submit"
                   disabled={carregando || !novoCargo.trim()}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-bold shadow-sm disabled:bg-slate-300 transition-all shrink-0 cursor-pointer select-none active:scale-95"
+                  className="px-4 py-2 bg-slate-900 dark:bg-blue-600 hover:bg-slate-850 dark:hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-sm disabled:bg-slate-300 dark:disabled:bg-[#1c2b4a] dark:disabled:text-slate-500 dark:disabled:border dark:disabled:border-[#2b3954] disabled:cursor-not-allowed transition-all shrink-0 cursor-pointer select-none active:scale-95"
                 >
                   + {t[idioma].adicionar}
                 </button>
@@ -1055,14 +1224,14 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
               )}
 
               {/* Lista de cargos */}
-              <div className="divide-y divide-slate-100 max-h-96 overflow-y-auto bg-white">
+              <div className="divide-y divide-slate-100 dark:divide-[#24334f] max-h-96 overflow-y-auto bg-white dark:bg-[#17223b]">
                 {(() => {
                   const filtrados = cargos.filter(c => c.nome.toLowerCase().includes((filtroCargos || '').toLowerCase()));
                   if (filtrados.length === 0) {
                     return <p className="p-4 text-xs text-slate-450 italic text-center">Nenhum cargo encontrado.</p>;
                   }
                   return filtrados.map((c) => (
-                    <div key={c.id} className="px-4 py-3 flex justify-between items-center text-xs group hover:bg-slate-50/50 transition-colors">
+                    <div key={c.id} className="px-4 py-3 flex justify-between items-center text-xs group hover:bg-slate-50/50 dark:hover:bg-[#1c2b4a]/70 transition-colors">
                       {editandoId === c.id ? (
                         <div className="flex items-center gap-2 flex-1 mr-3">
                           <input
@@ -1096,14 +1265,14 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                             <button
                               type="button"
                               onClick={() => { setEditandoId(c.id); setEditandoTexto(c.nome); }}
-                              className="px-2.5 py-1 text-slate-555 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                              className="px-2.5 py-1 text-slate-555 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#24375c] rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
                             >
                               <Edit2 size={12} /> {t[idioma].editar}
                             </button>
                             <button
                               type="button"
                               onClick={() => handleExcluirCargo(c.id)}
-                              className="px-2.5 py-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                              className="px-2.5 py-1 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
                             >
                               <Trash2 size={12} /> {t[idioma].excluir}
                             </button>
@@ -1178,7 +1347,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                   <button
                     type="submit"
                     disabled={carregando || !novaFormaPagamento.trim()}
-                    className="px-4 py-2 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-xs font-bold shadow-sm disabled:bg-slate-300 transition-all shrink-0 cursor-pointer select-none active:scale-95"
+                    className="px-4 py-2 bg-slate-900 dark:bg-blue-600 hover:bg-slate-850 dark:hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow-sm disabled:bg-slate-300 dark:disabled:bg-[#1c2b4a] dark:disabled:text-slate-500 dark:disabled:border dark:disabled:border-[#2b3954] disabled:cursor-not-allowed transition-all shrink-0 cursor-pointer select-none active:scale-95"
                   >
                     + {t[idioma].adicionar}
                   </button>
@@ -1208,14 +1377,14 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                 )}
 
                 {/* Lista de formas */}
-                <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto bg-white">
+                <div className="divide-y divide-slate-100 dark:divide-[#24334f] max-h-60 overflow-y-auto bg-white dark:bg-[#17223b]">
                   {(() => {
                     const filtradas = formasPagamentoDisponiveis.filter(f => f.nome.toLowerCase().includes((filtroFormas || '').toLowerCase()));
                     if (filtradas.length === 0) {
                       return <p className="p-4 text-xs text-slate-450 italic text-center">Nenhuma forma encontrada.</p>;
                     }
                     return filtradas.map((f) => (
-                      <div key={f.id} className="px-4 py-3 flex justify-between items-center text-xs group hover:bg-slate-50/50 transition-colors">
+                      <div key={f.id} className="px-4 py-3 flex justify-between items-center text-xs group hover:bg-slate-50/50 dark:hover:bg-[#1c2b4a]/70 transition-colors">
                         {editandoId === f.id ? (
                           <div className="flex items-center gap-2 flex-1 mr-3">
                             <input
@@ -1249,14 +1418,14 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                               <button
                                 type="button"
                                 onClick={() => { setEditandoId(f.id); setEditandoTexto(f.nome); }}
-                                className="px-2.5 py-1 text-slate-555 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                                className="px-2.5 py-1 text-slate-555 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#24375c] rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
                               >
                                 <Edit2 size={12} /> {t[idioma].editar}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleExcluirFormaPagamento(f.id)}
-                                className="px-2.5 py-1 text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
+                                className="px-2.5 py-1 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-all cursor-pointer font-bold flex items-center gap-1"
                               >
                                 <Trash2 size={12} /> {t[idioma].excluir}
                               </button>
@@ -1420,20 +1589,20 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
 
           {/* ── ABA 6: LOGS DO SISTEMA ── */}
           {abaAtiva === 'logs' && eAdminOuPastor && (
-            <Card className="p-0 border border-slate-100 rounded-2xl shadow-3xs overflow-hidden bg-white">
-              <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <Card className="p-0 border border-slate-100 dark:border-[#2b3954] rounded-2xl shadow-3xs overflow-hidden bg-white dark:bg-[#17223b]">
+              <div className="p-5 border-b border-slate-100 dark:border-[#2b3954] bg-slate-50/50 dark:bg-[#131d31] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h3 className="font-extrabold text-slate-900 text-sm">Logs e Auditoria do Sistema</h3>
+                  <h3 className="font-extrabold text-slate-900 dark:text-slate-100 text-sm">Logs e Auditoria do Sistema</h3>
                   <p className="text-xs text-slate-400">Monitore as ações executadas e as sessões de usuários.</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => setSubAbaLogs('auditoria')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       subAbaLogs === 'auditoria'
-                        ? 'bg-slate-900 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-650 hover:bg-slate-200'
+                        ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-[#1c2b4a] text-slate-650 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-[#24375c]'
                     }`}
                   >
                     Ações de Auditoria
@@ -1441,10 +1610,10 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                   <button
                     type="button"
                     onClick={() => setSubAbaLogs('sessoes')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       subAbaLogs === 'sessoes'
-                        ? 'bg-slate-900 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-650 hover:bg-slate-200'
+                        ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-[#1c2b4a] text-slate-650 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-[#24375c]'
                     }`}
                   >
                     Tempo de Uso & Sessões
@@ -1456,7 +1625,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
               {subAbaLogs === 'auditoria' && (
                 <div className="p-5 space-y-4">
                   {/* Barra de Filtros e Alternância de Visualização */}
-                  <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between bg-slate-50/70 p-3 rounded-2xl border border-slate-200/80">
+                  <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between bg-slate-50/70 dark:bg-[#131d31] p-3 rounded-2xl border border-slate-200/80 dark:border-[#24334f]">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 flex-1">
                       <div className="relative">
                         <User className="absolute left-2.5 top-2.5 text-slate-400" size={13} />
@@ -1465,14 +1634,14 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                           placeholder="Buscar usuário/autor..."
                           value={filtroUsuarioAudit}
                           onChange={e => setFiltroUsuarioAudit(e.target.value)}
-                          className="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 font-medium"
+                          className="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 dark:border-[#2b3954] rounded-xl text-xs bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-blue-500 font-medium"
                         />
                       </div>
                       <div>
                         <select
                           value={filtroAcaoAudit}
                           onChange={e => setFiltroAcaoAudit(e.target.value)}
-                          className="w-full px-2.5 py-1.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 font-medium cursor-pointer"
+                          className="w-full px-2.5 py-1.5 border border-slate-200 dark:border-[#2b3954] rounded-xl text-xs bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-blue-500 font-medium cursor-pointer"
                         >
                           <option value="">Todas as Ações</option>
                           <option value="INSERT">Inclusão (INSERT)</option>
@@ -1489,20 +1658,20 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                           placeholder="Tabela (ex: pessoas, escalas)..."
                           value={filtroTabelaAudit}
                           onChange={e => setFiltroTabelaAudit(e.target.value)}
-                          className="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 rounded-xl text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900 font-medium"
+                          className="w-full pl-8 pr-2.5 py-1.5 border border-slate-200 dark:border-[#2b3954] rounded-xl text-xs bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-blue-500 font-medium"
                         />
                       </div>
                     </div>
 
                     {/* Alternador Cards / Tabela */}
-                    <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200/80 shrink-0 self-end md:self-auto">
+                    <div className="flex items-center gap-1 bg-white dark:bg-[#0b1329] p-1 rounded-xl border border-slate-200/80 dark:border-[#2b3954] shrink-0 self-end md:self-auto">
                       <button
                         type="button"
                         onClick={() => setModoVisualizacaoAudit('cards')}
                         className={`p-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                           modoVisualizacaoAudit === 'cards'
-                            ? 'bg-slate-900 text-white shadow-xs'
-                            : 'text-slate-500 hover:text-slate-800'
+                            ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-xs'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                         }`}
                         title="Visualização em Cards Detalhados"
                       >
@@ -1514,8 +1683,8 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                         onClick={() => setModoVisualizacaoAudit('tabela')}
                         className={`p-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                           modoVisualizacaoAudit === 'tabela'
-                            ? 'bg-slate-900 text-white shadow-xs'
-                            : 'text-slate-500 hover:text-slate-800'
+                            ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-xs'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                         }`}
                         title="Visualização em Tabela"
                       >
@@ -1528,7 +1697,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                   {/* Listagem de Logs */}
                   {carregandoLogs ? (
                     <div className="py-16 flex flex-col justify-center items-center text-xs text-slate-400 gap-2">
-                      <div className="w-6 h-6 border-2 border-slate-300 border-t-slate-800 rounded-full animate-spin" />
+                      <div className="w-6 h-6 border-2 border-slate-300 dark:border-slate-700 border-t-slate-800 dark:border-t-blue-400 rounded-full animate-spin" />
                       <span>Carregando registros de auditoria...</span>
                     </div>
                   ) : (
@@ -1544,7 +1713,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
 
                       if (filtrados.length === 0) {
                         return (
-                          <div className="py-16 text-center text-slate-400 italic text-xs bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                          <div className="py-16 text-center text-slate-400 italic text-xs bg-slate-50/50 dark:bg-[#131d31] rounded-2xl border border-dashed border-slate-200 dark:border-[#2b3954]">
                             Nenhum registro de auditoria encontrado para os filtros selecionados.
                           </div>
                         );
@@ -1562,28 +1731,28 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
 
                               let badgeAcao = {
                                 label: log.acao,
-                                bg: 'bg-slate-100 text-slate-700 border-slate-200'
+                                bg: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
                               };
-                              if (log.acao === 'INSERT') badgeAcao = { label: 'Inclusão / Cadastro', bg: 'bg-emerald-50 text-emerald-800 border-emerald-200/80' };
-                              if (log.acao === 'UPDATE') badgeAcao = { label: 'Alteração', bg: 'bg-blue-50 text-blue-800 border-blue-200/80' };
-                              if (log.acao === 'DELETE') badgeAcao = { label: 'Exclusão', bg: 'bg-rose-50 text-rose-800 border-rose-200/80' };
-                              if (log.acao === 'LOGIN') badgeAcao = { label: 'Acesso / Login', bg: 'bg-purple-50 text-purple-800 border-purple-200/80' };
-                              if (log.acao === 'LOGOUT') badgeAcao = { label: 'Saída / Logout', bg: 'bg-amber-50 text-amber-800 border-amber-200/80' };
+                              if (log.acao === 'INSERT') badgeAcao = { label: 'Inclusão / Cadastro', bg: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/60' };
+                              if (log.acao === 'UPDATE') badgeAcao = { label: 'Alteração', bg: 'bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border-blue-200/80 dark:border-blue-800/60' };
+                              if (log.acao === 'DELETE') badgeAcao = { label: 'Exclusão', bg: 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-200/80 dark:border-rose-800/60' };
+                              if (log.acao === 'LOGIN') badgeAcao = { label: 'Acesso / Login', bg: 'bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border-purple-200/80 dark:border-purple-800/60' };
+                              if (log.acao === 'LOGOUT') badgeAcao = { label: 'Saída / Logout', bg: 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/60' };
 
                               return (
                                 <div
                                   key={log.id}
-                                  className="bg-white rounded-2xl border border-slate-200/90 hover:border-slate-300 hover:shadow-md transition-all p-4 flex flex-col gap-3 shadow-2xs"
+                                  className="bg-white dark:bg-[#131d31] rounded-2xl border border-slate-200/90 dark:border-[#24334f] hover:border-slate-300 dark:hover:border-blue-500/40 hover:shadow-md transition-all p-4 flex flex-col gap-3 shadow-2xs"
                                 >
                                   {/* Cabeçalho do Card: Quem alterou + Data/Hora + Ação */}
                                   <div className="flex items-start justify-between gap-3 flex-wrap">
                                     <div className="flex items-center gap-2.5 min-w-0">
-                                      <div className="w-8 h-8 rounded-xl bg-slate-900 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                                      <div className="w-8 h-8 rounded-xl bg-slate-900 dark:bg-blue-600/25 dark:border dark:border-blue-500/40 text-white dark:text-blue-300 font-black text-xs flex items-center justify-center shrink-0 shadow-2xs">
                                         {(log.usuario_nome || log.usuario_email || 'U').charAt(0).toUpperCase()}
                                       </div>
                                       <div className="min-w-0">
                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                          <span className="font-extrabold text-xs text-slate-900">
+                                          <span className="font-extrabold text-xs text-slate-900 dark:text-slate-100">
                                             {log.usuario_nome || 'Usuário do Sistema'}
                                           </span>
                                           <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${badgeAcao.bg}`}>
@@ -1597,16 +1766,16 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                                     </div>
 
                                     {/* Data e Hora */}
-                                    <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200/70 shrink-0">
+                                    <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-300 bg-slate-50 dark:bg-[#1c2b4a] px-2.5 py-1 rounded-xl border border-slate-200/70 dark:border-[#2b3954] shrink-0">
                                       <Clock size={12} className="text-slate-400" />
                                       <span>{dataFormatada}</span>
                                     </div>
                                   </div>
 
                                   {/* O que alterou: Descrição em Linguagem Clara */}
-                                  <div className="bg-slate-50/70 p-3 rounded-xl border border-slate-100 flex items-start gap-2">
-                                    <FileText size={14} className="text-blue-600 shrink-0 mt-0.5" />
-                                    <p className="text-xs font-bold text-slate-800 leading-snug">
+                                  <div className="bg-slate-50/70 dark:bg-[#0b1329] p-3 rounded-xl border border-slate-100 dark:border-[#24334f] flex items-start gap-2">
+                                    <FileText size={14} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">
                                       {descricaoResumo}
                                     </p>
                                   </div>
@@ -1621,17 +1790,17 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                                         {diffs.map(d => (
                                           <div
                                             key={d.campoRaw}
-                                            className="bg-slate-50/90 border border-slate-200/80 rounded-xl p-2.5 flex flex-col gap-1 shadow-2xs"
+                                            className="bg-slate-50/90 dark:bg-[#0b1329] border border-slate-200/80 dark:border-[#24334f] rounded-xl p-2.5 flex flex-col gap-1 shadow-2xs"
                                           >
-                                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-tight">
+                                            <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-tight">
                                               {d.campo}
                                             </span>
                                             <div className="flex items-center gap-1.5 text-[11px] font-bold flex-wrap">
-                                              <span className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200/80 line-through opacity-85 truncate max-w-[140px]" title={d.de}>
+                                              <span className="px-2 py-0.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800/60 line-through opacity-85 truncate max-w-[140px]" title={d.de}>
                                                 {d.de}
                                               </span>
                                               <ArrowRight size={11} className="text-slate-400 shrink-0" />
-                                              <span className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200/90 font-extrabold truncate max-w-[140px]" title={d.para}>
+                                              <span className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200/90 dark:border-emerald-800/60 font-extrabold truncate max-w-[140px]" title={d.para}>
                                                 {d.para}
                                               </span>
                                             </div>
@@ -1642,17 +1811,17 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                                   )}
 
                                   {/* Rodapé do Card: Tabela e Opção de Inspecionar JSON */}
-                                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[10px] text-slate-500">
+                                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-[#24334f] text-[10px] text-slate-500 dark:text-slate-400">
                                     <span className="font-semibold flex items-center gap-1">
                                       <Database size={11} className="text-slate-400" />
-                                      Tabela: <strong className="text-slate-700">{formatarNomeTabela(log.tabela)}</strong>
+                                      Tabela: <strong className="text-slate-700 dark:text-slate-200">{formatarNomeTabela(log.tabela)}</strong>
                                       {log.registro_id && <span className="text-slate-400 text-[9px]">({log.registro_id})</span>}
                                     </span>
 
                                     <button
                                       type="button"
                                       onClick={() => setLogDetalhesExpandidoId(isExpandido ? null : log.id)}
-                                      className="text-blue-600 hover:text-blue-800 font-bold hover:underline cursor-pointer"
+                                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-bold hover:underline cursor-pointer"
                                     >
                                       {isExpandido ? 'Ocultar JSON' : 'Inspecionar Dados Brutos'}
                                     </button>
@@ -1660,7 +1829,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
 
                                   {/* Bloco JSON Expandido */}
                                   {isExpandido && log.detalhes && (
-                                    <pre className="p-3 bg-slate-900 text-slate-200 text-[10px] rounded-xl overflow-x-auto font-mono leading-relaxed shadow-inner">
+                                    <pre className="p-3 bg-slate-900 dark:bg-[#070d1c] border border-slate-800 text-slate-200 text-[10px] rounded-xl overflow-x-auto font-mono leading-relaxed shadow-inner">
                                       {JSON.stringify(log.detalhes, null, 2)}
                                     </pre>
                                   )}
@@ -1673,11 +1842,11 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
 
                       // MODO 2: TABELA SINTÉTICA
                       return (
-                        <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">
+                        <div className="border border-slate-200/80 dark:border-[#24334f] rounded-2xl overflow-hidden shadow-2xs">
                           <div className="overflow-x-auto">
                             <table className="w-full text-xs text-left border-collapse">
                               <thead>
-                                <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200/80">
+                                <tr className="bg-slate-50 dark:bg-[#131d31] text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200/80 dark:border-[#24334f]">
                                   <th className="p-3">Data/Hora</th>
                                   <th className="p-3">Quem alterou</th>
                                   <th className="p-3">Ação</th>
@@ -1686,25 +1855,25 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                                   <th className="p-3 text-right">Ação</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-slate-100 bg-white">
+                              <tbody className="divide-y divide-slate-100 dark:divide-[#24334f] bg-white dark:bg-[#17223b]">
                                 {filtrados.map(log => {
                                   const isExpandido = logDetalhesExpandidoId === log.id;
                                   const diffs = extrairAlteracoesLog(log);
                                   const dataFormatada = formatarDataHoraAuditoria(log.created_at);
                                   const descricaoResumo = gerarDescricaoResumoLog(log);
 
-                                  let badgeColor = 'bg-slate-100 text-slate-750';
-                                  if (log.acao === 'INSERT') badgeColor = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
-                                  if (log.acao === 'UPDATE') badgeColor = 'bg-blue-50 text-blue-700 border border-blue-200';
-                                  if (log.acao === 'DELETE') badgeColor = 'bg-rose-50 text-rose-700 border border-rose-200';
-                                  if (log.acao === 'LOGIN') badgeColor = 'bg-purple-50 text-purple-700 border border-purple-200';
-                                  if (log.acao === 'LOGOUT') badgeColor = 'bg-amber-50 text-amber-700 border border-amber-200';
+                                  let badgeColor = 'bg-slate-100 dark:bg-slate-800 text-slate-750 dark:text-slate-200';
+                                  if (log.acao === 'INSERT') badgeColor = 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60';
+                                  if (log.acao === 'UPDATE') badgeColor = 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60';
+                                  if (log.acao === 'DELETE') badgeColor = 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60';
+                                  if (log.acao === 'LOGIN') badgeColor = 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60';
+                                  if (log.acao === 'LOGOUT') badgeColor = 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60';
 
                                   return (
-                                    <tr key={log.id} className="hover:bg-slate-50/60 transition-colors">
-                                      <td className="p-3 text-slate-600 whitespace-nowrap font-medium">{dataFormatada}</td>
+                                    <tr key={log.id} className="hover:bg-slate-50/60 dark:hover:bg-[#1c2b4a]/60 transition-colors">
+                                      <td className="p-3 text-slate-600 dark:text-slate-300 whitespace-nowrap font-medium">{dataFormatada}</td>
                                       <td className="p-3">
-                                        <div className="font-extrabold text-slate-800">{log.usuario_nome || 'Sistema'}</div>
+                                        <div className="font-extrabold text-slate-800 dark:text-slate-100">{log.usuario_nome || 'Sistema'}</div>
                                         <div className="text-[10px] text-slate-400">{log.usuario_email}</div>
                                       </td>
                                       <td className="p-3">
@@ -1712,16 +1881,16 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                                           {log.acao}
                                         </span>
                                       </td>
-                                      <td className="p-3 font-medium text-slate-700 max-w-xs">{descricaoResumo}</td>
+                                      <td className="p-3 font-medium text-slate-700 dark:text-slate-200 max-w-xs">{descricaoResumo}</td>
                                       <td className="p-3">
                                         {diffs.length > 0 ? (
                                           <div className="space-y-1 max-w-xs">
                                             {diffs.slice(0, 2).map(d => (
                                               <div key={d.campoRaw} className="text-[10px] flex items-center gap-1 font-semibold">
-                                                <span className="text-slate-500">{d.campo}:</span>
-                                                <span className="text-rose-600 line-through">{d.de}</span>
+                                                <span className="text-slate-500 dark:text-slate-400">{d.campo}:</span>
+                                                <span className="text-rose-600 dark:text-rose-400 line-through">{d.de}</span>
                                                 <span className="text-slate-400">→</span>
-                                                <span className="text-emerald-700 font-bold">{d.para}</span>
+                                                <span className="text-emerald-700 dark:text-emerald-400 font-bold">{d.para}</span>
                                               </div>
                                             ))}
                                             {diffs.length > 2 && (
@@ -1738,12 +1907,12 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                                         <button
                                           type="button"
                                           onClick={() => setLogDetalhesExpandidoId(isExpandido ? null : log.id)}
-                                          className="text-blue-600 hover:text-blue-800 font-bold hover:underline"
+                                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-bold hover:underline cursor-pointer"
                                         >
                                           {isExpandido ? 'Fechar' : 'Ver'}
                                         </button>
                                         {isExpandido && log.detalhes && (
-                                          <pre className="mt-2 p-3 bg-slate-900 text-slate-200 text-[10px] rounded-xl overflow-x-auto font-mono max-w-lg text-left leading-relaxed shadow-inner">
+                                          <pre className="mt-2 p-3 bg-slate-900 dark:bg-[#070d1c] border border-slate-800 text-slate-200 text-[10px] rounded-xl overflow-x-auto font-mono max-w-lg text-left leading-relaxed shadow-inner">
                                             {JSON.stringify(log.detalhes, null, 2)}
                                           </pre>
                                         )}
@@ -1765,14 +1934,14 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
               {subAbaLogs === 'sessoes' && (
                 <div className="p-5 space-y-4">
                   {/* Filtro */}
-                  <div className="max-w-xs space-y-1 bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
-                    <label className="text-[10px] font-bold text-slate-450 uppercase">Pesquisar Usuário</label>
+                  <div className="max-w-xs space-y-1 bg-slate-50/50 dark:bg-[#131d31] p-3 rounded-2xl border border-slate-100 dark:border-[#24334f]">
+                    <label className="text-[10px] font-bold text-slate-450 dark:text-slate-400 uppercase">Pesquisar Usuário</label>
                     <input
                       type="text"
                       placeholder="Nome ou e-mail..."
                       value={filtroUsuarioAudit}
                       onChange={e => setFiltroUsuarioAudit(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+                      className="w-full px-2.5 py-1.5 border border-slate-200 dark:border-[#2b3954] rounded-lg text-xs bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-blue-500"
                     />
                   </div>
 
@@ -1782,11 +1951,11 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                       Carregando sessões...
                     </div>
                   ) : (
-                    <div className="border border-slate-100 rounded-2xl overflow-hidden">
+                    <div className="border border-slate-100 dark:border-[#24334f] rounded-2xl overflow-hidden">
                       <div className="overflow-x-auto">
                         <table className="w-full text-xs text-left border-collapse">
                           <thead>
-                            <tr className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
+                            <tr className="bg-slate-50 dark:bg-[#131d31] text-slate-500 dark:text-slate-300 font-bold border-b border-slate-100 dark:border-[#24334f]">
                               <th className="p-3">Usuário</th>
                               <th className="p-3">Login em</th>
                               <th className="p-3">Última Atividade</th>
@@ -1794,7 +1963,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                               <th className="p-3">Status</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-100 bg-white">
+                          <tbody className="divide-y divide-slate-100 dark:divide-[#24334f] bg-white dark:bg-[#17223b]">
                             {(() => {
                               const filtradas = logsSessoes.filter(sess => {
                                 return !filtroUsuarioAudit ||
@@ -1819,22 +1988,22 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                                 const isAtiva = (agora - heartbeatTime) < 90000;
 
                                 return (
-                                  <tr key={sess.id} className="hover:bg-slate-50/50 transition-colors">
+                                  <tr key={sess.id} className="hover:bg-slate-50/50 dark:hover:bg-[#1c2b4a]/60 transition-colors">
                                     <td className="p-3">
-                                      <div className="font-bold text-slate-800">{sess.usuario_nome}</div>
+                                      <div className="font-bold text-slate-800 dark:text-slate-100">{sess.usuario_nome}</div>
                                       <div className="text-[10px] text-slate-400">{sess.usuario_email}</div>
                                     </td>
-                                    <td className="p-3 text-slate-500">{formatarDataHora(sess.login_at)}</td>
-                                    <td className="p-3 text-slate-500">{formatarDataHora(sess.ultimo_heartbeat)}</td>
-                                    <td className="p-3 font-semibold text-slate-700">{formatarTempoPermanencia(sess.duracao_segundos)}</td>
+                                    <td className="p-3 text-slate-500 dark:text-slate-300">{formatarDataHora(sess.login_at)}</td>
+                                    <td className="p-3 text-slate-500 dark:text-slate-300">{formatarDataHora(sess.ultimo_heartbeat)}</td>
+                                    <td className="p-3 font-semibold text-slate-700 dark:text-slate-200">{formatarTempoPermanencia(sess.duracao_segundos)}</td>
                                     <td className="p-3">
                                       {isAtiva ? (
-                                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-100">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                                        <span className="inline-flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800/60">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 animate-pulse" />
                                           Ativa
                                         </span>
                                       ) : (
-                                        <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-550 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200">
+                                        <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-[#1c2b4a] text-slate-550 dark:text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-slate-200 dark:border-[#2b3954]">
                                           Finalizada
                                         </span>
                                       )}

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Cake, Calendar, MessageCircle } from 'lucide-react';
+import { Cake, Calendar, MessageCircle, X, ZoomIn, User } from 'lucide-react';
 import { Card, CardHeader, Avatar, SelectFiltro, ColumnChart, DoughnutCard, PageHeader, ModalLinkCopiado } from './ui';
 import { supabase } from './supabaseClient';
 import DetalhesMembro from './DetalhesMembro';
@@ -443,39 +443,134 @@ export default function PessoasModulo(props) {
 }
 
 function TabelaPessoas({ pessoas, onSelecionar }) {
+  const [fotoAmpliada, setFotoAmpliada] = useState(null);
+
+  useEffect(() => {
+    if (!fotoAmpliada) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setFotoAmpliada(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [fotoAmpliada]);
+
   if (!pessoas || pessoas.length === 0) {
     return <div className="p-10 text-center text-sm text-slate-400 dark:text-slate-400">Nenhuma pessoa corresponde aos filtros ativos.</div>;
   }
   return (
-    <div className="overflow-x-auto">
-      <table className="table-mib">
-        <thead className="hidden md:table-header-group">
-          <tr><th>Nome</th><th className="hidden md:table-cell">Cargo / Função</th><th className="hidden md:table-cell">Contato</th><th className="hidden md:table-cell">Célula</th></tr>
-        </thead>
-        <tbody>
-          {pessoas.map((p) => (
-            <tr key={p.id} onClick={() => onSelecionar(p.id)} className="cursor-pointer">
-              <td className="py-3 md:py-2">
-                <div className="flex items-center gap-3">
-                  <Avatar pessoa={p} tamanho="w-15  h-15" />
-                  <div>
-                    <p className="font-semibold text-slate-700 dark:text-slate-100">{p.nome}</p>
-                    <p className="text-[11px] text-[var(--text-muted)] dark:text-slate-400">{p.email || 'Sem e-mail'}</p>
+    <>
+      <div className="overflow-x-auto">
+        <table className="table-mib">
+          <thead className="hidden md:table-header-group">
+            <tr><th>Nome</th><th className="hidden md:table-cell">Cargo / Função</th><th className="hidden md:table-cell">Contato</th><th className="hidden md:table-cell">Célula</th></tr>
+          </thead>
+          <tbody>
+            {pessoas.map((p) => (
+              <tr key={p.id} onClick={() => onSelecionar(p.id)} className="cursor-pointer">
+                <td className="py-3 md:py-2">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFotoAmpliada(p);
+                      }}
+                      title={p.foto_url ? `Ampliar foto de ${p.nome}` : `Visualizar avatar de ${p.nome}`}
+                      aria-label={`Ampliar foto de ${p.nome}`}
+                      className="group relative rounded-full shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-zoom-in"
+                    >
+                      <div className="transition-transform duration-200 group-hover:scale-105">
+                        <Avatar pessoa={p} tamanho="w-15 h-15" />
+                      </div>
+                      <span className="pointer-events-none absolute inset-0 rounded-full bg-slate-950/0 group-hover:bg-slate-950/35 transition-colors flex items-center justify-center">
+                        <ZoomIn size={16} className="text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow" />
+                      </span>
+                    </button>
+                    <div>
+                      <p className="font-semibold text-slate-700 dark:text-slate-100">{p.nome}</p>
+                      <p className="text-[11px] text-[var(--text-muted)] dark:text-slate-400">{p.email || 'Sem e-mail'}</p>
+                    </div>
                   </div>
+                </td>
+                <td className="hidden md:table-cell">
+                  <span className="text-xs px-2.5 py-1 rounded-lg bg-[var(--surface-muted)] dark:bg-[#131d31] border border-slate-200 dark:border-[#24334f] text-slate-700 dark:text-slate-200 font-medium">
+                    {p.cargo || 'Membro'}
+                  </span>
+                </td>
+                <td className="hidden md:table-cell text-xs text-[var(--text-muted)] dark:text-slate-300">{p.telefone || '—'}</td>
+                <td className="hidden md:table-cell"><span className="text-xs font-semibold text-[#2563eb] dark:text-blue-400">{p.celulas?.nome || '😢 Sem Célula'}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modal Lightbox Elegante para Ampliação da Foto do Membro */}
+      {fotoAmpliada && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Foto de ${fotoAmpliada.nome}`}
+          onClick={() => setFotoAmpliada(null)}
+          className="fixed inset-0 z-[120] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-md rounded-3xl overflow-hidden bg-white dark:bg-[#131d31] border border-slate-200/70 dark:border-[#2b3954] shadow-2xl animate-in zoom-in-95 duration-200"
+          >
+            <button
+              type="button"
+              onClick={() => setFotoAmpliada(null)}
+              aria-label="Fechar visualização"
+              className="absolute top-3.5 right-3.5 z-10 w-9 h-9 rounded-full bg-slate-950/60 hover:bg-slate-950/85 text-white backdrop-blur-md border border-white/15 flex items-center justify-center transition cursor-pointer shadow-lg"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="relative w-full aspect-square max-h-[68vh] bg-slate-100 dark:bg-[#0b1329] flex items-center justify-center overflow-hidden">
+              {fotoAmpliada.foto_url ? (
+                <img
+                  src={fotoAmpliada.foto_url}
+                  alt={fotoAmpliada.nome}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-3 text-slate-400 dark:text-slate-500 p-8">
+                  <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#202046] to-[#2563eb] text-white flex items-center justify-center text-4xl font-black shadow-xl ring-4 ring-blue-500/20">
+                    {(fotoAmpliada.nome || '?').trim().charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-xs font-medium">Este membro ainda não possui foto cadastrada</span>
                 </div>
-              </td>
-              <td className="hidden md:table-cell">
-                <span className="text-xs px-2.5 py-1 rounded-lg bg-[var(--surface-muted)] dark:bg-[#131d31] border border-slate-200 dark:border-[#24334f] text-slate-700 dark:text-slate-200 font-medium">
-                  {p.cargo || 'Membro'}
-                </span>
-              </td>
-              <td className="hidden md:table-cell text-xs text-[var(--text-muted)] dark:text-slate-300">{p.telefone || '—'}</td>
-              <td className="hidden md:table-cell"><span className="text-xs font-semibold text-[#2563eb] dark:text-blue-400">{p.celulas?.nome || '😢 Sem Célula'}</span></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+              )}
+            </div>
+
+            <div className="p-4 sm:p-5 flex items-center justify-between gap-3 bg-white dark:bg-[#131d31] border-t border-slate-100 dark:border-[#24334f]">
+              <div className="min-w-0">
+                <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 truncate">
+                  {fotoAmpliada.nome}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  {fotoAmpliada.cargo || 'Membro'}
+                  {fotoAmpliada.celulas?.nome ? ` • Célula ${fotoAmpliada.celulas.nome}` : ''}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const id = fotoAmpliada.id;
+                  setFotoAmpliada(null);
+                  onSelecionar(id);
+                }}
+                className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition cursor-pointer"
+              >
+                <User size={14} />
+                <span>Ver ficha</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

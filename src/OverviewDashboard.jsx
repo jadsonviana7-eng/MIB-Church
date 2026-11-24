@@ -2,41 +2,42 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Avatar, DoughnutCard, CombinationCard, ColumnChart, Recentes, PageHeader, StatCard } from './ui';
 import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona, extrairDataInfo, ehAniversarianteHoje, gerarLinkWhatsappAniversario } from './churchUtils';
 import PainelAprovacoes from './PainelAprovacoes';
+import CarteirinhaMembroModal from './CarteirinhaMembroModal';
 import { supabase } from './supabaseClient';
-import { 
-  Users, Home, Calendar, DollarSign, Award, ArrowUpRight, 
-  TrendingUp, TrendingDown, Target, UserCheck, Percent, 
+import {
+  Users, Home, Calendar, DollarSign, Award, ArrowUpRight,
+  TrendingUp, TrendingDown, Target, UserCheck, Percent,
   BookOpen, ChevronRight, ChevronLeft, Sparkles, Zap, Activity, Plus, ShieldAlert,
-  Smile, Coins, HelpCircle, Cake, MessageCircle
+  Smile, Coins, HelpCircle, Cake, MessageCircle, CreditCard
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  ComposedChart, 
-  Bar, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  AreaChart, 
-  Area 
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  AreaChart,
+  Area
 } from 'recharts';
 
-export default function OverviewDashboard({ 
-  pessoas = [], 
-  celulas = [], 
-  zonas = [], 
-  relatoriosCelula = [], 
-  indicadores = {}, 
-  carregando = false, 
-  periodoConvertidos = 'mes', 
-  setPeriodoConvertidos = () => {}, 
-  onVerMembro = () => {},
-  onVerReuniao = () => {},
+export default function OverviewDashboard({
+  pessoas = [],
+  celulas = [],
+  zonas = [],
+  relatoriosCelula = [],
+  indicadores = {},
+  carregando = false,
+  periodoConvertidos = 'mes',
+  setPeriodoConvertidos = () => { },
+  onVerMembro = () => { },
+  onVerReuniao = () => { },
   membroLogado = null,
   usuarioLogado = null,
-  onNavigate = () => {},
+  onNavigate = () => { },
   hasAccess = () => false,
   reunioesVistas = [],
   abaDashboard,
@@ -54,7 +55,7 @@ export default function OverviewDashboard({
       onNavigate('pessoas', 'todos');
     }
   }, [abrirPessoasFiltradas, onNavigate]);
-  
+
   // Estados para dados financeiros (carregados sob demanda com tratamento de erro/RLS)
   const [financeLoading, setFinanceLoading] = useState(false);
   const [financeData, setFinanceData] = useState(null);
@@ -444,54 +445,80 @@ export default function OverviewDashboard({
     return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
+  const [carteirinhaAberta, setCarteirinhaAberta] = useState(false);
+  const membroCompletoLogado = useMemo(
+    () => pessoas.find((p) => String(p.id) === String(membroLogado?.id)) || membroLogado || null,
+    [pessoas, membroLogado]
+  );
+
   return (
     <div className={`space-y-6 relative ${abaAtiva === 'visao_geral' ? 'lg:pr-[272px] xl:pr-[328px]' : ''}`}>
-      
+
       {/* 1. CABEÇALHO DE BOAS-VINDAS PREMIUM */}
-      <div className="relative overflow-hidden rounded-b-3xl rounded-t-none bg-linear-to-r from-[#202046] via-[#2a2a6b] to-[#3b3b8c] p-6 sm:p-8 text-white shadow-xl animate-in fade-in duration-500">
-        <div className="absolute right-0 top-0 -mr-16 -mt-16 h-48 w-48 rounded-full bg-white/5 blur-3xl pointer-events-none"></div>
-        <div className="absolute left-1/3 bottom-0 -ml-16 -mb-16 h-40 w-40 rounded-full bg-blue-500/10 blur-2xl pointer-events-none"></div>
-        
+      <div className="relative overflow-hidden rounded-b-3xl rounded-t-none bg-linear-to-r from-[#202046] via-[#2a2a6b] to-[#3b3b8c] dark:from-[#0f2454] dark:via-[#1d4ed8] dark:to-[#0284c7] dark:border dark:border-t-0 dark:border-blue-400/30 p-6 sm:p-8 text-white shadow-xl dark:shadow-[0_12px_32px_-8px_rgba(37,99,235,0.45)] animate-in fade-in duration-500">
+        <div className="absolute right-0 top-0 -mr-16 -mt-16 h-56 w-56 rounded-full bg-white/5 dark:bg-cyan-300/20 blur-3xl pointer-events-none"></div>
+        <div className="absolute left-1/3 bottom-0 -ml-16 -mb-16 h-44 w-44 rounded-full bg-blue-500/10 dark:bg-blue-300/20 blur-2xl pointer-events-none"></div>
+
         <div className="relative flex flex-col sm:flex-row items-center sm:justify-between gap-6">
           <div className="flex items-center gap-4 text-center sm:text-left flex-col sm:flex-row">
             {membroLogado?.foto_url ? (
-              <img 
-                src={membroLogado.foto_url} 
-                alt={nomeUsuario} 
-                className="w-16 h-16 rounded-2xl object-cover ring-4 ring-white/10 shadow-lg"
+              <img
+                src={membroLogado.foto_url}
+                alt={nomeUsuario}
+                className="w-16 h-16 rounded-2xl object-cover ring-4 ring-white/10 dark:ring-cyan-300/40 shadow-lg"
               />
             ) : (
-              <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-2xl font-bold ring-4 ring-white/10 shadow-lg text-blue-200">
+              <div className="w-16 h-16 rounded-2xl bg-white/10 dark:bg-white/15 flex items-center justify-center text-2xl font-bold ring-4 ring-white/10 dark:ring-cyan-300/40 shadow-lg text-blue-200 dark:text-white">
                 {nomeUsuario.charAt(0).toUpperCase()}
               </div>
             )}
             <div>
-              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
                 Olá, {nomeUsuario}! 👋
               </h1>
-              <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1 uppercase tracking-wider">
-                Perfil: <span className="text-blue-300 font-bold">{cargoUsuario}</span> • MIB Church Dashboard
+              <p className="text-xs sm:text-sm text-slate-300 dark:text-blue-100/90 font-medium mt-1 uppercase tracking-wider">
+                Perfil: <span className="text-blue-300 dark:text-cyan-200 font-bold">{cargoUsuario}</span> • MIB Church Dashboard
               </p>
             </div>
           </div>
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl px-4 py-2.5 text-center sm:text-right border border-white/10 shadow-sm shrink-0">
-            <span className="block text-[10px] font-bold text-slate-300 uppercase tracking-widest">Data de Hoje</span>
-            <span className="text-sm font-extrabold text-blue-100">
-              {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
-            </span>
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2.5 shrink-0">
+            {membroCompletoLogado && (
+              <button
+                type="button"
+                onClick={() => setCarteirinhaAberta(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 dark:bg-white/15 dark:hover:bg-white/25 backdrop-blur-md border border-white/25 text-white text-xs font-extrabold shadow-sm transition active:scale-95 cursor-pointer"
+                title="Abrir minha carteirinha de membro"
+              >
+                <CreditCard size={16} />
+                <span>Minha Carteirinha</span>
+              </button>
+            )}
+            <div className="bg-white/10 dark:bg-slate-950/35 backdrop-blur-md rounded-2xl px-4 py-2.5 text-center sm:text-right border border-white/10 dark:border-white/20 shadow-sm shrink-0">
+              <span className="block text-[10px] font-bold text-slate-300 dark:text-cyan-200 uppercase tracking-widest">Data de Hoje</span>
+              <span className="text-sm font-extrabold text-blue-100 dark:text-white">
+                {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
+      {carteirinhaAberta && membroCompletoLogado && (
+        <CarteirinhaMembroModal
+          pessoa={membroCompletoLogado}
+          onFechar={() => setCarteirinhaAberta(false)}
+        />
+      )}
+
       {/* 2. BANNERS DE EVENTOS E AVISOS (CARROSSEL COM TRANSIÇÃO DESLIZAR DA DIREITA PARA A ESQUERDA) */}
       {bannersExibidos.length > 0 && (
-        <div 
+        <div
           className="relative overflow-hidden rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md group"
           onMouseEnter={() => setIsBannerHovered(true)}
           onMouseLeave={() => setIsBannerHovered(false)}
         >
           {/* Trilha do Carrossel (Horizontal flex layout: transform translateX move os elementos deslizando da direita para a esquerda) */}
-          <div 
+          <div
             className="flex transition-transform duration-500 ease-in-out w-full"
             style={{ transform: `translateX(-${bannerIndex * 100}%)` }}
           >
@@ -549,12 +576,12 @@ export default function OverviewDashboard({
                   </div>
                 </div>
               ) : (
-                <div 
-                  key={item.id || idx} 
+                <div
+                  key={item.id || idx}
                   className="w-full shrink-0 min-w-full relative h-48 sm:h-56 md:h-64 overflow-hidden"
                 >
-                  <img 
-                    src={item.imagem_url} 
+                  <img
+                    src={item.imagem_url}
                     alt={item.titulo}
                     className="w-full h-full object-cover"
                   />
@@ -578,7 +605,7 @@ export default function OverviewDashboard({
                     )}
                     {item.link && (
                       <div className="mt-3">
-                        <button 
+                        <button
                           onClick={() => {
                             if (item.link.startsWith('http')) {
                               window.open(item.link, '_blank');
@@ -632,9 +659,8 @@ export default function OverviewDashboard({
                       e.stopPropagation();
                       setBannerIndex(i);
                     }}
-                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                      i === bannerIndex ? 'w-6 bg-white' : 'w-2 bg-white/40 hover:bg-white/70'
-                    }`}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${i === bannerIndex ? 'w-6 bg-white' : 'w-2 bg-white/40 hover:bg-white/70'
+                      }`}
                     aria-label={`Ir para banner ${i + 1}`}
                   />
                 ))}
@@ -655,11 +681,10 @@ export default function OverviewDashboard({
           <button
             key={tab.id}
             onClick={() => setAbaAtiva(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap cursor-pointer ${
-              abaAtiva === tab.id 
-                ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-900/10 dark:bg-blue-600 dark:shadow-blue-900/30' 
+            className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap cursor-pointer ${abaAtiva === tab.id
+                ? 'bg-[#1e3a8a] text-white shadow-md shadow-blue-900/10 dark:bg-blue-600 dark:shadow-blue-900/30'
                 : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100/50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800/80'
-            }`}
+              }`}
           >
             {tab.icon}
             <span>{tab.label}</span>
@@ -695,47 +720,47 @@ export default function OverviewDashboard({
       </div>
 
       {/* 4. CONTEÚDO DAS ABAS */}
-      
+
       {carregando ? (
         <div className="py-20 text-center animate-pulse text-slate-400 font-medium italic">
           Sincronizando estatísticas da igreja...
         </div>
       ) : (
         <div className="animate-in fade-in duration-300">
-          
+
           {/* ── ABA 1: VISÃO GERAL ── */}
           {abaAtiva === 'visao_geral' && (
             <div className="space-y-6">
               {/* StatCards para Desktop */}
               <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard 
-                  label="Total de Pessoas" 
-                  valor={totalPessoasAtivas} 
-                  detalhe="Membros Ativos (clique para ver)" 
+                <StatCard
+                  label="Total de Pessoas"
+                  valor={totalPessoasAtivas}
+                  detalhe="Membros Ativos (clique para ver)"
                   onClick={() => handleNavegarPessoas({})}
                   icone={<div className="p-2 rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-800/60"><Users className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div>}
                 />
-                <StatCard 
-                  label="Células" 
-                  valor={totalCelulas} 
-                  detalhe="Ativas (clique para ver)" 
+                <StatCard
+                  label="Células"
+                  valor={totalCelulas}
+                  detalhe="Ativas (clique para ver)"
                   onClick={() => onNavigate('celulas', 'todas')}
                   icone={<div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/60 dark:border-emerald-800/60"><Home className="w-6 h-6 text-emerald-600 dark:text-emerald-400" /></div>}
                 />
-                <StatCard 
-                  label="Novos Convertidos" 
-                  valor={novosConvertidosMes} 
-                  detalhe="Este Mês (clique para ver)" 
+                <StatCard
+                  label="Novos Convertidos"
+                  valor={novosConvertidosMes}
+                  detalhe="Este Mês (clique para ver)"
                   onClick={() => {
                     const mesAtual = meses[new Date().getMonth()];
                     handleNavegarPessoas({ mesConversao: mesAtual, novoConvertido: true });
                   }}
                   icone={<div className="p-2 rounded-xl bg-purple-50 border border-purple-100 dark:bg-purple-950/60 dark:border-purple-800/60"><Sparkles className="w-6 h-6 text-purple-600 dark:text-purple-400" /></div>}
                 />
-                <StatCard 
-                  label="Taxa de Batismo" 
-                  valor={`${taxaBatismo}%`} 
-                  detalhe={`${totalBatizados} batizados (clique para ver)`} 
+                <StatCard
+                  label="Taxa de Batismo"
+                  valor={`${taxaBatismo}%`}
+                  detalhe={`${totalBatizados} batizados (clique para ver)`}
                   onClick={() => handleNavegarPessoas({ batizado: 'sim', relatorioCampo: 'Batismo', relatorioValor: 'Batizado' })}
                   icone={<div className="p-2 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-950/60 dark:border-amber-800/60"><Award className="w-6 h-6 text-amber-600 dark:text-amber-400" /></div>}
                 />
@@ -782,11 +807,11 @@ export default function OverviewDashboard({
 
               {/* Gráficos da Visão Geral */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <CombinationCard 
-                  titulo="Novos convertidos" 
-                  dados={novosConvertidosTrend} 
-                  periodo={periodoConvertidos} 
-                  setPeriodo={setPeriodoConvertidos} 
+                <CombinationCard
+                  titulo="Novos convertidos"
+                  dados={novosConvertidosTrend}
+                  periodo={periodoConvertidos}
+                  setPeriodo={setPeriodoConvertidos}
                   onBarClick={(entry) => {
                     if (!entry || !entry.name) return;
                     if (periodoConvertidos === 'ano') {
@@ -803,10 +828,10 @@ export default function OverviewDashboard({
                     }
                   }}
                 />
-                <ColumnChart 
-                  titulo="Aniversariantes por mês" 
-                  dados={aniversariosDados} 
-                  hideLegend={true} 
+                <ColumnChart
+                  titulo="Aniversariantes por mês"
+                  dados={aniversariosDados}
+                  hideLegend={true}
                   onBarClick={(entry) => {
                     if (!entry || !entry.name) return;
                     handleNavegarPessoas({
@@ -819,12 +844,12 @@ export default function OverviewDashboard({
               </div>
 
               {/* Coluna da Direita: Sidebar Fixa no Desktop */}
-              <aside 
+              <aside
                 className="w-full lg:w-[276px] xl:w-[324px] shrink-0 space-y-6 lg:fixed lg:right-1 xl:right-5 lg:top-16 lg:bottom-6 lg:overflow-y-auto z-20 transition-all duration-300 scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 aria-label="Painéis laterais de aprovações e aniversariantes"
               >
-                <PainelAprovacoes pessoas={pessoas} onVerDetalhes={onVerMembro} onAprovado={() => {}} />
-                
+                <PainelAprovacoes pessoas={pessoas} onVerDetalhes={onVerMembro} onAprovado={() => { }} />
+
                 {/* Aniversariantes do Mês Estilizado */}
                 <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-4">
                   <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
@@ -842,8 +867,8 @@ export default function OverviewDashboard({
                   ) : (
                     <div className="space-y-2.5">
                       {aniversariantesMes.map((pessoa) => (
-                        <div 
-                          key={pessoa.id} 
+                        <div
+                          key={pessoa.id}
                           onClick={() => onVerMembro(pessoa.id)}
                           className="flex items-center justify-between p-2.5 rounded-xl border border-transparent hover:border-slate-100 dark:hover:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-all duration-200"
                         >
@@ -875,31 +900,31 @@ export default function OverviewDashboard({
             <div className="space-y-6">
               {/* StatCards de Células */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard 
-                  label="Total de Células" 
-                  valor={totalCelulas} 
-                  detalhe="Grupos Ativos (clique para ver)" 
+                <StatCard
+                  label="Total de Células"
+                  valor={totalCelulas}
+                  detalhe="Grupos Ativos (clique para ver)"
                   onClick={() => onNavigate('celulas', 'todas')}
                   icone={<div className="p-2 rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-800/60"><Home className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div>}
                 />
-                <StatCard 
-                  label="Reuniões Realizadas" 
-                  valor={totalReunioes} 
-                  detalhe="Relatórios Entregues (clique)" 
+                <StatCard
+                  label="Reuniões Realizadas"
+                  valor={totalReunioes}
+                  detalhe="Relatórios Entregues (clique)"
                   onClick={() => onNavigate('celulas', 'reunioes')}
                   icone={<div className="p-2 rounded-xl bg-purple-50 border border-purple-100 dark:bg-purple-950/60 dark:border-purple-800/60"><BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" /></div>}
                 />
-                <StatCard 
-                  label="Membros em Célula" 
-                  valor={membrosCelulaDados['Em Célula'] || 0} 
-                  detalhe="Integrados (clique para ver)" 
+                <StatCard
+                  label="Membros em Célula"
+                  valor={membrosCelulaDados['Em Célula'] || 0}
+                  detalhe="Integrados (clique para ver)"
                   onClick={() => handleNavegarPessoas({ temCelula: 'sim' })}
                   icone={<div className="p-2 rounded-xl bg-pink-50 border border-pink-100 dark:bg-pink-950/60 dark:border-pink-800/60"><Users className="w-6 h-6 text-pink-600 dark:text-pink-400" /></div>}
                 />
-                <StatCard 
-                  label="Ofertas Coletadas (Mês)" 
-                  valor={formatarBRL(ofertasCelulasMes)} 
-                  detalhe="Soma de Células (clique)" 
+                <StatCard
+                  label="Ofertas Coletadas (Mês)"
+                  valor={formatarBRL(ofertasCelulasMes)}
+                  detalhe="Soma de Células (clique)"
                   onClick={() => onNavigate('financeiro', 'dashboard')}
                   icone={<div className="p-2 rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-emerald-950/60 dark:border-emerald-800/60"><Coins className="w-6 h-6 text-emerald-600 dark:text-emerald-400" /></div>}
                 />
@@ -907,9 +932,9 @@ export default function OverviewDashboard({
 
               {/* Layout da Aba Células: Gráficos de Distribuição Interativos */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <DoughnutCard 
-                  titulo="Faixa etária das células" 
-                  dados={faixasCelulas} 
+                <DoughnutCard
+                  titulo="Faixa etária das células"
+                  dados={faixasCelulas}
                   onSliceClick={(slice) => {
                     if (!slice || !slice.nome) return;
                     handleNavegarPessoas({
@@ -919,9 +944,9 @@ export default function OverviewDashboard({
                     });
                   }}
                 />
-                <DoughnutCard 
-                  titulo="Integração em Células" 
-                  dados={membrosCelulaDados} 
+                <DoughnutCard
+                  titulo="Integração em Células"
+                  dados={membrosCelulaDados}
                   onSliceClick={(slice) => {
                     if (!slice || !slice.nome) return;
                     handleNavegarPessoas({
@@ -929,9 +954,9 @@ export default function OverviewDashboard({
                     });
                   }}
                 />
-                <DoughnutCard 
-                  titulo="Células por Zona" 
-                  dados={celulasPorZonaDados} 
+                <DoughnutCard
+                  titulo="Células por Zona"
+                  dados={celulasPorZonaDados}
                   onSliceClick={(slice) => {
                     if (!slice || !slice.nome) return;
                     const z = zonas.find(item => item.nome === slice.nome);
@@ -973,15 +998,14 @@ export default function OverviewDashboard({
                           const isNovo = isUsuarioPastor && !reunioesVistas.includes(String(relatorio.id));
 
                           return (
-                            <tr 
-                              key={relatorio.id} 
-                              className={`border-b border-slate-50 dark:border-slate-800/50 last:border-0 transition-colors ${
-                                isNovo 
-                                  ? 'bg-blue-50/30 dark:bg-blue-950/25 hover:bg-blue-50/50 dark:hover:bg-blue-950/45' 
+                            <tr
+                              key={relatorio.id}
+                              className={`border-b border-slate-50 dark:border-slate-800/50 last:border-0 transition-colors ${isNovo
+                                  ? 'bg-blue-50/30 dark:bg-blue-950/25 hover:bg-blue-50/50 dark:hover:bg-blue-950/45'
                                   : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/50'
-                              }`}
+                                }`}
                             >
-                              <td 
+                              <td
                                 onClick={() => handleNavegarPessoas({ celula: relatorio.celula_id, celulaNome: relatorio.celulas?.nome })}
                                 className="py-3 px-3 font-bold text-slate-800 dark:text-slate-200 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-2"
                                 title="Clique para filtrar pessoas desta célula"
@@ -1028,14 +1052,14 @@ export default function OverviewDashboard({
           {/* ── ABA 3: CRESCIMENTO & DEMOGRAFIA ── */}
           {abaAtiva === 'demografia' && (
             <div className="space-y-6">
-              
+
               {/* Gráficos Principais: Linha 1 */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
+
                 {/* 1. Zona de Moradia */}
-                <DoughnutCard 
-                  titulo="Distribuição por Zona" 
-                  dados={zonasDados} 
+                <DoughnutCard
+                  titulo="Distribuição por Zona"
+                  dados={zonasDados}
                   onSliceClick={(slice) => {
                     if (!slice || !slice.nome) return;
                     const z = zonas.find(item => item.nome === slice.nome);
@@ -1046,11 +1070,11 @@ export default function OverviewDashboard({
                     });
                   }}
                 />
-                
+
                 {/* 2. Faixa Etária dos Membros */}
-                <DoughnutCard 
-                  titulo="Faixa Etária (Membros)" 
-                  dados={faixasDados} 
+                <DoughnutCard
+                  titulo="Faixa Etária (Membros)"
+                  dados={faixasDados}
                   onSliceClick={(slice) => {
                     if (!slice || !slice.nome) return;
                     const f = faixasEtarias.find(item => item.curto === slice.nome || item.nome === slice.nome || item.id === slice.nome);
@@ -1071,7 +1095,7 @@ export default function OverviewDashboard({
                         <span>🔍</span> Filtrar pessoas
                       </span>
                     </div>
-                    
+
                     {/* Gênero */}
                     <div className="mt-5 space-y-4">
                       <div className="flex justify-between items-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -1079,21 +1103,21 @@ export default function OverviewDashboard({
                         <span className="text-[10px] text-slate-400 font-normal lowercase">(clique para filtrar)</span>
                       </div>
                       <div className="flex h-5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 p-1 border border-slate-200 dark:border-slate-700">
-                        <div 
+                        <div
                           onClick={() => handleNavegarPessoas({ genero: 'Masculino', relatorioCampo: 'Sexo', relatorioValor: 'Masculino' })}
-                          className="rounded-full bg-linear-to-r from-blue-400 to-blue-600 cursor-pointer hover:opacity-90 transition-all duration-300" 
-                          style={{ width: `${generoStats.pctHomens}%` }} 
+                          className="rounded-full bg-linear-to-r from-blue-400 to-blue-600 cursor-pointer hover:opacity-90 transition-all duration-300"
+                          style={{ width: `${generoStats.pctHomens}%` }}
                           title="Filtrar Homens"
                         />
-                        <div 
+                        <div
                           onClick={() => handleNavegarPessoas({ genero: 'Feminino', relatorioCampo: 'Sexo', relatorioValor: 'Feminino' })}
-                          className="rounded-full bg-linear-to-r from-rose-400 to-rose-600 cursor-pointer hover:opacity-90 transition-all duration-300 ml-1" 
-                          style={{ width: `${generoStats.pctMulheres}%` }} 
+                          className="rounded-full bg-linear-to-r from-rose-400 to-rose-600 cursor-pointer hover:opacity-90 transition-all duration-300 ml-1"
+                          style={{ width: `${generoStats.pctMulheres}%` }}
                           title="Filtrar Mulheres"
                         />
                       </div>
                       <div className="grid grid-cols-2 gap-4 text-center">
-                        <div 
+                        <div
                           onClick={() => handleNavegarPessoas({ genero: 'Masculino', relatorioCampo: 'Sexo', relatorioValor: 'Masculino' })}
                           className="p-3 bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-800/50 hover:border-blue-300 dark:hover:border-blue-600 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
                           title="Clique para ver os membros masculinos"
@@ -1101,7 +1125,7 @@ export default function OverviewDashboard({
                           <span className="block text-2xl font-black text-blue-700 dark:text-blue-400 group-hover:scale-105 transition-transform">{generoStats.homens}</span>
                           <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">Homens ({generoStats.pctHomens}%)</span>
                         </div>
-                        <div 
+                        <div
                           onClick={() => handleNavegarPessoas({ genero: 'Feminino', relatorioCampo: 'Sexo', relatorioValor: 'Feminino' })}
                           className="p-3 bg-rose-50/50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-800/50 hover:border-rose-300 dark:hover:border-rose-600 rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
                           title="Clique para ver os membros femininos"
@@ -1114,7 +1138,7 @@ export default function OverviewDashboard({
                   </div>
 
                   {/* Batismo de águas progresso */}
-                  <div 
+                  <div
                     onClick={() => handleNavegarPessoas({ batizado: 'sim', relatorioCampo: 'Batismo', relatorioValor: 'Batizado' })}
                     className="border-t border-slate-100 dark:border-slate-800 pt-5 mt-5 p-3 rounded-2xl hover:bg-amber-50/50 dark:hover:bg-amber-950/20 border border-transparent hover:border-amber-200 dark:hover:border-amber-800/60 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
                     title="Clique para ver os membros batizados nas águas"
@@ -1129,7 +1153,7 @@ export default function OverviewDashboard({
                       <span className="text-amber-600 dark:text-amber-400 font-extrabold">{taxaBatismo}%</span>
                     </div>
                     <div className="relative w-full h-3 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden border border-slate-200 dark:border-slate-700">
-                      <div 
+                      <div
                         className="absolute top-0 left-0 h-full bg-linear-to-r from-amber-400 to-amber-600 rounded-full transition-all duration-500"
                         style={{ width: `${taxaBatismo}%` }}
                       />
@@ -1143,9 +1167,9 @@ export default function OverviewDashboard({
 
               {/* Gráficos Demográficos: Linha 2 (Estado Civil, Cargos, Ministérios) */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <DoughnutCard 
-                  titulo="Estado Civil" 
-                  dados={estadosCivisDados} 
+                <DoughnutCard
+                  titulo="Estado Civil"
+                  dados={estadosCivisDados}
                   onSliceClick={(slice) => {
                     if (!slice || !slice.nome) return;
                     handleNavegarPessoas({
@@ -1155,9 +1179,9 @@ export default function OverviewDashboard({
                     });
                   }}
                 />
-                <ColumnChart 
-                  titulo="Cargos e Liderança" 
-                  dados={cargosDados} 
+                <ColumnChart
+                  titulo="Cargos e Liderança"
+                  dados={cargosDados}
                   hideLegend={true}
                   onBarClick={(entry) => {
                     if (!entry || !entry.name) return;
@@ -1168,9 +1192,9 @@ export default function OverviewDashboard({
                     });
                   }}
                 />
-                <ColumnChart 
-                  titulo="Campos de Atuação" 
-                  dados={atuacoesDados} 
+                <ColumnChart
+                  titulo="Campos de Atuação"
+                  dados={atuacoesDados}
                   hideLegend={true}
                   onBarClick={(entry) => {
                     if (!entry || !entry.name) return;
@@ -1210,36 +1234,36 @@ export default function OverviewDashboard({
                 <div className="space-y-6 border-slate-100">
                   {/* Stats Cards */}
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard 
-                      label="Receitas (Mês)" 
-                      valor={formatarBRL(financeData.receitasMes)} 
-                      detalhe="Entradas (clique para ver)" 
+                    <StatCard
+                      label="Receitas (Mês)"
+                      valor={formatarBRL(financeData.receitasMes)}
+                      detalhe="Entradas (clique para ver)"
                       onClick={() => onNavigate('financeiro', 'transacoes')}
                       icone={<div className="p-2 rounded-xl bg-blue-50 border border-blue-100 dark:bg-blue-950/60 dark:border-blue-800/60"><TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" /></div>}
                       className="flex-col"
                     />
-                    <StatCard 
-                      label="Despesas (Mês)" 
-                      valor={formatarBRL(financeData.despesasMes)} 
-                      detalhe="Saídas (clique para ver)" 
+                    <StatCard
+                      label="Despesas (Mês)"
+                      valor={formatarBRL(financeData.despesasMes)}
+                      detalhe="Saídas (clique para ver)"
                       onClick={() => onNavigate('financeiro', 'transacoes')}
                       icone={<div className="p-2 rounded-xl bg-rose-50 border border-rose-100 dark:bg-rose-950/60 dark:border-rose-800/60"><TrendingDown className="w-6 h-6 text-rose-600 dark:text-rose-400" /></div>}
                       className="flex-col"
                     />
-                    <StatCard 
-                      label="Resultado do Mês" 
-                      valor={formatarBRL(financeData.saldoMes)} 
-                      detalhe="Balanço mensal (clique)" 
+                    <StatCard
+                      label="Resultado do Mês"
+                      valor={formatarBRL(financeData.saldoMes)}
+                      detalhe="Balanço mensal (clique)"
                       onClick={() => onNavigate('financeiro', 'dashboard')}
                       icone={<div className={`p-2 rounded-xl border ${financeData.saldoMes >= 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-600 dark:bg-emerald-950/60 dark:border-emerald-800/60 dark:text-emerald-400' : 'bg-rose-50 border-rose-100 text-rose-600 dark:bg-rose-950/60 dark:border-rose-800/60 dark:text-rose-400'}`}>
                         {financeData.saldoMes >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
                       </div>}
                       className={`flex-col ${financeData.saldoMes >= 0 ? 'border-emerald-500/20' : 'border-rose-500/20'} animate-in fade-in duration-200`}
                     />
-                    <StatCard 
-                      label="Saldo Geral Caixa" 
-                      valor={formatarBRL(financeData.saldoTotal)} 
-                      detalhe="Disponível em Contas (clique)" 
+                    <StatCard
+                      label="Saldo Geral Caixa"
+                      valor={formatarBRL(financeData.saldoTotal)}
+                      detalhe="Disponível em Contas (clique)"
                       onClick={() => onNavigate('financeiro', 'dashboard')}
                       icone={<div className="p-2 rounded-xl bg-amber-50 border border-amber-100 dark:bg-amber-950/60 dark:border-amber-800/60"><Coins className="w-6 h-6 text-amber-600 dark:text-amber-400" /></div>}
                       className="flex-col"
@@ -1248,7 +1272,7 @@ export default function OverviewDashboard({
 
                   {/* Fluxo e Recentes */}
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
+
                     {/* Gráfico do Fluxo */}
                     <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between">
                       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 mb-4">
@@ -1264,50 +1288,50 @@ export default function OverviewDashboard({
                           <span>🔍</span> Ver transações
                         </button>
                       </div>
-                      
+
                       <div className="w-full h-80 min-w-0">
                         <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
-                          <ComposedChart 
-                            data={financeData.graficoData} 
+                          <ComposedChart
+                            data={financeData.graficoData}
                             style={{ outline: 'none', cursor: 'pointer' }}
                             onClick={() => onNavigate('financeiro', 'transacoes')}
                           >
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="name" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                             <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                            <Tooltip 
-                              contentStyle={{ 
-                                background: 'rgba(255, 255, 255, 0.95)', 
-                                border: '1px solid #e2e8f0', 
+                            <Tooltip
+                              contentStyle={{
+                                background: 'rgba(255, 255, 255, 0.95)',
+                                border: '1px solid #e2e8f0',
                                 borderRadius: '12px',
                                 boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05)',
                                 fontSize: '11px',
                                 fontFamily: "'Roboto', sans-serif"
-                              }} 
+                              }}
                             />
                             <Legend wrapperStyle={{ fontSize: 10, pt: 10 }} />
-                            <Bar 
-                              dataKey="Receitas" 
-                              fill="#3b82f6" 
-                              radius={[4, 4, 0, 0]} 
+                            <Bar
+                              dataKey="Receitas"
+                              fill="#3b82f6"
+                              radius={[4, 4, 0, 0]}
                               barSize={20}
                               cursor="pointer"
                               onClick={() => onNavigate('financeiro', 'transacoes')}
                             />
-                            <Bar 
-                              dataKey="Despesas" 
-                              fill="#f43f5e" 
-                              radius={[4, 4, 0, 0]} 
-                              barSize={20} 
+                            <Bar
+                              dataKey="Despesas"
+                              fill="#f43f5e"
+                              radius={[4, 4, 0, 0]}
+                              barSize={20}
                               cursor="pointer"
                               onClick={() => onNavigate('financeiro', 'transacoes')}
                             />
-                            <Line 
-                              type="monotone" 
-                              dataKey="Saldo" 
-                              stroke="#eab308" 
-                              strokeWidth={3} 
-                              dot={{ r: 3, fill: '#eab308' }} 
+                            <Line
+                              type="monotone"
+                              dataKey="Saldo"
+                              stroke="#eab308"
+                              strokeWidth={3}
+                              dot={{ r: 3, fill: '#eab308' }}
                             />
                           </ComposedChart>
                         </ResponsiveContainer>
@@ -1326,8 +1350,8 @@ export default function OverviewDashboard({
                       ) : (
                         <div className="space-y-3">
                           {financeData.transacoesRecentes.map((t) => (
-                            <div 
-                              key={t.id} 
+                            <div
+                              key={t.id}
                               onClick={() => onNavigate('financeiro', 'transacoes')}
                               className="flex justify-between items-start p-2.5 rounded-xl border border-slate-50 dark:border-slate-800 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
                               title="Ver transação no Financeiro"
@@ -1365,7 +1389,7 @@ export default function OverviewDashboard({
 
 function CardMobileIndicador({ label, valor, detalhe, icon: Icon, colorBg = 'bg-blue-600', onClick = null }) {
   return (
-    <div 
+    <div
       onClick={onClick}
       className={`p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xs flex items-center gap-5 text-slate-850 animate-in fade-in slide-in-from-top-1 duration-300 ${onClick ? 'cursor-pointer active:scale-95 transition-all' : ''}`}
     >

@@ -12,6 +12,8 @@ import PedidoOracao from './PedidoOracao';
 import MuralOracao from './MuralOracao';
 import FormularioVisitante from './FormularioVisitante';
 import RepertorioLouvor from './RepertorioLouvor';
+import GeradorDocumentos from './GeradorDocumentos';
+import GeradorCertificados from './GeradorCertificados';
 
 // Lista única de utilitários — usada tanto na grade da "Visão Geral"
 // quanto no painel lateral fixo (telas grandes).
@@ -80,6 +82,22 @@ function getUtilitarios({ membroLogado, temVinculoEscala }) {
       icon: MenuIcons['u-perfil-comportamental'],
       gradient: 'from-blue-600 via-indigo-600 to-violet-600',
       show: true,
+    },
+    {
+      id: 'gerador-documentos',
+      label: 'Gerador de Documentos',
+      desc: 'Gere ofícios timbrados, atas, declarações e termos de casamento religioso em PDF.',
+      icon: MenuIcons['u-gerador-documentos'],
+      gradient: 'from-slate-700 via-blue-700 to-indigo-700',
+      show: ['admin', 'pastor', 'secretaria', 'secretario'].includes((membroLogado?.permissao || '').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '')),
+    },
+    {
+      id: 'certificados',
+      label: 'Certificados',
+      desc: 'Emita certificados oficiais da EDB (Ouro), Batismo e Apresentação de Crianças.',
+      icon: MenuIcons['u-certificados'],
+      gradient: 'from-purple-700 via-violet-600 to-amber-500',
+      show: ['admin', 'pastor', 'secretaria', 'secretario'].includes((membroLogado?.permissao || '').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '')),
     },
     {
       id: 'carne-generator',
@@ -231,6 +249,21 @@ export default function ModuloUtilitarios(props) {
     conteudo = <PedidoOracao usuarioLogado={usuarioLogado} />;
   } else if (submenu === 'mural-oracao') {
     conteudo = <MuralOracao />;
+  } else if (submenu === 'gerador-documentos') {
+    conteudo = (
+      <GeradorDocumentos
+        pessoas={props.pessoas}
+        membroLogado={membroLogado}
+        onVoltar={() => onNavigate('resumo')}
+      />
+    );
+  } else if (submenu === 'certificados') {
+    conteudo = (
+      <GeradorCertificados
+        pessoas={props.pessoas}
+        onVoltar={() => onNavigate('resumo')}
+      />
+    );
   } else if (submenu === 'visitante-recepcao') {
     conteudo = <FormularioVisitante onVoltar={() => onNavigate('resumo')} />;
   }
@@ -242,7 +275,7 @@ export default function ModuloUtilitarios(props) {
       <div className="flex-1 min-w-0">{conteudo}</div>
 
       {/* Painel lateral fixo de atalhos — apenas em telas grandes */}
-      <aside className={`${['escalas', 'repertorio'].includes(submenu) ? 'hidden' : 'hidden xl:block'} w-64 shrink-0 sticky top-6`}>
+      <aside className={`${['escalas', 'repertorio', 'gerador-documentos', 'certificados'].includes(submenu) ? 'hidden' : 'hidden xl:block'} w-64 shrink-0 sticky top-6`}>
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-4">
           <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 px-2 mb-2">
             Utilitários

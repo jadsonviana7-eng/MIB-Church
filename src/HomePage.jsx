@@ -4,10 +4,11 @@ import { Card, CardHeader, Avatar, DoughnutCard, CombinationCard, ColumnChart, S
 import { MenuIcons } from './icons'; 
 import { meses, faixasEtarias, faixaDaIdade, agrupamentoPor, nomeZona, extrairDataInfo, ehAniversarianteHoje, gerarLinkWhatsappAniversario } from './churchUtils';
 import PainelAprovacoes from './PainelAprovacoes';
+import CarteirinhaMembroModal from './CarteirinhaMembroModal';
 import { 
   Users, Home, Flame, Calendar, DollarSign, Award, Sparkles,
   ChevronRight, ChevronLeft, Smile, MapPin, TrendingUp, BookOpen, AlertCircle,
-  Coins, Zap, Plus, ShieldAlert, TrendingDown, Activity, Cake, MessageCircle
+  Coins, Zap, Plus, ShieldAlert, TrendingDown, Activity, Cake, MessageCircle, CreditCard
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -396,35 +397,59 @@ export default function HomePage({
 
   const nomeUsuario = membroLogado?.nome || 'Usuário';
   const cargoUsuario = membroLogado?.tipo_membro || 'Membro';
+  const [carteirinhaAberta, setCarteirinhaAberta] = useState(false);
+  const membroCompletoLogado = useMemo(
+    () => pessoas.find((p) => String(p.id) === String(membroLogado?.id)) || membroLogado || null,
+    [pessoas, membroLogado]
+  );
 
   return (
     <div className="space-y-5 pb-6">
       
       {/* 1. CABEÇALHO MOBILE PREMIUM */}
-      <div className="flex items-center justify-between p-4 bg-linear-to-r from-[#202046] to-[#2a2a6b] text-white rounded-b-2xl rounded-t-none shadow-md gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          {membroLogado?.foto_url ? (
-            <img 
-              src={membroLogado.foto_url} 
-              alt={nomeUsuario} 
-              className="w-11 h-11 rounded-xl object-cover ring-2 ring-white/15 shrink-0" 
-            />
-          ) : (
-            <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center font-bold text-blue-200 ring-2 ring-white/15 shrink-0">
-              {nomeUsuario.charAt(0).toUpperCase()}
+      <div className="p-4 bg-linear-to-r from-[#202046] to-[#2a2a6b] dark:from-[#0f2454] dark:via-[#1d4ed8] dark:to-[#0284c7] dark:border dark:border-t-0 dark:border-blue-400/30 text-white rounded-b-2xl rounded-t-none shadow-md dark:shadow-[0_8px_24px_-6px_rgba(37,99,235,0.4)] space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            {membroLogado?.foto_url ? (
+              <img 
+                src={membroLogado.foto_url} 
+                alt={nomeUsuario} 
+                className="w-11 h-11 rounded-xl object-cover ring-2 ring-white/15 dark:ring-cyan-300/40 shrink-0" 
+              />
+            ) : (
+              <div className="w-11 h-11 rounded-xl bg-white/10 dark:bg-white/15 flex items-center justify-center font-bold text-blue-200 dark:text-white ring-2 ring-white/15 dark:ring-cyan-300/40 shrink-0">
+                {nomeUsuario.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0">
+              <span className="block text-[9px] text-slate-300 dark:text-cyan-200 font-bold uppercase tracking-wider">Bem-vindo</span>
+              <h2 className="text-sm font-extrabold truncate text-blue-50 dark:text-white" title={nomeUsuario}>{nomeUsuario}</h2>
             </div>
-          )}
-          <div className="min-w-0">
-            <span className="block text-[9px] text-slate-300 font-bold uppercase tracking-wider">Bem-vindo</span>
-            <h2 className="text-sm font-extrabold truncate text-blue-50" title={nomeUsuario}>{nomeUsuario}</h2>
           </div>
-        </div>
-        <div className="shrink-0">
-          <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/25 text-blue-200 border border-blue-500/30">
+          <span className="shrink-0 inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/25 dark:bg-white/15 text-blue-200 dark:text-cyan-100 border border-blue-500/30 dark:border-cyan-200/35">
             {cargoUsuario}
           </span>
         </div>
+
+        {membroCompletoLogado && (
+          <button
+            type="button"
+            onClick={() => setCarteirinhaAberta(true)}
+            className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-extrabold active:scale-[0.98] transition cursor-pointer shadow-xs"
+            title="Abrir minha carteirinha de membro"
+          >
+            <CreditCard size={15} />
+            <span>Minha Carteirinha Digital</span>
+          </button>
+        )}
       </div>
+
+      {carteirinhaAberta && membroCompletoLogado && (
+        <CarteirinhaMembroModal
+          pessoa={membroCompletoLogado}
+          onFechar={() => setCarteirinhaAberta(false)}
+        />
+      )}
 
       {/* 2. MENU DE ABAS MOBILE (TABS NAVIGATION - GRID SEGMENTADO FIXO) */}
       <div className={`grid ${podeVerFinanceiro ? 'grid-cols-4' : 'grid-cols-3'} bg-white/80 dark:bg-slate-900/90 backdrop-blur-md p-1 rounded-xl shadow-xs border border-slate-200/80 dark:border-slate-800 gap-1 w-full`}>

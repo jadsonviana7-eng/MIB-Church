@@ -2,10 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabaseClient';
 import { Card, PageHeader, Avatar } from './ui';
 import ModalLancarReuniao from './ModalLancarReuniao';
+import CarteirinhaMembroModal from './CarteirinhaMembroModal';
 import {
   Calendar, Gift, Wallet, Music, Heart,
   ArrowRight, Sparkles, ChevronRight, CheckCircle2, 
-  ShieldAlert, Users, MessageSquare, Plus, UserPlus, BookOpen, ExternalLink
+  ShieldAlert, Users, MessageSquare, Plus, UserPlus, BookOpen, ExternalLink, CreditCard
 } from 'lucide-react';
 import { normalizarTexto } from './churchUtils';
 import { buscarDuplicidadeBanco, interpretarErroDuplicidadeBanco } from './duplicateUtils';
@@ -339,6 +340,12 @@ export default function DashboardLider({
     return `https://wa.me/55${clean}`;
   };
 
+  const [carteirinhaAberta, setCarteirinhaAberta] = useState(false);
+  const membroCompletoLider = useMemo(
+    () => (pessoas || []).find((p) => String(p.id) === String(membroLogado?.id)) || membroLogado || null,
+    [pessoas, membroLogado]
+  );
+
   if (!minhaCelula) {
     return (
       <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-slate-100 shadow-sm max-w-lg mx-auto text-center space-y-4">
@@ -365,11 +372,11 @@ export default function DashboardLider({
       {/* HEADER DE BOAS VINDAS E AVISOS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Banner de Boas Vindas */}
-        <div className="lg:col-span-2 relative rounded-b-3xl rounded-t-none overflow-hidden bg-gradient-to-br from-[#1e3a8a] via-[#2563eb] to-[#3b82f6] text-white p-6 md:p-8 shadow-xl flex items-center justify-between">
-          <div className="absolute top-0 right-0 p-8 opacity-10">
+        <div className="lg:col-span-2 relative rounded-b-3xl rounded-t-none overflow-hidden bg-gradient-to-br from-[#1e3a8a] via-[#2563eb] to-[#3b82f6] dark:from-[#0f2454] dark:via-[#1d4ed8] dark:to-[#0284c7] text-white p-5 sm:p-6 md:p-8 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
             <Sparkles size={120} />
           </div>
-          <div className="relative z-10 flex items-center gap-5">
+          <div className="relative z-10 flex items-center gap-4 sm:gap-5">
             <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white/20 overflow-hidden shadow-lg shrink-0">
               {membroLogado?.foto_url ? (
                 <img src={membroLogado.foto_url} alt={membroLogado.nome} className="w-full h-full object-cover" />
@@ -379,19 +386,36 @@ export default function DashboardLider({
                 </div>
               )}
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-blue-100 text-xs font-bold uppercase tracking-wider mb-1">
                 Painel da Liderança
               </p>
               <h2 className="text-xl md:text-2xl font-black tracking-tight">
                 Líder da Célula {minhaCelula.nome}
               </h2>
-              <p className="text-blue-100/80 text-[11px] font-medium mt-1">
+              <p className="text-blue-100/80 text-[11px] font-medium mt-1 truncate">
                 {membroLogado.nome}
               </p>
             </div>
           </div>
+          {membroCompletoLider && (
+            <button
+              type="button"
+              onClick={() => setCarteirinhaAberta(true)}
+              className="relative z-10 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/25 text-white text-xs font-extrabold shadow-sm transition active:scale-95 cursor-pointer shrink-0"
+            >
+              <CreditCard size={16} />
+              <span>Minha Carteirinha</span>
+            </button>
+          )}
         </div>
+
+        {carteirinhaAberta && membroCompletoLider && (
+          <CarteirinhaMembroModal
+            pessoa={membroCompletoLider}
+            onFechar={() => setCarteirinhaAberta(false)}
+          />
+        )}
 
         {/* Mural de Avisos Mini */}
         <div className="bg-white rounded-3xl border border-slate-100 p-4 shadow-sm relative flex flex-col justify-center">

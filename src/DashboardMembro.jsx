@@ -3,8 +3,9 @@ import { supabase } from './supabaseClient';
 import { Card, PageHeader, Avatar } from './ui';
 import {
   Calendar, Gift, Wallet, Music, Heart,
-  ArrowRight, Sparkles, ChevronRight, CheckCircle2, ShieldAlert
+  ArrowRight, Sparkles, ChevronRight, CheckCircle2, ShieldAlert, CreditCard
 } from 'lucide-react';
+import CarteirinhaMembroModal from './CarteirinhaMembroModal';
 import { normalizarTexto } from './churchUtils';
 
 const CARGOS_ESCALA = {
@@ -22,6 +23,7 @@ export default function DashboardMembro({ membroLogado, onNavigate, onVerPerfil 
   const [ultimasContribuicoes, setUltimasContribuicoes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [carteirinhaAberta, setCarteirinhaAberta] = useState(false);
 
   const handleResponderEscala = async (escalaId, novoStatus) => {
     try {
@@ -164,11 +166,11 @@ export default function DashboardMembro({ membroLogado, onNavigate, onVerPerfil 
       {/* HEADER DE BOAS VINDAS E AVISOS */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Banner de Boas Vindas */}
-        <div className="lg:col-span-2 relative rounded-b-3xl rounded-t-none overflow-hidden bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#4338ca] text-white p-6 md:p-8 shadow-xl flex items-center justify-between">
-          <div className="absolute top-0 right-0 p-8 opacity-10">
+        <div className="lg:col-span-2 relative rounded-b-3xl rounded-t-none overflow-hidden bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#4338ca] dark:from-[#0f2454] dark:via-[#1d4ed8] dark:to-[#0284c7] text-white p-5 sm:p-6 md:p-8 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
             <Sparkles size={120} />
           </div>
-          <div className="relative z-10 flex items-center gap-5">
+          <div className="relative z-10 flex items-center gap-4 sm:gap-5">
             <div className="w-16 h-16 md:w-20 md:h-20 rounded-full border-4 border-white/20 overflow-hidden shadow-lg shrink-0">
               {membroLogado?.foto_url ? (
                 <img src={membroLogado.foto_url} alt={membroLogado.nome} className="w-full h-full object-cover" />
@@ -178,16 +180,33 @@ export default function DashboardMembro({ membroLogado, onNavigate, onVerPerfil 
                 </div>
               )}
             </div>
-            <div>
-              <p className="text-indigo-200 text-sm font-bold uppercase tracking-wider mb-1">
+            <div className="min-w-0">
+              <p className="text-indigo-200 dark:text-cyan-200 text-xs sm:text-sm font-bold uppercase tracking-wider mb-1">
                 Bem-vindo(a) à sua igreja,
               </p>
-              <h2 className="text-2xl md:text-3xl font-black tracking-tight">
+              <h2 className="text-2xl md:text-3xl font-black tracking-tight truncate">
                 {primeiroNome(membroLogado?.nome)}!
               </h2>
             </div>
           </div>
+          {membroLogado && (
+            <button
+              type="button"
+              onClick={() => setCarteirinhaAberta(true)}
+              className="relative z-10 w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/25 text-white text-xs font-extrabold shadow-sm transition active:scale-95 cursor-pointer shrink-0"
+            >
+              <CreditCard size={16} />
+              <span>Minha Carteirinha</span>
+            </button>
+          )}
         </div>
+
+        {carteirinhaAberta && membroLogado && (
+          <CarteirinhaMembroModal
+            pessoa={membroLogado}
+            onFechar={() => setCarteirinhaAberta(false)}
+          />
+        )}
 
         {/* Mural de Avisos Mini */}
         <div className="bg-white rounded-3xl border border-slate-100 p-4 shadow-sm relative flex flex-col justify-center">

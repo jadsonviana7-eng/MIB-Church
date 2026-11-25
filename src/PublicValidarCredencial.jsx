@@ -229,7 +229,7 @@ export default function PublicValidarCredencial() {
                 </div>
                 <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                   <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1">
-                    <Calendar size={10} /> Filiado desde
+                    <Calendar size={10} /> Batizado em
                   </span>
                   <span className="text-sm font-black text-slate-800">{dados.filiadoDesde}</span>
                 </div>

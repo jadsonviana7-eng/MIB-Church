@@ -12,6 +12,7 @@ import {
   ArrowRight, User, Clock, FileText, Database, ShieldCheck, Filter, LayoutGrid, List, ChevronLeft, Award
 } from 'lucide-react';
 import { aplicarTema } from './themeUtils';
+import EditorCarteirinhaConfig from './EditorCarteirinhaConfig';
 import { isBadgingSupported, getBadgePermissionStatus, requestBadgePermission, setAppBadge, clearAppBadge, isStandalone, syncAndroidNotificationBadge } from './badgeUtils';
 import { 
   formatarDataHoraAuditoria, 
@@ -584,6 +585,15 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
       icon: Palette,
       corIcone: 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-200/70 dark:border-rose-800/60',
       corBordaHover: 'hover:border-rose-300 dark:hover:border-rose-600/70',
+      badge: null,
+    },
+    {
+      id: 'carteirinha',
+      label: 'Carteirinha',
+      desc: 'Editor visual de layout e fontes',
+      icon: CreditCard,
+      corIcone: 'bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border-sky-200/70 dark:border-sky-800/60',
+      corBordaHover: 'hover:border-sky-300 dark:hover:border-sky-600/70',
       badge: null,
     },
     ...(eAdminOuPastor
@@ -2020,6 +2030,21 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
                 </div>
               )}
             </Card>
+          )}
+
+          {/* ── ABA: EDITOR VISUAL DA CARTEIRINHA ── */}
+          {abaAtiva === 'carteirinha' && (
+            <EditorCarteirinhaConfig
+              dadosIgreja={{
+                nome_igreja: nomeIgreja,
+                cnpj,
+                telefone,
+                cidade,
+                estado,
+                pastor_responsavel: pastorResponsavel,
+              }}
+              membroLogado={membroLogado}
+            />
           )}
 
         </div>

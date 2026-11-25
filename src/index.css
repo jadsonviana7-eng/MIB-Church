@@ -1,5 +1,5 @@
-/* Fontes gratuitas via Google Fonts: Outfit para títulos e Inter para UI/texto. */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap');
+/* Fontes gratuitas via Google Fonts: Outfit para títulos, Inter para UI/texto e fontes de certificados. */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=David+Libre:wght@400;500;700&family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -42,6 +42,150 @@ body, .font-sans, html, #root, table, thead, tbody, tr, td, p, span, a, button, 
 h1, h2, h3, h4, h5, h6, th, .font-bold, .font-black, h1 *, h2 *, h3 *, h4 *, h5 *, h6 *, th *, .font-bold *, .font-black * {
   font-family: var(--font-heading) !important;
   font-weight: 700 !important;
+}
+
+/* Fontes locais oficiais da igreja para Certificados (public/fontes) */
+@font-face {
+  font-family: 'Bebas Neue Rounded';
+  src: url('/fontes/BebasNeueRounded-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Abraham';
+  src: url('/fontes/Abraham.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Anisha Free';
+  src: url('/fontes/Anisha%20Free.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Antro Vectra';
+  src: url('/fontes/Antro_Vectra.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Antro Vectra Bolder';
+  src: url('/fontes/Antro_Vectra_Bolder.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Ants Valley';
+  src: url('/fontes/Ants%20Valley%20-%20Personal%20Use.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Aunt Bertha NF';
+  src: url('/fontes/Aunt%20Bertha%20NF.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Aurona';
+  src: url('/fontes/Aurona.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Dosis';
+  src: url('/fontes/Dosis-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Kreon';
+  src: url('/fontes/kreon-regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-david-libre,
+.font-david-libre * {
+  font-family: 'David Libre', Georgia, serif !important;
+}
+
+.font-bebas-neue,
+.font-bebas-neue * {
+  font-family: 'Bebas Neue Rounded', 'Bebas Neue', sans-serif !important;
+  font-weight: 400 !important;
+}
+
+.font-cert-playfair,
+.font-cert-playfair * {
+  font-family: 'Playfair Display', Georgia, serif !important;
+}
+
+.font-cert-vibes,
+.font-cert-vibes * {
+  font-family: 'Great Vibes', 'Brush Script MT', Georgia, serif !important;
+  font-weight: 400 !important;
+}
+
+.font-cert-inter,
+.font-cert-inter * {
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif !important;
+}
+
+.font-cert-abraham,
+.font-cert-abraham * {
+  font-family: 'Abraham', Georgia, serif !important;
+}
+
+.font-cert-anisha,
+.font-cert-anisha * {
+  font-family: 'Anisha Free', Georgia, serif !important;
+}
+
+.font-cert-antro-vectra,
+.font-cert-antro-vectra * {
+  font-family: 'Antro Vectra', Georgia, serif !important;
+}
+
+.font-cert-antro-vectra-bolder,
+.font-cert-antro-vectra-bolder * {
+  font-family: 'Antro Vectra Bolder', Georgia, serif !important;
+}
+
+.font-cert-ants-valley,
+.font-cert-ants-valley * {
+  font-family: 'Ants Valley', Georgia, serif !important;
+}
+
+.font-cert-aunt-bertha,
+.font-cert-aunt-bertha * {
+  font-family: 'Aunt Bertha NF', Georgia, serif !important;
+}
+
+.font-cert-aurona,
+.font-cert-aurona * {
+  font-family: 'Aurona', Georgia, serif !important;
+}
+
+.font-cert-dosis,
+.font-cert-dosis * {
+  font-family: 'Dosis', 'Segoe UI', Arial, sans-serif !important;
+}
+
+.font-cert-kreon,
+.font-cert-kreon * {
+  font-family: 'Kreon', Georgia, serif !important;
 }
 
 body {

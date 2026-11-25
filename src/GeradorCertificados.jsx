@@ -1,6 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from './supabaseClient';
 import { Card, PageHeader } from './ui';
+import PainelAjusteLayoutCertificado from './PainelAjusteLayoutCertificado';
+import {
+  STORAGE_CERT_LAYOUTS_KEY,
+  PT_TO_CQW,
+  getDefaultLayout,
+  mesclarLayout,
+  getFonteInfo,
+  estiloTextoPreview,
+  estiloTextoPrint,
+  gerarFontFacesPrintCss,
+} from './certificadoLayoutConfig';
 import {
   Award,
   Droplets,
@@ -18,10 +29,12 @@ import {
   X,
   Image as ImageIcon,
   RotateCcw,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 const STORAGE_CERT_MODELOS_KEY = 'mib_cert_modelos_custom_v1';
 const STORAGE_CERT_FUNDOS_KEY = 'mib_cert_fundos_override_v1';
+const STORAGE_CERT_ELEMENTOS_IMG_KEY = 'mib_cert_elementos_img_v1';
 
 function lerImagemComCompressao(file) {
   return new Promise((resolve, reject) => {
@@ -73,6 +86,50 @@ function dataParaExtenso(isoDate) {
   return `${m[3]} de ${mes} de ${m[1]}`;
 }
 
+const PREPOSICOES_NOME = new Set(['da', 'de', 'do', 'das', 'dos', 'e']);
+
+function abreviarNomeMeio(nome, maxChars = 26) {
+  const limpo = String(nome || '').trim().replace(/\s+/g, ' ');
+  if (!limpo || limpo.length <= maxChars) return limpo;
+  const partes = limpo.split(' ');
+  if (partes.length <= 2) return limpo;
+
+  const resultado = [...partes];
+  for (let i = 1; i < resultado.length - 1; i++) {
+    if (resultado.join(' ').length <= maxChars) break;
+    const palavra = resultado[i];
+    if (PREPOSICOES_NOME.has(palavra.toLowerCase()) || palavra.length <= 2) continue;
+    resultado[i] = `${palavra[0].toUpperCase()}.`;
+  }
+  return resultado.join(' ');
+}
+
+function formatarVersaleteHtml(texto, escFn) {
+  return Array.from(String(texto || ''))
+    .map((ch) => {
+      const ehMinuscula = ch !== ch.toUpperCase() && ch === ch.toLowerCase();
+      if (ehMinuscula) {
+        return `<span style="font-size:0.78em;">${escFn(ch.toUpperCase())}</span>`;
+      }
+      return escFn(ch);
+    })
+    .join('');
+}
+
+function renderVersaleteJsx(texto, fontClass = 'font-bebas-neue') {
+  return Array.from(String(texto || '')).map((ch, idx) => {
+    const ehMinuscula = ch !== ch.toUpperCase() && ch === ch.toLowerCase();
+    if (ehMinuscula) {
+      return (
+        <span key={idx} className={fontClass} style={{ fontSize: '0.78em' }}>
+          {ch.toUpperCase()}
+        </span>
+      );
+    }
+    return <React.Fragment key={idx}>{ch}</React.Fragment>;
+  });
+}
+
 const MODELOS_CERTIFICADO = [
   {
     id: 'edb-ouro',
@@ -107,6 +164,12 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
   const [abaMobile, setAbaMobile] = useState('editor'); // 'editor' | 'preview'
   const [membroSelecionadoId, setMembroSelecionadoId] = useState('');
   const [incluirAssinatura, setIncluirAssinatura] = useState(true);
+  const [abreviarNomesLongos, setAbreviarNomesLongos] = useState(true);
+
+  const formatarNomeExibicao = (nome, fallback) => {
+    const base = String(nome || '').trim() || fallback;
+    return abreviarNomesLongos ? abreviarNomeMeio(base, 26) : base;
+  };
 
   // Planos de fundo personalizados (PNG/JPG) para os certificados já existentes
   const [fundosOverride, setFundosOverride] = useState(() => {
@@ -117,6 +180,30 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
       return {};
     }
   });
+
+  // Editor manual de layout (arrastar e soltar + ajuste fino por elemento)
+  const [modoLayout, setModoLayout] = useState(false);
+  const [elementoSelecionadoId, setElementoSelecionadoId] = useState('nome');
+  const [arrastando, setArrastando] = useState(false);
+  const [layoutsSalvos, setLayoutsSalvos] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_CERT_LAYOUTS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  // Elementos de imagem extras (PNG/JPG: assinaturas, selos, logotipos) inseridos pelo usuário
+  const [elementosImgSalvos, setElementosImgSalvos] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_CERT_ELEMENTOS_IMG_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  const previewSheetRef = useRef(null);
+  const dragStateRef = useRef(null);
 
   // Modelos pré-prontos personalizados criados pelo usuário
   const [modelosCustom, setModelosCustom] = useState(() => {
@@ -235,6 +322,232 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
     () => modelosCustom.find((m) => m.id === modeloAtivo) || null,
     [modelosCustom, modeloAtivo]
   );
+
+  const layoutPadrao = useMemo(
+    () => getDefaultLayout(modeloAtivo, modeloCustomAtivo),
+    [modeloAtivo, modeloCustomAtivo]
+  );
+
+  const elementosImgAtivos = useMemo(
+    () => elementosImgSalvos[modeloAtivo] || [],
+    [elementosImgSalvos, modeloAtivo]
+  );
+
+  const layoutAtivo = useMemo(() => {
+    const base = mesclarLayout(layoutPadrao, layoutsSalvos[modeloAtivo]);
+    for (const imgEl of elementosImgAtivos) {
+      base[imgEl.id] = imgEl;
+    }
+    return base;
+  }, [layoutPadrao, layoutsSalvos, modeloAtivo, elementosImgAtivos]);
+
+  const possuiLayoutPersonalizado = Boolean(layoutsSalvos[modeloAtivo]) || elementosImgAtivos.length > 0;
+
+  const atualizarElementoLayout = (elId, patch) => {
+    if (String(elId).startsWith('img-extra-')) {
+      setElementosImgSalvos((prev) => {
+        const listaAtual = prev[modeloAtivo] || [];
+        const novaLista = listaAtual.map((item) =>
+          item.id === elId ? { ...item, ...patch } : item
+        );
+        const proximo = { ...prev, [modeloAtivo]: novaLista };
+        try {
+          localStorage.setItem(STORAGE_CERT_ELEMENTOS_IMG_KEY, JSON.stringify(proximo));
+        } catch {
+          // ignora
+        }
+        return proximo;
+      });
+      return;
+    }
+    setLayoutsSalvos((prev) => {
+      const atualModelo = prev[modeloAtivo] || {};
+      const baseEl = layoutPadrao[elId] || {};
+      const novoEl = { ...baseEl, ...(atualModelo[elId] || {}), ...patch };
+      const proximo = {
+        ...prev,
+        [modeloAtivo]: {
+          ...atualModelo,
+          [elId]: novoEl,
+        },
+      };
+      try {
+        localStorage.setItem(STORAGE_CERT_LAYOUTS_KEY, JSON.stringify(proximo));
+      } catch {
+        // ignora
+      }
+      return proximo;
+    });
+  };
+
+  const handleAdicionarImagemExtra = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const dataUrl = await lerImagemComCompressao(file);
+      const nomeLimpo = file.name.replace(/\.[^.]+$/, '').slice(0, 20) || 'Imagem';
+      const novoEl = {
+        id: `img-extra-${Date.now()}`,
+        label: `Img: ${nomeLimpo}`,
+        src: dataUrl,
+        x: 40,
+        y: 62,
+        w: 18,
+        h: 12,
+        isImage: true,
+        isExtraImage: true,
+        hidden: false,
+      };
+      setElementosImgSalvos((prev) => {
+        const listaAtual = prev[modeloAtivo] || [];
+        const proximo = { ...prev, [modeloAtivo]: [...listaAtual, novoEl] };
+        try {
+          localStorage.setItem(STORAGE_CERT_ELEMENTOS_IMG_KEY, JSON.stringify(proximo));
+        } catch {
+          window.alert('A imagem excede o limite do armazenamento local. Tente um arquivo PNG/JPG mais leve.');
+          return prev;
+        }
+        return proximo;
+      });
+      setModoLayout(true);
+      setAbaMobile('preview');
+      setElementoSelecionadoId(novoEl.id);
+    } catch {
+      window.alert('Não foi possível carregar a imagem selecionada.');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoverImagemExtra = (elId) => {
+    setElementosImgSalvos((prev) => {
+      const listaAtual = prev[modeloAtivo] || [];
+      const proximo = { ...prev, [modeloAtivo]: listaAtual.filter((item) => item.id !== elId) };
+      try {
+        localStorage.setItem(STORAGE_CERT_ELEMENTOS_IMG_KEY, JSON.stringify(proximo));
+      } catch {
+        // ignora
+      }
+      return proximo;
+    });
+    if (elementoSelecionadoId === elId) {
+      setElementoSelecionadoId('nome');
+    }
+  };
+
+  const restaurarLayoutAtivo = () => {
+    setLayoutsSalvos((prev) => {
+      const proximo = { ...prev };
+      delete proximo[modeloAtivo];
+      try {
+        localStorage.setItem(STORAGE_CERT_LAYOUTS_KEY, JSON.stringify(proximo));
+      } catch {
+        // ignora
+      }
+      return proximo;
+    });
+  };
+
+  const iniciarArrasteElemento = (e, elId) => {
+    if (!modoLayout) return;
+    e.stopPropagation();
+    e.preventDefault();
+    setElementoSelecionadoId(elId);
+    const sheet = previewSheetRef.current;
+    const el = layoutAtivo[elId];
+    if (!sheet || !el) return;
+    const rect = sheet.getBoundingClientRect();
+    dragStateRef.current = {
+      elId,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: Number(el.x) || 0,
+      origY: Number(el.y) || 0,
+      rectW: rect.width || 1,
+      rectH: rect.height || 1,
+    };
+    setArrastando(true);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // ignora
+    }
+  };
+
+  const moverArrasteElemento = (e) => {
+    const st = dragStateRef.current;
+    if (!st) return;
+    const dxPct = ((e.clientX - st.startX) / st.rectW) * 100;
+    const dyPct = ((e.clientY - st.startY) / st.rectH) * 100;
+    const nx = Number(Math.max(0, Math.min(95, st.origX + dxPct)).toFixed(1));
+    const ny = Number(Math.max(0, Math.min(95, st.origY + dyPct)).toFixed(1));
+    atualizarElementoLayout(st.elId, { x: nx, y: ny });
+  };
+
+  const finalizarArrasteElemento = () => {
+    if (!dragStateRef.current) return;
+    dragStateRef.current = null;
+    setArrastando(false);
+  };
+
+  const getPropsArraste = (elId) => {
+    if (!modoLayout) return {};
+    const selecionado = elementoSelecionadoId === elId;
+    return {
+      onPointerDown: (e) => iniciarArrasteElemento(e, elId),
+      onPointerMove: moverArrasteElemento,
+      onPointerUp: finalizarArrasteElemento,
+      onPointerCancel: finalizarArrasteElemento,
+      style: {
+        cursor: 'move',
+        touchAction: 'none',
+        outline: selecionado ? '2px solid #2563eb' : '1px dashed rgba(37,99,235,0.55)',
+        outlineOffset: '2px',
+        backgroundColor: selecionado ? 'rgba(37,99,235,0.08)' : 'transparent',
+        borderRadius: '4px',
+        zIndex: selecionado ? 30 : 20,
+      },
+      title: `Arraste para mover: ${layoutAtivo[elId]?.label || elId}`,
+    };
+  };
+
+  const renderTextoFormatadoJsx = (texto, el) => {
+    const fonte = getFonteInfo(el?.font);
+    if (el?.versalete) {
+      return renderVersaleteJsx(texto, fonte.className);
+    }
+    return texto;
+  };
+
+  const renderImagensExtrasPreview = () =>
+    elementosImgAtivos
+      .filter((imgEl) => !imgEl.hidden)
+      .map((imgEl) => {
+        const drag = getPropsArraste(imgEl.id);
+        return (
+          <img
+            key={imgEl.id}
+            {...drag}
+            src={imgEl.src}
+            alt={imgEl.label}
+            draggable={false}
+            className="absolute object-contain"
+            style={{
+              left: `${imgEl.x}%`,
+              top: `${imgEl.y}%`,
+              width: `${imgEl.w}%`,
+              height: `${imgEl.h}%`,
+              zIndex: 15,
+              ...(drag.style || {}),
+            }}
+          />
+        );
+      });
+
+  const formatarTextoPrint = (texto, el, escFn) => {
+    if (el?.versalete) return formatarVersaleteHtml(texto, escFn);
+    return escFn(texto);
+  };
 
   const selecionarModelo = (id, abrirMobile = true) => {
     setModeloAtivo(id);
@@ -447,6 +760,14 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
         .replace(/"/g, '&quot;');
 
     const origin = window.location.origin;
+    const fontFacesLocaisCss = gerarFontFacesPrintCss(origin);
+    const imagensExtrasPrintHtml = elementosImgAtivos
+      .filter((imgEl) => !imgEl.hidden)
+      .map(
+        (imgEl) =>
+          `<img src="${imgEl.src}" style="position:absolute;left:${imgEl.x}%;top:${imgEl.y}%;width:${imgEl.w}%;height:${imgEl.h}%;object-fit:contain;z-index:15;" alt="${esc(imgEl.label)}" />`
+      )
+      .join('');
     const logoBetesda = `${origin}/betesda-geral.png`;
     const assinaturaUrl = `${origin}/certificados/assinatura-pastor.png`;
     const fundoApresentacaoUrl = fundosOverride['apresentacao'] || `${origin}/certificados/fundo-apresentacao.png`;
@@ -459,6 +780,7 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
 
     if (modeloAtivo === 'edb-ouro') {
       const f = edbForm;
+      const lay = layoutAtivo;
       tituloArquivo = `Certificado EDB - ${f.nomeAluno || 'Aluno'}`;
       htmlDoc = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -466,7 +788,8 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
   <meta charset="utf-8" />
   <title>${esc(tituloArquivo)}</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=David+Libre:wght@400;500;700&family=Great+Vibes&family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap');
+    ${fontFacesLocaisCss}
     @page { size: A4 landscape; margin: 0; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     html, body { margin: 0; padding: 0; background: #ffffff; }
@@ -730,6 +1053,34 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
     <div class="corner-box-sm"></div>`}
 
     <div class="content">
+      ${fundoEdbCustom ? `
+      ${!lay.subtitulo.hidden ? `<div style="${estiloTextoPrint(lay.subtitulo)}white-space:nowrap;">${formatarTextoPrint('DE CONCLUSÃO', lay.subtitulo, esc)}</div>` : ''}
+
+      ${!lay.kicker.hidden ? `<div style="${estiloTextoPrint(lay.kicker)}white-space:nowrap;">${formatarTextoPrint('CERTIFICAMOS ORGULHOSAMENTE QUE', lay.kicker, esc)}</div>` : ''}
+      ${!lay.nome.hidden ? `<div style="${estiloTextoPrint(lay.nome)}white-space:nowrap;">${formatarTextoPrint(formatarNomeExibicao(f.nomeAluno, 'Nome do(a) Formando(a)'), lay.nome, esc)}</div>` : ''}
+
+      ${!lay.descricao.hidden ? `<div style="${estiloTextoPrint(lay.descricao)}line-height:1.55;">
+        Concluiu com sucesso o curso teológico <strong>"${esc(f.curso)}"</strong>, ${esc(f.complementoCurso)}, de ${esc(f.periodoInicio)} a ${esc(f.periodoFim)}, cumprindo uma carga horária de ${esc(f.cargaHoraria)} horas/aulas.
+      </div>` : ''}
+
+      ${incluirAssinatura && !lay.assinaturaImg.hidden ? `<img src="${esc(assinaturaUrl)}" style="position:absolute;left:${lay.assinaturaImg.x}%;top:${lay.assinaturaImg.y}%;width:${lay.assinaturaImg.w}%;height:${lay.assinaturaImg.h}%;object-fit:contain;" alt="Assinatura" />` : ''}
+      ${!lay.diretor.hidden ? `<div style="${estiloTextoPrint(lay.diretor)}">
+        <div>${esc(f.diretorNome)}</div>
+        <div style="font-size:${(lay.diretor.fontSize * 0.76).toFixed(1)}pt;font-weight:700;letter-spacing:0.08em;color:#6b3b94;text-transform:uppercase;margin-top:0.6mm;">${esc(f.diretorCargo)}</div>
+      </div>` : ''}
+
+      ${!lay.coordenador.hidden ? `<div style="${estiloTextoPrint(lay.coordenador)}">
+        <div>${esc(f.coordenadorNome)}</div>
+        <div style="font-size:${(lay.coordenador.fontSize * 0.76).toFixed(1)}pt;font-weight:700;letter-spacing:0.08em;color:#6b3b94;text-transform:uppercase;margin-top:0.6mm;">${esc(f.coordenadorCargo)}</div>
+      </div>` : ''}
+
+      ${!lay.seloAprovado.hidden ? `<div style="${estiloTextoPrint(lay.seloAprovado)}white-space:nowrap;">${formatarTextoPrint('APROVADO', lay.seloAprovado, esc)}</div>` : ''}
+      ${!lay.seloAno.hidden ? `<div style="${estiloTextoPrint(lay.seloAno)}line-height:0.95;">${esc(f.anoSelo)}</div>` : ''}
+
+      ${!lay.logo.hidden ? `<img src="${esc(logoBetesda)}" style="position:absolute;left:${lay.logo.x}%;top:${lay.logo.y}%;height:${lay.logo.h}%;max-width:${lay.logo.w}%;object-fit:contain;" alt="Betesda" />` : ''}
+
+      ${!lay.data.hidden ? `<div style="${estiloTextoPrint(lay.data)}">${esc(f.cidade)}, ${esc(dataParaExtenso(f.dataEmissao))}.</div>` : ''}
+      ` : `
       <div class="header-title">Certificado</div>
       <div class="sub-pill">DE CONCLUSÃO</div>
 
@@ -773,12 +1124,15 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
       </div>
 
       <div class="bottom-date">${esc(f.cidade)}, ${esc(dataParaExtenso(f.dataEmissao))}.</div>
+      `}
+      ${imagensExtrasPrintHtml}
     </div>
   </div>
 </body>
 </html>`;
     } else if (modeloAtivo === 'batismo') {
       const f = batismoForm;
+      const lay = layoutAtivo;
       tituloArquivo = `Certificado de Batismo - ${f.nomeBatizando || 'Membro'}`;
       htmlDoc = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -786,128 +1140,38 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
   <meta charset="utf-8" />
   <title>${esc(tituloArquivo)}</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=David+Libre:wght@400;500;700&family=Great+Vibes&family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap');
+    ${fontFacesLocaisCss}
     @page { size: A4 landscape; margin: 0; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     html, body { margin: 0; padding: 0; background: #ffffff; }
-    .sheet {
-      width: 297mm;
-      height: 210mm;
-      background: #ffffff;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-      overflow: hidden;
-    }
-    .top-art {
-      width: 100%;
-      height: 82mm;
-      object-fit: cover;
-      object-position: top center;
-      display: block;
-    }
-    .body {
-      flex: 1;
-      padding: 2mm 24mm 12mm;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
-      text-align: center;
-    }
-    .cert-label {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 16pt;
-      color: #334155;
-      margin-top: 2mm;
-    }
-    .person-name {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 28pt;
-      font-weight: 800;
-      color: #0b2d5c;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      padding: 2mm 14mm 3mm;
-      border-bottom: 2pt solid #0284c7;
-      margin: 2mm 0 4mm;
-    }
-    .desc-text {
-      max-width: 225mm;
-      font-size: 13.5pt;
-      line-height: 1.6;
-      color: #1e293b;
-      margin: 0;
-    }
-    .bottom-row {
-      width: 100%;
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      margin-top: 6mm;
-    }
-    .logo-betesda {
-      height: 19mm;
-      max-width: 85mm;
-      object-fit: contain;
-    }
-    .sig-box {
-      text-align: center;
-      min-width: 82mm;
-    }
-    .sig-img {
-      height: 24mm;
-      max-width: 64mm;
-      object-fit: contain;
-      display: block;
-      margin: 0 auto -6mm;
-    }
-    .sig-line {
-      border-top: 1.3pt solid #0f172a;
-      padding-top: 1.5mm;
-      font-size: 12pt;
-      font-weight: 800;
-      color: #0f172a;
-    }
-    .sig-role {
-      font-size: 10pt;
-      color: #475569;
-    }
-    .city-date {
-      font-size: 10pt;
-      color: #475569;
-      margin-top: 1.5mm;
-    }
+    .sheet { width: 297mm; height: 210mm; background: #ffffff; position: relative; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; overflow: hidden; }
+    .top-art { position: absolute; top: 0; left: 0; width: 100%; height: 82mm; object-fit: cover; object-position: top center; display: block; z-index: 0; }
+    .bg-art { position: absolute; inset: 0; width: 297mm; height: 210mm; object-fit: cover; z-index: 0; }
   </style>
 </head>
 <body>
   <div class="sheet">
     ${fundoBatismoCustom
-      ? `<img src="${fundoBatismoCustom}" style="position:absolute;inset:0;width:297mm;height:210mm;object-fit:cover;z-index:0;" alt="Fundo Batismo" /><div style="height:68mm;position:relative;z-index:1;"></div>`
+      ? `<img src="${fundoBatismoCustom}" class="bg-art" alt="Fundo Batismo" />`
       : `<img src="${esc(topoBatismoUrl)}" class="top-art" alt="Certificado de Batismo" />`}
-    <div class="body" style="position:relative;z-index:2;">
-      <div>
-        <div class="cert-label">Certificamos que</div>
-        <div class="person-name">${esc(f.nomeBatizando || 'NOME DO BATIZANDO')}</div>
-        <p class="desc-text">${esc(textoBatismoFinal)}</p>
-      </div>
-      <div class="bottom-row">
-        <img src="${esc(logoBetesda)}" class="logo-betesda" alt="Betesda" />
-        <div class="sig-box">
-          ${incluirAssinatura ? `<img src="${esc(assinaturaUrl)}" class="sig-img" alt="Assinatura" />` : `<div style="height:18mm;"></div>`}
-          <div class="sig-line">${esc(f.pastorNome)}</div>
-          <div class="sig-role">${esc(f.pastorCargo)}</div>
-          <div class="city-date">${esc(f.cidade)}, ${esc(dataParaExtenso(f.dataBatismo))}.</div>
-        </div>
-      </div>
-    </div>
+    ${!lay.kicker.hidden ? `<div style="${estiloTextoPrint(lay.kicker)}z-index:2;">${formatarTextoPrint('Certificamos que', lay.kicker, esc)}</div>` : ''}
+    ${!lay.nome.hidden ? `<div style="${estiloTextoPrint(lay.nome)}z-index:2;border-bottom:${fundoBatismoCustom ? 'none' : '2pt solid #0284c7'};padding-bottom:2mm;">${formatarTextoPrint(formatarNomeExibicao(f.nomeBatizando, 'NOME DO BATIZANDO'), lay.nome, esc)}</div>` : ''}
+    ${!lay.descricao.hidden ? `<div style="${estiloTextoPrint(lay.descricao)}z-index:2;line-height:1.55;">${esc(textoBatismoFinal)}</div>` : ''}
+    ${!lay.logo.hidden ? `<img src="${esc(logoBetesda)}" style="position:absolute;left:${lay.logo.x}%;top:${lay.logo.y}%;height:${lay.logo.h}%;max-width:${lay.logo.w}%;object-fit:contain;z-index:2;" alt="Betesda" />` : ''}
+    ${incluirAssinatura && !lay.assinaturaImg.hidden ? `<img src="${esc(assinaturaUrl)}" style="position:absolute;left:${lay.assinaturaImg.x}%;top:${lay.assinaturaImg.y}%;width:${lay.assinaturaImg.w}%;height:${lay.assinaturaImg.h}%;object-fit:contain;z-index:2;" alt="Assinatura" />` : ''}
+    ${!lay.pastor.hidden ? `<div style="${estiloTextoPrint(lay.pastor)}z-index:2;border-top:1.3pt solid ${lay.pastor.color || '#0f172a'};padding-top:1.5mm;">
+      <div>${formatarTextoPrint(f.pastorNome, lay.pastor, esc)}</div>
+      <div style="font-size:${(lay.pastor.fontSize * 0.85).toFixed(1)}pt;font-weight:500;opacity:0.85;">${esc(f.pastorCargo)}</div>
+    </div>` : ''}
+    ${lay.data && !lay.data.hidden ? `<div style="${estiloTextoPrint(lay.data)}z-index:2;">${formatarTextoPrint(`${f.cidade}, ${dataParaExtenso(f.dataBatismo)}.`, lay.data, esc)}</div>` : ''}
+    ${imagensExtrasPrintHtml}
   </div>
 </body>
 </html>`;
     } else if (modeloAtivo === 'apresentacao') {
       const f = apresentacaoForm;
+      const lay = layoutAtivo;
       tituloArquivo = `Certificado de Apresentacao - ${f.nomeCrianca || 'Crianca'}`;
       htmlDoc = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -915,101 +1179,34 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
   <meta charset="utf-8" />
   <title>${esc(tituloArquivo)}</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=David+Libre:wght@400;500;700&family=Great+Vibes&family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap');
+    ${fontFacesLocaisCss}
     @page { size: A4 landscape; margin: 0; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     html, body { margin: 0; padding: 0; background: #ffffff; }
-    .sheet {
-      width: 297mm;
-      height: 210mm;
-      position: relative;
-      overflow: hidden;
-      font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-    }
-    .bg-art {
-      position: absolute;
-      inset: 0;
-      width: 297mm;
-      height: 210mm;
-      object-fit: cover;
-    }
-    .child-name {
-      position: absolute;
-      top: 88mm;
-      left: 60mm;
-      width: 177mm;
-      height: 22mm;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 24pt;
-      font-weight: 800;
-      color: #6b3428;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-    }
-    .body-text {
-      position: absolute;
-      top: 117mm;
-      left: 48mm;
-      width: 201mm;
-      text-align: center;
-      font-size: 13pt;
-      line-height: 1.55;
-      color: #3f2b22;
-      font-weight: 500;
-    }
-    .sig-area {
-      position: absolute;
-      right: 32mm;
-      bottom: 20mm;
-      width: 105mm;
-      text-align: center;
-    }
-    .sig-date {
-      font-size: 10.5pt;
-      color: #5c4338;
-      margin-bottom: 1mm;
-    }
-    .sig-img {
-      height: 22mm;
-      max-width: 60mm;
-      object-fit: contain;
-      display: block;
-      margin: 0 auto -6mm;
-    }
-    .sig-line {
-      border-top: 1.3pt solid #5c4338;
-      padding-top: 1.2mm;
-      font-size: 11.5pt;
-      font-weight: 800;
-      color: #3f2b22;
-    }
-    .sig-role {
-      font-size: 9.5pt;
-      color: #5c4338;
-    }
+    .sheet { width: 297mm; height: 210mm; position: relative; overflow: hidden; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; }
+    .bg-art { position: absolute; inset: 0; width: 297mm; height: 210mm; object-fit: cover; z-index: 0; }
   </style>
 </head>
 <body>
   <div class="sheet">
     <img src="${esc(fundoApresentacaoUrl)}" class="bg-art" alt="Certificado de Apresentação" />
-    <div class="child-name">${esc(f.nomeCrianca || 'NOME DA CRIANÇA')}</div>
-    <div class="body-text">${esc(textoApresentacaoFinal)}</div>
-    <div class="sig-area">
-      <div class="sig-date">${esc(f.cidade)}, ${esc(dataParaExtenso(f.dataApresentacao))}.</div>
-      ${incluirAssinatura ? `<img src="${esc(assinaturaUrl)}" class="sig-img" alt="Assinatura" />` : `<div style="height:16mm;"></div>`}
-      <div class="sig-line">${esc(f.pastorNome)}</div>
-      <div class="sig-role">${esc(f.pastorCargo)}</div>
-    </div>
+    ${!lay.nome.hidden ? `<div style="${estiloTextoPrint(lay.nome)}z-index:2;">${formatarTextoPrint(formatarNomeExibicao(f.nomeCrianca, 'NOME DA CRIANÇA'), lay.nome, esc)}</div>` : ''}
+    ${!lay.descricao.hidden ? `<div style="${estiloTextoPrint(lay.descricao)}z-index:2;line-height:1.55;">${esc(textoApresentacaoFinal)}</div>` : ''}
+    ${lay.data && !lay.data.hidden ? `<div style="${estiloTextoPrint(lay.data)}z-index:2;">${formatarTextoPrint(`${f.cidade}, ${dataParaExtenso(f.dataApresentacao)}.`, lay.data, esc)}</div>` : ''}
+    ${incluirAssinatura && !lay.assinaturaImg.hidden ? `<img src="${esc(assinaturaUrl)}" style="position:absolute;left:${lay.assinaturaImg.x}%;top:${lay.assinaturaImg.y}%;width:${lay.assinaturaImg.w}%;height:${lay.assinaturaImg.h}%;object-fit:contain;z-index:2;" alt="Assinatura" />` : ''}
+    ${!lay.pastor.hidden ? `<div style="${estiloTextoPrint(lay.pastor)}z-index:2;border-top:1.3pt solid ${lay.pastor.color || '#5c4338'};padding-top:1.2mm;">
+      <div>${formatarTextoPrint(f.pastorNome, lay.pastor, esc)}</div>
+      <div style="font-size:${(lay.pastor.fontSize * 0.85).toFixed(1)}pt;font-weight:500;opacity:0.85;">${esc(f.pastorCargo)}</div>
+    </div>` : ''}
+    ${imagensExtrasPrintHtml}
   </div>
 </body>
 </html>`;
     } else if (modeloCustomAtivo) {
       const mc = modeloCustomAtivo;
       const f = customForm;
+      const lay = layoutAtivo;
       tituloArquivo = `${mc.titulo} - ${f.nomeParticipante || 'Certificado'}`;
       htmlDoc = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -1017,81 +1214,30 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
   <meta charset="utf-8" />
   <title>${esc(tituloArquivo)}</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=David+Libre:wght@400;500;700&family=Great+Vibes&family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap');
+    ${fontFacesLocaisCss}
     @page { size: A4 landscape; margin: 0; }
     * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
     html, body { margin: 0; padding: 0; background: #ffffff; }
-    .sheet {
-      width: 297mm;
-      height: 210mm;
-      position: relative;
-      overflow: hidden;
-      background: #ffffff;
-      font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-    }
-    .bg-art {
-      position: absolute;
-      inset: 0;
-      width: 297mm;
-      height: 210mm;
-      object-fit: cover;
-    }
-    .fallback-border {
-      position: absolute;
-      inset: 9mm;
-      border: 2pt solid #1e3a8a;
-      outline: 0.8pt solid #d4a23a;
-      outline-offset: -3mm;
-    }
-    .name-box {
-      position: absolute;
-      top: ${mc.posNomeY || 44}%;
-      left: 12%;
-      width: 76%;
-      text-align: center;
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 27pt;
-      font-weight: 800;
-      color: ${mc.corNome || '#1e3a8a'};
-      text-transform: uppercase;
-      line-height: 1.15;
-    }
-    .text-box {
-      position: absolute;
-      top: ${mc.posTextoY || 57}%;
-      left: 14%;
-      width: 72%;
-      text-align: center;
-      font-size: 13pt;
-      line-height: 1.55;
-      color: ${mc.corTexto || '#1e293b'};
-    }
-    .sig-area {
-      position: absolute;
-      right: 28mm;
-      bottom: 18mm;
-      width: 96mm;
-      text-align: center;
-    }
-    .sig-date { font-size: 10pt; color: ${mc.corTexto || '#334155'}; margin-bottom: 1mm; }
-    .sig-img { height: 22mm; max-width: 60mm; object-fit: contain; display: block; margin: 0 auto -6mm; }
-    .sig-line { border-top: 1.3pt solid ${mc.corTexto || '#1e293b'}; padding-top: 1.2mm; font-size: 11.5pt; font-weight: 800; color: ${mc.corNome || '#0f172a'}; }
-    .sig-role { font-size: 9.5pt; color: ${mc.corTexto || '#475569'}; }
-    .logo-left { position: absolute; left: 22mm; bottom: 18mm; height: 16mm; max-width: 72mm; object-fit: contain; }
+    .sheet { width: 297mm; height: 210mm; position: relative; overflow: hidden; background: #ffffff; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; }
+    .bg-art { position: absolute; inset: 0; width: 297mm; height: 210mm; object-fit: cover; z-index: 0; }
+    .fallback-border { position: absolute; inset: 9mm; border: 2pt solid #1e3a8a; outline: 0.8pt solid #d4a23a; outline-offset: -3mm; z-index: 0; }
+    .logo-left { position: absolute; left: 22mm; bottom: 18mm; height: 16mm; max-width: 72mm; object-fit: contain; z-index: 1; }
   </style>
 </head>
 <body>
   <div class="sheet">
     ${mc.fundoImg ? `<img src="${mc.fundoImg}" class="bg-art" alt="${esc(mc.titulo)}" />` : `<div class="fallback-border"></div>`}
     ${!mc.fundoImg ? `<img src="${esc(logoBetesda)}" class="logo-left" alt="Betesda" />` : ''}
-    <div class="name-box">${esc(f.nomeParticipante || 'NOME DO PARTICIPANTE')}</div>
-    <div class="text-box">${esc(textoCustomResolvido)}</div>
-    <div class="sig-area">
-      <div class="sig-date">${esc(f.cidade)}, ${esc(dataParaExtenso(f.dataEmissao))}.</div>
-      ${incluirAssinatura ? `<img src="${esc(assinaturaUrl)}" class="sig-img" alt="Assinatura" />` : `<div style="height:16mm;"></div>`}
-      <div class="sig-line">${esc(f.pastorNome)}</div>
-      <div class="sig-role">${esc(f.pastorCargo)}</div>
-    </div>
+    ${!lay.nome.hidden ? `<div style="${estiloTextoPrint(lay.nome)}z-index:2;">${formatarTextoPrint(formatarNomeExibicao(f.nomeParticipante, 'NOME DO PARTICIPANTE'), lay.nome, esc)}</div>` : ''}
+    ${!lay.descricao.hidden ? `<div style="${estiloTextoPrint(lay.descricao)}z-index:2;line-height:1.55;">${esc(textoCustomResolvido)}</div>` : ''}
+    ${lay.data && !lay.data.hidden ? `<div style="${estiloTextoPrint(lay.data)}z-index:2;">${formatarTextoPrint(`${f.cidade}, ${dataParaExtenso(f.dataEmissao)}.`, lay.data, esc)}</div>` : ''}
+    ${incluirAssinatura && !lay.assinaturaImg.hidden ? `<img src="${esc(assinaturaUrl)}" style="position:absolute;left:${lay.assinaturaImg.x}%;top:${lay.assinaturaImg.y}%;width:${lay.assinaturaImg.w}%;height:${lay.assinaturaImg.h}%;object-fit:contain;z-index:2;" alt="Assinatura" />` : ''}
+    ${!lay.pastor.hidden ? `<div style="${estiloTextoPrint(lay.pastor)}z-index:2;border-top:1.3pt solid ${lay.pastor.color || '#1e293b'};padding-top:1.2mm;">
+      <div>${formatarTextoPrint(f.pastorNome, lay.pastor, esc)}</div>
+      <div style="font-size:${(lay.pastor.fontSize * 0.85).toFixed(1)}pt;font-weight:500;opacity:0.85;">${esc(f.pastorCargo)}</div>
+    </div>` : ''}
+    ${imagensExtrasPrintHtml}
   </div>
 </body>
 </html>`;
@@ -1349,6 +1495,36 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                const novoEstado = !modoLayout;
+                setModoLayout(novoEstado);
+                if (novoEstado) {
+                  setAbaMobile('preview');
+                  const primeiroId = Object.keys(layoutAtivo)[0] || 'nome';
+                  if (!layoutAtivo[elementoSelecionadoId]) setElementoSelecionadoId(primeiroId);
+                }
+              }}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-extrabold cursor-pointer transition ${
+                modoLayout
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : 'border-slate-200 dark:border-[#2b3954] bg-slate-50 dark:bg-[#131d31] hover:bg-slate-100 dark:hover:bg-[#1c2b4a] text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              <SlidersHorizontal size={14} className={modoLayout ? 'text-white' : 'text-blue-600 dark:text-blue-400'} />
+              <span>{modoLayout ? 'Concluir Layout' : 'Ajustar Layout'}</span>
+            </button>
+            <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 dark:bg-emerald-950/35 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold cursor-pointer transition">
+              <Plus size={14} />
+              <span>Inserir Imagem</span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/jpg"
+                onChange={handleAdicionarImagemExtra}
+                className="hidden"
+              />
+            </label>
             <label className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-[#2b3954] bg-slate-50 dark:bg-[#131d31] hover:bg-slate-100 dark:hover:bg-[#1c2b4a] text-slate-700 dark:text-slate-200 text-xs font-bold cursor-pointer transition">
               <ImageIcon size={14} className="text-blue-600 dark:text-blue-400" />
               <span>{fundoAtivoPersonalizado ? 'Trocar Fundo (PNG/JPG)' : 'Alterar Fundo (PNG/JPG)'}</span>
@@ -1370,6 +1546,15 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
                 <span>Restaurar Fundo</span>
               </button>
             )}
+            <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer px-1">
+              <input
+                type="checkbox"
+                checked={abreviarNomesLongos}
+                onChange={(e) => setAbreviarNomesLongos(e.target.checked)}
+                className="rounded"
+              />
+              <span>Abreviar Nomes Longos</span>
+            </label>
             <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer px-1">
               <input
                 type="checkbox"
@@ -1609,18 +1794,25 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
 
               {modeloAtivo === 'edb-ouro' && (
                 <div
+                  ref={previewSheetRef}
                   className="relative w-full aspect-[297/210] rounded-xl shadow-xl overflow-hidden select-none"
-                  style={{ backgroundColor: '#ffffff', color: '#334155' }}
+                  style={{ backgroundColor: '#ffffff', color: '#334155', containerType: 'inline-size' }}
                 >
+                  {modoLayout && arrastando && (
+                    <>
+                      <div className="absolute inset-y-0 left-1/2 w-[1px] bg-blue-500/50 pointer-events-none z-40" />
+                      <div className="absolute inset-x-0 top-1/2 h-[1px] bg-blue-500/50 pointer-events-none z-40" />
+                    </>
+                  )}
                   {fundosOverride['edb-ouro'] ? (
                     <img
                       src={fundosOverride['edb-ouro']}
                       alt="Fundo EDB personalizado"
-                      className="absolute inset-0 w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                     />
                   ) : (
                     <>
-                      <svg viewBox="0 0 297 210" className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                      <svg viewBox="0 0 297 210" className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
                         <defs>
                           <linearGradient id="pvPurple" x1="0%" y1="0%" x2="100%" y2="0%">
                             <stop offset="0%" stopColor="#4e207e" />
@@ -1642,213 +1834,571 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
                     </>
                   )}
 
-                  {/* Título */}
-                  <div className="absolute top-[3%] left-[6%] w-[56%] text-center italic font-serif text-2xl sm:text-4xl font-bold" style={{ color: '#ffffff' }}>
-                    Certificado
-                  </div>
-                  <div
-                    className="absolute top-[20.5%] left-[21%] px-4 py-0.5 rounded-full text-[7px] sm:text-[9px] font-bold uppercase tracking-[0.22em]"
-                    style={{ background: 'linear-gradient(90deg,#522382,#6f35a6)', border: '1.5px solid #d4a23a', color: '#ffffff' }}
-                  >
-                    DE CONCLUSÃO
-                  </div>
+                  {fundosOverride['edb-ouro'] ? (
+                    <>
+                      {/* Blocos editáveis e arrastáveis sobre a arte de fundo personalizada */}
+                      {!layoutAtivo.subtitulo.hidden && (() => {
+                        const drag = getPropsArraste('subtitulo');
+                        const fonte = getFonteInfo(layoutAtivo.subtitulo.font);
+                        return (
+                          <div
+                            {...drag}
+                            className={`${fonte.className} absolute whitespace-nowrap`}
+                            style={{ ...estiloTextoPreview(layoutAtivo.subtitulo), ...(drag.style || {}) }}
+                          >
+                            {renderTextoFormatadoJsx('DE CONCLUSÃO', layoutAtivo.subtitulo)}
+                          </div>
+                        );
+                      })()}
 
-                  {/* Corpo */}
-                  <div className="absolute top-[31%] left-[7%] w-[57%] text-center">
-                    <p className="text-[7px] sm:text-[9px] font-serif uppercase tracking-[0.18em]" style={{ color: '#4a236b' }}>
-                      CERTIFICAMOS ORGULHOSAMENTE QUE
-                    </p>
-                    <p className="font-serif text-lg sm:text-2xl font-bold mt-1 truncate" style={{ color: '#5b2d8e' }}>
-                      {edbForm.nomeAluno || 'Nome do(a) Formando(a)'}
-                    </p>
-                    <div className="h-[1.5px] w-full my-1.5" style={{ background: 'linear-gradient(90deg,#c6922c,#f3d277,#c6922c)' }} />
-                    <p className="text-[8px] sm:text-[10px] leading-snug text-left mt-1.5" style={{ color: '#334155' }}>
-                      Concluiu com sucesso o curso teológico <strong>"{edbForm.curso}"</strong>, {edbForm.complementoCurso}, de {edbForm.periodoInicio} a {edbForm.periodoFim}, cumprindo uma carga horária de {edbForm.cargaHoraria} horas/aulas.
-                    </p>
-                  </div>
+                      {!layoutAtivo.kicker.hidden && (() => {
+                        const drag = getPropsArraste('kicker');
+                        const fonte = getFonteInfo(layoutAtivo.kicker.font);
+                        return (
+                          <div
+                            {...drag}
+                            className={`${fonte.className} absolute whitespace-nowrap`}
+                            style={{ ...estiloTextoPreview(layoutAtivo.kicker), ...(drag.style || {}) }}
+                          >
+                            {renderTextoFormatadoJsx('CERTIFICAMOS ORGULHOSAMENTE QUE', layoutAtivo.kicker)}
+                          </div>
+                        );
+                      })()}
 
-                  {/* Selo Dourado Direita */}
-                  <div className="absolute right-[7%] top-[27%] flex flex-col items-center">
-                    <div
-                      className="w-16 h-16 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center shadow-lg z-10"
-                      style={{ background: 'radial-gradient(circle,#7a3eb5,#4b1d7a)', border: '4px solid #e4b84d', color: '#ffffff' }}
-                    >
-                      <span className="text-[6px] sm:text-[8px] font-bold tracking-widest">APROVADO</span>
-                      <span className="font-serif text-sm sm:text-xl font-extrabold leading-none">{edbForm.anoSelo}</span>
-                      <span className="text-[7px] sm:text-[9px]" style={{ color: '#f6d57a' }}>★ ★ ★</span>
-                    </div>
-                    <div
-                      className="w-10 sm:w-14 h-12 sm:h-16 -mt-3"
-                      style={{
-                        background: 'linear-gradient(90deg,#5b2d8e 0%,#5b2d8e 18%,#e4b84d 18%,#f7dc88 50%,#e4b84d 82%,#5b2d8e 82%,#5b2d8e 100%)',
-                        clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)',
-                      }}
-                    />
-                  </div>
+                      {!layoutAtivo.nome.hidden && (() => {
+                        const drag = getPropsArraste('nome');
+                        const fonte = getFonteInfo(layoutAtivo.nome.font);
+                        return (
+                          <div
+                            {...drag}
+                            className={`${fonte.className} absolute whitespace-nowrap`}
+                            style={{ ...estiloTextoPreview(layoutAtivo.nome), ...(drag.style || {}) }}
+                          >
+                            {renderTextoFormatadoJsx(formatarNomeExibicao(edbForm.nomeAluno, 'Nome do(a) Formando(a)'), layoutAtivo.nome)}
+                          </div>
+                        );
+                      })()}
 
-                  {/* Assinaturas + Selo EDB */}
-                  <div className="absolute top-[65%] left-[7%] w-[58%] flex items-center justify-between gap-2">
-                    <div className="flex-1 text-center">
-                      {incluirAssinatura ? (
-                        <img src="/certificados/assinatura-pastor.png" alt="Assinatura" className="h-7 sm:h-10 mx-auto -mb-2 object-contain" />
-                      ) : <div className="h-5" />}
-                      <div className="pt-0.5 text-[7.5px] sm:text-[9.5px] font-extrabold truncate" style={{ borderTop: '1px solid #c6922c', color: '#4a236b' }}>
-                        {edbForm.diretorNome}
-                      </div>
-                      <div className="text-[6px] sm:text-[7.5px] font-bold uppercase" style={{ color: '#6b3b94' }}>
-                        {edbForm.diretorCargo}
-                      </div>
-                    </div>
-                    <div
-                      className="w-10 h-10 sm:w-14 sm:h-14 rounded-full flex flex-col items-center justify-center shrink-0"
-                      style={{ background: 'radial-gradient(circle,#8b4cc9,#4a1e78)', border: '2px solid #e3b84c', color: '#ffffff' }}
-                    >
-                      <span className="text-xs sm:text-sm leading-none">🎓</span>
-                      <span className="font-serif text-[8px] sm:text-[10px] font-extrabold">EDB</span>
-                    </div>
-                    <div className="flex-1 text-center">
-                      <div className="h-5 sm:h-8" />
-                      <div className="pt-0.5 text-[7.5px] sm:text-[9.5px] font-extrabold truncate" style={{ borderTop: '1px solid #c6922c', color: '#4a236b' }}>
-                        {edbForm.coordenadorNome}
-                      </div>
-                      <div className="text-[6px] sm:text-[7.5px] font-bold uppercase" style={{ color: '#6b3b94' }}>
-                        {edbForm.coordenadorCargo}
-                      </div>
-                    </div>
-                  </div>
+                      {!layoutAtivo.descricao.hidden && (() => {
+                        const drag = getPropsArraste('descricao');
+                        const fonte = getFonteInfo(layoutAtivo.descricao.font);
+                        return (
+                          <div
+                            {...drag}
+                            className={`${fonte.className} absolute leading-snug`}
+                            style={{ ...estiloTextoPreview(layoutAtivo.descricao), ...(drag.style || {}) }}
+                          >
+                            Concluiu com sucesso o curso teológico <strong>"{edbForm.curso}"</strong>, {edbForm.complementoCurso}, de {edbForm.periodoInicio} a {edbForm.periodoFim}, cumprindo uma carga horária de {edbForm.cargaHoraria} horas/aulas.
+                          </div>
+                        );
+                      })()}
 
-                  {/* Rodapé Logo + Data */}
-                  <img src="/betesda-geral.png" alt="Betesda" className="absolute left-[13%] bottom-[5%] h-6 sm:h-8 w-auto object-contain" />
-                  <span className="absolute left-[41%] bottom-[10%] text-[7.5px] sm:text-[9.5px] font-semibold" style={{ color: '#4a236b' }}>
-                    {edbForm.cidade}, {dataParaExtenso(edbForm.dataEmissao)}.
-                  </span>
+                      {!layoutAtivo.seloAprovado.hidden && (() => {
+                        const drag = getPropsArraste('seloAprovado');
+                        const fonte = getFonteInfo(layoutAtivo.seloAprovado.font);
+                        return (
+                          <div
+                            {...drag}
+                            className={`${fonte.className} absolute whitespace-nowrap`}
+                            style={{ ...estiloTextoPreview(layoutAtivo.seloAprovado), ...(drag.style || {}) }}
+                          >
+                            {renderTextoFormatadoJsx('APROVADO', layoutAtivo.seloAprovado)}
+                          </div>
+                        );
+                      })()}
+
+                      {!layoutAtivo.seloAno.hidden && (() => {
+                        const drag = getPropsArraste('seloAno');
+                        const fonte = getFonteInfo(layoutAtivo.seloAno.font);
+                        return (
+                          <div
+                            {...drag}
+                            className={`${fonte.className} absolute`}
+                            style={{ ...estiloTextoPreview(layoutAtivo.seloAno), lineHeight: 0.95, ...(drag.style || {}) }}
+                          >
+                            {edbForm.anoSelo}
+                          </div>
+                        );
+                      })()}
+
+                      {incluirAssinatura && !layoutAtivo.assinaturaImg.hidden && (() => {
+                        const drag = getPropsArraste('assinaturaImg');
+                        return (
+                          <img
+                            {...drag}
+                            src="/certificados/assinatura-pastor.png"
+                            alt="Assinatura"
+                            draggable={false}
+                            className="absolute object-contain"
+                            style={{
+                              left: `${layoutAtivo.assinaturaImg.x}%`,
+                              top: `${layoutAtivo.assinaturaImg.y}%`,
+                              width: `${layoutAtivo.assinaturaImg.w}%`,
+                              height: `${layoutAtivo.assinaturaImg.h}%`,
+                              ...(drag.style || {}),
+                            }}
+                          />
+                        );
+                      })()}
+
+                      {!layoutAtivo.diretor.hidden && (() => {
+                        const drag = getPropsArraste('diretor');
+                        const fonte = getFonteInfo(layoutAtivo.diretor.font);
+                        return (
+                          <div
+                            {...drag}
+                            className={`${fonte.className} absolute`}
+                            style={{ ...estiloTextoPreview(layoutAtivo.diretor), ...(drag.style || {}) }}
+                          >
+                            <div className="truncate">{edbForm.diretorNome}</div>
+                            <div
+                              className="font-bold uppercase"
+                              style={{ color: '#6b3b94', fontSize: `${(layoutAtivo.diretor.fontSize * 0.76 * PT_TO_CQW).toFixed(3)}cqw` }}
+                            >
+                              {edbForm.diretorCargo}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {!layoutAtivo.coordenador.hidden && (() => {
+                        const drag = getPropsArraste('coordenador');
+                        const fonte = getFonteInfo(layoutAtivo.coordenador.font);
+                        return (
+                          <div
+                            {...drag}
+                            className={`${fonte.className} absolute`}
+                            style={{ ...estiloTextoPreview(layoutAtivo.coordenador), ...(drag.style || {}) }}
+                          >
+                            <div className="truncate">{edbForm.coordenadorNome}</div>
+                            <div
+                              className="font-bold uppercase"
+                              style={{ color: '#6b3b94', fontSize: `${(layoutAtivo.coordenador.fontSize * 0.76 * PT_TO_CQW).toFixed(3)}cqw` }}
+                            >
+                              {edbForm.coordenadorCargo}
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {!layoutAtivo.logo.hidden && (() => {
+                        const drag = getPropsArraste('logo');
+                        return (
+                          <img
+                            {...drag}
+                            src="/betesda-geral.png"
+                            alt="Betesda"
+                            draggable={false}
+                            className="absolute object-contain"
+                            style={{
+                              left: `${layoutAtivo.logo.x}%`,
+                              top: `${layoutAtivo.logo.y}%`,
+                              height: `${layoutAtivo.logo.h}%`,
+                              maxWidth: `${layoutAtivo.logo.w}%`,
+                              ...(drag.style || {}),
+                            }}
+                          />
+                        );
+                      })()}
+
+                      {!layoutAtivo.data.hidden && (() => {
+                        const drag = getPropsArraste('data');
+                        const fonte = getFonteInfo(layoutAtivo.data.font);
+                        return (
+                          <div
+                            {...drag}
+                            className={`${fonte.className} absolute`}
+                            style={{ ...estiloTextoPreview(layoutAtivo.data), ...(drag.style || {}) }}
+                          >
+                            {edbForm.cidade}, {dataParaExtenso(edbForm.dataEmissao)}.
+                          </div>
+                        );
+                      })()}
+                    </>
+                  ) : (
+                    <>
+                      {/* Título */}
+                      <div className="absolute top-[3%] left-[6%] w-[56%] text-center italic font-serif text-2xl sm:text-4xl font-bold" style={{ color: '#ffffff' }}>
+                        Certificado
+                      </div>
+                      <div
+                        className="absolute top-[20.5%] left-[21%] px-4 py-0.5 rounded-full text-[7px] sm:text-[9px] font-bold uppercase tracking-[0.22em]"
+                        style={{ background: 'linear-gradient(90deg,#522382,#6f35a6)', border: '1.5px solid #d4a23a', color: '#ffffff' }}
+                      >
+                        DE CONCLUSÃO
+                      </div>
+
+                      {/* Corpo */}
+                      <div className="absolute top-[31%] left-[7%] w-[57%] text-center">
+                        <p className="text-[7px] sm:text-[9px] font-serif uppercase tracking-[0.18em]" style={{ color: '#4a236b' }}>
+                          CERTIFICAMOS ORGULHOSAMENTE QUE
+                        </p>
+                        <p className="font-serif text-lg sm:text-2xl font-bold mt-1 truncate" style={{ color: '#5b2d8e' }}>
+                          {edbForm.nomeAluno || 'Nome do(a) Formando(a)'}
+                        </p>
+                        <div className="h-[1.5px] w-full my-1.5" style={{ background: 'linear-gradient(90deg,#c6922c,#f3d277,#c6922c)' }} />
+                        <p className="text-[8px] sm:text-[10px] leading-snug text-left mt-1.5" style={{ color: '#334155' }}>
+                          Concluiu com sucesso o curso teológico <strong>"{edbForm.curso}"</strong>, {edbForm.complementoCurso}, de {edbForm.periodoInicio} a {edbForm.periodoFim}, cumprindo uma carga horária de {edbForm.cargaHoraria} horas/aulas.
+                        </p>
+                      </div>
+
+                      {/* Selo Dourado Direita */}
+                      <div className="absolute right-[7%] top-[27%] flex flex-col items-center">
+                        <div
+                          className="w-16 h-16 sm:w-24 sm:h-24 rounded-full flex flex-col items-center justify-center shadow-lg z-10"
+                          style={{ background: 'radial-gradient(circle,#7a3eb5,#4b1d7a)', border: '4px solid #e4b84d', color: '#ffffff' }}
+                        >
+                          <span className="text-[6px] sm:text-[8px] font-bold tracking-widest">APROVADO</span>
+                          <span className="font-serif text-sm sm:text-xl font-extrabold leading-none">{edbForm.anoSelo}</span>
+                          <span className="text-[7px] sm:text-[9px]" style={{ color: '#f6d57a' }}>★ ★ ★</span>
+                        </div>
+                        <div
+                          className="w-10 sm:w-14 h-12 sm:h-16 -mt-3"
+                          style={{
+                            background: 'linear-gradient(90deg,#5b2d8e 0%,#5b2d8e 18%,#e4b84d 18%,#f7dc88 50%,#e4b84d 82%,#5b2d8e 82%,#5b2d8e 100%)',
+                            clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)',
+                          }}
+                        />
+                      </div>
+
+                      {/* Assinaturas + Selo EDB */}
+                      <div className="absolute top-[65%] left-[7%] w-[58%] flex items-center justify-between gap-2">
+                        <div className="flex-1 text-center">
+                          {incluirAssinatura ? (
+                            <img src="/certificados/assinatura-pastor.png" alt="Assinatura" className="h-7 sm:h-10 mx-auto -mb-2 object-contain" />
+                          ) : <div className="h-5" />}
+                          <div className="pt-0.5 text-[7.5px] sm:text-[9.5px] font-extrabold truncate" style={{ borderTop: '1px solid #c6922c', color: '#4a236b' }}>
+                            {edbForm.diretorNome}
+                          </div>
+                          <div className="text-[6px] sm:text-[7.5px] font-bold uppercase" style={{ color: '#6b3b94' }}>
+                            {edbForm.diretorCargo}
+                          </div>
+                        </div>
+                        <div
+                          className="w-10 h-10 sm:w-14 sm:h-14 rounded-full flex flex-col items-center justify-center shrink-0"
+                          style={{ background: 'radial-gradient(circle,#8b4cc9,#4a1e78)', border: '2px solid #e3b84c', color: '#ffffff' }}
+                        >
+                          <span className="text-xs sm:text-sm leading-none">🎓</span>
+                          <span className="font-serif text-[8px] sm:text-[10px] font-extrabold">EDB</span>
+                        </div>
+                        <div className="flex-1 text-center">
+                          <div className="h-5 sm:h-8" />
+                          <div className="pt-0.5 text-[7.5px] sm:text-[9.5px] font-extrabold truncate" style={{ borderTop: '1px solid #c6922c', color: '#4a236b' }}>
+                            {edbForm.coordenadorNome}
+                          </div>
+                          <div className="text-[6px] sm:text-[7.5px] font-bold uppercase" style={{ color: '#6b3b94' }}>
+                            {edbForm.coordenadorCargo}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Rodapé Logo + Data */}
+                      <img src="/betesda-geral.png" alt="Betesda" className="absolute left-[13%] bottom-[5%] h-6 sm:h-8 w-auto object-contain" />
+                      <span className="absolute left-[41%] bottom-[10%] text-[7.5px] sm:text-[9.5px] font-semibold" style={{ color: '#4a236b' }}>
+                        {edbForm.cidade}, {dataParaExtenso(edbForm.dataEmissao)}.
+                      </span>
+                    </>
+                  )}
+                  {renderImagensExtrasPreview()}
                 </div>
               )}
 
               {modeloAtivo === 'batismo' && (
                 <div
-                  className="relative w-full aspect-[297/210] rounded-xl shadow-xl overflow-hidden flex flex-col justify-between select-none"
-                  style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
+                  ref={previewSheetRef}
+                  className="relative w-full aspect-[297/210] rounded-xl shadow-xl overflow-hidden select-none"
+                  style={{ backgroundColor: '#ffffff', color: '#0f172a', containerType: 'inline-size' }}
                 >
-                  {fundosOverride['batismo'] ? (
+                  {modoLayout && arrastando && (
                     <>
-                      <img
-                        src={fundosOverride['batismo']}
-                        alt="Fundo Batismo personalizado"
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                      <div className="h-[32%] shrink-0 relative z-10" />
+                      <div className="absolute inset-y-0 left-1/2 w-[1px] bg-blue-500/50 pointer-events-none z-40" />
+                      <div className="absolute inset-x-0 top-1/2 h-[1px] bg-blue-500/50 pointer-events-none z-40" />
                     </>
-                  ) : (
-                    <img src="/certificados/topo-batismo.png" alt="Certificado de Batismo" className="w-full h-[39%] object-cover object-top" />
                   )}
-                  <div className="relative z-10 flex-1 px-6 sm:px-10 pb-4 flex flex-col items-center justify-between text-center">
-                    <div className="w-full flex flex-col items-center">
-                      <span className="font-serif text-xs sm:text-sm" style={{ color: '#334155' }}>Certificamos que</span>
-                      <span
-                        className="font-serif text-base sm:text-2xl font-extrabold uppercase tracking-wide px-4 pb-1 mt-0.5 truncate max-w-full"
-                        style={{ color: '#0b2d5c', borderBottom: '2px solid #0284c7' }}
+                  {fundosOverride['batismo'] ? (
+                    <img
+                      src={fundosOverride['batismo']}
+                      alt="Fundo Batismo personalizado"
+                      className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                    />
+                  ) : (
+                    <img src="/certificados/topo-batismo.png" alt="Certificado de Batismo" className="absolute top-0 left-0 w-full h-[39%] object-cover object-top pointer-events-none" />
+                  )}
+
+                  {!layoutAtivo.kicker.hidden && (() => {
+                    const drag = getPropsArraste('kicker');
+                    const fonte = getFonteInfo(layoutAtivo.kicker.font);
+                    return (
+                      <div {...drag} className={`${fonte.className} absolute`} style={{ ...estiloTextoPreview(layoutAtivo.kicker), ...(drag.style || {}) }}>
+                        {renderTextoFormatadoJsx('Certificamos que', layoutAtivo.kicker)}
+                      </div>
+                    );
+                  })()}
+
+                  {!layoutAtivo.nome.hidden && (() => {
+                    const drag = getPropsArraste('nome');
+                    const fonte = getFonteInfo(layoutAtivo.nome.font);
+                    return (
+                      <div
+                        {...drag}
+                        className={`${fonte.className} absolute pb-1`}
+                        style={{
+                          ...estiloTextoPreview(layoutAtivo.nome),
+                          borderBottom: fundosOverride['batismo'] ? 'none' : '2px solid #0284c7',
+                          ...(drag.style || {}),
+                        }}
                       >
-                        {batismoForm.nomeBatizando || 'NOME DO BATIZANDO'}
-                      </span>
-                      <p className="text-[9px] sm:text-xs leading-relaxed mt-2 max-w-[90%]" style={{ color: '#1e293b' }}>
+                        {renderTextoFormatadoJsx(formatarNomeExibicao(batismoForm.nomeBatizando, 'NOME DO BATIZANDO'), layoutAtivo.nome)}
+                      </div>
+                    );
+                  })()}
+
+                  {!layoutAtivo.descricao.hidden && (() => {
+                    const drag = getPropsArraste('descricao');
+                    const fonte = getFonteInfo(layoutAtivo.descricao.font);
+                    return (
+                      <div {...drag} className={`${fonte.className} absolute leading-relaxed`} style={{ ...estiloTextoPreview(layoutAtivo.descricao), ...(drag.style || {}) }}>
                         {textoBatismoFinal}
-                      </p>
-                    </div>
-                    <div className="w-full flex items-end justify-between gap-4">
-                      <img src="/betesda-geral.png" alt="Betesda" className="h-7 sm:h-10 w-auto object-contain" />
-                      <div className="text-center min-w-[120px] sm:min-w-[170px]">
-                        {incluirAssinatura ? (
-                          <img src="/certificados/assinatura-pastor.png" alt="Assinatura" className="h-8 sm:h-12 mx-auto -mb-2.5 object-contain" />
-                        ) : <div className="h-6" />}
-                        <div className="pt-0.5 text-[9px] sm:text-xs font-extrabold" style={{ borderTop: '1px solid #0f172a', color: '#0f172a' }}>
-                          {batismoForm.pastorNome}
-                        </div>
-                        <div className="text-[7.5px] sm:text-[10px]" style={{ color: '#475569' }}>
+                      </div>
+                    );
+                  })()}
+
+                  {!layoutAtivo.logo.hidden && (() => {
+                    const drag = getPropsArraste('logo');
+                    return (
+                      <img
+                        {...drag}
+                        src="/betesda-geral.png"
+                        alt="Betesda"
+                        draggable={false}
+                        className="absolute object-contain"
+                        style={{ left: `${layoutAtivo.logo.x}%`, top: `${layoutAtivo.logo.y}%`, height: `${layoutAtivo.logo.h}%`, maxWidth: `${layoutAtivo.logo.w}%`, ...(drag.style || {}) }}
+                      />
+                    );
+                  })()}
+
+                  {incluirAssinatura && !layoutAtivo.assinaturaImg.hidden && (() => {
+                    const drag = getPropsArraste('assinaturaImg');
+                    return (
+                      <img
+                        {...drag}
+                        src="/certificados/assinatura-pastor.png"
+                        alt="Assinatura"
+                        draggable={false}
+                        className="absolute object-contain"
+                        style={{ left: `${layoutAtivo.assinaturaImg.x}%`, top: `${layoutAtivo.assinaturaImg.y}%`, width: `${layoutAtivo.assinaturaImg.w}%`, height: `${layoutAtivo.assinaturaImg.h}%`, ...(drag.style || {}) }}
+                      />
+                    );
+                  })()}
+
+                  {!layoutAtivo.pastor.hidden && (() => {
+                    const drag = getPropsArraste('pastor');
+                    const fonte = getFonteInfo(layoutAtivo.pastor.font);
+                    return (
+                      <div
+                        {...drag}
+                        className={`${fonte.className} absolute pt-0.5`}
+                        style={{ ...estiloTextoPreview(layoutAtivo.pastor), borderTop: `1px solid ${layoutAtivo.pastor.color || '#0f172a'}`, ...(drag.style || {}) }}
+                      >
+                        <div>{renderTextoFormatadoJsx(batismoForm.pastorNome, layoutAtivo.pastor)}</div>
+                        <div style={{ fontSize: `${(layoutAtivo.pastor.fontSize * 0.85 * PT_TO_CQW).toFixed(3)}cqw`, fontWeight: 500, opacity: 0.85 }}>
                           {batismoForm.pastorCargo}
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    );
+                  })()}
+
+                  {layoutAtivo.data && !layoutAtivo.data.hidden && (() => {
+                    const drag = getPropsArraste('data');
+                    const fonte = getFonteInfo(layoutAtivo.data.font);
+                    return (
+                      <div {...drag} className={`${fonte.className} absolute`} style={{ ...estiloTextoPreview(layoutAtivo.data), ...(drag.style || {}) }}>
+                        {renderTextoFormatadoJsx(`${batismoForm.cidade}, ${dataParaExtenso(batismoForm.dataBatismo)}.`, layoutAtivo.data)}
+                      </div>
+                    );
+                  })()}
+                  {renderImagensExtrasPreview()}
                 </div>
               )}
 
               {modeloAtivo === 'apresentacao' && (
-                <div className="relative w-full aspect-[297/210] rounded-xl shadow-xl overflow-hidden select-none">
+                <div
+                  ref={previewSheetRef}
+                  className="relative w-full aspect-[297/210] rounded-xl shadow-xl overflow-hidden select-none"
+                  style={{ containerType: 'inline-size' }}
+                >
+                  {modoLayout && arrastando && (
+                    <>
+                      <div className="absolute inset-y-0 left-1/2 w-[1px] bg-blue-500/50 pointer-events-none z-40" />
+                      <div className="absolute inset-x-0 top-1/2 h-[1px] bg-blue-500/50 pointer-events-none z-40" />
+                    </>
+                  )}
                   <img
                     src={fundosOverride['apresentacao'] || '/certificados/fundo-apresentacao.png'}
                     alt="Certificado de Apresentação"
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                   />
-                  <div
-                    className="absolute top-[41.8%] left-[20%] w-[60%] h-[10.8%] flex items-center justify-center text-center px-2 font-serif text-sm sm:text-xl font-extrabold uppercase truncate"
-                    style={{ color: '#6b3428' }}
-                  >
-                    {apresentacaoForm.nomeCrianca || 'NOME DA CRIANÇA'}
-                  </div>
-                  <div
-                    className="absolute top-[56%] left-[15%] w-[70%] text-center text-[8.5px] sm:text-xs leading-snug font-medium"
-                    style={{ color: '#3f2b22' }}
-                  >
-                    {textoApresentacaoFinal}
-                  </div>
-                  <div className="absolute right-[10%] bottom-[9%] w-[36%] text-center">
-                    <div className="text-[7px] sm:text-[9.5px]" style={{ color: '#5c4338' }}>
-                      {apresentacaoForm.cidade}, {dataParaExtenso(apresentacaoForm.dataApresentacao)}.
-                    </div>
-                    {incluirAssinatura ? (
-                      <img src="/certificados/assinatura-pastor.png" alt="Assinatura" className="h-7 sm:h-11 mx-auto -mb-2.5 object-contain" />
-                    ) : <div className="h-5" />}
-                    <div className="pt-0.5 text-[8px] sm:text-[10.5px] font-extrabold" style={{ borderTop: '1px solid #5c4338', color: '#3f2b22' }}>
-                      {apresentacaoForm.pastorNome}
-                    </div>
-                    <div className="text-[7px] sm:text-[9px]" style={{ color: '#5c4338' }}>
-                      {apresentacaoForm.pastorCargo}
-                    </div>
-                  </div>
+
+                  {!layoutAtivo.nome.hidden && (() => {
+                    const drag = getPropsArraste('nome');
+                    const fonte = getFonteInfo(layoutAtivo.nome.font);
+                    return (
+                      <div {...drag} className={`${fonte.className} absolute`} style={{ ...estiloTextoPreview(layoutAtivo.nome), ...(drag.style || {}) }}>
+                        {renderTextoFormatadoJsx(formatarNomeExibicao(apresentacaoForm.nomeCrianca, 'NOME DA CRIANÇA'), layoutAtivo.nome)}
+                      </div>
+                    );
+                  })()}
+
+                  {!layoutAtivo.descricao.hidden && (() => {
+                    const drag = getPropsArraste('descricao');
+                    const fonte = getFonteInfo(layoutAtivo.descricao.font);
+                    return (
+                      <div {...drag} className={`${fonte.className} absolute leading-snug`} style={{ ...estiloTextoPreview(layoutAtivo.descricao), ...(drag.style || {}) }}>
+                        {textoApresentacaoFinal}
+                      </div>
+                    );
+                  })()}
+
+                  {layoutAtivo.data && !layoutAtivo.data.hidden && (() => {
+                    const drag = getPropsArraste('data');
+                    const fonte = getFonteInfo(layoutAtivo.data.font);
+                    return (
+                      <div {...drag} className={`${fonte.className} absolute`} style={{ ...estiloTextoPreview(layoutAtivo.data), ...(drag.style || {}) }}>
+                        {renderTextoFormatadoJsx(`${apresentacaoForm.cidade}, ${dataParaExtenso(apresentacaoForm.dataApresentacao)}.`, layoutAtivo.data)}
+                      </div>
+                    );
+                  })()}
+
+                  {incluirAssinatura && !layoutAtivo.assinaturaImg.hidden && (() => {
+                    const drag = getPropsArraste('assinaturaImg');
+                    return (
+                      <img
+                        {...drag}
+                        src="/certificados/assinatura-pastor.png"
+                        alt="Assinatura"
+                        draggable={false}
+                        className="absolute object-contain"
+                        style={{ left: `${layoutAtivo.assinaturaImg.x}%`, top: `${layoutAtivo.assinaturaImg.y}%`, width: `${layoutAtivo.assinaturaImg.w}%`, height: `${layoutAtivo.assinaturaImg.h}%`, ...(drag.style || {}) }}
+                      />
+                    );
+                  })()}
+
+                  {!layoutAtivo.pastor.hidden && (() => {
+                    const drag = getPropsArraste('pastor');
+                    const fonte = getFonteInfo(layoutAtivo.pastor.font);
+                    return (
+                      <div
+                        {...drag}
+                        className={`${fonte.className} absolute pt-0.5`}
+                        style={{ ...estiloTextoPreview(layoutAtivo.pastor), borderTop: `1px solid ${layoutAtivo.pastor.color || '#5c4338'}`, ...(drag.style || {}) }}
+                      >
+                        <div>{renderTextoFormatadoJsx(apresentacaoForm.pastorNome, layoutAtivo.pastor)}</div>
+                        <div style={{ fontSize: `${(layoutAtivo.pastor.fontSize * 0.85 * PT_TO_CQW).toFixed(3)}cqw`, fontWeight: 500, opacity: 0.85 }}>
+                          {apresentacaoForm.pastorCargo}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  {renderImagensExtrasPreview()}
                 </div>
               )}
 
               {modeloCustomAtivo && (
                 <div
+                  ref={previewSheetRef}
                   className="relative w-full aspect-[297/210] rounded-xl shadow-xl overflow-hidden select-none"
-                  style={{ backgroundColor: '#ffffff' }}
+                  style={{ backgroundColor: '#ffffff', containerType: 'inline-size' }}
                 >
+                  {modoLayout && arrastando && (
+                    <>
+                      <div className="absolute inset-y-0 left-1/2 w-[1px] bg-blue-500/50 pointer-events-none z-40" />
+                      <div className="absolute inset-x-0 top-1/2 h-[1px] bg-blue-500/50 pointer-events-none z-40" />
+                    </>
+                  )}
                   {modeloCustomAtivo.fundoImg ? (
-                    <img src={modeloCustomAtivo.fundoImg} alt={modeloCustomAtivo.titulo} className="absolute inset-0 w-full h-full object-cover" />
+                    <img src={modeloCustomAtivo.fundoImg} alt={modeloCustomAtivo.titulo} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
                   ) : (
                     <>
                       <div className="absolute inset-[3%] pointer-events-none" style={{ border: '2px solid #1e3a8a', outline: '1px solid #d4a23a', outlineOffset: '-4px' }} />
-                      <img src="/betesda-geral.png" alt="Betesda" className="absolute left-[8%] bottom-[9%] h-7 sm:h-9 w-auto object-contain" />
+                      <img src="/betesda-geral.png" alt="Betesda" className="absolute left-[8%] bottom-[9%] h-7 sm:h-9 w-auto object-contain pointer-events-none" />
                     </>
                   )}
-                  <div
-                    className="absolute left-[12%] w-[76%] text-center font-serif text-base sm:text-2xl font-extrabold uppercase truncate"
-                    style={{ top: `${modeloCustomAtivo.posNomeY || 44}%`, color: modeloCustomAtivo.corNome || '#1e3a8a' }}
-                  >
-                    {customForm.nomeParticipante || 'NOME DO PARTICIPANTE'}
-                  </div>
-                  <div
-                    className="absolute left-[14%] w-[72%] text-center text-[8.5px] sm:text-xs leading-relaxed"
-                    style={{ top: `${modeloCustomAtivo.posTextoY || 57}%`, color: modeloCustomAtivo.corTexto || '#1e293b' }}
-                  >
-                    {textoCustomResolvido}
-                  </div>
-                  <div className="absolute right-[9%] bottom-[9%] w-[34%] text-center">
-                    <div className="text-[7px] sm:text-[9px]" style={{ color: modeloCustomAtivo.corTexto || '#334155' }}>
-                      {customForm.cidade}, {dataParaExtenso(customForm.dataEmissao)}.
-                    </div>
-                    {incluirAssinatura ? (
-                      <img src="/certificados/assinatura-pastor.png" alt="Assinatura" className="h-7 sm:h-10 mx-auto -mb-2 object-contain" />
-                    ) : <div className="h-5" />}
-                    <div className="pt-0.5 text-[8px] sm:text-[10px] font-extrabold" style={{ borderTop: `1px solid ${modeloCustomAtivo.corTexto || '#1e293b'}`, color: modeloCustomAtivo.corNome || '#0f172a' }}>
-                      {customForm.pastorNome}
-                    </div>
-                    <div className="text-[7px] sm:text-[8.5px]" style={{ color: modeloCustomAtivo.corTexto || '#475569' }}>
-                      {customForm.pastorCargo}
-                    </div>
-                  </div>
+
+                  {!layoutAtivo.nome.hidden && (() => {
+                    const drag = getPropsArraste('nome');
+                    const fonte = getFonteInfo(layoutAtivo.nome.font);
+                    return (
+                      <div {...drag} className={`${fonte.className} absolute`} style={{ ...estiloTextoPreview(layoutAtivo.nome), ...(drag.style || {}) }}>
+                        {renderTextoFormatadoJsx(formatarNomeExibicao(customForm.nomeParticipante, 'NOME DO PARTICIPANTE'), layoutAtivo.nome)}
+                      </div>
+                    );
+                  })()}
+
+                  {!layoutAtivo.descricao.hidden && (() => {
+                    const drag = getPropsArraste('descricao');
+                    const fonte = getFonteInfo(layoutAtivo.descricao.font);
+                    return (
+                      <div {...drag} className={`${fonte.className} absolute leading-relaxed`} style={{ ...estiloTextoPreview(layoutAtivo.descricao), ...(drag.style || {}) }}>
+                        {textoCustomResolvido}
+                      </div>
+                    );
+                  })()}
+
+                  {layoutAtivo.data && !layoutAtivo.data.hidden && (() => {
+                    const drag = getPropsArraste('data');
+                    const fonte = getFonteInfo(layoutAtivo.data.font);
+                    return (
+                      <div {...drag} className={`${fonte.className} absolute`} style={{ ...estiloTextoPreview(layoutAtivo.data), ...(drag.style || {}) }}>
+                        {renderTextoFormatadoJsx(`${customForm.cidade}, ${dataParaExtenso(customForm.dataEmissao)}.`, layoutAtivo.data)}
+                      </div>
+                    );
+                  })()}
+
+                  {incluirAssinatura && !layoutAtivo.assinaturaImg.hidden && (() => {
+                    const drag = getPropsArraste('assinaturaImg');
+                    return (
+                      <img
+                        {...drag}
+                        src="/certificados/assinatura-pastor.png"
+                        alt="Assinatura"
+                        draggable={false}
+                        className="absolute object-contain"
+                        style={{ left: `${layoutAtivo.assinaturaImg.x}%`, top: `${layoutAtivo.assinaturaImg.y}%`, width: `${layoutAtivo.assinaturaImg.w}%`, height: `${layoutAtivo.assinaturaImg.h}%`, ...(drag.style || {}) }}
+                      />
+                    );
+                  })()}
+
+                  {!layoutAtivo.pastor.hidden && (() => {
+                    const drag = getPropsArraste('pastor');
+                    const fonte = getFonteInfo(layoutAtivo.pastor.font);
+                    return (
+                      <div
+                        {...drag}
+                        className={`${fonte.className} absolute pt-0.5`}
+                        style={{ ...estiloTextoPreview(layoutAtivo.pastor), borderTop: `1px solid ${layoutAtivo.pastor.color || '#1e293b'}`, ...(drag.style || {}) }}
+                      >
+                        <div>{renderTextoFormatadoJsx(customForm.pastorNome, layoutAtivo.pastor)}</div>
+                        <div style={{ fontSize: `${(layoutAtivo.pastor.fontSize * 0.85 * PT_TO_CQW).toFixed(3)}cqw`, fontWeight: 500, opacity: 0.85 }}>
+                          {customForm.pastorCargo}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  {renderImagensExtrasPreview()}
                 </div>
+              )}
+              {/* PAINEL INTERATIVO DE AJUSTE MANUAL DE LAYOUT */}
+              {modoLayout && (
+                <PainelAjusteLayoutCertificado
+                  layout={layoutAtivo}
+                  elementoSelecionadoId={elementoSelecionadoId}
+                  onSelecionarElemento={setElementoSelecionadoId}
+                  onAtualizarElemento={atualizarElementoLayout}
+                  onRestaurarLayout={restaurarLayoutAtivo}
+                  possuiPersonalizacao={possuiLayoutPersonalizado}
+                  onAdicionarImagemExtra={handleAdicionarImagemExtra}
+                  onRemoverImagemExtra={handleRemoverImagemExtra}
+                />
               )}
             </div>
           </div>

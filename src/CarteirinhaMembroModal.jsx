@@ -1,9 +1,40 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabaseClient';
 import { X, Printer, RotateCw, ShieldCheck, CreditCard, Scale, ExternalLink } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import QRCode from 'qrcode';
 import { mascaraCPF, mascaraCNPJ, mascaraTelefone } from './mascaras';
+import { getFonteInfo, gerarFontFacesPrintCss } from './certificadoLayoutConfig';
+import {
+  carregarConfigCarteirinha,
+  estiloTextoCardPreview,
+  estiloTextoCardPrint,
+} from './carteirinhaLayoutConfig';
+
+function formatarVersaleteCardHtml(texto, escFn) {
+  return Array.from(String(texto || ''))
+    .map((ch) => {
+      const ehMinuscula = ch !== ch.toUpperCase() && ch === ch.toLowerCase();
+      return ehMinuscula
+        ? `<span style="font-size:0.78em;">${escFn(ch.toUpperCase())}</span>`
+        : escFn(ch);
+    })
+    .join('');
+}
+
+function renderVersaleteCardJsx(texto, fontClass) {
+  return Array.from(String(texto || '')).map((ch, idx) => {
+    const ehMinuscula = ch !== ch.toUpperCase() && ch === ch.toLowerCase();
+    if (ehMinuscula) {
+      return (
+        <span key={idx} className={fontClass} style={{ fontSize: '0.78em' }}>
+          {ch.toUpperCase()}
+        </span>
+      );
+    }
+    return <React.Fragment key={idx}>{ch}</React.Fragment>;
+  });
+}
 
 function gerarNumeroRegistro(pessoa) {
   if (!pessoa) return '0001';
@@ -74,10 +105,21 @@ function flexionarCargoPorGenero(cargoTexto, genero) {
 export default function CarteirinhaMembroModal({ pessoa, onFechar }) {
   const [dadosIgreja, setDadosIgreja] = useState(null);
   const [lado, setLado] = useState('frente'); // 'frente' | 'verso'
+  const [configCustom, setConfigCustom] = useState(() => carregarConfigCarteirinha());
   const [viewport, setViewport] = useState(() => ({
     w: typeof window !== 'undefined' ? window.innerWidth : 1024,
     h: typeof window !== 'undefined' ? window.innerHeight : 768,
   }));
+
+  useEffect(() => {
+    const recarregar = () => setConfigCustom(carregarConfigCarteirinha());
+    window.addEventListener('mib-carteirinha-atualizada', recarregar);
+    window.addEventListener('storage', recarregar);
+    return () => {
+      window.removeEventListener('mib-carteirinha-atualizada', recarregar);
+      window.removeEventListener('storage', recarregar);
+    };
+  }, []);
 
   useEffect(() => {
     const atualizarViewport = () => {
@@ -225,6 +267,139 @@ export default function CarteirinhaMembroModal({ pessoa, onFechar }) {
 
     const logoBetesdaUrl = `${window.location.origin}/betesda-geral.png`;
     const logoHtml = `<img src="${esc(logoBetesdaUrl)}" alt="${esc(info.nomeIgreja)}" style="max-height:12mm;max-width:56mm;width:auto;height:auto;object-fit:contain;display:block;" />`;
+
+    const fmtPrintTxt = (txt, el) => (el?.versalete ? formatarVersaleteCardHtml(txt, esc) : esc(txt));
+
+    // Se o layout personalizado da Carteirinha estiver ativo nas Configurações, gera o CR80 com o perfil correspondente (Pastor ou Membro)
+    if (configCustom?.ativo) {
+      const origin = window.location.origin;
+      const fontFacesLocaisCss = gerarFontFacesPrintCss(origin);
+      const perfilCfg = configCustom[info.ehPastor ? 'pastor' : 'membro'] || configCustom.membro;
+      const cf = perfilCfg.frente;
+      const cv = perfilCfg.verso;
+      const lf = cf.layout;
+      const lv = cv.layout;
+
+      const textoLegalPuro = info.ehPastor
+        ? `DIREITO NACIONAL DE CAPELANIA — Ao portador desta credencial (${info.cargoExibicao}), é assegurado o livre acesso para assistência religiosa em hospitais, presídios e entidades civis/militares em todo o território nacional (Art. 5º, VII CF/88 e Lei nº 9.982/2000).`
+        : `DECLARAÇÃO DE MEMBRESIA — Esta credencial é pessoal e intransferível, atestando que o portador é membro em plena comunhão com a ${info.nomeIgreja}, válida em todo o território nacional enquanto mantiver vínculo ativo.`;
+
+      const dadosIgrejaLinha = [
+        info.cnpjIgreja ? `CNPJ: ${info.cnpjIgreja}` : '',
+        info.telefoneIgreja ? `Tel: ${info.telefoneIgreja}` : '',
+        info.enderecoIgreja || '',
+      ].filter(Boolean).join(' • ');
+
+      const renderExtrasHtml = (arr) =>
+        (arr || [])
+          .filter((i) => !i.hidden)
+          .map(
+            (i) =>
+              `<img src="${i.src}" style="position:absolute;left:${i.x}%;top:${i.y}%;width:${i.w}%;height:${i.h}%;object-fit:contain;z-index:18;" alt="${esc(i.label)}" />`
+          )
+          .join('');
+
+      const htmlCustom = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Carteirinha - ${esc(pessoa?.nome || 'Membro')}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=David+Libre:wght@400;500;700&family=Great+Vibes&family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;600;700;800&display=swap');
+    ${fontFacesLocaisCss}
+    @page { size: A4 portrait; margin: 15mm; }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { margin: 0; padding: 0; background: #ffffff; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; color: #0f172a; }
+    .sheet-title { font-size: 11pt; font-weight: 800; color: #0f172a; margin-bottom: 2mm; }
+    .sheet-sub { font-size: 8.5pt; color: #475569; margin-bottom: 8mm; }
+    .cards-row { display: flex; flex-wrap: wrap; gap: 8mm; align-items: flex-start; }
+    .card-wrap { display: flex; flex-direction: column; gap: 2mm; }
+    .card-caption { font-size: 7.5pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
+    .id-card { width: 85.6mm; height: 54mm; border-radius: 3.2mm; overflow: hidden; position: relative; border: 0.3mm solid #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="sheet-title">${esc(info.nomeIgreja)} — ${esc(info.tituloCredencial)}</div>
+  <div class="sheet-sub">Formato padrão PVC CR80 (85,6 mm × 54 mm) • Layout Personalizado</div>
+  <div class="cards-row">
+    <div class="card-wrap">
+      <span class="card-caption">Frente</span>
+      <div class="id-card" style="background:${cf.fundoImg ? '#ffffff' : 'linear-gradient(135deg,#071936 0%,#0d2b5c 52%,#133c7c 100%)'};">
+        ${cf.fundoImg
+          ? `<img src="${cf.fundoImg}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;" alt="Fundo Frente" />`
+          : `<div style="position:absolute;top:0;left:0;right:0;height:27%;background:linear-gradient(180deg,#ffffff 0%,#f1f7fd 100%);"></div><div style="position:absolute;top:27%;left:0;right:0;height:2.4%;background:linear-gradient(90deg,#991b1b,#dc2626,#991b1b);"></div><div style="position:absolute;top:29.4%;left:0;right:0;height:0.9%;background:${info.ehAutoridade ? '#f59e0b' : '#38bdf8'};"></div>`}
+        ${lf.logo && !lf.logo.hidden ? `<img src="${esc(logoBetesdaUrl)}" style="position:absolute;left:${lf.logo.x}%;top:${lf.logo.y}%;width:${lf.logo.w}%;height:${lf.logo.h}%;object-fit:contain;object-position:left center;z-index:5;" alt="Logo" />` : ''}
+        ${lf.foto && !lf.foto.hidden ? `<div style="position:absolute;left:${lf.foto.x}%;top:${lf.foto.y}%;width:${lf.foto.w}%;height:${lf.foto.h}%;border-radius:2mm;overflow:hidden;border:0.55mm solid rgba(255,255,255,0.95);background:#e0f2fe;z-index:5;">${fotoHtml}</div>` : ''}
+        ${lf.titulo && !lf.titulo.hidden ? `<div style="${estiloTextoCardPrint(lf.titulo)}z-index:6;white-space:nowrap;">${fmtPrintTxt(info.tituloCredencial, lf.titulo)}</div>` : ''}
+        ${lf.registro && !lf.registro.hidden ? `<div style="${estiloTextoCardPrint(lf.registro)}z-index:6;padding:0.6mm 1.2mm;border-radius:1.2mm;background:${cf.fundoImg ? 'transparent' : 'rgba(255,255,255,0.12)'};"><span style="display:block;font-size:4pt;color:#93c5fd;font-weight:700;line-height:1;">Nº REGISTRO</span><span>${fmtPrintTxt(info.numRegistro, lf.registro)}</span></div>` : ''}
+        ${lf.cargoBanner && !lf.cargoBanner.hidden ? `<div style="${estiloTextoCardPrint(lf.cargoBanner)}z-index:6;padding:0.8mm 2mm;border-radius:1.2mm;background:${cf.fundoImg ? 'transparent' : info.ehAutoridade ? 'linear-gradient(90deg,#b45309,#d97706,#f59e0b)' : 'linear-gradient(90deg,#1d4ed8,#2563eb,#0284c7)'};">${fmtPrintTxt(info.cargoBanner, lf.cargoBanner)}</div>` : ''}
+        ${lf.nome && !lf.nome.hidden ? `<div style="${estiloTextoCardPrint(lf.nome)}z-index:6;padding:0.6mm 1.6mm;border-radius:1.2mm;background:${cf.fundoImg ? 'transparent' : 'rgba(255,255,255,0.96)'};border-left:${cf.fundoImg ? 'none' : `0.8mm solid ${info.ehAutoridade ? '#d97706' : '#2563eb'}`};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><span style="display:block;font-size:4pt;color:#64748b;font-weight:700;line-height:1;">NOME</span><span>${fmtPrintTxt(pessoa?.nome || info.nomeUpper, lf.nome)}</span></div>` : ''}
+        ${lf.localidade && !lf.localidade.hidden ? `<div style="${estiloTextoCardPrint(lf.localidade)}z-index:6;padding:0.6mm 1.6mm;border-radius:1.2mm;background:${cf.fundoImg ? 'transparent' : 'rgba(255,255,255,0.96)'};border-left:${cf.fundoImg ? 'none' : `0.8mm solid ${info.ehAutoridade ? '#d97706' : '#2563eb'}`};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><span style="display:block;font-size:4pt;color:#64748b;font-weight:700;line-height:1;">CIDADE/UF/PAÍS</span><span>${fmtPrintTxt(info.localidade, lf.localidade)}</span></div>` : ''}
+        ${[
+          { k: 'cpf', lbl: 'CPF', val: info.cpfFmt },
+          { k: 'rg', lbl: 'RG', val: info.rgFmt },
+          { k: 'cargo', lbl: 'CARGO', val: info.cargoExibicao },
+          { k: 'filiado', lbl: 'BATIZADO EM', val: info.filiadoDesde },
+        ].map((it) => lf[it.k] && !lf[it.k].hidden ? `<div style="${estiloTextoCardPrint(lf[it.k])}z-index:6;padding:0.6mm 1.2mm;border-radius:1.2mm;background:${cf.fundoImg ? 'transparent' : 'rgba(15,23,42,0.52)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><span style="display:block;font-size:3.8pt;color:#93c5fd;font-weight:700;line-height:1;">${it.lbl}</span><span>${fmtPrintTxt(it.val, lf[it.k])}</span></div>` : '').join('')}
+        ${renderExtrasHtml(cf.imagensExtras)}
+      </div>
+    </div>
+    <div class="card-wrap">
+      <span class="card-caption">Verso</span>
+      <div class="id-card" style="background:${cv.fundoImg ? '#ffffff' : 'linear-gradient(180deg,#f8fafc 0%,#e0f2fe 100%)'};">
+        ${cv.fundoImg
+          ? `<img src="${cv.fundoImg}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;" alt="Fundo Verso" />`
+          : `<div style="position:absolute;top:0;left:0;right:0;height:16.5%;background:linear-gradient(90deg,#06357a 0%,#0b52b5 100%);"></div><div style="position:absolute;top:16.5%;left:0;right:0;height:2.2%;background:linear-gradient(90deg,#991b1b,#dc2626,#991b1b);"></div>`}
+        ${lv.igrejaHeader && !lv.igrejaHeader.hidden ? `<div style="${estiloTextoCardPrint(lv.igrejaHeader)}z-index:6;">${fmtPrintTxt(info.nomeIgreja, lv.igrejaHeader)}</div>` : ''}
+        ${lv.regVerso && !lv.regVerso.hidden ? `<div style="${estiloTextoCardPrint(lv.regVerso)}z-index:6;">${fmtPrintTxt(`REG. Nº ${info.numRegistro}`, lv.regVerso)}</div>` : ''}
+        ${lv.textoLegal && !lv.textoLegal.hidden ? `<div style="${estiloTextoCardPrint(lv.textoLegal)}z-index:6;padding:1.4mm 1.8mm;border-radius:1.4mm;background:${cv.fundoImg ? 'transparent' : 'rgba(255,255,255,0.88)'};border-left:${cv.fundoImg ? 'none' : '1mm solid #1d4ed8'};">${esc(textoLegalPuro)}</div>` : ''}
+        ${lv.dadosIgreja && !lv.dadosIgreja.hidden ? `<div style="${estiloTextoCardPrint(lv.dadosIgreja)}z-index:6;">${esc(dadosIgrejaLinha)}</div>` : ''}
+        ${lv.assinatura && !lv.assinatura.hidden ? `<div style="${estiloTextoCardPrint(lv.assinatura)}z-index:6;border-top:0.25mm solid ${lv.assinatura.color || '#334155'};padding-top:0.6mm;">${fmtPrintTxt(`${info.pastorResponsavel} • Pastor Responsável`, lv.assinatura)}</div>` : ''}
+        ${lv.emissao && !lv.emissao.hidden ? `<div style="${estiloTextoCardPrint(lv.emissao)}z-index:6;">${esc(`Emissão: ${info.dataEmissao} • ATIVO`)}</div>` : ''}
+        ${lv.qrCode && !lv.qrCode.hidden && qrDataUrl ? `<div style="position:absolute;left:${lv.qrCode.x}%;top:${lv.qrCode.y}%;width:${lv.qrCode.w}%;height:${lv.qrCode.h}%;background:#ffffff;border:0.3mm solid #cbd5e1;border-radius:1.4mm;padding:0.9mm;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:6;"><img src="${qrDataUrl}" style="width:82%;height:auto;display:block;" alt="QR" /><span style="font-size:3.5pt;font-weight:800;color:#0d2b5c;margin-top:0.4mm;">AUTENTICAR</span></div>` : ''}
+        ${renderExtrasHtml(cv.imagensExtras)}
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+      const tituloAntigo = document.title;
+      document.title = `Carteirinha - ${pessoa?.nome || 'Membro'}`;
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.style.visibility = 'hidden';
+      document.body.appendChild(iframe);
+      const doc = iframe.contentWindow?.document;
+      if (!doc) {
+        document.body.removeChild(iframe);
+        document.title = tituloAntigo;
+        return;
+      }
+      doc.open();
+      doc.write(htmlCustom);
+      doc.close();
+      const limpar = () => {
+        document.title = tituloAntigo;
+        if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      };
+      setTimeout(() => {
+        try {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.onafterprint = limpar;
+          iframe.contentWindow.print();
+        } catch {
+          limpar();
+        }
+        setTimeout(limpar, 2500);
+      }, 280);
+      return;
+    }
 
     const textoVersoLegal = info.ehPastor
       ? `
@@ -534,7 +709,7 @@ export default function CarteirinhaMembroModal({ pessoa, onFechar }) {
             <div class="mini-pill"><span class="lbl">CPF:</span><span class="val">${esc(info.cpfFmt)}</span></div>
             <div class="mini-pill"><span class="lbl">RG:</span><span class="val">${esc(info.rgFmt)}</span></div>
             <div class="mini-pill"><span class="lbl">Cargo Ministerial:</span><span class="val">${esc(info.cargoExibicao)}</span></div>
-            <div class="mini-pill"><span class="lbl">Filiado desde:</span><span class="val">${esc(info.filiadoDesde)}</span></div>
+            <div class="mini-pill"><span class="lbl">Batizado em:</span><span class="val">${esc(info.filiadoDesde)}</span></div>
           </div>
         </div>
       </div>
@@ -615,6 +790,231 @@ export default function CarteirinhaMembroModal({ pessoa, onFechar }) {
   if (!pessoa) return null;
 
   const renderCartao = (fullLandscape = false) => {
+    // Se o administrador ativou o Layout Personalizado em Configurações -> Carteirinha
+    if (configCustom?.ativo) {
+      const perfilCfg = configCustom[info.ehPastor ? 'pastor' : 'membro'] || configCustom.membro;
+      const ladoCfg = perfilCfg?.[lado];
+      const lay = ladoCfg?.layout || {};
+      const renderTxt = (txt, el) => {
+        const fonte = getFonteInfo(el?.font);
+        return el?.versalete ? renderVersaleteCardJsx(txt, fonte.className) : txt;
+      };
+      const textoLegalCustom = info.ehPastor
+        ? `DIREITO NACIONAL DE CAPELANIA — Ao portador desta credencial (${info.cargoExibicao}), é assegurado o livre acesso para assistência religiosa em hospitais, presídios e entidades civis/militares em todo o território nacional (Art. 5º, VII CF/88 e Lei nº 9.982/2000).`
+        : `DECLARAÇÃO DE MEMBRESIA — Esta credencial é pessoal e intransferível, atestando que o portador é membro em plena comunhão com a ${info.nomeIgreja}, válida em todo o território nacional enquanto mantiver vínculo ativo.`;
+      const dadosIgrejaCustom = [
+        info.cnpjIgreja ? `CNPJ: ${info.cnpjIgreja}` : '',
+        info.telefoneIgreja ? `Tel: ${info.telefoneIgreja}` : '',
+        info.enderecoIgreja || '',
+      ].filter(Boolean).join(' • ');
+
+      return (
+        <div
+          className="relative w-full h-full aspect-[1.586/1] rounded-2xl overflow-hidden shadow-[0_20px_50px_-12px_rgba(7,25,54,0.65)] border border-white/30 select-none"
+          style={{
+            containerType: 'inline-size',
+            background: ladoCfg?.fundoImg
+              ? '#ffffff'
+              : lado === 'frente'
+                ? 'linear-gradient(135deg, #071936 0%, #0d2b5c 52%, #133c7c 100%)'
+                : 'linear-gradient(180deg, #f8fafc 0%, #e0f2fe 100%)',
+          }}
+        >
+          {ladoCfg?.fundoImg ? (
+            <img src={ladoCfg.fundoImg} alt="Fundo Carteirinha" className="absolute inset-0 w-full h-full object-cover" />
+          ) : lado === 'frente' ? (
+            <>
+              <div className="absolute top-0 left-0 right-0 h-[27%]" style={{ background: 'linear-gradient(180deg, #ffffff 0%, #f1f7fd 100%)' }} />
+              <div className="absolute top-[27%] left-0 right-0 h-[2.4%]" style={{ background: 'linear-gradient(90deg, #991b1b, #dc2626, #991b1b)' }} />
+              <div className="absolute top-[29.4%] left-0 right-0 h-[0.9%]" style={{ backgroundColor: info.ehAutoridade ? '#f59e0b' : '#38bdf8' }} />
+            </>
+          ) : (
+            <>
+              <div className="absolute top-0 left-0 right-0 h-[16.5%]" style={{ background: 'linear-gradient(90deg, #06357a 0%, #0b52b5 100%)' }} />
+              <div className="absolute top-[16.5%] left-0 right-0 h-[2.2%]" style={{ background: 'linear-gradient(90deg, #991b1b, #dc2626, #991b1b)' }} />
+            </>
+          )}
+
+          {lado === 'frente' ? (
+            <>
+              {lay.logo && !lay.logo.hidden && (
+                <img
+                  src="/betesda-geral.png"
+                  alt={info.nomeIgreja}
+                  className="absolute object-contain object-left"
+                  style={{ left: `${lay.logo.x}%`, top: `${lay.logo.y}%`, width: `${lay.logo.w}%`, height: `${lay.logo.h}%` }}
+                />
+              )}
+              {lay.foto && !lay.foto.hidden && (
+                <div
+                  className="absolute rounded-xl overflow-hidden flex items-center justify-center shadow-md"
+                  style={{
+                    left: `${lay.foto.x}%`,
+                    top: `${lay.foto.y}%`,
+                    width: `${lay.foto.w}%`,
+                    height: `${lay.foto.h}%`,
+                    border: '2px solid rgba(255,255,255,0.95)',
+                    background: 'linear-gradient(180deg, #e0f2fe, #bae6fd)',
+                  }}
+                >
+                  {pessoa.foto_url ? (
+                    <img src={pessoa.foto_url} alt={pessoa.nome} className="w-full h-full object-cover object-top" />
+                  ) : (
+                    <span style={{ fontSize: '9cqw', fontWeight: 900, color: '#0a52b8' }}>{info.nomeUpper.charAt(0)}</span>
+                  )}
+                </div>
+              )}
+              {lay.titulo && !lay.titulo.hidden && (
+                <div className={`${getFonteInfo(lay.titulo.font).className} absolute whitespace-nowrap`} style={estiloTextoCardPreview(lay.titulo)}>
+                  {renderTxt(info.tituloCredencial, lay.titulo)}
+                </div>
+              )}
+              {lay.registro && !lay.registro.hidden && (
+                <div
+                  className={`${getFonteInfo(lay.registro.font).className} absolute px-1.5 py-0.5 rounded-md`}
+                  style={{ ...estiloTextoCardPreview(lay.registro), backgroundColor: ladoCfg?.fundoImg ? 'transparent' : 'rgba(255,255,255,0.12)' }}
+                >
+                  <span className="block" style={{ fontSize: '1.7cqw', color: '#93c5fd', fontWeight: 700, lineHeight: 1 }}>Nº REGISTRO</span>
+                  <span className="block">{renderTxt(info.numRegistro, lay.registro)}</span>
+                </div>
+              )}
+              {lay.cargoBanner && !lay.cargoBanner.hidden && (
+                <div
+                  className={`${getFonteInfo(lay.cargoBanner.font).className} absolute px-2 py-1 rounded-md`}
+                  style={{
+                    ...estiloTextoCardPreview(lay.cargoBanner),
+                    background: ladoCfg?.fundoImg
+                      ? 'transparent'
+                      : info.ehAutoridade
+                        ? 'linear-gradient(90deg, #b45309, #d97706, #f59e0b)'
+                        : 'linear-gradient(90deg, #1d4ed8, #2563eb, #0284c7)',
+                  }}
+                >
+                  {renderTxt(info.cargoBanner, lay.cargoBanner)}
+                </div>
+              )}
+              {lay.nome && !lay.nome.hidden && (
+                <div
+                  className={`${getFonteInfo(lay.nome.font).className} absolute px-2 py-0.5 rounded-md truncate`}
+                  style={{
+                    ...estiloTextoCardPreview(lay.nome),
+                    backgroundColor: ladoCfg?.fundoImg ? 'transparent' : 'rgba(255,255,255,0.96)',
+                    borderLeft: ladoCfg?.fundoImg ? 'none' : `3px solid ${info.ehAutoridade ? '#d97706' : '#2563eb'}`,
+                  }}
+                >
+                  <span className="block" style={{ fontSize: '1.7cqw', color: '#64748b', fontWeight: 700, lineHeight: 1 }}>NOME</span>
+                  <span className="block truncate">{renderTxt(pessoa.nome || info.nomeUpper, lay.nome)}</span>
+                </div>
+              )}
+              {lay.localidade && !lay.localidade.hidden && (
+                <div
+                  className={`${getFonteInfo(lay.localidade.font).className} absolute px-2 py-0.5 rounded-md truncate`}
+                  style={{
+                    ...estiloTextoCardPreview(lay.localidade),
+                    backgroundColor: ladoCfg?.fundoImg ? 'transparent' : 'rgba(255,255,255,0.96)',
+                    borderLeft: ladoCfg?.fundoImg ? 'none' : `3px solid ${info.ehAutoridade ? '#d97706' : '#2563eb'}`,
+                  }}
+                >
+                  <span className="block" style={{ fontSize: '1.7cqw', color: '#64748b', fontWeight: 700, lineHeight: 1 }}>CIDADE/UF/PAÍS</span>
+                  <span className="block truncate">{renderTxt(info.localidade, lay.localidade)}</span>
+                </div>
+              )}
+              {[
+                { key: 'cpf', lbl: 'CPF', val: info.cpfFmt },
+                { key: 'rg', lbl: 'RG', val: info.rgFmt },
+                { key: 'cargo', lbl: 'CARGO', val: info.cargoExibicao },
+                { key: 'filiado', lbl: 'BATIZADO EM', val: info.filiadoDesde },
+              ].map((it) => {
+                const el = lay[it.key];
+                if (!el || el.hidden) return null;
+                return (
+                  <div
+                    key={it.key}
+                    className={`${getFonteInfo(el.font).className} absolute px-1.5 py-0.5 rounded-md truncate`}
+                    style={{ ...estiloTextoCardPreview(el), backgroundColor: ladoCfg?.fundoImg ? 'transparent' : 'rgba(15,23,42,0.52)' }}
+                  >
+                    <span className="block" style={{ fontSize: '1.6cqw', color: '#93c5fd', fontWeight: 700, lineHeight: 1 }}>{it.lbl}</span>
+                    <span className="block truncate">{renderTxt(it.val, el)}</span>
+                  </div>
+                );
+              })}
+            </>
+          ) : (
+            <>
+              {lay.igrejaHeader && !lay.igrejaHeader.hidden && (
+                <div className={`${getFonteInfo(lay.igrejaHeader.font).className} absolute truncate`} style={estiloTextoCardPreview(lay.igrejaHeader)}>
+                  {renderTxt(info.nomeIgreja, lay.igrejaHeader)}
+                </div>
+              )}
+              {lay.regVerso && !lay.regVerso.hidden && (
+                <div className={`${getFonteInfo(lay.regVerso.font).className} absolute whitespace-nowrap`} style={estiloTextoCardPreview(lay.regVerso)}>
+                  {renderTxt(`REG. Nº ${info.numRegistro}`, lay.regVerso)}
+                </div>
+              )}
+              {lay.textoLegal && !lay.textoLegal.hidden && (
+                <div
+                  className={`${getFonteInfo(lay.textoLegal.font).className} absolute p-1.5 rounded-md`}
+                  style={{
+                    ...estiloTextoCardPreview(lay.textoLegal),
+                    backgroundColor: ladoCfg?.fundoImg ? 'transparent' : 'rgba(255,255,255,0.88)',
+                    borderLeft: ladoCfg?.fundoImg ? 'none' : '3px solid #1d4ed8',
+                  }}
+                >
+                  {textoLegalCustom}
+                </div>
+              )}
+              {lay.dadosIgreja && !lay.dadosIgreja.hidden && (
+                <div className={`${getFonteInfo(lay.dadosIgreja.font).className} absolute`} style={estiloTextoCardPreview(lay.dadosIgreja)}>
+                  {dadosIgrejaCustom}
+                </div>
+              )}
+              {lay.assinatura && !lay.assinatura.hidden && (
+                <div
+                  className={`${getFonteInfo(lay.assinatura.font).className} absolute pt-0.5`}
+                  style={{ ...estiloTextoCardPreview(lay.assinatura), borderTop: `1px solid ${lay.assinatura.color || '#334155'}` }}
+                >
+                  {renderTxt(`${info.pastorResponsavel} • Pastor Responsável`, lay.assinatura)}
+                </div>
+              )}
+              {lay.emissao && !lay.emissao.hidden && (
+                <div className={`${getFonteInfo(lay.emissao.font).className} absolute`} style={estiloTextoCardPreview(lay.emissao)}>
+                  {`Emissão: ${info.dataEmissao} • ATIVO`}
+                </div>
+              )}
+              {lay.qrCode && !lay.qrCode.hidden && info.urlValidacao && (
+                <div
+                  className="absolute rounded-lg p-1 flex flex-col items-center justify-center shadow-xs"
+                  style={{
+                    left: `${lay.qrCode.x}%`,
+                    top: `${lay.qrCode.y}%`,
+                    width: `${lay.qrCode.w}%`,
+                    height: `${lay.qrCode.h}%`,
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                  }}
+                >
+                  <QRCodeSVG value={info.urlValidacao} size={64} bgColor="#ffffff" fgColor="#071936" style={{ width: '82%', height: 'auto' }} />
+                  <span style={{ fontSize: '1.5cqw', fontWeight: 800, color: '#0d2b5c', marginTop: '2px' }}>AUTENTICAR</span>
+                </div>
+              )}
+            </>
+          )}
+
+          {(ladoCfg?.imagensExtras || [])
+            .filter((imgEl) => !imgEl.hidden)
+            .map((imgEl) => (
+              <img
+                key={imgEl.id}
+                src={imgEl.src}
+                alt={imgEl.label}
+                className="absolute object-contain"
+                style={{ left: `${imgEl.x}%`, top: `${imgEl.y}%`, width: `${imgEl.w}%`, height: `${imgEl.h}%`, zIndex: 18 }}
+              />
+            ))}
+        </div>
+      );
+    }
+
     if (lado === 'frente') {
       return (
         /* ── FRENTE DA CARTEIRINHA (Elegante & Moderna) ── */
@@ -748,7 +1148,7 @@ export default function CarteirinhaMembroModal({ pessoa, onFechar }) {
                 { label: 'CPF', valor: info.cpfFmt },
                 { label: 'RG', valor: info.rgFmt },
                 { label: 'Cargo Ministerial', valor: info.cargoExibicao },
-                { label: 'Filiado desde', valor: info.filiadoDesde },
+                { label: 'Batizado em', valor: info.filiadoDesde },
               ].map((campo) => (
                 <div
                   key={campo.label}

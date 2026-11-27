@@ -1700,7 +1700,17 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
   const [formatoExportarInicial, setFormatoExportarInicial] = useState('pdf');
   const [incluirTransporteNoTotal, setIncluirTransporteNoTotal] = useState(true);
   const [modalRecibo, setModalRecibo] = useState({ aberto: false, inscrito: null });
+  const [toastWhatsApp, setToastWhatsApp] = useState(null);
   const sincronizadosDemogRef = useRef(new Set());
+
+  const notificarWhatsApp = useCallback((type, msg, duracaoMs = 6500) => {
+    setToastWhatsApp({ type, msg });
+    if (duracaoMs > 0) {
+      setTimeout(() => {
+        setToastWhatsApp((atual) => (atual?.msg === msg ? null : atual));
+      }, duracaoMs);
+    }
+  }, []);
 
   useEffect(() => {
     sincronizadosDemogRef.current.clear();
@@ -2229,6 +2239,27 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
     return `${dia}/${mes}/${ano} ${hora ? hora.slice(0, 5) : '00:00'}`;
   };
 
+  const executarEnvioReciboAuto = useCallback(async (inscAtualizado) => {
+    if (!inscAtualizado) return;
+    notificarWhatsApp('loading', 'Enviando Recibo Especial (PDF) no WhatsApp...', 0);
+    try {
+      const res = await dispararReciboQuitacaoAutomatico({
+        evento,
+        inscrito: inscAtualizado,
+        pessoas,
+        obterZonaParticipante
+      });
+      if (res?.ok) {
+        notificarWhatsApp('success', `Recibo Especial em PDF enviado no WhatsApp de ${res.nome || 'participante'}!`, 6500);
+      } else if (res?.skipped) {
+        notificarWhatsApp('warning', `Recibo não enviado: ${res.reason}`, 7500);
+      }
+    } catch (err) {
+      console.warn('[WhatsApp Auto] Recibo não enviado automaticamente:', err?.message);
+      notificarWhatsApp('error', `WhatsApp automático: ${err?.message || 'servidor indisponível.'}`, 8500);
+    }
+  }, [evento, pessoas, obterZonaParticipante, notificarWhatsApp]);
+
   const handleUpdateStatus = async (id, novoStatus) => {
     const insc = inscritos.find(i => i.id === id);
     const dados = insc?.dados_inscricao || {};
@@ -2249,17 +2280,16 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
     const { error } = await supabase.from('agenda_inscricoes').update(patch).eq('id', id);
     if (!error) {
       const inscAtualizado = insc ? { ...insc, ...patch } : null;
-      setInscritos(prev => prev.map(ins => ins.id === id ? { ...ins, ...patch } : ins));
+      setInscritos(prev => {
+        const atualizados = prev.map(ins => ins.id === id ? { ...ins, ...patch } : ins);
+        if (evento?.id) cacheAgenda.inscritosPorEvento[evento.id] = atualizados;
+        return atualizados;
+      });
       setModalInscrito({ aberto: false, dados: null });
 
       // Disparo automático do Recibo Especial em PDF via Servidor WhatsApp ao quitar inscrição paga
       if (!isGratuito && novoStatus === 'pago' && insc?.status_pagamento !== 'pago' && inscAtualizado) {
-        dispararReciboQuitacaoAutomatico({
-          evento,
-          inscrito: inscAtualizado,
-          pessoas,
-          obterZonaParticipante
-        }).catch((err) => console.warn('[WhatsApp Auto] Recibo não enviado automaticamente:', err?.message));
+        executarEnvioReciboAuto(inscAtualizado);
       }
     }
   };
@@ -2295,17 +2325,16 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
 
     if (!error) {
       const inscAtualizado = { ...insc, status_pagamento: novoStatus, dados_inscricao: novosDadosInscricao };
-      setInscritos(prev => prev.map(item => item.id === insc.id ? { ...item, status_pagamento: novoStatus, dados_inscricao: novosDadosInscricao } : item));
+      setInscritos(prev => {
+        const atualizados = prev.map(item => item.id === insc.id ? { ...item, status_pagamento: novoStatus, dados_inscricao: novosDadosInscricao } : item);
+        if (evento?.id) cacheAgenda.inscritosPorEvento[evento.id] = atualizados;
+        return atualizados;
+      });
       setModalInscrito(prev => ({ ...prev, dados: { ...prev.dados, status_pagamento: novoStatus, dados_inscricao: novosDadosInscricao } }));
 
       // Se a última parcela acabou de ser quitada, dispara o Recibo Especial em PDF automaticamente
       if (!isGratuito && novoStatus === 'pago' && insc.status_pagamento !== 'pago') {
-        dispararReciboQuitacaoAutomatico({
-          evento,
-          inscrito: inscAtualizado,
-          pessoas,
-          obterZonaParticipante
-        }).catch((err) => console.warn('[WhatsApp Auto] Recibo não enviado automaticamente:', err?.message));
+        executarEnvioReciboAuto(inscAtualizado);
       }
     }
   };
@@ -2329,6 +2358,31 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {toastWhatsApp && (
+        <div
+          className={`fixed bottom-5 right-5 z-[300] max-w-sm px-4 py-3 rounded-2xl shadow-2xl border text-xs font-bold flex items-center gap-2.5 animate-in slide-in-from-bottom-3 duration-200 print:hidden ${
+            toastWhatsApp.type === 'success'
+              ? 'bg-emerald-600 text-white border-emerald-400/40'
+              : toastWhatsApp.type === 'warning'
+                ? 'bg-amber-500 text-white border-amber-300/40'
+                : toastWhatsApp.type === 'error'
+                  ? 'bg-rose-600 text-white border-rose-400/40'
+                  : 'bg-slate-900 text-white border-slate-700'
+          }`}
+        >
+          <span>
+            {toastWhatsApp.type === 'success' ? '✅' : toastWhatsApp.type === 'warning' ? '⚠️' : toastWhatsApp.type === 'error' ? '❌' : '⏳'}
+          </span>
+          <span className="flex-1 leading-snug">{toastWhatsApp.msg}</span>
+          <button
+            type="button"
+            onClick={() => setToastWhatsApp(null)}
+            className="text-white/80 hover:text-white font-black ml-1 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between flex-wrap gap-y-4 print:hidden">
         <button className="btn-ghost !rounded-md text-xs sm:text-sm p-2 sm:px-4 sm:py-2" onClick={onVoltar}>
           <Icon.Back />

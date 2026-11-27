@@ -1,5 +1,9 @@
 import { supabase } from '../supabaseClient';
-import { gerarReciboQuitacaoPDF, obterMensagemBoasVindasEvento } from '../utils/reciboQuitacaoPdf';
+import {
+  gerarReciboQuitacaoPDF,
+  obterMensagemBoasVindasEvento,
+  obterMensagemCheckinBoasVindas
+} from '../utils/reciboQuitacaoPdf';
 
 const STORAGE_KEY = 'mib_whatsapp_server_config_v1';
 const BRIDGE_TABLE = 'whatsapp_bridge_mib';
@@ -8,7 +12,9 @@ export const DEFAULT_WHATSAPP_CONFIG = {
   serverUrl: 'http://localhost:3001',
   autoEnviarReciboQuitacao: true,
   autoEnviarBoasVindasEvento: true,
-  mensagemBoasVindasTemplate: ''
+  autoEnviarBoasVindasCheckin: true,
+  mensagemBoasVindasTemplate: '',
+  mensagemCheckinTemplate: ''
 };
 
 export function obterConfigWhatsApp() {
@@ -74,8 +80,8 @@ async function lerStatusBridgeSupabase() {
       .maybeSingle();
     if (error || !data?.bridge_status) return null;
     const bridge = data.bridge_status;
-    // Considera ponte ativa se heartbeat ocorreu nos últimos 60 segundos
-    const ativo = bridge.heartbeat && (Date.now() - bridge.heartbeat) < 60000;
+    // Considera ponte ativa se heartbeat ocorreu nos últimos 10 minutos (heartbeat a cada 5 min)
+    const ativo = bridge.heartbeat && (Date.now() - bridge.heartbeat) < 10 * 60 * 1000;
     return {
       ok: ativo,
       viaBridge: true,
@@ -202,7 +208,7 @@ export async function desconectarWhatsApp() {
 }
 
 export async function enviarDocumentoWhatsApp({ phone, fileName, caption, pdfBase64, mimetype = 'application/pdf' }) {
-  const cfg = obterConfigWhatsApp();
+  const cfg = await carregarConfigWhatsAppRemota();
   const baseUrl = limparBaseUrl(cfg.serverUrl);
   const payload = { phone, fileName, caption, pdfBase64, mimetype };
 
@@ -217,13 +223,25 @@ export async function enviarDocumentoWhatsApp({ phone, fileName, caption, pdfBas
         },
         25000
       );
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'Falha ao enviar documento.');
-      return { ...data, viaBridge: false };
-    } catch (err) {
-      if (err?.name !== 'AbortError' && !String(err?.message || '').includes('Failed to fetch')) {
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (_) {
+        data = null;
+      }
+      if (res.ok && data?.ok) {
+        return { ...data, viaBridge: false };
+      }
+      if (data && data.ok === false && data.error) {
+        const err = new Error(data.error);
+        err.isWhatsAppBusinessError = true;
         throw err;
       }
+    } catch (err) {
+      if (err?.isWhatsAppBusinessError) {
+        throw err;
+      }
+      // Qualquer erro de rede/CORS/timeout/502 faz fallback automático para a Ponte Supabase
     }
   }
 
@@ -231,7 +249,7 @@ export async function enviarDocumentoWhatsApp({ phone, fileName, caption, pdfBas
 }
 
 export async function enviarMensagemWhatsApp({ phone, text }) {
-  const cfg = obterConfigWhatsApp();
+  const cfg = await carregarConfigWhatsAppRemota();
   const baseUrl = limparBaseUrl(cfg.serverUrl);
   const payload = { phone, text };
 
@@ -246,13 +264,25 @@ export async function enviarMensagemWhatsApp({ phone, text }) {
         },
         20000
       );
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'Falha ao enviar mensagem.');
-      return { ...data, viaBridge: false };
-    } catch (err) {
-      if (err?.name !== 'AbortError' && !String(err?.message || '').includes('Failed to fetch')) {
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (_) {
+        data = null;
+      }
+      if (res.ok && data?.ok) {
+        return { ...data, viaBridge: false };
+      }
+      if (data && data.ok === false && data.error) {
+        const err = new Error(data.error);
+        err.isWhatsAppBusinessError = true;
         throw err;
       }
+    } catch (err) {
+      if (err?.isWhatsAppBusinessError) {
+        throw err;
+      }
+      // Qualquer erro de rede/CORS/timeout/502 faz fallback automático para a Ponte Supabase
     }
   }
 
@@ -270,7 +300,7 @@ export async function dispararReciboQuitacaoAutomatico({
   obterZonaParticipante,
   forcar = false
 }) {
-  const cfg = obterConfigWhatsApp();
+  const cfg = await carregarConfigWhatsAppRemota();
   if (!forcar && !cfg.autoEnviarReciboQuitacao) {
     return { skipped: true, reason: 'Envio automático de recibo desativado nas configurações.' };
   }
@@ -305,7 +335,7 @@ export async function dispararBoasVindasEventoAutomatico({
   telefone,
   forcar = false
 }) {
-  const cfg = obterConfigWhatsApp();
+  const cfg = await carregarConfigWhatsAppRemota();
   if (!forcar && !cfg.autoEnviarBoasVindasEvento) {
     return { skipped: true, reason: 'Envio automático de boas-vindas desativado nas configurações.' };
   }
@@ -318,6 +348,35 @@ export async function dispararBoasVindasEventoAutomatico({
     evento,
     nome,
     templateCustom: cfg.mensagemBoasVindasTemplate
+  });
+
+  const res = await enviarMensagemWhatsApp({ phone: telefone, text });
+  return { ok: true, ...res };
+}
+
+/**
+ * Dispara automaticamente mensagem de boas-vindas ao evento quando o QR Code
+ * do Recibo de Quitação é lido na entrada (check-in / presença confirmada).
+ */
+export async function dispararBoasVindasCheckinAutomatico({
+  evento,
+  nome,
+  telefone,
+  forcar = false
+}) {
+  const cfg = await carregarConfigWhatsAppRemota();
+  if (!forcar && !cfg.autoEnviarBoasVindasCheckin) {
+    return { skipped: true, reason: 'Envio automático de boas-vindas no check-in desativado nas configurações.' };
+  }
+
+  if (!telefone) {
+    return { skipped: true, reason: 'Participante sem telefone/WhatsApp cadastrado.' };
+  }
+
+  const text = obterMensagemCheckinBoasVindas({
+    evento,
+    nome,
+    templateCustom: cfg.mensagemCheckinTemplate
   });
 
   const res = await enviarMensagemWhatsApp({ phone: telefone, text });

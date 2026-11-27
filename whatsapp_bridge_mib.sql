@@ -22,3 +22,14 @@ CREATE POLICY "whatsapp_bridge_mib_all"
   FOR ALL
   USING (true)
   WITH CHECK (true);
+
+-- Habilita Realtime na tabela para reduzir o tráfego de saída (egress) a praticamente zero em repouso
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'whatsapp_bridge_mib'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.whatsapp_bridge_mib;
+  END IF;
+END $$;

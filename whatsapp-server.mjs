@@ -264,6 +264,16 @@ async function pollSupabaseBridgeCommands() {
   isProcessingBridge = true;
 
   try {
+    // Check ultraleve (~4 bytes) antes de baixar qualquer payload: só busca pending_cmd se status === 'pending'
+    const { data: checkRow, error: checkErr } = await supabase
+      .from(BRIDGE_TABLE)
+      .select("id")
+      .eq("id", 1)
+      .eq("pending_cmd->>status", "pending")
+      .maybeSingle();
+
+    if (checkErr || !checkRow) return;
+
     const { data: row, error } = await supabase
       .from(BRIDGE_TABLE)
       .select("id, pending_cmd")
@@ -613,12 +623,28 @@ const RENDER_URL = process.env.RENDER_EXTERNAL_URL || "";
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`====================================================`);
   console.log(`[WhatsApp MIB] Servidor Próprio rodando na porta ${PORT}`);
-  console.log(`[WhatsApp MIB] Ponte Supabase: ${supabase ? "ATIVA" : "INATIVA (configure VITE_SUPABASE_URL/KEY)"}`);
+  console.log(`[WhatsApp MIB] Ponte Supabase: ${supabase ? "ATIVA (Realtime + Economia de Egress)" : "INATIVA"}`);
   console.log(`====================================================`);
   startWhatsApp();
   if (supabase) {
-    setInterval(pollSupabaseBridgeCommands, 1500);
-    setInterval(syncBridgeStatusToSupabase, 12000);
+    // Escuta em tempo real (0 bytes de egress em repouso)
+    try {
+      supabase
+        .channel("mib-whatsapp-bridge")
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: BRIDGE_TABLE, filter: "id=eq.1" },
+          () => {
+            pollSupabaseBridgeCommands();
+          }
+        )
+        .subscribe();
+    } catch (_) {}
+
+    // Fallback leve a cada 20s (consulta apenas id quando há comando pendente)
+    setInterval(pollSupabaseBridgeCommands, 20000);
+    // Heartbeat de status a cada 5 minutos (mudanças de estado já sincronizam na hora)
+    setInterval(syncBridgeStatusToSupabase, 5 * 60 * 1000);
   }
   if (RENDER_URL) {
     setInterval(() => {

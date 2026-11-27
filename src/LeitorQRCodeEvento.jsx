@@ -5,7 +5,10 @@ import { baixarCartaoPNG, baixarCartaoPDF } from './cartaoDigital';
 import { supabase } from './supabaseClient';
 import { Card, PageHeader } from './ui';
 import { extrairValorInscricao, findInJsonGlobal, extrairParcelasInscricao } from './eventoInscricaoUtils';
-import { dispararReciboQuitacaoAutomatico } from './services/whatsappServerService';
+import {
+  dispararReciboQuitacaoAutomatico,
+  dispararBoasVindasCheckinAutomatico
+} from './services/whatsappServerService';
 import './LeitorQRCode.css';
 import {
   Camera, QrCode, CheckCircle, AlertCircle,
@@ -218,8 +221,9 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
 
       const dados = inscricao.dados_inscricao || {};
       const nome = findInJsonGlobal(dados, ['nome', 'nome completo', 'completo']) || qrPayload.participante || 'Participante';
+      const email = findInJsonGlobal(dados, 'email') || '';
       const cpf = findInJsonGlobal(dados, 'cpf') || '';
-      const telefone = findInJsonGlobal(dados, ['telefone', 'celular', 'whatsapp', 'contato']) || '';
+      let telefone = findInJsonGlobal(dados, ['telefone', 'celular', 'whatsapp', 'contato', 'fone']) || '';
       const incluiTransporte = findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
       const eventoTitulo = inscricao.agenda_eventos?.titulo || 'Evento MIB';
       const codigoRecibo = qrPayload.recibo || `REC-${new Date().getFullYear()}-${String(inscricao.id).slice(0, 8).toUpperCase()}`;
@@ -331,11 +335,53 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
         telefone,
         incluiTransporte,
         statusPagamento: 'pago',
-        presencaEm: agoraIso
+        presencaEm: agoraIso,
+        whatsappStatus: 'sending',
+        whatsappMsg: 'Enviando boas-vindas no WhatsApp...'
       });
       setStatus({ loading: false, msg: `Acesso liberado para ${nome}!`, type: 'success' });
 
       if (onBaixaRealizada) onBaixaRealizada();
+
+      // Dispara mensagem automática de boas-vindas ao evento no WhatsApp do participante
+      (async () => {
+        try {
+          let telefoneEnvio = telefone;
+          if (!telefoneEnvio && (email || nome)) {
+            const { data: pessoaMatch } = email
+              ? await supabase.from('pessoas').select('telefone').ilike('email', email.trim()).limit(1).maybeSingle()
+              : await supabase.from('pessoas').select('telefone').ilike('nome', nome.trim()).limit(1).maybeSingle();
+            if (pessoaMatch?.telefone) telefoneEnvio = pessoaMatch.telefone;
+          }
+
+          const waRes = await dispararBoasVindasCheckinAutomatico({
+            evento: inscricao.agenda_eventos,
+            nome,
+            telefone: telefoneEnvio
+          });
+
+          if (waRes?.ok) {
+            setCheckinResultado((prev) => prev ? {
+              ...prev,
+              whatsappStatus: 'sent',
+              whatsappMsg: 'Mensagem de boas-vindas enviada no WhatsApp!'
+            } : prev);
+          } else if (waRes?.skipped) {
+            setCheckinResultado((prev) => prev ? {
+              ...prev,
+              whatsappStatus: 'skipped',
+              whatsappMsg: waRes.reason
+            } : prev);
+          }
+        } catch (waErr) {
+          console.warn('[WhatsApp Check-in] Boas-vindas não enviadas:', waErr?.message);
+          setCheckinResultado((prev) => prev ? {
+            ...prev,
+            whatsappStatus: 'error',
+            whatsappMsg: waErr?.message || 'Não foi possível enviar no WhatsApp.'
+          } : prev);
+        }
+      })();
     } catch (err) {
       setCheckinResultado(null);
       setStatus({ loading: false, msg: 'Erro ao validar acesso: ' + err.message, type: 'error' });
@@ -914,6 +960,31 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
                     </div>
                   )}
                 </div>
+
+                {checkinResultado.whatsappStatus && (
+                  <div
+                    className={`mt-2 px-3 py-2 rounded-xl border text-[11px] font-bold flex items-center gap-2 ${
+                      checkinResultado.whatsappStatus === 'sent'
+                        ? 'bg-emerald-100/80 dark:bg-emerald-950/70 border-emerald-300 dark:border-emerald-700/60 text-emerald-800 dark:text-emerald-200'
+                        : checkinResultado.whatsappStatus === 'sending'
+                          ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-800/60 text-blue-700 dark:text-blue-300'
+                          : checkinResultado.whatsappStatus === 'skipped'
+                            ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800/60 text-amber-800 dark:text-amber-300'
+                            : 'bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300'
+                    }`}
+                  >
+                    <span>
+                      {checkinResultado.whatsappStatus === 'sent'
+                        ? '✅'
+                        : checkinResultado.whatsappStatus === 'sending'
+                          ? '⏳'
+                          : checkinResultado.whatsappStatus === 'skipped'
+                            ? '⚠️'
+                            : '❌'}
+                    </span>
+                    <span className="leading-snug">{checkinResultado.whatsappMsg}</span>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -383,19 +383,51 @@ export default function PainelWhatsAppConfig() {
                 </p>
               </div>
             </label>
+
+            <label className="flex items-start gap-3 p-3.5 rounded-xl border border-slate-200/80 dark:border-[#24334f] bg-slate-50/50 dark:bg-[#0f172a]/50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={config.autoEnviarBoasVindasCheckin !== false}
+                onChange={(e) => setConfig((prev) => ({ ...prev, autoEnviarBoasVindasCheckin: e.target.checked }))}
+                className="mt-0.5 w-4 h-4 rounded text-teal-600 cursor-pointer"
+              />
+              <div>
+                <p className="text-xs font-extrabold text-slate-800 dark:text-slate-100">
+                  Enviar boas-vindas ao evento na leitura do QR Code (Check-in)
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Quando o QR Code do Recibo de Quitação for escaneado na entrada, além de liberar o acesso e marcar presença, o participante recebe uma mensagem automática de boas-vindas no WhatsApp.
+                </p>
+              </div>
+            </label>
           </div>
 
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
-              Modelo Personalizado de Boas-Vindas (Opcional)
-            </label>
-            <textarea
-              rows={3}
-              value={config.mensagemBoasVindasTemplate || ''}
-              onChange={(e) => setConfig((prev) => ({ ...prev, mensagemBoasVindasTemplate: e.target.value }))}
-              placeholder="Deixe vazio para usar o modelo padrão. Variáveis disponíveis: {{NOME}}, {{PRIMEIRO_NOME}}, {{EVENTO}}, {{DATA}}, {{LOCAL}}"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#2b3954] bg-slate-50 dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/40 resize-none"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                Modelo Boas-Vindas na Inscrição (Opcional)
+              </label>
+              <textarea
+                rows={3}
+                value={config.mensagemBoasVindasTemplate || ''}
+                onChange={(e) => setConfig((prev) => ({ ...prev, mensagemBoasVindasTemplate: e.target.value }))}
+                placeholder="Vazio = modelo padrão. Variáveis: {{NOME}}, {{PRIMEIRO_NOME}}, {{EVENTO}}, {{DATA}}, {{LOCAL}}"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#2b3954] bg-slate-50 dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/40 resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
+                Modelo Boas-Vindas no Check-in / QR Code (Opcional)
+              </label>
+              <textarea
+                rows={3}
+                value={config.mensagemCheckinTemplate || ''}
+                onChange={(e) => setConfig((prev) => ({ ...prev, mensagemCheckinTemplate: e.target.value }))}
+                placeholder="Vazio = modelo padrão. Variáveis: {{NOME}}, {{PRIMEIRO_NOME}}, {{EVENTO}}, {{LOCAL}}"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-[#2b3954] bg-slate-50 dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 text-xs font-medium outline-none focus:ring-2 focus:ring-teal-500/40 resize-none"
+              />
+            </div>
           </div>
 
           <div className="flex justify-end">

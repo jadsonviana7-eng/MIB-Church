@@ -7,15 +7,21 @@ export function extrairDadosReciboQuitacao({ evento, inscrito, pessoas = [], obt
   const dados = inscrito?.dados_inscricao || {};
   const nome = findInJsonGlobal(dados, ['nome', 'nome completo', 'completo']) || 'Participante';
   const email = findInJsonGlobal(dados, 'email') || '';
-  const rawPhone = findInJsonGlobal(dados, ['telefone', 'celular', 'whatsapp', 'contato']) || '';
   const rawCpf = findInJsonGlobal(dados, 'cpf') || '';
-  const telefone = rawPhone ? mascaraTelefone(rawPhone) : '';
-  const cpf = rawCpf ? mascaraCPF(rawCpf) : '';
 
   const membro = (pessoas || []).find(p =>
     (email && p.email?.toLowerCase().trim() === email.toLowerCase().trim()) ||
     (nome && p.nome?.toLowerCase().trim() === nome.toLowerCase().trim())
   );
+
+  const rawPhone =
+    findInJsonGlobal(dados, ['telefone', 'celular', 'whatsapp', 'contato', 'fone']) ||
+    membro?.telefone ||
+    membro?.celular ||
+    membro?.whatsapp ||
+    '';
+  const telefone = rawPhone ? mascaraTelefone(rawPhone) : '';
+  const cpf = rawCpf ? mascaraCPF(rawCpf) : '';
 
   const incluiTransporte = findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
   const valorTotal = extrairValorInscricao(dados, evento);
@@ -123,6 +129,27 @@ export function obterMensagemBoasVindasEvento({ evento, nome, templateCustom }) 
     `${dataFormatada ? `📅 *Data:* ${dataFormatada}\n` : ''}` +
     `${evento?.local_nome ? `📍 *Local:* ${evento.local_nome}\n` : ''}` +
     `\nEstamos muito felizes em contar com a sua presença! Em breve entraremos em contato com mais informações. Deus abençoe!`
+  );
+}
+
+export function obterMensagemCheckinBoasVindas({ evento, nome, templateCustom }) {
+  const primeiroNome = (nome || 'Participante').split(' ')[0];
+  const local = evento?.local_nome || 'Templo Sede';
+
+  if (templateCustom && templateCustom.trim()) {
+    return templateCustom
+      .replace(/\{\{NOME\}\}/gi, nome || 'Participante')
+      .replace(/\{\{PRIMEIRO_NOME\}\}/gi, primeiroNome)
+      .replace(/\{\{EVENTO\}\}/gi, evento?.titulo || 'Evento MIB')
+      .replace(/\{\{LOCAL\}\}/gi, local);
+  }
+
+  return (
+    `*SEJA MUITO BEM-VINDO(A), ${primeiroNome.toUpperCase()}!* 🎉\n\n` +
+    `Seu credenciamento foi confirmado e sua presença está registrada no evento *${evento?.titulo || 'Evento MIB Church'}*!\n\n` +
+    `✅ *Acesso liberado*\n` +
+    `${evento?.local_nome ? `📍 *Local:* ${evento.local_nome}\n` : ''}` +
+    `\nQue Deus fale poderosamente ao seu coração e abençoe grandemente este tempo especial conosco! Aproveite cada momento!`
   );
 }
 

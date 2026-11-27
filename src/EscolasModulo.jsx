@@ -6,7 +6,8 @@ import {
   Users, Home, Calendar, Award, Sparkles, AlertCircle, Coins, Activity,
   CheckCircle, Trophy, BookOpen, Flame, TrendingUp, HelpCircle,
   FileSpreadsheet, Printer, Save, Edit3, MessageSquare, Search, Check,
-  RotateCcw, SlidersHorizontal, Layers, FileText, CheckCircle2
+  RotateCcw, SlidersHorizontal, Layers, FileText, CheckCircle2,
+  LayoutGrid, List, ArrowLeft
 } from 'lucide-react';
 
 const getIconForCourse = (nome) => {
@@ -56,6 +57,14 @@ export const isAlunoDesistente = (aluno) => {
 
 export const isAlunoAtivo = (aluno) => !isAlunoDesistente(aluno);
 
+// Cache em memória do Módulo de Escolas para abertura instantânea de Cursos, Turmas, Detalhes da Turma e Dashboard
+const cacheEscolas = {
+  escolas: null,
+  turmas: null,
+  dadosPorTurma: {},
+  dashboardStats: null
+};
+
 export default function EscolasModulo({
   submenu,
   onNavigate,
@@ -69,7 +78,7 @@ export default function EscolasModulo({
   filtroCursoTurmas,
   setFiltroCursoTurmas
 }) {
-  const [escolas, setEscolas] = useState([]);
+  const [escolas, setEscolas] = useState(() => cacheEscolas.escolas || []);
   const [carregando, setCarregando] = useState(false);
   const [escolaEditando, setEscolaEditando] = useState(null);
   const [isModalEdicaoAberto, setIsModalEdicaoAberto] = useState(false);
@@ -90,9 +99,27 @@ export default function EscolasModulo({
   const [selectedMembrosParaAdicionar, setSelectedMembrosParaAdicionar] = useState([]); // Para seleção de alunos na turma
 
   // Estados para Turmas
-  const [turmas, setTurmas] = useState([]);
+  const [turmas, setTurmas] = useState(() => cacheEscolas.turmas || []);
   const [isModalEdicaoTurmaAberto, setIsModalEdicaoTurmaAberto] = useState(false);
   const [turmaEditando, setTurmaEditando] = useState(null);
+
+  // Modo de visualização (Blocos vs Lista) para Cursos e Turmas
+  const [modoVisCursos, setModoVisCursos] = useState(() => {
+    try { return localStorage.getItem('mib_escolas_vis_cursos') || 'blocos'; } catch { return 'blocos'; }
+  });
+  const [modoVisTurmas, setModoVisTurmas] = useState(() => {
+    try { return localStorage.getItem('mib_escolas_vis_turmas') || 'blocos'; } catch { return 'blocos'; }
+  });
+
+  const alterarModoVisCursos = (modo) => {
+    setModoVisCursos(modo);
+    try { localStorage.setItem('mib_escolas_vis_cursos', modo); } catch {}
+  };
+
+  const alterarModoVisTurmas = (modo) => {
+    setModoVisTurmas(modo);
+    try { localStorage.setItem('mib_escolas_vis_turmas', modo); } catch {}
+  };
 
   // Detalhes da Turma Selecionada
   const [isAddingAlunos, setIsAddingAlunos] = useState(false); // Estado de carregamento local para o modal de adicionar alunos
@@ -101,6 +128,7 @@ export default function EscolasModulo({
   // Estados do formulário Turmas
   const [turmaCursoId, setTurmaCursoId] = useState('');
   const [turmaNome, setTurmaNome] = useState('');
+  const [turmaDataInicio, setTurmaDataInicio] = useState(new Date().toISOString().split('T')[0]);
   const [turmaHorario, setTurmaHorario] = useState('Não definido');
   const [turmaStatus, setTurmaStatus] = useState('Preparando turma');
   const [turmaDescricao, setTurmaDescricao] = useState('');
@@ -110,17 +138,26 @@ export default function EscolasModulo({
   // Estados Edição Turmas
   const [editTurmaCursoId, setEditTurmaCursoId] = useState('');
   const [editTurmaNome, setEditTurmaNome] = useState('');
+  const [editTurmaDataInicio, setEditTurmaDataInicio] = useState('');
   const [editTurmaHorario, setEditTurmaHorario] = useState('');
   const [editTurmaStatus, setEditTurmaStatus] = useState('');
   const [editTurmaDescricao, setEditTurmaDescricao] = useState('');
 
+  // Pré-seleciona o curso no formulário de Nova Turma quando um curso está filtrado
+  useEffect(() => {
+    if (filtroCursoTurmas) {
+      setTurmaCursoId(filtroCursoTurmas);
+    }
+  }, [filtroCursoTurmas]);
+
   // Estados para Gestão de Alunos/Disciplinas/Aulas/Avaliações
-  const [alunosTurma, setAlunosTurma] = useState([]);
-  const [disciplinasTurma, setDisciplinasTurma] = useState([]);
-  const [aulasTurma, setAulasTurma] = useState([]);
-  const [avaliacoesTurma, setAvaliacoesTurma] = useState([]);
-  const [avaliacoesItensTurma, setAvaliacoesItensTurma] = useState([]);
-  const [avaliacoesNotasTurma, setAvaliacoesNotasTurma] = useState([]);
+  const turmaCacheInicial = turmaSelecionadaId ? cacheEscolas.dadosPorTurma[turmaSelecionadaId] : null;
+  const [alunosTurma, setAlunosTurma] = useState(() => turmaCacheInicial?.alunos || []);
+  const [disciplinasTurma, setDisciplinasTurma] = useState(() => turmaCacheInicial?.disciplinas || []);
+  const [aulasTurma, setAulasTurma] = useState(() => turmaCacheInicial?.aulas || []);
+  const [avaliacoesTurma, setAvaliacoesTurma] = useState(() => turmaCacheInicial?.avaliacoes || []);
+  const [avaliacoesItensTurma, setAvaliacoesItensTurma] = useState(() => turmaCacheInicial?.avaliacoesItens || []);
+  const [avaliacoesNotasTurma, setAvaliacoesNotasTurma] = useState(() => turmaCacheInicial?.avaliacoesNotas || []);
   const [isModalAddAlunosAberto, setIsModalAddAlunosAberto] = useState(false);
   const [isModalAddDisciplinaAberto, setIsModalAddDisciplinaAberto] = useState(false);
   const [disciplinaParaEditar, setDisciplinaParaEditar] = useState(null);
@@ -140,14 +177,16 @@ export default function EscolasModulo({
   const [filtroAlunosModalAula, setFiltroAlunosModalAula] = useState('todos'); // 'todos' | 'ativos' | 'desistentes'
 
   const carregarEscolas = async () => {
-    setCarregando(true);
-    console.log('EscolasModulo: Iniciando carregamento de escolas...');
+    if (!cacheEscolas.escolas) {
+      setCarregando(true);
+    }
     const { data, error } = await supabase.from('escolas').select('*').order('nome');
     if (error) {
       console.error('EscolasModulo: Erro ao carregar escolas:', error);
     } else {
-      console.log('EscolasModulo: Escolas carregadas:', data);
-      setEscolas(data || []);
+      const lista = data || [];
+      cacheEscolas.escolas = lista;
+      setEscolas(lista);
     }
     setCarregando(false);
   };
@@ -158,7 +197,11 @@ export default function EscolasModulo({
       .select('*, escolas(nome)')
       .order('created_at', { ascending: false });
     if (error) console.error('Erro ao carregar turmas:', error);
-    else setTurmas(data || []);
+    else {
+      const lista = data || [];
+      cacheEscolas.turmas = lista;
+      setTurmas(lista);
+    }
   };
 
   useEffect(() => {
@@ -167,52 +210,75 @@ export default function EscolasModulo({
   }, []);
 
   const carregarDadosTurma = async (id) => {
-    setCarregando(true);
+    const cached = cacheEscolas.dadosPorTurma[id];
+    if (cached) {
+      setAlunosTurma(cached.alunos);
+      setDisciplinasTurma(cached.disciplinas);
+      setAulasTurma(cached.aulas);
+      setAvaliacoesTurma(cached.avaliacoes);
+      setAvaliacoesItensTurma(cached.avaliacoesItens);
+      setAvaliacoesNotasTurma(cached.avaliacoesNotas);
+    } else {
+      setCarregando(true);
+    }
+
     try {
-      // 1. Alunos
-      const { data: dataAlunos } = await supabase
-        .from('alunos_turmas')
-        .select('*, alunos(id, pessoa_id, pessoas(nome, foto_url))')
-        .eq('turma_id', id);
-      const sortedAlunos = (dataAlunos || []).sort((a, b) =>
+      // 1 e 2. Alunos e Disciplinas em paralelo
+      const [resAlunos, resDisc] = await Promise.all([
+        supabase
+          .from('alunos_turmas')
+          .select('*, alunos(id, pessoa_id, pessoas(nome, foto_url))')
+          .eq('turma_id', id),
+        supabase
+          .from('turmas_disciplinas')
+          .select('*, disciplinas(id, nome), professores(id, pessoa_id, pessoas(nome))')
+          .eq('turma_id', id)
+      ]);
+
+      const sortedAlunos = (resAlunos.data || []).sort((a, b) =>
         (a.alunos?.pessoas?.nome || "").localeCompare(b.alunos?.pessoas?.nome || "")
       );
+      const discList = resDisc.data || [];
       setAlunosTurma(sortedAlunos);
+      setDisciplinasTurma(discList);
 
-      // 2. Disciplinas vinculadas
-      const { data: dataDisc } = await supabase
-        .from('turmas_disciplinas')
-        .select('*, disciplinas(id, nome), professores(id, pessoa_id, pessoas(nome))')
-        .eq('turma_id', id);
-      setDisciplinasTurma(dataDisc || []);
+      const discIds = discList.map(d => d.id);
 
-      const discIds = (dataDisc || []).map(d => d.id);
+      let aulasList = [];
+      let itensList = [];
+      let notasItensList = [];
+      let avalList = [];
 
-      // 3. Aulas
       if (discIds.length > 0) {
-        const { data: dataAulas } = await supabase
-          .from('aulas')
-          .select('*, turmas_disciplinas(disciplinas(nome))')
-          .in('turma_disciplina_id', discIds)
-          .order('data_aula', { ascending: false });
-        setAulasTurma(dataAulas || []);
-
-        // 4. Avaliações Itens (Provas/Atividades individuais dentro dos módulos)
-        let itensList = [];
-        try {
-          const { data: dataItens, error: errItens } = await supabase
+        // 3, 4 e 6. Aulas, Avaliações Itens e Avaliações Gerais em paralelo
+        const [resAulas, resItens, resAval] = await Promise.all([
+          supabase
+            .from('aulas')
+            .select('*, turmas_disciplinas(disciplinas(nome))')
+            .in('turma_disciplina_id', discIds)
+            .order('data_aula', { ascending: false }),
+          supabase
             .from('avaliacoes_itens')
             .select('*')
             .in('turma_disciplina_id', discIds)
             .order('ordem', { ascending: true })
-            .order('created_at', { ascending: true });
-          if (!errItens && dataItens) {
-            itensList = dataItens;
-          }
-        } catch (e) {
-          console.warn("Tabela avaliacoes_itens não encontrada ou vazia:", e);
-        }
+            .order('created_at', { ascending: true })
+            .then(r => r)
+            .catch(() => ({ data: [], error: true })),
+          supabase
+            .from('avaliacoes')
+            .select('*')
+            .in('turma_disciplina_id', discIds)
+        ]);
+
+        aulasList = resAulas.data || [];
+        if (!resItens?.error && resItens?.data) itensList = resItens.data;
+        if (resAval.error) console.error("EscolasModulo: Erro ao carregar avaliações:", resAval.error);
+        avalList = resAval.data || [];
+
+        setAulasTurma(aulasList);
         setAvaliacoesItensTurma(itensList);
+        setAvaliacoesTurma(avalList);
 
         // 5. Notas por Item de Avaliação
         const itemIds = itensList.map(it => it.id);
@@ -223,31 +289,28 @@ export default function EscolasModulo({
               .select('*')
               .in('avaliacao_item_id', itemIds);
             if (!errNotasItens && dataNotasItens) {
-              setAvaliacoesNotasTurma(dataNotasItens);
-            } else {
-              setAvaliacoesNotasTurma([]);
+              notasItensList = dataNotasItens;
             }
           } catch (e) {
             console.warn("Tabela alunos_avaliacoes_notas não encontrada:", e);
-            setAvaliacoesNotasTurma([]);
           }
-        } else {
-          setAvaliacoesNotasTurma([]);
         }
-
-        // 6. Avaliações Gerais (Compatibilidade / Médias consolidadas por disciplina)
-        const { data: dataAval, error: errAval } = await supabase
-          .from('avaliacoes')
-          .select('*')
-          .in('turma_disciplina_id', discIds);
-        if (errAval) console.error("EscolasModulo: Erro ao carregar avaliações:", errAval);
-        setAvaliacoesTurma(dataAval || []);
+        setAvaliacoesNotasTurma(notasItensList);
       } else {
         setAulasTurma([]);
         setAvaliacoesTurma([]);
         setAvaliacoesItensTurma([]);
         setAvaliacoesNotasTurma([]);
       }
+
+      cacheEscolas.dadosPorTurma[id] = {
+        alunos: sortedAlunos,
+        disciplinas: discList,
+        aulas: aulasList,
+        avaliacoes: avalList,
+        avaliacoesItens: itensList,
+        avaliacoesNotas: notasItensList
+      };
     } catch (err) {
       console.error("EscolasModulo: Erro ao carregar dados da turma:", err);
     } finally {
@@ -448,18 +511,34 @@ export default function EscolasModulo({
     if (!turmaCursoId) return alert('Selecione um curso para a turma.');
 
     setCarregando(true);
-    const { error } = await supabase.from('turmas').insert([{
+    const anoLetivo = turmaDataInicio
+      ? (parseInt(String(turmaDataInicio).split('-')[0], 10) || new Date().getFullYear())
+      : new Date().getFullYear();
+
+    const payloadBase = {
       escola_id: turmaCursoId,
       nome: turmaNome,
       horario: turmaHorario,
       status: turmaStatus,
       descricao: turmaDescricao,
-      ano_letivo: new Date().getFullYear() // Valor obrigatório no seu schema
+      ano_letivo: anoLetivo
+    };
+
+    let { error } = await supabase.from('turmas').insert([{
+      ...payloadBase,
+      data_inicio: turmaDataInicio || null
     }]);
+
+    // Fallback caso a coluna data_inicio ainda não exista na tabela turmas
+    if (error && String(error.message || '').toLowerCase().includes('data_inicio')) {
+      const retry = await supabase.from('turmas').insert([payloadBase]);
+      error = retry.error;
+    }
 
     if (error) alert('Erro ao criar turma: ' + error.message);
     else {
       setTurmaNome('');
+      setTurmaDataInicio(new Date().toISOString().split('T')[0]);
       setTurmaDescricao('');
       carregarTurmas();
     }
@@ -470,6 +549,7 @@ export default function EscolasModulo({
     setTurmaEditando(turma);
     setEditTurmaCursoId(turma.escola_id || '');
     setEditTurmaNome(turma.nome || '');
+    setEditTurmaDataInicio(turma.data_inicio ? String(turma.data_inicio).split('T')[0] : '');
     setEditTurmaHorario(turma.horario || 'Não definido');
     setEditTurmaStatus(turma.status || 'Preparando turma');
     setEditTurmaDescricao(turma.descricao || '');
@@ -479,13 +559,23 @@ export default function EscolasModulo({
   const handleUpdateTurma = async (e) => {
     e.preventDefault();
     setCarregando(true);
-    const { error } = await supabase.from('turmas').update({
+    const payloadBase = {
       escola_id: editTurmaCursoId,
       nome: editTurmaNome,
       horario: editTurmaHorario,
       status: editTurmaStatus,
       descricao: editTurmaDescricao
+    };
+
+    let { error } = await supabase.from('turmas').update({
+      ...payloadBase,
+      data_inicio: editTurmaDataInicio || null
     }).eq('id', turmaEditando.id);
+
+    if (error && String(error.message || '').toLowerCase().includes('data_inicio')) {
+      const retry = await supabase.from('turmas').update(payloadBase).eq('id', turmaEditando.id);
+      error = retry.error;
+    }
 
     if (error) alert('Erro ao atualizar: ' + error.message);
     else {
@@ -758,7 +848,31 @@ export default function EscolasModulo({
         }
       `}</style>
       {submenu !== 'resumo' && (
-        <PageHeader titulo={getSubmenuTitle(submenu)} />
+        <div className="flex items-center gap-3">
+          {submenu === 'cursos' && (
+            <button
+              type="button"
+              onClick={() => onNavigate('resumo')}
+              title="Voltar para Escolas"
+              className="w-9 h-9 rounded-xl bg-white dark:bg-[#131d31] border border-slate-200 dark:border-[#24334f] text-slate-600 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1c2b4a] hover:border-blue-400 dark:hover:border-blue-500 flex items-center justify-center shadow-2xs transition cursor-pointer shrink-0"
+            >
+              <ArrowLeft size={18} />
+            </button>
+          )}
+          {submenu === 'turmas' && !turmaSelecionadaId && (
+            <button
+              type="button"
+              onClick={() => onNavigate('cursos')}
+              title="Voltar para Cursos"
+              className="w-9 h-9 rounded-xl bg-white dark:bg-[#131d31] border border-slate-200 dark:border-[#24334f] text-slate-600 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1c2b4a] hover:border-blue-400 dark:hover:border-blue-500 flex items-center justify-center shadow-2xs transition cursor-pointer shrink-0"
+            >
+              <ArrowLeft size={18} />
+            </button>
+          )}
+          <div className="flex-1 min-w-0">
+            <PageHeader titulo={getSubmenuTitle(submenu)} />
+          </div>
+        </div>
       )}
 
       {submenu === 'resumo' && (
@@ -846,18 +960,114 @@ export default function EscolasModulo({
 
           {/* CARDS DE CURSOS */}
           <div className={`${!podeEditar ? 'col-span-full' : ''} space-y-4`}>
-            <div className="hidden md:block">
+            <div className="flex items-center justify-between gap-3">
               <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Cursos Cadastrados</h3>
+              <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-[#0b1329] border border-slate-200 dark:border-[#24334f]">
+                <button
+                  type="button"
+                  onClick={() => alterarModoVisCursos('blocos')}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                    modoVisCursos === 'blocos'
+                      ? 'bg-white dark:bg-[#1c2b4a] text-blue-700 dark:text-blue-300 shadow-xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                  title="Visualização em Blocos"
+                >
+                  <LayoutGrid size={14} />
+                  <span>Blocos</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => alterarModoVisCursos('lista')}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                    modoVisCursos === 'lista'
+                      ? 'bg-white dark:bg-[#1c2b4a] text-blue-700 dark:text-blue-300 shadow-xs'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                  title="Visualização em Lista"
+                >
+                  <List size={14} />
+                  <span>Lista</span>
+                </button>
+              </div>
             </div>
 
             {carregando && escolas.length === 0 ? (
               <div className="p-10 text-center animate-pulse text-slate-400">Carregando cursos...</div>
             ) : escolas.length === 0 ? (
               <div className="p-10 text-center text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-[#24334f] rounded-2xl bg-white dark:bg-[#131d31] italic">Nenhum curso cadastrado.</div>
+            ) : modoVisCursos === 'lista' ? (
+              <div className="space-y-2.5">
+                {escolas.map(escola => {
+                  const numTurmas = turmas.filter(t => String(t.escola_id) === String(escola.id)).length;
+                  const iconInfo = getIconForCourse(escola.nome);
+                  return (
+                    <div
+                      key={escola.id}
+                      onClick={() => {
+                        onNavigate('turmas', { filtroCursoId: escola.id });
+                        setFiltroCursoTurmas(escola.id);
+                      }}
+                      className="flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl border border-slate-150 dark:border-[#24334f] bg-white dark:bg-[#131d31] hover:bg-slate-50/70 dark:hover:bg-[#1c2b4a]/70 hover:border-slate-300 dark:hover:border-blue-500/70 hover:shadow-sm transition-all duration-200 cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${iconInfo.bg} [&>svg]:w-5 [&>svg]:h-5`}>
+                          {iconInfo.icon}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors" title={escola.nome}>
+                            {escola.nome}
+                          </h4>
+                          {escola.descricao ? (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{escola.descricao}</p>
+                          ) : (
+                            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">Clique para ver as turmas</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                        <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-slate-100 dark:bg-[#0b1329] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-[#2b3954]">
+                          {numTurmas} {numTurmas === 1 ? 'turma' : 'turmas'}
+                        </span>
+
+                        {podeEditar && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={e => { e.stopPropagation(); handleEditar(escola); }}
+                              className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-[#1c2b4a] transition p-1.5 rounded-lg cursor-pointer"
+                              title="Editar Curso"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={e => { e.stopPropagation(); handleExcluir(escola.id); }}
+                              className="text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition p-1.5 rounded-lg cursor-pointer"
+                              title="Remover Curso"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
+
+                        <span className="hidden sm:inline text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+                          →
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
               <div className={`grid grid-cols-2 gap-4 ${podeEditar ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'}`}>
                 {escolas.map(escola => {
-                  const numTurmas = turmas.filter(t => t.escola_id === escola.id).length;
+                  const numTurmas = turmas.filter(t => String(t.escola_id) === String(escola.id)).length;
                   const iconInfo = getIconForCourse(escola.nome);
 
                   return (
@@ -865,8 +1075,8 @@ export default function EscolasModulo({
                       key={escola.id}
                       type="button"
                       onClick={() => {
+                        onNavigate('turmas', { filtroCursoId: escola.id });
                         setFiltroCursoTurmas(escola.id);
-                        onNavigate('turmas');
                       }}
                       className="flex flex-col items-center justify-between p-4 sm:p-6 rounded-2xl border border-slate-150 dark:border-[#24334f] bg-white dark:bg-[#131d31] hover:bg-slate-50/50 dark:hover:bg-[#1c2b4a]/70 hover:border-slate-350 dark:hover:border-blue-500 hover:shadow-md hover:scale-[1.03] active:scale-97 transition-all duration-300 text-center w-full aspect-square group cursor-pointer relative"
                     >
@@ -1022,6 +1232,16 @@ export default function EscolasModulo({
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Data de Início</label>
+                    <input
+                      type="date"
+                      value={turmaDataInicio}
+                      onChange={e => setTurmaDataInicio(e.target.value)}
+                      className="w-full px-3 py-2 border-0 dark:border dark:border-[#2b3954] bg-[#2e2e5e] dark:bg-[#0b1329] text-white rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-400"
+                    />
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">Horário</label>
@@ -1061,24 +1281,54 @@ export default function EscolasModulo({
 
             {/* CARDS DE TURMAS */}
             <div className="space-y-4 col-span-full lg:col-span-1">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">
-                  {filtroCursoTurmas ? `Turmas de ${escolas.find(e => e.id === filtroCursoTurmas)?.nome || 'Curso'}` : "Turmas Ativas"}
+                  {filtroCursoTurmas ? `Turmas de ${escolas.find(e => String(e.id) === String(filtroCursoTurmas))?.nome || 'Curso'}` : "Turmas Ativas"}
                 </h3>
-                {filtroCursoTurmas && (
-                  <button
-                    onClick={() => setFiltroCursoTurmas('')}
-                    className="px-3 py-1.5 text-xs font-bold text-[#055F6D] dark:text-teal-400 hover:text-[#044c57] dark:hover:text-teal-300 bg-[#055F6D]/5 dark:bg-teal-950/40 hover:bg-[#055F6D]/10 dark:hover:bg-teal-900/50 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
-                  >
-                    ← Ver Todas
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {filtroCursoTurmas && (
+                    <button
+                      onClick={() => setFiltroCursoTurmas('')}
+                      className="px-3 py-1.5 text-xs font-bold text-[#055F6D] dark:text-teal-400 hover:text-[#044c57] dark:hover:text-teal-300 bg-[#055F6D]/5 dark:bg-teal-950/40 hover:bg-[#055F6D]/10 dark:hover:bg-teal-900/50 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      ← Ver Todas
+                    </button>
+                  )}
+                  <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 dark:bg-[#0b1329] border border-slate-200 dark:border-[#24334f]">
+                    <button
+                      type="button"
+                      onClick={() => alterarModoVisTurmas('blocos')}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                        modoVisTurmas === 'blocos'
+                          ? 'bg-white dark:bg-[#1c2b4a] text-blue-700 dark:text-blue-300 shadow-xs'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                      }`}
+                      title="Visualização em Blocos"
+                    >
+                      <LayoutGrid size={14} />
+                      <span>Blocos</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => alterarModoVisTurmas('lista')}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                        modoVisTurmas === 'lista'
+                          ? 'bg-white dark:bg-[#1c2b4a] text-blue-700 dark:text-blue-300 shadow-xs'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                      }`}
+                      title="Visualização em Lista"
+                    >
+                      <List size={14} />
+                      <span>Lista</span>
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Mobile filter clear indicator */}
               {filtroCursoTurmas && (
                 <div className="md:hidden p-3 bg-slate-50 dark:bg-[#131d31] border border-slate-150 dark:border-[#24334f] rounded-xl flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Filtrando: {escolas.find(e => e.id === filtroCursoTurmas)?.nome}</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Filtrando: {escolas.find(e => String(e.id) === String(filtroCursoTurmas))?.nome}</span>
                   <button
                     onClick={() => setFiltroCursoTurmas('')}
                     className="text-xs font-black text-[#055F6D] dark:text-teal-400 cursor-pointer"
@@ -1088,11 +1338,81 @@ export default function EscolasModulo({
                 </div>
               )}
 
-              {(filtroCursoTurmas ? turmas.filter(t => t.escola_id === filtroCursoTurmas) : turmas).length === 0 ? (
+              {(filtroCursoTurmas ? turmas.filter(t => String(t.escola_id) === String(filtroCursoTurmas)) : turmas).length === 0 ? (
                 <div className="p-10 text-center text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-[#24334f] rounded-2xl bg-white dark:bg-[#131d31] italic">Nenhuma turma cadastrada para este filtro.</div>
+              ) : modoVisTurmas === 'lista' ? (
+                <div className="space-y-2.5">
+                  {(filtroCursoTurmas ? turmas.filter(t => String(t.escola_id) === String(filtroCursoTurmas)) : turmas).map(t => {
+                    const iconInfo = getIconForCourse(t.escolas?.nome || '');
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => handleAbrirTurma(t.id)}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl border border-slate-150 dark:border-[#24334f] bg-white dark:bg-[#131d31] hover:bg-slate-50/70 dark:hover:bg-[#1c2b4a]/70 hover:border-slate-300 dark:hover:border-blue-500/70 hover:shadow-sm transition-all duration-200 cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                          <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${iconInfo.bg} [&>svg]:w-5 [&>svg]:h-5`}>
+                            {iconInfo.icon}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors" title={t.nome}>
+                              {t.nome}
+                            </h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                              {t.escolas?.nome || 'Sem curso'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 shrink-0">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-[#0b1329] px-2.5 py-1 rounded-full border border-slate-200 dark:border-[#2b3954] uppercase tracking-wide">
+                              {t.horario}
+                            </span>
+                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wide ${t.status === 'Em andamento' ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-300 border-emerald-100 dark:border-emerald-800' :
+                              t.status === 'Finalizada' ? 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700' :
+                                'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-300 border-amber-100 dark:border-amber-800'
+                              }`}>
+                              {t.status}
+                            </span>
+                          </div>
+
+                          {podeEditar && (
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={e => { e.stopPropagation(); handleEditarTurma(t); }}
+                                className="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-[#1c2b4a] transition p-1.5 rounded-lg cursor-pointer"
+                                title="Editar Turma"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={e => { e.stopPropagation(); handleExcluirTurma(t.id); }}
+                                className="text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition p-1.5 rounded-lg cursor-pointer"
+                                title="Remover Turma"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+
+                          <span className="hidden sm:inline text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+                            →
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {(filtroCursoTurmas ? turmas.filter(t => t.escola_id === filtroCursoTurmas) : turmas).map(t => {
+                  {(filtroCursoTurmas ? turmas.filter(t => String(t.escola_id) === String(filtroCursoTurmas)) : turmas).map(t => {
                     const iconInfo = getIconForCourse(t.escolas?.nome || '');
                     return (
                       <button
@@ -1383,6 +1703,16 @@ export default function EscolasModulo({
                   <input
                     type="text" required
                     value={editTurmaNome} onChange={e => setEditTurmaNome(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl text-sm outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Data de Início</label>
+                  <input
+                    type="date"
+                    value={editTurmaDataInicio}
+                    onChange={e => setEditTurmaDataInicio(e.target.value)}
                     className="w-full px-3 py-2 border border-slate-200 dark:border-[#2b3954] bg-white dark:bg-[#0b1329] text-slate-800 dark:text-slate-100 rounded-xl text-sm outline-none"
                   />
                 </div>
@@ -3796,7 +4126,7 @@ function ModalImprimirCaderneta({ turma, disciplinas = [], avaliacoesItens = [],
 
 /* PAINEL CENTRAL DE AVALIAÇÕES (QUANDO NENHUMA TURMA ESTÁ ABERTA) */
 function PainelCentralAvaliacoes({ turmas = [], escolas = [], filtroCursoTurmas, setFiltroCursoTurmas, onAbrirCadernetaTurma }) {
-  const turmasFiltradas = filtroCursoTurmas ? turmas.filter(t => t.escola_id === filtroCursoTurmas) : turmas;
+  const turmasFiltradas = filtroCursoTurmas ? turmas.filter(t => String(t.escola_id) === String(filtroCursoTurmas)) : turmas;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -3891,7 +4221,7 @@ function PainelCentralAvaliacoes({ turmas = [], escolas = [], filtroCursoTurmas,
 function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
   const [abaAtivaDashboard, setAbaAtivaDashboard] = useState('geral');
   const [modoDemo, setModoDemo] = useState(true);
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState(() => cacheEscolas.dashboardStats || {
     totalAlunos: 0,
     totalMatriculas: 0,
     matriculasPorCurso: {},
@@ -3910,7 +4240,7 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
       'Abaixo da Média (<5)': 0
     }
   });
-  const [carregandoStats, setCarregandoStats] = useState(true);
+  const [carregandoStats, setCarregandoStats] = useState(false);
 
   // Dados simulados de demonstração para quando o banco de dados estiver vazio ou quando o modo demo estiver ativo
   const demoStats = useMemo(() => {
@@ -4002,7 +4332,9 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
 
   useEffect(() => {
     async function carregarStats() {
-      setCarregandoStats(true);
+      if (!cacheEscolas.dashboardStats) {
+        setCarregandoStats(true);
+      }
       try {
         const [
           resMatriculas,
@@ -4204,7 +4536,7 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
           { categoria: 'Finanças & Administração', icon: <Coins size={16} className="text-emerald-500" />, corBg: 'bg-emerald-50 border-emerald-100 text-emerald-800', alunos: financasList.slice(0, 3) }
         ].filter(t => t.alunos.length > 0);
 
-        setStats({
+        const novosStats = {
           totalAlunos: uniqueAlunosIds.length,
           totalMatriculas: matriculas.length,
           matriculasPorCurso: porCurso,
@@ -4217,7 +4549,9 @@ function DashboardEscolas({ escolas, turmas, pessoas, onNavigate }) {
           melhoresNotas,
           tendenciasMinisterio,
           distribuicaoNotas: distNotas
-        });
+        };
+        cacheEscolas.dashboardStats = novosStats;
+        setStats(novosStats);
       } catch (err) {
         console.error("Erro dashboard:", err);
       } finally {

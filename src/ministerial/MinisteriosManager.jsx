@@ -6,6 +6,7 @@ import {
   HelpingHand, Scroll, Smile, Globe, Video, Tv, Wrench, Hammer
 } from 'lucide-react';
 import { ministeriosService, clarearCorParaModoEscuro } from './services/ministeriosService';
+import { ministerialCache } from './ministerialCache';
 import { useIsDarkMode } from './hooks/useIsDarkMode';
 import MinistryDetails from './MinistryDetails';
 import { MinistryIcon } from '../ui';
@@ -50,7 +51,7 @@ export default function MinisteriosManager({
   onMinisterioAtivoChange
 }) {
   const isDark = useIsDarkMode();
-  const [ministerios, setMinisterios] = useState([]);
+  const [ministerios, setMinisterios] = useState(() => ministerialCache.ministerios || []);
   const [modalOpen, setModalOpen] = useState(false);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -86,6 +87,7 @@ export default function MinisteriosManager({
   async function carregar() {
     try {
       const dados = await ministeriosService.listarMinisterios();
+      ministerialCache.ministerios = dados || [];
       setMinisterios(dados || []);
     } catch (error) {
       console.error('Erro ao carregar ministérios:', error);

@@ -1,18 +1,26 @@
 import { useEffect, useState } from 'react';
 import { Clock, Filter, User, BookOpen } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { ministerialCache } from './ministerialCache';
 
 export default function HistoricoMinisterial({ initialStatus = null, hideHeader = false }) {
-  const [logs, setLogs] = useState([]);
   const [filtroAcao, setFiltroAcao] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState(() => ministerialCache.historicoPorAcao[''] || []);
+  const [loading, setLoading] = useState(() => !ministerialCache.historicoPorAcao['']);
 
   useEffect(() => {
+    const cached = ministerialCache.historicoPorAcao[filtroAcao];
+    if (cached) {
+      setLogs(cached);
+      setLoading(false);
+    }
     carregarLogs();
   }, [filtroAcao]);
 
   async function carregarLogs() {
-    setLoading(true);
+    if (!ministerialCache.historicoPorAcao[filtroAcao]) {
+      setLoading(true);
+    }
     try {
       let query = supabase
         .from('historico_ministerial')
@@ -37,6 +45,7 @@ export default function HistoricoMinisterial({ initialStatus = null, hideHeader 
 
       const { data, error } = await query;
       if (error) throw error;
+      ministerialCache.historicoPorAcao[filtroAcao] = data || [];
       setLogs(data || []);
     } catch (error) {
       console.error('Erro ao carregar histórico:', error);

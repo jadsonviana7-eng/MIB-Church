@@ -602,9 +602,9 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
   };
 
   return (
-    <div className="max-w-6xl pt-0 px-0 pb-12 sm:px-6 space-y-6 mx-[-3px] sm:mx-auto">
+    <div className="w-full space-y-4 pb-8">
       {/* 1. Elementos de Filtros em Card Integrado (Oculto na Impressão) - !overflow-visible adicionado para evitar corte do calendário */}
-      <Card className="p-4 sm:p-5 rounded-3xl border border-slate-100 dark:border-[#2b3954] shadow-sm print:hidden space-y-4 !overflow-visible">
+      <Card className="p-4 rounded-2xl border border-slate-100 dark:border-[#2b3954] shadow-sm print:hidden space-y-3 !overflow-visible">
         <div className="flex flex-col lg:flex-row gap-4 items-end justify-between">
           <div className="flex flex-col sm:flex-row gap-4 items-end w-full lg:w-auto">
             {/* Seletor de Período Estilizado */}
@@ -705,10 +705,10 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
       </Card>
 
       {/* 2. Conteúdo Inferior - Relatório à esquerda e Painel à direita */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-6 items-start px-[3px] sm:px-0">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_290px] gap-4 items-start">
         <div className="space-y-4 w-full">
           {/* Seletor Mobile de Relatórios no Topo */}
-          <div className="xl:hidden bg-white dark:bg-[#17223b] p-4 rounded-3xl border border-slate-100 dark:border-[#2b3954] shadow-sm space-y-2 print:hidden">
+          <div className="xl:hidden bg-white dark:bg-[#17223b] p-4 rounded-2xl border border-slate-100 dark:border-[#2b3954] shadow-sm space-y-2 print:hidden">
             <label className="block text-[10px] font-black uppercase tracking-widest text-[#055F6D] dark:text-blue-400">Selecione o Relatório</label>
             <select
               value={relatorioAtivo}
@@ -741,7 +741,7 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
 
           {/* Área de exibição do relatório selecionado */}
           {relatorioAtivo ? (
-            <Card className="p-4 sm:p-8 min-h-[600px] print:p-0 print:border-none print:shadow-none print:bg-white rounded-3xl border border-slate-100 dark:border-[#2b3954] shadow-sm printable-report">
+            <Card className="p-4 sm:p-6 min-h-[580px] print:p-0 print:border-none print:shadow-none print:bg-white rounded-2xl border border-slate-100 dark:border-[#2b3954] shadow-sm printable-report">
               {/* Estilos de impressão para margens A4 e layout de tabela limpa */}
               <style>{`
                 @media print {
@@ -938,7 +938,7 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
               )}
             </Card>
           ) : (
-            <Card className="p-12 text-center h-[350px] sm:h-[600px] flex items-center justify-center rounded-3xl border border-slate-100 dark:border-[#2b3954] shadow-sm">
+            <Card className="p-10 text-center h-[350px] sm:h-[580px] flex items-center justify-center rounded-2xl border border-slate-100 dark:border-[#2b3954] shadow-sm">
               <div className="max-w-xs mx-auto space-y-3">
                 <div className="text-4xl">📊</div>
                 <h3 className="font-bold text-slate-800 dark:text-slate-100">Selecione um relatório</h3>
@@ -950,12 +950,12 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
 
         {/* Coluna Direita: Painel de Controle de Relatórios */}
         <div className="space-y-4 print:hidden hidden xl:block">
-          <Card className="p-0 rounded-3xl border border-slate-100 dark:border-[#2b3954] shadow-sm">
+          <Card className="p-0 rounded-2xl border border-slate-100 dark:border-[#2b3954] shadow-sm">
             <CardHeader titulo="Painel de Controle" subtitulo="Escolha o tipo de relatório financeiro." className="dark:!bg-[#1c2b4a] dark:!border-[#2b3954]" />
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-3">
               {/* Fluxo de Caixa */}
-              <div className="space-y-2">
-                <h4 className="text-[14px] font-black text-slate-400 dark:text-slate-400 uppercase border-l-2 border-[#055F6D] dark:border-blue-500 pl-2 mb-3 tracking-widest">Fluxo de Caixa</h4>
+              <div className="space-y-1.5">
+                <h4 className="text-xs font-black text-slate-400 dark:text-slate-400 uppercase border-l-2 border-[#055F6D] dark:border-blue-500 pl-2 mb-2 tracking-widest">Fluxo de Caixa</h4>
                 <button 
                   onClick={() => handleSelecionarRelatorio('fluxo-extrato')} 
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${relatorioAtivo === 'fluxo-extrato' ? 'bg-[#055F6D] dark:bg-blue-600 text-white' : 'bg-slate-50 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
@@ -977,8 +977,8 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
               </div>
 
               {/* Receitas */}
-              <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-[#2b3954]">
-                <h4 className="text-[14px] font-black text-slate-400 dark:text-slate-400 uppercase border-l-2 border-emerald-600 pl-2 mb-3 tracking-widest">Receitas</h4>
+              <div className="space-y-1.5 pt-3 border-t border-slate-100 dark:border-[#2b3954]">
+                <h4 className="text-xs font-black text-slate-400 dark:text-slate-400 uppercase border-l-2 border-emerald-600 pl-2 mb-2 tracking-widest">Receitas</h4>
                 <button 
                   onClick={() => handleSelecionarRelatorio('receitas-extrato-diario')} 
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${relatorioAtivo === 'receitas-extrato-diario' ? 'bg-emerald-600 text-white' : 'bg-slate-50 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
@@ -1018,8 +1018,8 @@ export default function RelatoriosFinanceiros({ onVoltar }) {
               </div>
 
               {/* Despesas */}
-              <div className="space-y-2 pt-4 border-t border-slate-100 dark:border-[#2b3954]">
-                <h4 className="text-[14px] font-black text-slate-400 dark:text-slate-400 uppercase border-l-2 border-rose-600 pl-2 mb-3 tracking-widest">Despesas</h4>
+              <div className="space-y-1.5 pt-3 border-t border-slate-100 dark:border-[#2b3954]">
+                <h4 className="text-xs font-black text-slate-400 dark:text-slate-400 uppercase border-l-2 border-rose-600 pl-2 mb-2 tracking-widest">Despesas</h4>
                 <button 
                   onClick={() => handleSelecionarRelatorio('despesas-extrato-diario')} 
                   className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition ${relatorioAtivo === 'despesas-extrato-diario' ? 'bg-rose-600 text-white' : 'bg-slate-50 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from './supabaseClient';
+import { utilitariosCache } from './utilitariosCache';
 import { Card, PageHeader } from './ui';
 import PainelAjusteLayoutCertificado from './PainelAjusteLayoutCertificado';
 import {
@@ -280,6 +281,18 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
 
   useEffect(() => {
     let ativo = true;
+    const aplicarDadosIgreja = (data) => {
+      if (!ativo || !data) return;
+      setDadosIgreja(data);
+      const cidade = data.cidade || 'Santana do Mundaú';
+      const pastor = data.pastor_responsavel || 'Jadson da Silva Viana';
+      setEdbForm((prev) => ({ ...prev, cidade }));
+      setBatismoForm((prev) => ({ ...prev, cidade, pastorNome: pastor }));
+      setApresentacaoForm((prev) => ({ ...prev, cidade, pastorNome: pastor }));
+    };
+    if (utilitariosCache.dadosIgreja) {
+      aplicarDadosIgreja(utilitariosCache.dadosIgreja);
+    }
     supabase
       .from('dados_igreja')
       .select('*')
@@ -287,12 +300,8 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
       .maybeSingle()
       .then(({ data }) => {
         if (!ativo || !data) return;
-        setDadosIgreja(data);
-        const cidade = data.cidade || 'Santana do Mundaú';
-        const pastor = data.pastor_responsavel || 'Jadson da Silva Viana';
-        setEdbForm((prev) => ({ ...prev, cidade }));
-        setBatismoForm((prev) => ({ ...prev, cidade, pastorNome: pastor }));
-        setApresentacaoForm((prev) => ({ ...prev, cidade, pastorNome: pastor }));
+        utilitariosCache.dadosIgreja = data;
+        aplicarDadosIgreja(data);
       })
       .catch(() => {});
     return () => { ativo = false; };

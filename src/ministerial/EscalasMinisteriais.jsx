@@ -3,6 +3,7 @@ import { Calendar, Plus, X, Search, Check, AlertCircle, Share2, Printer, CheckCi
 import { escalasService, limparTextoJustificativa } from './services/escalasService';
 import { autoEscalaService } from './services/autoEscalaService';
 import { clarearCorParaModoEscuro } from './services/ministeriosService';
+import { ministerialCache } from './ministerialCache';
 import { useIsDarkMode } from './hooks/useIsDarkMode';
 import { supabase } from '../supabaseClient';
 import { toPng } from 'html-to-image';
@@ -18,10 +19,19 @@ export default function EscalasMinisteriais({
   colunaRecolhida = false
 }) {
   const isDark = useIsDarkMode();
-  const [eventos, setEventos] = useState([]);
-  const [eventoSelecionado, setEventoSelecionado] = useState(null);
-  const [escalas, setEscalas] = useState([]);
-  const [minhasEscalas, setMinhasEscalas] = useState([]);
+  const [eventos, setEventos] = useState(() => ministerialCache.eventos || []);
+  const [eventoSelecionado, setEventoSelecionado] = useState(() => {
+    const lista = ministerialCache.eventos || [];
+    return lista.length > 0 ? lista[0] : null;
+  });
+  const [escalas, setEscalas] = useState(() => {
+    const lista = ministerialCache.eventos || [];
+    const firstId = lista[0]?.id;
+    return firstId ? (ministerialCache.escalasPorEvento[firstId] || []) : [];
+  });
+  const [minhasEscalas, setMinhasEscalas] = useState(() => (
+    membroLogado?.id ? (ministerialCache.minhasEscalasPorMembro[membroLogado.id] || []) : []
+  ));
 
   // Estado sincronizado de recolhimento da coluna direita
   const [colunaDireitaRetraida, setColunaDireitaRetraida] = useState(() => {
@@ -68,10 +78,10 @@ export default function EscalasMinisteriais({
     pessoa_id: ''
   });
 
-  const [listaMinisterios, setListaMinisterios] = useState([]);
+  const [listaMinisterios, setListaMinisterios] = useState(() => ministerialCache.ministerios || []);
   const [listaFuncoes, setListaFuncoes] = useState([]);
   const [listaPessoas, setListaPessoas] = useState([]); // Membros do ministério selecionado
-  const [todasPessoasSistema, setTodasPessoasSistema] = useState([]); // Todas as pessoas cadastradas
+  const [todasPessoasSistema, setTodasPessoasSistema] = useState(() => ministerialCache.todasPessoas || []); // Todas as pessoas cadastradas
   const [pregadorModal, setPregadorModal] = useState(''); // Pregador digitado ou selecionado no modal
   const [salvandoPregador, setSalvandoPregador] = useState(false);
   const [buscaVoluntario, setBuscaVoluntario] = useState('');
@@ -345,8 +355,19 @@ export default function EscalasMinisteriais({
 
   async function carregarEventos() {
     try {
-      const dados = await escalasService.listarEventos();
+      const [dados, mins, pessoasRes] = await Promise.all([
+        escalasService.listarEventos(),
+        escalasService.listarMinisterios(),
+        supabase.from('pessoas').select('id, nome, telefone').order('nome')
+      ]);
+
+      ministerialCache.eventos = dados || [];
+      ministerialCache.ministerios = mins || [];
+      ministerialCache.todasPessoas = pessoasRes?.data || [];
+
       setEventos(dados || []);
+      setListaMinisterios(mins || []);
+      setTodasPessoasSistema(pessoasRes?.data || []);
 
       if (dados && dados.length > 0) {
         const evMaisProximo = encontrarEventoMaisProximo(dados);
@@ -361,13 +382,6 @@ export default function EscalasMinisteriais({
           }
         }
       }
-
-      const mins = await escalasService.listarMinisterios();
-      setListaMinisterios(mins || []);
-
-      // Carregar todas as pessoas para sugestão rápida de pregador / membros
-      const { data: todasp } = await supabase.from('pessoas').select('id, nome, telefone').order('nome');
-      setTodasPessoasSistema(todasp || []);
     } catch (error) {
       console.error('Erro ao carregar eventos:', error);
     }
@@ -377,6 +391,7 @@ export default function EscalasMinisteriais({
     if (!membroLogado?.id) return;
     try {
       const dados = await escalasService.listarEscalasMembro(membroLogado.id);
+      ministerialCache.minhasEscalasPorMembro[membroLogado.id] = dados || [];
       // Filtrar apenas escalas pendentes para decisão do voluntário
       setMinhasEscalas(dados || []);
     } catch (error) {
@@ -386,8 +401,12 @@ export default function EscalasMinisteriais({
 
   async function selecionarEvento(evento, fromUserClick = false) {
     setEventoSelecionado(evento);
+    if (evento?.id && ministerialCache.escalasPorEvento[evento.id]) {
+      setEscalas(ministerialCache.escalasPorEvento[evento.id]);
+    }
     try {
       const lista = await escalasService.listarEscalas(evento.id);
+      ministerialCache.escalasPorEvento[evento.id] = lista || [];
       setEscalas(lista || []);
       if (fromUserClick && window.innerWidth < 1024) {
         setModalGradeMobile(true);

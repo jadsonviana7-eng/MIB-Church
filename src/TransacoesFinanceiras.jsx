@@ -6,6 +6,48 @@ import { registrarLogFinanceiro } from './financeiroUtils';
 import { mascaraMoeda, desmascararMoeda } from './mascaras';
 import ModalImportarNFCe from './ModalImportarNFCe';
 
+// Cache em memória para abertura instantânea da aba de Transações
+const cacheTransacoes = {
+  porFiltro: {},
+  contas: null,
+  categorias: null,
+  pessoas: null
+};
+
+const normalizarTransacaoItem = (t) => ({
+  ...t,
+  contribuinte: t.contribuinte ?? t.pessoas?.nome,
+  categoria: t.categoria ?? t.categorias_financeiras?.nome,
+  conta: t.conta ?? t.contas_financeiras?.nome
+});
+
+const filtrarTransacoesPrecarregadas = (lista, {
+  dataInicioFiltro,
+  dataFimFiltro,
+  tipoTransacaoFiltro,
+  statusTransacaoFiltro,
+  contasSelecionadas,
+  categoriasSelecionadas,
+  temAcessoTotal,
+  membroId
+}) => {
+  if (!Array.isArray(lista) || lista.length === 0) return null;
+  const tipoAlvo = tipoTransacaoFiltro ? tipoTransacaoFiltro.toLowerCase() : '';
+  const statusAlvo = statusTransacaoFiltro ? statusTransacaoFiltro.toLowerCase() : '';
+  return lista
+    .filter((t) => {
+      if (dataInicioFiltro && (!t.data || t.data < dataInicioFiltro)) return false;
+      if (dataFimFiltro && (!t.data || t.data > dataFimFiltro)) return false;
+      if (tipoAlvo && String(t.tipo || '').toLowerCase() !== tipoAlvo) return false;
+      if (statusAlvo && String(t.status || '').toLowerCase() !== statusAlvo) return false;
+      if (contasSelecionadas.length > 0 && !contasSelecionadas.map(String).includes(String(t.conta_id))) return false;
+      if (categoriasSelecionadas.length > 0 && !categoriasSelecionadas.map(String).includes(String(t.categoria_id))) return false;
+      if (!temAcessoTotal && membroId && String(t.pessoa_id) !== String(membroId)) return false;
+      return true;
+    })
+    .map(normalizarTransacaoItem);
+};
+
 export default function TransacoesFinanceiras({
   dataInicioFiltro, setDataInicioFiltro,
   dataFimFiltro, setDataFimFiltro,
@@ -13,6 +55,9 @@ export default function TransacoesFinanceiras({
   statusTransacaoFiltro, setStatusTransacaoFiltro,
   contaFiltro, setContaFiltro,
   categoriaFiltro, setCategoriaFiltro,
+  transacoesIniciais,
+  contasIniciais,
+  categoriasIniciais,
   usuarioLogado,
   membroLogado,
   hasAccess,
@@ -22,15 +67,16 @@ export default function TransacoesFinanceiras({
   const [modalTransacao, setModalTransacao] = useState({ aberto: false, tipo: 'receita', dados: null });
   const [calendarioAberto, setCalendarioAberto] = useState(false);
   const [viewDate, setViewDate] = useState(new Date());
-  const [contasDisponiveis, setContasDisponiveis] = useState([]);
-  const [categoriasDisponiveis, setCategoriasDisponiveis] = useState([]);
-  const [pessoasDisponiveis, setPessoasDisponiveis] = useState([]);
-  const [transacoes, setTransacoes] = useState([]);
-  const [carregando, setCarregando] = useState(true);
-  const [buscaNome, setBuscaNome] = useState('');
-  const [filtroPix, setFiltroPix] = useState(''); // '' (todos), 'pix' (apenas pix), 'outros' (não pix)
+  const [contasDisponiveis, setContasDisponiveis] = useState(() => (
+    Array.isArray(contasIniciais) && contasIniciais.length > 0 ? contasIniciais : (cacheTransacoes.contas || [])
+  ));
+  const [categoriasDisponiveis, setCategoriasDisponiveis] = useState(() => (
+    Array.isArray(categoriasIniciais) && categoriasIniciais.length > 0 ? categoriasIniciais : (cacheTransacoes.categorias || [])
+  ));
+  const [pessoasDisponiveis, setPessoasDisponiveis] = useState(() => cacheTransacoes.pessoas || []);
 
   const podeEditar = hasAccess('Financeiro', 'Transações', 'editar');
+  const temAcessoFinanceiro = hasAccess('Financeiro');
 
   // Normaliza filtros de Conta e Categoria como arrays para suportar multi-seleção
   const contasSelecionadas = useMemo(() => (
@@ -40,6 +86,52 @@ export default function TransacoesFinanceiras({
   const categoriasSelecionadas = useMemo(() => (
     Array.isArray(categoriaFiltro) ? categoriaFiltro : (categoriaFiltro ? [categoriaFiltro] : [])
   ), [categoriaFiltro]);
+
+  const filtroCacheKey = useMemo(() => [
+    dataInicioFiltro || '',
+    dataFimFiltro || '',
+    tipoTransacaoFiltro || '',
+    statusTransacaoFiltro || '',
+    contasSelecionadas.join(','),
+    categoriasSelecionadas.join(','),
+    temAcessoFinanceiro ? '1' : '0',
+    membroLogado?.id || ''
+  ].join('|'), [
+    dataInicioFiltro, dataFimFiltro, tipoTransacaoFiltro, statusTransacaoFiltro,
+    contasSelecionadas, categoriasSelecionadas, temAcessoFinanceiro, membroLogado?.id
+  ]);
+
+  const listaInicialTransacoes = useMemo(() => {
+    if (cacheTransacoes.porFiltro[filtroCacheKey]) {
+      return cacheTransacoes.porFiltro[filtroCacheKey];
+    }
+    return filtrarTransacoesPrecarregadas(transacoesIniciais, {
+      dataInicioFiltro,
+      dataFimFiltro,
+      tipoTransacaoFiltro,
+      statusTransacaoFiltro,
+      contasSelecionadas,
+      categoriasSelecionadas,
+      temAcessoTotal: temAcessoFinanceiro,
+      membroId: membroLogado?.id
+    });
+  }, [
+    filtroCacheKey, transacoesIniciais, dataInicioFiltro, dataFimFiltro,
+    tipoTransacaoFiltro, statusTransacaoFiltro, contasSelecionadas,
+    categoriasSelecionadas, temAcessoFinanceiro, membroLogado?.id
+  ]);
+
+  const [transacoes, setTransacoes] = useState(() => listaInicialTransacoes || []);
+  const [carregando, setCarregando] = useState(() => !listaInicialTransacoes);
+  const [buscaNome, setBuscaNome] = useState('');
+  const [filtroPix, setFiltroPix] = useState(''); // '' (todos), 'pix' (apenas pix), 'outros' (não pix)
+
+  useEffect(() => {
+    if (listaInicialTransacoes) {
+      setTransacoes(listaInicialTransacoes);
+      setCarregando(false);
+    }
+  }, [listaInicialTransacoes]);
 
   // Lógica para o seletor de período simplificado (Mobile)
   const labelPeriodoMobile = useMemo(() => {
@@ -62,6 +154,16 @@ export default function TransacoesFinanceiras({
   const abrirModal = (tipo, transacao = null) => {
     setModalTransacao({ aberto: true, tipo, dados: transacao });
   };
+
+  useEffect(() => {
+    const onNovaTransacao = (e) => {
+      if (!podeEditar) return;
+      const tipo = e?.detail === 'despesa' ? 'despesa' : 'receita';
+      setModalTransacao({ aberto: true, tipo, dados: null });
+    };
+    window.addEventListener('mib-financeiro-nova-transacao', onNovaTransacao);
+    return () => window.removeEventListener('mib-financeiro-nova-transacao', onNovaTransacao);
+  }, [podeEditar]);
 
   // Helper para evitar problemas de fuso horário ao converter para YYYY-MM-DD
   const formatarParaISO = (date) => {
@@ -212,7 +314,9 @@ export default function TransacoesFinanceiras({
 
   // Função principal para carregar transações com filtros
   const carregarTransacoes = useCallback(async () => {
-    setCarregando(true);
+    if (!cacheTransacoes.porFiltro[filtroCacheKey] && !(Array.isArray(transacoesIniciais) && transacoesIniciais.length > 0)) {
+      setCarregando(true);
+    }
     try {
       let query = supabase
         .from('transacoes_financeiras')
@@ -232,44 +336,43 @@ export default function TransacoesFinanceiras({
       const { data, error } = await query;
       if (error) throw error;
 
-      setTransacoes(data.map(t => ({
-        ...t,
-        contribuinte: t.pessoas?.nome,
-        categoria: t.categorias_financeiras?.nome,
-        conta: t.contas_financeiras?.nome
-      })));
+      const normalizadas = (data || []).map(normalizarTransacaoItem);
+      cacheTransacoes.porFiltro[filtroCacheKey] = normalizadas;
+      setTransacoes(normalizadas);
     } catch (error) {
       console.error('Erro ao carregar transações:', error);
     } finally {
       setCarregando(false);
     }
-  }, [dataInicioFiltro, dataFimFiltro, tipoTransacaoFiltro, statusTransacaoFiltro, contasSelecionadas, categoriasSelecionadas, hasAccess, membroLogado?.id]);
+  }, [filtroCacheKey, transacoesIniciais, dataInicioFiltro, dataFimFiltro, tipoTransacaoFiltro, statusTransacaoFiltro, contasSelecionadas, categoriasSelecionadas, hasAccess, membroLogado?.id]);
 
   useEffect(() => {
-    // Carrega dados auxiliares apenas uma vez ao montar o componente
+    // Carrega dados auxiliares em paralelo ao montar o componente
     const carregarAuxiliares = async () => {
       try {
-        const { data: contas, error: erroContas } = await supabase
-          .from('contas_financeiras')
-          .select('id, nome')
-          .order('nome');
-        if (erroContas) console.warn('Erro ao carregar contas financeiras:', erroContas.message);
-        if (contas) setContasDisponiveis(contas);
+        const [resContas, resCategorias, resPessoas] = await Promise.all([
+          supabase.from('contas_financeiras').select('id, nome').order('nome'),
+          supabase.from('categorias_financeiras').select('id, nome, tipo').order('nome'),
+          supabase.from('pessoas').select('id, nome').neq('status', 'excluido').order('nome')
+        ]);
 
-        const { data: categorias, error: erroCategorias } = await supabase
-          .from('categorias_financeiras')
-          .select('id, nome, tipo')
-          .order('nome');
-        if (erroCategorias) console.warn('Erro ao carregar categorias financeiras:', erroCategorias.message);
-        if (categorias) setCategoriasDisponiveis(categorias);
+        if (resContas.error) console.warn('Erro ao carregar contas financeiras:', resContas.error.message);
+        if (resContas.data) {
+          cacheTransacoes.contas = resContas.data;
+          setContasDisponiveis(resContas.data);
+        }
 
-        const { data: pessoas, error: erroPessoas } = await supabase
-          .from('pessoas')
-          .select('id, nome')
-          .neq('status', 'excluido')
-          .order('nome');
-        if (erroPessoas) console.warn('Erro ao carregar pessoas:', erroPessoas.message);
-        if (pessoas) setPessoasDisponiveis(pessoas);
+        if (resCategorias.error) console.warn('Erro ao carregar categorias financeiras:', resCategorias.error.message);
+        if (resCategorias.data) {
+          cacheTransacoes.categorias = resCategorias.data;
+          setCategoriasDisponiveis(resCategorias.data);
+        }
+
+        if (resPessoas.error) console.warn('Erro ao carregar pessoas:', resPessoas.error.message);
+        if (resPessoas.data) {
+          cacheTransacoes.pessoas = resPessoas.data;
+          setPessoasDisponiveis(resPessoas.data);
+        }
       } catch (error) {
         console.error('Erro ao carregar dados financeiros:', error);
       }
@@ -445,9 +548,9 @@ export default function TransacoesFinanceiras({
     <div className="space-y-6 mx-1">
       {/* Seção de Filtros e Atalhos - Desktop */}
       <div className="space-y-4">
-        <div className="hidden md:flex flex-wrap items-end gap-3">
+        <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-4 gap-3 items-end">
           {/* Campo de Pesquisa por Nome */}
-          <div className="flex-1 min-w-[200px]">
+          <div className="md:col-span-2 lg:col-span-2 min-w-0">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Pesquisar por Nome</label>
             <div className="relative flex items-center">
               <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -472,26 +575,26 @@ export default function TransacoesFinanceiras({
               )}
             </div>
           </div>
-          <div className="min-w-[220px] relative datepicker-container">
+          <div className="min-w-0 relative datepicker-container">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Data da Movimentação</label>
             <div
               onClick={() => setCalendarioAberto(!calendarioAberto)}
-              className={`flex items-center gap-3 px-3 h-[42px] bg-white dark:bg-slate-900 border rounded-xl cursor-pointer transition-all shadow-sm group ${calendarioAberto ? 'border-[#1e3a8a] dark:border-blue-500 ring-2 ring-[#1e3a8a]/10' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}
+              className={`flex items-center gap-2 px-3 h-[42px] bg-white dark:bg-slate-900 border rounded-xl cursor-pointer transition-all shadow-sm group ${calendarioAberto ? 'border-[#1e3a8a] dark:border-blue-500 ring-2 ring-[#1e3a8a]/10' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'}`}
             >
               <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <div className="flex items-center gap-1.5 text-sm font-normal text-slate-700 dark:text-slate-200 tracking-tight">
+              <div className="flex items-center gap-1 text-xs font-medium text-slate-700 dark:text-slate-200 tracking-tight truncate">
                 <span>{formatarDataExibicao(dataInicioFiltro)}</span>
-                <span className="text-slate-300 dark:text-slate-600 font-medium">→</span>
+                <span className="text-slate-300 dark:text-slate-600">→</span>
                 <span>{formatarDataExibicao(dataFimFiltro)}</span>
               </div>
             </div>
             {calendarioAberto && <CalendarPopup />}
           </div>
-          <div className="flex-1 min-w-[120px]"><SelectFiltro label="Tipo" valor={tipoTransacaoFiltro} onChange={setTipoTransacaoFiltro} opcoes={['Receita', 'Despesa', 'Transferência']} /></div>
-          <div className="flex-1 min-w-[120px]"><SelectFiltro label="Status" valor={statusTransacaoFiltro} onChange={setStatusTransacaoFiltro} opcoes={['Pago', 'Pendente', 'Cancelado']} /></div>
-          <div className="flex-1 min-w-[150px]">
+          <div className="min-w-0"><SelectFiltro label="Tipo" valor={tipoTransacaoFiltro} onChange={setTipoTransacaoFiltro} opcoes={['Receita', 'Despesa', 'Transferência']} /></div>
+          <div className="min-w-0"><SelectFiltro label="Status" valor={statusTransacaoFiltro} onChange={setStatusTransacaoFiltro} opcoes={['Pago', 'Pendente', 'Cancelado']} /></div>
+          <div className="min-w-0">
             <MultiSelectCheckboxFiltro
               label="Conta"
               selecionados={contasSelecionadas}
@@ -500,7 +603,7 @@ export default function TransacoesFinanceiras({
               placeholder="Todas"
             />
           </div>
-          <div className="flex-1 min-w-[150px]">
+          <div className="min-w-0">
             <MultiSelectCheckboxFiltro
               label="Categoria"
               selecionados={categoriasSelecionadas}
@@ -509,7 +612,7 @@ export default function TransacoesFinanceiras({
               placeholder="Todas"
             />
           </div>
-          <div className="flex-1 min-w-[120px]">
+          <div className="min-w-0">
             <SelectFiltro
               label="Via PIX"
               valor={filtroPix}
@@ -558,7 +661,7 @@ export default function TransacoesFinanceiras({
           </div>
 
           {podeEditar && (
-            <div className="hidden md:flex items-center gap-2 w-full md:w-auto">
+            <div className="hidden md:flex lg:hidden items-center gap-2 w-full md:w-auto">
               <button
                 type="button"
                 onClick={() => abrirModal('receita')}

@@ -5,6 +5,7 @@ import {
   TrendingUp, RefreshCw, Sparkles
 } from 'lucide-react';
 import { ministeriosService, clarearCorParaModoEscuro } from './services/ministeriosService';
+import { ministerialCache } from './ministerialCache';
 import { useIsDarkMode } from './hooks/useIsDarkMode';
 
 function Card({ titulo, valor, Icon, corSub, desc, onClick }) {
@@ -133,7 +134,7 @@ function verificarEscalaSubstituida(escala, todasEscalas) {
 
 export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNavegarGlobal, hideHeader = false }) {
   const isDark = useIsDarkMode();
-  const [dados, setDados] = useState({
+  const [dados, setDados] = useState(() => ministerialCache.dashboard || {
     totalMinisterios: 0,
     totalMembros: 0,
     totalFuncoes: 0,
@@ -144,10 +145,10 @@ export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNa
     rankingLideres: []
   });
 
-  const [rawDados, setRawDados] = useState(null);
+  const [rawDados, setRawDados] = useState(() => ministerialCache.consolidados);
   const [modalIndicadorAberto, setModalIndicadorAberto] = useState(null);
   const [buscaIndicador, setBuscaIndicador] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !(ministerialCache.dashboard && ministerialCache.consolidados));
   const hoje = new Date();
   const [mesSelecionado, setMesSelecionado] = useState(hoje.getMonth());
   const [anoSelecionado, setAnoSelecionado] = useState(hoje.getFullYear());
@@ -175,12 +176,16 @@ export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNa
   }, []);
 
   async function carregar() {
-    setLoading(true);
+    if (!ministerialCache.dashboard || !ministerialCache.consolidados) {
+      setLoading(true);
+    }
     try {
       const [resumo, consolidados] = await Promise.all([
         ministeriosService.obterDashboard(),
         ministeriosService.obterRelatoriosConsolidados()
       ]);
+      ministerialCache.dashboard = resumo;
+      ministerialCache.consolidados = consolidados;
       setDados(resumo);
       setRawDados(consolidados);
     } catch (error) {

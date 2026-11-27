@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+whatsapp_auth_session
 
 # Environment variables
 .env

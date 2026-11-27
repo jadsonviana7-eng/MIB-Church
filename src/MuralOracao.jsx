@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
+import { utilitariosCache } from './utilitariosCache';
 import { Card, PageHeader, Avatar } from './ui';
 import { Clock, CheckCircle2, Heart } from 'lucide-react';
 
 export default function MuralOracao() {
-  const [pedidos, setPedidos] = useState([]);
-  const [carregando, setCarregando] = useState(true);
+  const [pedidos, setPedidos] = useState(() => utilitariosCache.muralOracao || []);
+  const [carregando, setCarregando] = useState(() => !utilitariosCache.muralOracao);
   const [filtro, setFiltro] = useState('todos'); // 'todos' | 'pendente' | 'urgente' | 'respondido'
 
   const carregarPedidos = useCallback(async () => {
-    setCarregando(true);
+    if (!utilitariosCache.muralOracao) {
+      setCarregando(true);
+    }
     try {
       // O RLS cuidará de filtrar os pedidos que o usuário logado tem permissão para ver.
       // Pastores/Admins verão tudo, Líderes verão apenas membros de sua célula.
@@ -28,7 +31,9 @@ export default function MuralOracao() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPedidos(data || []);
+      const lista = data || [];
+      utilitariosCache.muralOracao = lista;
+      setPedidos(lista);
     } catch (err) {
       console.error('Erro ao carregar mural:', err.message);
     } finally {
@@ -99,7 +104,7 @@ export default function MuralOracao() {
       </div>
 
       {/* Filtros em Tabs */}
-      <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/80 backdrop-blur-md rounded-2xl w-fit border border-slate-200/50">
+      <div className="flex flex-wrap gap-1.5 sm:gap-2 p-1.5 bg-slate-100/80 dark:bg-[#131d31] backdrop-blur-md rounded-2xl w-fit border border-slate-200/50 dark:border-[#24334f]">
         {[
           { id: 'todos', label: 'Todos os Pedidos', count: pedidos.length },
           { id: 'pendente', label: 'Pendentes', count: pedidos.filter(p => p.status === 'pendente').length },
@@ -111,17 +116,17 @@ export default function MuralOracao() {
             <button
               key={tab.id}
               onClick={() => setFiltro(tab.id)}
-              className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1 sm:py-2 rounded-xl text-[8px] sm:text-xs font-black uppercase tracking-wider transition-all duration-200 select-none ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[9px] sm:text-xs font-black uppercase tracking-wider transition-all duration-200 select-none cursor-pointer ${
                 ativo 
-                  ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60' 
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white dark:bg-blue-600 text-slate-900 dark:text-white shadow-sm dark:shadow-md dark:shadow-blue-950/50 border border-slate-200/60 dark:border-blue-500/40' 
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 dark:hover:bg-[#1c2b4a]/70'
               }`}
             >
               {tab.label}
               <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black transition-colors ${
                 ativo 
-                  ? (tab.id === 'urgente' && tab.count > 0 ? 'bg-rose-100 text-rose-600' : 'bg-slate-100 text-slate-700') 
-                  : 'bg-slate-200/60 text-slate-500'
+                  ? (tab.id === 'urgente' && tab.count > 0 ? 'bg-rose-100 text-rose-600 dark:bg-rose-500/30 dark:text-rose-200' : 'bg-slate-100 text-slate-700 dark:bg-white/20 dark:text-white') 
+                  : 'bg-slate-200/60 text-slate-500 dark:bg-[#1c2b4a] dark:text-slate-300'
               }`}>
                 {tab.count}
               </span>
@@ -133,8 +138,8 @@ export default function MuralOracao() {
       {/* Grid de Pedidos */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {pedidosFiltrados.length === 0 ? (
-          <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-slate-100 shadow-sm">
-            <p className="text-slate-400 italic text-sm">Nenhum pedido de oração encontrado nesta categoria.</p>
+          <div className="col-span-full py-20 text-center bg-white dark:bg-[#17223b] rounded-3xl border border-slate-100 dark:border-[#2b3954] shadow-sm">
+            <p className="text-slate-400 dark:text-slate-400 italic text-sm">Nenhum pedido de oração encontrado nesta categoria.</p>
           </div>
         ) : (
           pedidosFiltrados.map((p) => {
@@ -144,10 +149,10 @@ export default function MuralOracao() {
             return (
               <Card 
                 key={p.id} 
-                className={`p-0 overflow-hidden rounded-3xl border border-slate-100/80 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between h-full bg-white border-t-4 ${
+                className={`p-0 overflow-hidden rounded-3xl border border-slate-100/80 dark:border-[#2b3954] shadow-md hover:shadow-xl dark:shadow-none transition-all duration-300 flex flex-col justify-between h-full bg-white dark:bg-[#17223b] border-t-4 ${
                   isDone 
-                    ? 'border-t-emerald-500 bg-gradient-to-b from-emerald-50/10 to-white' 
-                    : (isUrgent ? 'border-t-rose-500 bg-gradient-to-b from-rose-50/10 to-white shadow-rose-100/50' : 'border-t-purple-500 bg-gradient-to-b from-purple-50/10 to-white')
+                    ? 'border-t-emerald-500 bg-gradient-to-b from-emerald-50/10 to-white dark:from-emerald-950/20 dark:to-[#17223b]' 
+                    : (isUrgent ? 'border-t-rose-500 bg-gradient-to-b from-rose-50/10 to-white dark:from-rose-950/20 dark:to-[#17223b] shadow-rose-100/50 dark:shadow-none' : 'border-t-purple-500 bg-gradient-to-b from-purple-50/10 to-white dark:from-purple-950/20 dark:to-[#17223b]')
                 }`}
               >
                 <div className="p-5 flex flex-col gap-4 flex-1">
@@ -162,10 +167,10 @@ export default function MuralOracao() {
                         <Avatar pessoa={p.pessoas} tamanho="w-10 h-10" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-extrabold text-slate-800 leading-tight">
+                        <h4 className="text-sm font-extrabold text-slate-800 dark:text-slate-100 leading-tight">
                           {p.pessoas?.nome}
                         </h4>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                        <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider mt-0.5">
                           {p.pessoas?.celulas?.nome || 'Sem Célula'}
                         </p>
                       </div>
@@ -174,20 +179,20 @@ export default function MuralOracao() {
                     {/* Pulsing indicator tag */}
                     <div className="flex items-center gap-2">
                       {isUrgent && (
-                        <span className="text-[8px] bg-rose-50 border border-rose-200 text-rose-600 px-2 py-0.5 rounded-full font-black uppercase tracking-wider flex items-center gap-1 shrink-0">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse shrink-0" />
+                        <span className="text-[8px] bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800/60 text-rose-600 dark:text-rose-300 px-2 py-0.5 rounded-full font-black uppercase tracking-wider flex items-center gap-1 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-600 dark:bg-rose-400 animate-pulse shrink-0" />
                           Urgente
                         </span>
                       )}
                       {isDone && (
-                        <span className="text-[8px] bg-emerald-50 border border-emerald-200 text-emerald-600 px-2 py-0.5 rounded-full font-black uppercase tracking-wider flex items-center gap-1 shrink-0">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+                        <span className="text-[8px] bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-emerald-600 dark:text-emerald-300 px-2 py-0.5 rounded-full font-black uppercase tracking-wider flex items-center gap-1 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 shrink-0" />
                           Concluído
                         </span>
                       )}
                       {!isUrgent && !isDone && (
-                        <span className="text-[8px] bg-purple-50 border border-purple-200 text-purple-600 px-2 py-0.5 rounded-full font-black uppercase tracking-wider flex items-center gap-1 shrink-0">
-                          <span className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse shrink-0" />
+                        <span className="text-[8px] bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800/60 text-purple-600 dark:text-purple-300 px-2 py-0.5 rounded-full font-black uppercase tracking-wider flex items-center gap-1 shrink-0">
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-600 dark:bg-purple-400 animate-pulse shrink-0" />
                           Pendente
                         </span>
                       )}
@@ -197,8 +202,8 @@ export default function MuralOracao() {
                   {/* Quote Block */}
                   <div className={`relative p-4 rounded-2xl min-h-[90px] border flex-1 flex flex-col justify-center ${
                     isDone
-                      ? 'bg-emerald-50/20 border-emerald-100/50'
-                      : (isUrgent ? 'bg-rose-50/20 border-rose-100/50' : 'bg-purple-50/20 border-purple-100/50')
+                      ? 'bg-emerald-50/20 border-emerald-100/50 dark:bg-[#0f172a]/80 dark:border-emerald-900/50'
+                      : (isUrgent ? 'bg-rose-50/20 border-rose-100/50 dark:bg-[#0f172a]/80 dark:border-rose-900/50' : 'bg-purple-50/20 border-purple-100/50 dark:bg-[#0f172a]/80 dark:border-purple-900/50')
                   }`}>
                     {/* Left border accent */}
                     <div className={`absolute left-0 top-3 bottom-3 w-1 rounded-r-lg ${
@@ -212,15 +217,15 @@ export default function MuralOracao() {
                       “
                     </span>
                     
-                    <p className="text-xs text-slate-600 font-medium italic leading-relaxed pl-2 pr-4 break-words">
+                    <p className="text-xs text-slate-600 dark:text-slate-200 font-medium italic leading-relaxed pl-2 pr-4 break-words">
                       {p.pedido}
                     </p>
                   </div>
 
                   {/* Date & Action */}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100/80">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-slate-300" />
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100/80 dark:border-[#24334f]">
+                    <span className="text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-300 dark:text-slate-500" />
                       {new Date(p.created_at).toLocaleDateString('pt-BR')}
                     </span>
                     
@@ -228,14 +233,14 @@ export default function MuralOracao() {
                       {!isDone ? (
                         <button 
                           onClick={() => atualizarStatus(p.id, 'respondido')}
-                          className="text-[10px] font-black text-emerald-600 hover:bg-emerald-50 border border-emerald-100 hover:border-emerald-200 px-3 py-1.5 rounded-xl transition-all active:scale-95 flex items-center gap-1 cursor-pointer select-none"
+                          className="text-[10px] font-black text-emerald-600 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800/60 hover:border-emerald-200 dark:hover:border-emerald-700 px-3 py-1.5 rounded-xl transition-all active:scale-95 flex items-center gap-1 cursor-pointer select-none"
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
                           CONCLUIR
                         </button>
                       ) : (
-                        <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl flex items-center gap-1 select-none">
-                          <Heart className="w-3 h-3 text-emerald-500 fill-emerald-500" />
+                        <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 px-3 py-1.5 rounded-xl flex items-center gap-1 select-none">
+                          <Heart className="w-3 h-3 text-emerald-500 dark:text-emerald-400 fill-emerald-500 dark:fill-emerald-400" />
                           EM ORAÇÃO
                         </span>
                       )}

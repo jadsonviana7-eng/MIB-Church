@@ -25,6 +25,7 @@ import { faixasEtarias, faixaDaIdade } from './churchUtils';
 import { findInJsonGlobal, parseMoeda, extrairValorInscricao, extrairParcelasInscricao, gerarMensagemInscricaoEvento } from './eventoInscricaoUtils';
 import ModalExportarInscritos from './ModalExportarInscritos';
 import ModalReciboQuitacao from './ModalReciboQuitacao';
+import { dispararReciboQuitacaoAutomatico } from './services/whatsappServerService';
 
 /* ─── Roboto via Google Fonts ─────────────────────────────────────────────── */
 const RobotoStyle = () => (
@@ -628,11 +629,18 @@ function QuillEditorDetalhes({ value, onChange }) {
 // Helpers de manipulação financeira de inscrições importados de eventoInscricaoUtils.js:
 // findInJsonGlobal, parseMoeda, extrairValorInscricao, extrairParcelasInscricao
 
+// Cache em memória do Módulo de Agenda para abertura instantânea de Eventos, Calendário, Mural e Dashboard do Evento
+const cacheAgenda = {
+  eventos: null,
+  avisos: null,
+  inscritosPorEvento: {}
+};
+
 /* ─── Main Export ─────────────────────────────────────────────────────────── */
 export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAccess, pessoas = [], zonas = [] }) {
-  const [eventos, setEventos] = useState([]);
+  const [eventos, setEventos] = useState(() => cacheAgenda.eventos || []);
   const [dataAtual, setDataAtual] = useState(new Date());
-  const [carregando, setCarregando] = useState(false);
+  const [carregando, setCarregando] = useState(() => !cacheAgenda.eventos);
   const [modalEvento, setModalEvento] = useState({ aberto: false, dados: null });
   const [view, setView] = useState('lista'); // 'lista', 'form', 'dashboard'
   const [subView, setSubView] = useState(null);
@@ -644,7 +652,9 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
   const eventosExibidos = eventos.filter(ev => podeEditar || ev.publicado !== false);
 
   const carregarEventos = async () => {
-    setCarregando(true);
+    if (!cacheAgenda.eventos) {
+      setCarregando(true);
+    }
     try {
       const { data, error } = await supabase
         .from('agenda_eventos')
@@ -652,9 +662,14 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
         .order('data_inicio', { ascending: true });
       if (error) {
         if (error.code === 'PGRST116' || error.message.includes('does not exist')) {
+          cacheAgenda.eventos = [];
           setEventos([]);
         } else throw error;
-      } else setEventos(data || []);
+      } else {
+        const lista = data || [];
+        cacheAgenda.eventos = lista;
+        setEventos(lista);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -745,11 +760,16 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
     );
   }
 
-  // Leitor de QR Code para baixa de parcelas/inscrições do evento
+  // Leitor de QR Code para check-in/presença (Recibo) e baixa de parcelas (Carnê)
   if (subView === 'leitor') {
     return (
       <LeitorQRCodeEvento
         eventoId={eventoSelecionado?.id}
+        onBaixaRealizada={() => {
+          if (eventoSelecionado?.id) {
+            delete cacheAgenda.inscritosPorEvento[eventoSelecionado.id];
+          }
+        }}
         onVoltar={() => setSubView(null)}
       />
     );
@@ -953,7 +973,7 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
               </div>
               <div className="grid grid-cols-1 gap-5">
                 {eventosExibidos.length === 0 ? (
-                  <div className="ag-card text-center py-24 text-slate-400 italic">Nenhum evento publicado.</div>
+                  carregando ? null : <div className="ag-card text-center py-24 text-slate-400 italic">Nenhum evento publicado.</div>
                 ) : (
                   eventosExibidos.map(ev => (
                     <div key={ev.id} className="ag-horiz-card" style={ev.publicado === false ? { opacity: 0.75 } : {}} onClick={() => { setEventoSelecionado(ev); setView('dashboard'); }}>
@@ -1252,16 +1272,20 @@ export default function AgendaModulo({ submenu, onNavigate, membroLogado, hasAcc
 
 /* ─── Gerenciador de Mural ────────────────────────────────────────────────── */
 function GerenciadorMural({ onVoltar, membroLogado }) {
-  const [avisos, setAvisos] = useState([]);
-  const [carregando, setCarregando] = useState(true);
+  const [avisos, setAvisos] = useState(() => cacheAgenda.avisos || []);
+  const [carregando, setCarregando] = useState(() => !cacheAgenda.avisos);
   const [editando, setEditando] = useState(null);
   const [view, setView] = useState('lista'); // 'lista' ou 'form'
 
   const carregarAvisos = useCallback(async () => {
-    setCarregando(true);
+    if (!cacheAgenda.avisos) {
+      setCarregando(true);
+    }
     try {
       const { data } = await supabase.from('mural_avisos').select('*').order('created_at', { ascending: false });
-      setAvisos(data || []);
+      const lista = data || [];
+      cacheAgenda.avisos = lista;
+      setAvisos(lista);
     } catch (err) { console.error(err); }
     finally { setCarregando(false); }
   }, []);
@@ -1657,8 +1681,10 @@ function RoscaGraficoCard({ titulo, subtitulo, dados = [], onSliceClick, totalLa
 function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar, onExcluir, onAlternarPublicacao, podeEditar, onVerMembro, onAbrirLeitor, onGerarCarne, membroLogado }) {
   const isGratuito = evento?.valor_tipo !== 'pago';
   const temTransporte = Number(evento?.valor_transporte) > 0;
-  const [inscritos, setInscritos] = useState([]);
-  const [carregando, setCarregando] = useState(true);
+  const [inscritos, setInscritos] = useState(() => (
+    evento?.id && cacheAgenda.inscritosPorEvento[evento.id] ? cacheAgenda.inscritosPorEvento[evento.id] : []
+  ));
+  const [carregando, setCarregando] = useState(() => !(evento?.id && cacheAgenda.inscritosPorEvento[evento.id]));
   const [modalInscrito, setModalInscrito] = useState({ aberto: false, dados: null });
   const [modalFiltroGrafico, setModalFiltroGrafico] = useState({
     aberto: false,
@@ -1691,15 +1717,26 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
   }, [zonas]);
 
   useEffect(() => {
+    const cached = evento?.id ? cacheAgenda.inscritosPorEvento[evento.id] : null;
+    if (cached) {
+      setInscritos(cached);
+      setCarregando(false);
+    }
     async function carregarInscritos() {
-      setCarregando(true);
+      if (!cached) {
+        setCarregando(true);
+      }
       try {
         const { data, error } = await supabase
           .from('agenda_inscricoes')
           .select('*')
           .eq('evento_id', evento.id)
           .order('created_at', { ascending: false });
-        if (!error) setInscritos(data || []);
+        if (!error) {
+          const lista = data || [];
+          cacheAgenda.inscritosPorEvento[evento.id] = lista;
+          setInscritos(lista);
+        }
       } catch (err) { console.error(err); }
       finally { setCarregando(false); }
     }
@@ -2211,8 +2248,19 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
 
     const { error } = await supabase.from('agenda_inscricoes').update(patch).eq('id', id);
     if (!error) {
+      const inscAtualizado = insc ? { ...insc, ...patch } : null;
       setInscritos(prev => prev.map(ins => ins.id === id ? { ...ins, ...patch } : ins));
       setModalInscrito({ aberto: false, dados: null });
+
+      // Disparo automático do Recibo Especial em PDF via Servidor WhatsApp ao quitar inscrição paga
+      if (!isGratuito && novoStatus === 'pago' && insc?.status_pagamento !== 'pago' && inscAtualizado) {
+        dispararReciboQuitacaoAutomatico({
+          evento,
+          inscrito: inscAtualizado,
+          pessoas,
+          obterZonaParticipante
+        }).catch((err) => console.warn('[WhatsApp Auto] Recibo não enviado automaticamente:', err?.message));
+      }
     }
   };
 
@@ -2246,8 +2294,19 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
       .eq('id', insc.id);
 
     if (!error) {
+      const inscAtualizado = { ...insc, status_pagamento: novoStatus, dados_inscricao: novosDadosInscricao };
       setInscritos(prev => prev.map(item => item.id === insc.id ? { ...item, status_pagamento: novoStatus, dados_inscricao: novosDadosInscricao } : item));
       setModalInscrito(prev => ({ ...prev, dados: { ...prev.dados, status_pagamento: novoStatus, dados_inscricao: novosDadosInscricao } }));
+
+      // Se a última parcela acabou de ser quitada, dispara o Recibo Especial em PDF automaticamente
+      if (!isGratuito && novoStatus === 'pago' && insc.status_pagamento !== 'pago') {
+        dispararReciboQuitacaoAutomatico({
+          evento,
+          inscrito: inscAtualizado,
+          pessoas,
+          obterZonaParticipante
+        }).catch((err) => console.warn('[WhatsApp Auto] Recibo não enviado automaticamente:', err?.message));
+      }
     }
   };
 
@@ -2690,21 +2749,31 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                         </td>
                         <td className="text-xs text-slate-500 dark:text-slate-400">{contato}</td>
                         <td style={{ textAlign: 'right' }}>
-                          {i.status_pagamento === 'pago' ? (
-                            <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
-                              {isGratuito ? 'presente' : 'pago'}
-                            </span>
-                          ) : i.status_pagamento === 'cancelado' ? (
-                            <span className="badge bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">cancelado</span>
-                          ) : (!isGratuito && totalParcelas > 1 && pagas.length > 0) ? (
-                            <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800 whitespace-nowrap">
-                              {pagas.length}/{totalParcelas} Parc.
-                            </span>
-                          ) : (
-                            <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
-                              {isGratuito ? 'ausente' : 'pendente'}
-                            </span>
-                          )}
+                          <div className="inline-flex items-center justify-end gap-1.5 flex-wrap">
+                            {!isGratuito && i.dados_inscricao?.presenca_confirmada && (
+                              <span
+                                className="badge bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60"
+                                title={i.dados_inscricao?.presenca_em ? `Check-in em ${new Date(i.dados_inscricao.presenca_em).toLocaleString('pt-BR')}` : 'Presença confirmada via QR Code'}
+                              >
+                                ✓ Presente
+                              </span>
+                            )}
+                            {i.status_pagamento === 'pago' ? (
+                              <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
+                                {isGratuito ? 'presente' : 'pago'}
+                              </span>
+                            ) : i.status_pagamento === 'cancelado' ? (
+                              <span className="badge bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">cancelado</span>
+                            ) : (!isGratuito && totalParcelas > 1 && pagas.length > 0) ? (
+                              <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800 whitespace-nowrap">
+                                {pagas.length}/{totalParcelas} Parc.
+                              </span>
+                            ) : (
+                              <span className="badge bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
+                                {isGratuito ? 'ausente' : 'pendente'}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td style={{ textAlign: 'right', paddingRight: '24px' }} className="print:hidden">
                           <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
@@ -2759,7 +2828,15 @@ function DashboardEvento({ evento, pessoas = [], zonas = [], onVoltar, onEditar,
                     <div key={i.id} className="p-4 flex flex-col gap-2 active:bg-slate-50 dark:active:bg-slate-800 transition" onClick={() => setModalInscrito({ aberto: true, dados: i })}>
                       <div className="flex justify-between items-start">
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(i.created_at).toLocaleDateString('pt-BR')}</span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                          {!isGratuito && i.dados_inscricao?.presenca_confirmada && (
+                            <span
+                              className="badge bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800/60"
+                              title={i.dados_inscricao?.presenca_em ? `Check-in em ${new Date(i.dados_inscricao.presenca_em).toLocaleString('pt-BR')}` : 'Presença confirmada via QR Code'}
+                            >
+                              ✓ Presente
+                            </span>
+                          )}
                           {i.status_pagamento === 'pago' ? (
                             <span className="badge bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
                               {isGratuito ? 'presente' : 'pago'}

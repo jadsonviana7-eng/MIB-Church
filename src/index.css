@@ -795,38 +795,75 @@ html.dark .text-purple-950 {
   height: 0 !important;
 }
 
-/* Ocultar barras de rolagem vertical da página para economizar espaço visual e desativar pull-to-refresh na PWA mobile */
+/* Desativar pull-to-refresh na PWA mobile */
 html,
 body {
   overscroll-behavior-y: none;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
 }
 
-html::-webkit-scrollbar,
-body::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
+/* Mobile (< 768px): ocultar barra de rolagem da página para economizar espaço visual */
+@media (max-width: 767px) {
+  html,
+  body {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
 }
 
-/* Scrollbars sutis apenas para áreas onde necessário */
-html.dark ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
+/* Desktop (>= 768px): barra de rolagem vertical moderna e visível */
+@media (min-width: 768px) {
+  html,
+  body,
+  .desktop-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
 
-html.dark ::-webkit-scrollbar-track {
-  background: transparent;
-}
+  html.dark,
+  html.dark body,
+  html.dark .desktop-scrollbar {
+    scrollbar-color: #334155 transparent;
+  }
 
-html.dark ::-webkit-scrollbar-thumb {
-  background: #2b3954;
-  border-radius: 4px;
-}
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 
-html.dark ::-webkit-scrollbar-thumb:hover {
-  background: #3b4d6e;
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+    background-clip: content-box;
+  }
+
+  html.dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+
+  html.dark ::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+    background-clip: content-box;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════

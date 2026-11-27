@@ -32,14 +32,6 @@ export default function HistoricoFinanceiro({ onVoltar }) {
 
   return (
     <div className="space-y-6">
-      <div className="print:hidden mx-[3px] sm:mx-0">
-        <PageHeader 
-          titulo="Logs de Ações" 
-          breadcrumb={['Resumo', 'Logs']}
-          onNavigate={onVoltar}
-        />
-      </div>
-
       <Card className="p-0">
         <CardHeader titulo="Logs de Atividade" className="dark:!bg-[#1c2b4a] dark:!border-[#2b3954]" />
         {erro && (

@@ -4,6 +4,7 @@ import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 import { findInJsonGlobal, extrairValorInscricao, extrairParcelasInscricao } from './eventoInscricaoUtils';
 import { mascaraTelefone, mascaraCPF } from './mascaras';
+import { dispararReciboQuitacaoAutomatico } from './services/whatsappServerService';
 
 /**
  * Modal elegante, moderno e alegre de Recibo Especial de Quitação.
@@ -20,6 +21,7 @@ export default function ModalReciboQuitacao({
 }) {
   const [processando, setProcessando] = useState(false);
   const [avisoDesktop, setAvisoDesktop] = useState(false);
+  const [avisoAutoWhatsApp, setAvisoAutoWhatsApp] = useState('');
   const reciboRef = useRef(null);
 
   if (!aberto || !inscrito) return null;
@@ -631,13 +633,34 @@ export default function ModalReciboQuitacao({
     }
   };
 
-  // Envia o recibo em PDF diretamente para o WhatsApp (Nativo no celular ou Download + WhatsApp no desktop)
+  // Envia o recibo em PDF diretamente para o WhatsApp (Servidor Próprio Automático → fallback Web Share / WhatsApp Web)
   const enviarPDFWhatsApp = async () => {
     try {
       setProcessando(true);
       setAvisoDesktop(false);
+      setAvisoAutoWhatsApp('');
 
       const telLimpo = rawPhone.replace(/\D/g, '');
+
+      // 0. Tenta primeiro envio automático direto com PDF anexado pelo Servidor Próprio de WhatsApp
+      if (telLimpo.length >= 10) {
+        try {
+          const autoRes = await dispararReciboQuitacaoAutomatico({
+            evento,
+            inscrito,
+            pessoas,
+            obterZonaParticipante,
+            forcar: true
+          });
+          if (autoRes?.ok) {
+            setAvisoAutoWhatsApp(`Recibo em PDF enviado automaticamente para o WhatsApp de ${nome}!`);
+            return;
+          }
+        } catch (autoErr) {
+          console.warn('Servidor próprio indisponível, usando fallback manual:', autoErr?.message);
+        }
+      }
+
       const texto = obterTextoWhatsApp();
       const { doc, file, nomeArquivo } = await gerarReciboPDF();
 
@@ -806,6 +829,29 @@ export default function ModalReciboQuitacao({
               <p className="text-[10px] font-mono font-bold text-slate-400 mt-1">Autenticação: {codigoRecibo}</p>
             </div>
           </div>
+
+          {/* Aviso de Envio Automático pelo Servidor Próprio */}
+          {avisoAutoWhatsApp && (
+            <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700/60 flex items-start justify-between gap-3 text-xs animate-in fade-in">
+              <div className="flex items-start gap-2.5 text-emerald-900 dark:text-emerald-200">
+                <span className="text-base shrink-0">✅</span>
+                <div>
+                  <p className="font-extrabold text-emerald-800 dark:text-emerald-300">Enviado automaticamente!</p>
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-0.5 leading-relaxed">
+                    {avisoAutoWhatsApp}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAvisoAutoWhatsApp('')}
+                className="text-emerald-600 hover:text-emerald-800 font-black text-xs cursor-pointer"
+                title="Fechar aviso"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Aviso Didático para Computador */}
           {avisoDesktop && (

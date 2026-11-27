@@ -1031,16 +1031,16 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
 
               {/* Membro Selecionado ou Campo de Busca */}
               {membroSelecionado ? (
-                <div className="flex items-center justify-between bg-blue-50/40 border border-blue-100/60 rounded-2xl px-4 py-3">
-                  <div className="text-xs">
-                    <span className="text-[9px] font-black uppercase text-blue-500 tracking-wider">Cliente / Sacado</span>
-                    <p className="font-extrabold text-slate-800 text-sm mt-0.5">{membroSelecionado.nome}</p>
-                    <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{mascaraCPF(membroSelecionado.cpf || '') || 'CPF não informado'}</p>
+                <div className="flex items-center justify-between bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-800/50 rounded-2xl px-4 py-3">
+                  <div className="text-xs min-w-0">
+                    <span className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-wider">Cliente / Sacado</span>
+                    <p className="font-extrabold text-slate-800 dark:text-slate-100 text-sm mt-0.5 truncate">{membroSelecionado.nome}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">{mascaraCPF(membroSelecionado.cpf || '') || 'CPF não informado'}</p>
                   </div>
                   <button
                     type="button"
                     onClick={limparMembroSelecionado}
-                    className="p-1.5 bg-white border border-slate-200 hover:border-red-300 hover:text-red-600 text-slate-500 rounded-lg transition cursor-pointer"
+                    className="p-1.5 bg-white dark:bg-[#131d31] border border-slate-200 dark:border-[#2b3954] hover:border-red-300 dark:hover:border-rose-500/60 hover:text-red-600 dark:hover:text-rose-400 text-slate-500 dark:text-slate-300 rounded-lg transition cursor-pointer shrink-0"
                     title="Trocar membro"
                   >
                     <X size={14} />
@@ -1053,20 +1053,20 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                     <input
                       type="text"
                       placeholder="Buscar membro pelo nome..."
-                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                      className="w-full bg-slate-50 dark:bg-[#0b1329] border-2 border-slate-100 dark:border-[#24334f] focus:border-blue-600/30 dark:focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none transition font-medium"
                       value={buscaMembro}
                       onChange={(e) => setBuscaMembro(e.target.value)}
                     />
                     {resultadosBusca.length > 0 && (
-                      <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto divide-y divide-slate-50">
+                      <ul className="absolute z-20 left-0 right-0 mt-1 bg-white dark:bg-[#17223b] border border-slate-200 dark:border-[#2b3954] rounded-xl shadow-lg max-h-56 overflow-y-auto divide-y divide-slate-50 dark:divide-[#24334f]">
                         {resultadosBusca.map((p) => (
                           <li key={p.id}>
                             <button
                               type="button"
                               onClick={() => selecionarMembro(p)}
-                              className="w-full text-left px-3 py-2.5 text-xs hover:bg-blue-50/50 flex justify-between items-center transition cursor-pointer"
+                              className="w-full text-left px-3 py-2.5 text-xs hover:bg-blue-50/50 dark:hover:bg-[#1c2b4a] flex justify-between items-center transition cursor-pointer"
                             >
-                              <span className="font-bold text-slate-700">{p.nome}</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-100">{p.nome}</span>
                               <span className="text-[10px] text-slate-400 font-semibold">{mascaraCPF(p.cpf || '') || ''}</span>
                             </button>
                           </li>
@@ -1084,22 +1084,22 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
 
               {/* Vínculo de Evento (QR Code) */}
               {inscricaoSelecionada ? (
-                <div className="flex items-center justify-between bg-emerald-50/40 border border-emerald-100/60 rounded-2xl px-4 py-3">
-                  <div className="text-xs">
-                    <span className="text-[9px] font-black uppercase text-emerald-600 tracking-wider">Inscrição Vinculada (QR Code)</span>
-                    <p className="font-extrabold text-slate-800 text-sm mt-0.5">
+                <div className="flex items-center justify-between bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-800/50 rounded-2xl px-4 py-3">
+                  <div className="text-xs min-w-0">
+                    <span className="text-[9px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider">Inscrição Vinculada (QR Code)</span>
+                    <p className="font-extrabold text-slate-800 dark:text-slate-100 text-sm mt-0.5 truncate">
                       {inscricaoSelecionada.dados_inscricao?.nome ||
                         inscricaoSelecionada.dados_inscricao?.['Nome Completo'] ||
                         'Inscrição'}
                     </p>
-                    <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">
+                    <p className="text-[10px] text-emerald-700 dark:text-emerald-300 font-semibold mt-0.5 truncate">
                       Evento: {inscricaoSelecionada.agenda_eventos?.titulo || '—'}
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={removerVinculoInscricao}
-                    className="p-1.5 bg-white border border-slate-200 hover:border-red-300 hover:text-red-600 text-slate-500 rounded-lg transition cursor-pointer"
+                    className="p-1.5 bg-white dark:bg-[#131d31] border border-slate-200 dark:border-[#2b3954] hover:border-red-300 dark:hover:border-rose-500/60 hover:text-red-600 dark:hover:text-rose-400 text-slate-500 dark:text-slate-300 rounded-lg transition cursor-pointer shrink-0"
                     title="Remover vínculo"
                   >
                     <X size={14} />
@@ -1112,20 +1112,20 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                     <input
                       type="text"
                       placeholder="Vincular inscrição de evento..."
-                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-600/30 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-medium"
+                      className="w-full bg-slate-50 dark:bg-[#0b1329] border-2 border-slate-100 dark:border-[#24334f] focus:border-blue-600/30 dark:focus:border-blue-500 rounded-xl px-3 py-2 text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none transition font-medium"
                       value={buscaInscricao}
                       onChange={(e) => setBuscaInscricao(e.target.value)}
                     />
                     {resultadosInscricao.length > 0 && (
-                      <ul className="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-56 overflow-y-auto divide-y divide-slate-50">
+                      <ul className="absolute z-20 left-0 right-0 mt-1 bg-white dark:bg-[#17223b] border border-slate-200 dark:border-[#2b3954] rounded-xl shadow-lg max-h-56 overflow-y-auto divide-y divide-slate-50 dark:divide-[#24334f]">
                         {resultadosInscricao.map((insc) => (
                           <li key={insc.id}>
                             <button
                               type="button"
                               onClick={() => selecionarInscricao(insc)}
-                              className="w-full text-left px-3 py-2.5 text-xs hover:bg-blue-50/50 flex justify-between items-center transition cursor-pointer"
+                              className="w-full text-left px-3 py-2.5 text-xs hover:bg-blue-50/50 dark:hover:bg-[#1c2b4a] flex justify-between items-center transition cursor-pointer"
                             >
-                              <span className="font-bold text-slate-700">
+                              <span className="font-bold text-slate-700 dark:text-slate-100">
                                 {insc.dados_inscricao?.nome || insc.dados_inscricao?.['Nome Completo'] || 'Sem nome'}
                               </span>
                               <span className="text-[10px] text-slate-400 font-semibold">{insc.agenda_eventos?.titulo}</span>
@@ -1417,7 +1417,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                       <button
                         type="button"
                         onClick={() => handleExcluirPerfil(perfilSelecionadoId)}
-                        className="px-3 py-2 bg-red-50 border-2 border-red-100 hover:border-red-300 text-red-400 hover:text-red-600 rounded-xl transition cursor-pointer"
+                        className="px-3 py-2 bg-red-50 dark:bg-rose-950/40 border-2 border-red-100 dark:border-rose-800/60 hover:border-red-300 dark:hover:border-rose-600 text-red-400 dark:text-rose-400 hover:text-red-600 dark:hover:text-rose-300 rounded-xl transition cursor-pointer"
                         title="Excluir perfil"
                       >
                         <Trash2 size={14} />
@@ -1427,11 +1427,11 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
 
                   {/* Preview rápido do perfil ativo (quando editor fechado) */}
                   {!showCedenteEditor && !modoNovoPerfil && perfilSelecionadoId && dadosCedente.nome && (
-                    <div className="bg-violet-50/60 border border-violet-100 rounded-2xl px-4 py-2.5 text-[10px] text-violet-800 font-semibold leading-relaxed">
-                      <p className="font-black text-xs text-violet-900">{dadosCedente.nome}</p>
-                      {dadosCedente.localPagamento && <p className="text-violet-600 mt-0.5">{dadosCedente.localPagamento}</p>}
+                    <div className="bg-violet-50/60 dark:bg-violet-950/40 border border-violet-100 dark:border-violet-800/50 rounded-2xl px-4 py-2.5 text-[10px] text-violet-800 dark:text-violet-200 font-semibold leading-relaxed">
+                      <p className="font-black text-xs text-violet-900 dark:text-violet-100">{dadosCedente.nome}</p>
+                      {dadosCedente.localPagamento && <p className="text-violet-600 dark:text-violet-300 mt-0.5">{dadosCedente.localPagamento}</p>}
                       {(dadosCedente.telefoneCelular || dadosCedente.email) && (
-                        <p className="text-violet-500 mt-0.5">
+                        <p className="text-violet-500 dark:text-violet-400 mt-0.5">
                           {dadosCedente.telefoneCelular}{dadosCedente.telefoneCelular && dadosCedente.email ? ' · ' : ''}{dadosCedente.email}
                         </p>
                       )}
@@ -1441,7 +1441,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
 
                 {/* Editor de perfil (novo ou edição do existente) */}
                 {(showCedenteEditor || modoNovoPerfil) && (
-                  <div className="space-y-4 pt-1 border-t border-slate-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <div className="space-y-4 pt-1 border-t border-slate-100 dark:border-[#24334f] animate-in fade-in slide-in-from-top-1 duration-200">
 
                     {/* Nome do perfil (só ao criar novo) */}
                     {modoNovoPerfil && (
@@ -1450,7 +1450,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                         <input
                           type="text"
                           placeholder="Ex: Congresso MIB 2026, Retiro 2025..."
-                          className="w-full bg-violet-50 border-2 border-violet-200 focus:border-violet-400 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-bold text-slate-700"
+                          className="w-full bg-violet-50 dark:bg-violet-950/40 border-2 border-violet-200 dark:border-violet-800/60 focus:border-violet-400 rounded-xl px-3 py-2 text-xs focus:outline-none transition font-bold text-slate-700 dark:text-slate-100"
                           value={nomeNovoPerfil}
                           onChange={(e) => setNomeNovoPerfil(e.target.value)}
                         />
@@ -1576,7 +1576,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                           <button
                             type="button"
                             onClick={() => { setModoNovoPerfil(false); setShowCedenteEditor(false); if (perfilSelecionadoId) aplicarPerfil(perfilSelecionadoId, perfisCedente); }}
-                            className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-wider transition cursor-pointer"
+                            className="px-4 py-2.5 bg-slate-100 dark:bg-[#1c2b4a] hover:bg-slate-200 dark:hover:bg-[#24334f] text-slate-600 dark:text-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider transition cursor-pointer"
                           >
                             Cancelar
                           </button>
@@ -1597,7 +1597,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
               </div>
 
               {erro && (
-                <div className="bg-red-50 border border-red-100 text-red-600 text-xs rounded-2xl px-4 py-3 flex items-center gap-2">
+                <div className="bg-red-50 dark:bg-rose-950/50 border border-red-100 dark:border-rose-800/60 text-red-600 dark:text-rose-300 text-xs rounded-2xl px-4 py-3 flex items-center gap-2">
                   <AlertCircle size={16} className="shrink-0" />
                   <span className="font-semibold">{erro}</span>
                 </div>
@@ -1617,7 +1617,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                   <button
                     type="button"
                     onClick={handleLimparGeral}
-                    className="py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5"
+                    className="py-2.5 bg-slate-100 dark:bg-[#1c2b4a] hover:bg-slate-200 dark:hover:bg-[#24334f] text-slate-700 dark:text-slate-200 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <Trash2 size={14} />
                     Limpar Formulário
@@ -1696,7 +1696,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                       <button
                         type="button"
                         onClick={handleWhatsAppCarneCompleto}
-                        className="px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-emerald-200"
+                        className="px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1.5 cursor-pointer shadow-sm shadow-emerald-600/25 dark:shadow-emerald-950/60"
                       >
                         <Share2 size={13} />
                         Enviar WhatsApp
@@ -1705,7 +1705,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                         <button
                           type="button"
                           onClick={handleBaixarTodosCartoesPDF}
-                          className="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                          className="px-3 py-2 bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                         >
                           <Download size={13} />
                           Baixar Todos
@@ -1717,11 +1717,11 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                   {inscricaoId ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {parcelas.map((parcela) => (
-                        <div key={parcela.numero} className="border border-slate-100 bg-slate-50/50 rounded-2xl p-3 flex flex-col items-center justify-between text-center gap-3">
+                        <div key={parcela.numero} className="border border-slate-100 dark:border-[#24334f] bg-slate-50/50 dark:bg-[#0f172a]/70 rounded-2xl p-3 flex flex-col items-center justify-between text-center gap-3">
                           <div>
                             <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Parcela</span>
-                            <p className="text-sm font-black text-slate-800 mt-0.5">{parcela.parcelaLabel}</p>
-                            <p className="text-xs font-bold text-slate-600 mt-1">R$ {formatCurrency(parcela.valorPago)}</p>
+                            <p className="text-sm font-black text-slate-800 dark:text-slate-100 mt-0.5">{parcela.parcelaLabel}</p>
+                            <p className="text-xs font-bold text-slate-600 dark:text-slate-300 mt-1">R$ {formatCurrency(parcela.valorPago)}</p>
                           </div>
 
                           <div className="flex flex-col gap-1.5 w-full">
@@ -1729,14 +1729,14 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                               <button
                                 type="button"
                                 onClick={() => handleBaixarCartaoPNG(parcela)}
-                                className="flex-1 py-1.5 bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 rounded-lg text-[9px] font-extrabold uppercase transition cursor-pointer"
+                                className="flex-1 py-1.5 bg-white dark:bg-[#17223b] border border-slate-200 dark:border-[#2b3954] hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-200 rounded-lg text-[9px] font-extrabold uppercase transition cursor-pointer"
                               >
                                 PNG
                               </button>
                               <button
                                 type="button"
                                 onClick={() => handleBaixarCartaoPDF(parcela)}
-                                className="flex-1 py-1.5 bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 rounded-lg text-[9px] font-extrabold uppercase transition cursor-pointer"
+                                className="flex-1 py-1.5 bg-white dark:bg-[#17223b] border border-slate-200 dark:border-[#2b3954] hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-200 rounded-lg text-[9px] font-extrabold uppercase transition cursor-pointer"
                               >
                                 PDF
                               </button>
@@ -1744,7 +1744,7 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                             <button
                               type="button"
                               onClick={() => handleWhatsAppParcela(parcela)}
-                              className="w-full py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[9px] font-extrabold uppercase transition flex items-center justify-center gap-1.5 cursor-pointer"
+                              className="w-full py-1.5 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-transparent dark:border-emerald-800/50 rounded-lg text-[9px] font-extrabold uppercase transition flex items-center justify-center gap-1.5 cursor-pointer"
                               title="Enviar por WhatsApp"
                             >
                               <Share2 size={11} />
@@ -1755,8 +1755,8 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center">
-                      <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                    <div className="bg-slate-50 dark:bg-[#0f172a]/70 border border-slate-100 dark:border-[#24334f] rounded-2xl p-4 text-center">
+                      <p className="text-xs text-slate-500 dark:text-slate-300 font-medium leading-relaxed">
                         Para habilitar a geração de cartões digitais de parcelas e códigos QR para baixa automática, vincule o carnê a uma <strong>Inscrição de Evento</strong> no Passo 1.
                       </p>
                     </div>

@@ -1307,7 +1307,7 @@ export default function App() {
     turmaSelecionadaId
   ]);
 
-  function navegar(modulo, submenu = null) {
+  function navegar(modulo, submenu = null, opcoes = {}) {
     setModuloAtual(modulo);
     setMenuAberto(false);
     // Limpa estados de seleção ao navegar para garantir que submenus abram corretamente
@@ -1316,7 +1316,11 @@ export default function App() {
     setReuniaoSelecionadaId(null);
     setOrigemVerReuniao(null);
     setTurmaSelecionadaId(null);
-    setFiltroCursoTurmas('');
+    if (opcoes?.filtroCursoId !== undefined) {
+      setFiltroCursoTurmas(opcoes.filtroCursoId);
+    } else if (!opcoes?.manterFiltroCurso) {
+      setFiltroCursoTurmas('');
+    }
 
     if (submenu !== 'ficha-aluno') {
       setAlunoSelecionadoParaCadernetaId(null);
@@ -2114,7 +2118,7 @@ export default function App() {
         )}
       </nav>
 
-      <main className="min-w-0 px-2 pb-20 pt-14 sm:px-6 sm:pb-6 md:pl-20 md:pr-6 md:pt-16 lg:pl-20 lg:pr-10 lg:pt-16 lg:pb-8 print:p-0 print:m-0 print:w-full print:max-w-full flex-1 overflow-y-auto scrollbar-hide [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      <main className="min-w-0 px-2 pb-20 pt-14 sm:px-6 sm:pb-6 md:pl-20 md:pr-6 md:pt-16 lg:pl-20 lg:pr-10 lg:pt-16 lg:pb-8 print:p-0 print:m-0 print:w-full print:max-w-full flex-1 overflow-y-auto desktop-scrollbar max-md:[scrollbar-width:none] max-md:[-ms-overflow-style:none] max-md:[&::-webkit-scrollbar]:hidden">
         {/* Nova HomePage como a tela principal do dashboard */}
         {moduloAtual === 'dashboard' && (
           <>
@@ -2299,7 +2303,7 @@ export default function App() {
         {moduloAtual === 'escolas' && escolasSubmenu !== 'ficha-aluno' && (
           <EscolasModulo
             submenu={escolasSubmenu}
-            onNavigate={(sub) => navegar('escolas', sub)}
+            onNavigate={(sub, opcoes) => navegar('escolas', sub, opcoes)}
             pessoas={pessoasVisiveis}
             alunoSelecionadoParaCadernetaId={alunoSelecionadoParaCadernetaId} // Passa o ID do aluno
             setAlunoSelecionadoParaCadernetaId={setAlunoSelecionadoParaCadernetaId} // Passa o setter

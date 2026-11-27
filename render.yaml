@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: mib-church-whatsapp-api
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node whatsapp-server.mjs
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false

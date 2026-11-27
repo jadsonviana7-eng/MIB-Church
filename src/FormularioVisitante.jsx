@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabaseClient';
+import { utilitariosCache } from './utilitariosCache';
 import { Card, CardHeader, PageHeader } from './ui';
 import { 
   UserPlus, Save, CheckCircle2, AlertCircle, RefreshCw, 
@@ -22,15 +23,15 @@ export default function FormularioVisitante({ onVoltar }) {
   const [observacoes, setObservacoes] = useState('');
   
   // Estados da lista de visitantes
-  const [visitantes, setVisitantes] = useState([]);
+  const [visitantes, setVisitantes] = useState(() => utilitariosCache.visitantes || []);
   const [carregandoVisitantes, setCarregandoVisitantes] = useState(false);
   const [busca, setBusca] = useState('');
   const [filtroCulto, setFiltroCulto] = useState('Todos');
   const [visitanteDetalhado, setVisitanteDetalhado] = useState(null);
 
   // Estados de metadados
-  const [zonas, setZonas] = useState([]);
-  const [carregandoZonas, setCarregandoZonas] = useState(true);
+  const [zonas, setZonas] = useState(() => utilitariosCache.zonas || []);
+  const [carregandoZonas, setCarregandoZonas] = useState(() => !utilitariosCache.zonas);
   const [enviando, setEnviando] = useState(false);
   const [statusEnvio, setStatusEnvio] = useState(null); // { type: 'success' | 'error', message: '...' }
 
@@ -44,7 +45,9 @@ export default function FormularioVisitante({ onVoltar }) {
           .order('nome');
         
         if (error) throw error;
-        setZonas(data || []);
+        const lista = data || [];
+        utilitariosCache.zonas = lista;
+        setZonas(lista);
       } catch (err) {
         console.error('Erro ao carregar zonas:', err);
       } finally {
@@ -56,7 +59,9 @@ export default function FormularioVisitante({ onVoltar }) {
 
   // Carregar lista de visitantes
   async function carregarVisitantes() {
-    setCarregandoVisitantes(true);
+    if (!utilitariosCache.visitantes) {
+      setCarregandoVisitantes(true);
+    }
     try {
       const { data, error } = await supabase
         .from('visitantes_culto')
@@ -64,7 +69,9 @@ export default function FormularioVisitante({ onVoltar }) {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setVisitantes(data || []);
+      const lista = data || [];
+      utilitariosCache.visitantes = lista;
+      setVisitantes(lista);
     } catch (err) {
       console.error('Erro ao carregar visitantes:', err);
     } finally {

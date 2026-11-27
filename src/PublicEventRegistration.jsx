@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { Card, CardHeader } from './ui';
 import { mascaraTelefone } from './mascaras';
+import { findInJsonGlobal } from './eventoInscricaoUtils';
+import { dispararBoasVindasEventoAutomatico } from './services/whatsappServerService';
 
 export default function PublicEventRegistration() {
   const [evento, setEvento] = useState(null);
@@ -110,6 +112,18 @@ export default function PublicEventRegistration() {
           status_pagamento: evento.valor_tipo === 'gratuito' ? 'pago' : 'pendente'
         }]);
       if (error) throw error;
+
+      // Disparo automático de mensagem de boas-vindas via servidor WhatsApp (em segundo plano)
+      const nomeInscrito = findInJsonGlobal(respostas, ['nome', 'nome completo', 'completo']) || 'Participante';
+      const telInscrito = findInJsonGlobal(respostas, ['telefone', 'celular', 'whatsapp', 'contato']) || '';
+      if (telInscrito) {
+        dispararBoasVindasEventoAutomatico({
+          evento,
+          nome: nomeInscrito,
+          telefone: telInscrito
+        }).catch(() => {});
+      }
+
       setSucesso(true);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {

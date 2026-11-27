@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import DashboardMinisterialV2 from './ministerial/DashboardMinisterialV2';
 import EscalasMinisteriais from './ministerial/EscalasMinisteriais';
 import MinisteriosManager from './ministerial/MinisteriosManager';
 import HistoricoMinisterial from './ministerial/HistoricoMinisterial';
 import RelatoriosMinisterial from './ministerial/RelatoriosMinisterial';
+import { prefetchModuloMinisterial } from './ministerial/ministerialCache';
 import {
   LayoutDashboard,
   Calendar,
@@ -21,8 +22,13 @@ import RepertorioLouvor from './RepertorioLouvor';
 import { isLouvorMinistry } from './ministerial/services/ministeriosService';
 
 export default function GestaoMinisterial(props) {
-  const { submenu, onNavigate } = props;
+  const { submenu, onNavigate, membroLogado } = props;
   const aba = submenu || 'dashboard';
+
+  // Pré-carrega em segundo plano os dados das demais abas do módulo ministerial para troca instantânea
+  useEffect(() => {
+    prefetchModuloMinisterial(membroLogado?.id);
+  }, [membroLogado?.id]);
 
   const [filtroMinisterioId, setFiltroMinisterioId] = useState(null);
   const [ministerioAtivo, setMinisterioAtivo] = useState(null);
@@ -148,7 +154,7 @@ export default function GestaoMinisterial(props) {
       {/* ── CABEÇALHO DO MÓDULO (OCULTO NA ABA DASHBOARD) ── */}
       {aba !== 'dashboard' && (
         <>
-          <div className={`hidden md:block animate-in fade-in duration-300 transition-all ${colunaRecolhida ? 'lg:pr-24' : 'lg:pr-72 xl:pr-80'}`}>
+          <div className="hidden md:block animate-in fade-in duration-300">
             <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
               {abaAtual.titulo || abaAtual.label}
             </h1>
@@ -283,7 +289,9 @@ export default function GestaoMinisterial(props) {
 
         {/* ── MENU DE NAVEGAÇÃO FIXO À DIREITA SEM ROLAGEM (DESKTOP) ── */}
         <aside
-          className={`hidden lg:block transition-all duration-300 fixed lg:top-20 lg:right-10 z-30 ${
+          className={`hidden lg:block transition-all duration-300 fixed lg:right-10 z-30 ${
+            aba === 'dashboard' ? 'lg:top-16' : 'lg:top-[128px]'
+          } ${
             colunaRecolhida ? 'lg:w-20' : 'lg:w-64 xl:w-72'
           }`}
         >

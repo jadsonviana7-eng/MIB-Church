@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as XLSX from 'xlsx';
+import { utilitariosCache } from './utilitariosCache';
 import {
   Music,
   Calendar,
@@ -83,15 +84,22 @@ function IconWhatsApp({ size = 16, className = "" }) {
 }
 
 export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSidebar = false }) {
+  const repCache = utilitariosCache.repertorio;
   const [abaAtiva, setAbaAtiva] = useState('cultos'); // 'cultos' | 'biblioteca' | 'estatisticas'
   const [colunaRecolhida, setColunaRecolhida] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !repCache);
 
   // Dados
-  const [musicas, setMusicas] = useState([]);
-  const [eventos, setEventos] = useState([]);
-  const [mapaRepertorios, setMapaRepertorios] = useState({});
-  const [eventoSelecionadoId, setEventoSelecionadoId] = useState(null);
+  const [musicas, setMusicas] = useState(() => repCache?.musicas || []);
+  const [eventos, setEventos] = useState(() => repCache?.eventos || []);
+  const [mapaRepertorios, setMapaRepertorios] = useState(() => repCache?.mapaRepertorios || {});
+  const [eventoSelecionadoId, setEventoSelecionadoId] = useState(() => {
+    const listaEv = repCache?.eventos || [];
+    if (!listaEv.length) return null;
+    const hojeIso = new Date().toISOString();
+    const proximo = listaEv.find(e => e.data_evento >= hojeIso) || listaEv[0];
+    return proximo ? proximo.id : null;
+  });
 
   // Seleção Múltipla de Músicas na Biblioteca (Exclusão e Transferência em Lote)
   const [musicasSelecionadas, setMusicasSelecionadas] = useState([]);
@@ -101,7 +109,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
   const [transferindoLote, setTransferindoLote] = useState(false);
 
   // Estados de Bibliotecas / Pastas de Repertório
-  const [bibliotecas, setBibliotecas] = useState([]);
+  const [bibliotecas, setBibliotecas] = useState(() => repCache?.bibliotecas || []);
   const [bibliotecaSelecionada, setBibliotecaSelecionada] = useState('todas');
   const [modoVisualizacao, setModoVisualizacao] = useState(() => {
     try {
@@ -255,10 +263,10 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
   }
 
   // Estatísticas calculadas
-  const [estatisticas, setEstatisticas] = useState(null);
+  const [estatisticas, setEstatisticas] = useState(() => repCache?.estatisticas || null);
 
   // Status do Banco de Dados (Supabase)
-  const [statusBanco, setStatusBanco] = useState(null);
+  const [statusBanco, setStatusBanco] = useState(() => repCache?.statusBanco || null);
   const [modalSqlAberto, setModalSqlAberto] = useState(false);
   const [copiadoSql, setCopiadoSql] = useState(false);
 
@@ -269,11 +277,16 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
 
   // Carregamento Inicial
   useEffect(() => {
+    if (repCache && eventoSelecionadoId) {
+      selecionarEvento(eventoSelecionadoId, repCache.mapaRepertorios || {});
+    }
     carregarTudo();
   }, []);
 
   async function carregarTudo() {
-    setLoading(true);
+    if (!utilitariosCache.repertorio) {
+      setLoading(true);
+    }
     try {
       const [listaMus, listaEv, todosReps, stats, statusDb, listaBibs] = await Promise.all([
         repertorioService.listarMusicas(),
@@ -283,6 +296,15 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
         repertorioService.verificarConexaoBanco(),
         repertorioService.listarBibliotecas()
       ]);
+
+      utilitariosCache.repertorio = {
+        musicas: listaMus || [],
+        eventos: listaEv || [],
+        mapaRepertorios: todosReps || {},
+        estatisticas: stats || null,
+        statusBanco: statusDb || null,
+        bibliotecas: listaBibs || []
+      };
 
       setMusicas(listaMus || []);
       setEventos(listaEv || []);

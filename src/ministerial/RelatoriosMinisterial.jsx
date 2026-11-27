@@ -19,13 +19,14 @@ import {
 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { ministeriosService } from './services/ministeriosService';
+import { ministerialCache } from './ministerialCache';
 import { jsPDF } from 'jspdf';
 
 export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNavegarGlobal, hideHeader = false }) {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !ministerialCache.consolidados);
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'exportar'
   const [toastMsg, setToastMsg] = useState('');
-  const [rawDados, setRawDados] = useState(null);
+  const [rawDados, setRawDados] = useState(() => ministerialCache.consolidados);
 
   // Modal de Detalhamento por Indicador (Pessoas/Voluntários)
   const [modalIndicadorAberto, setModalIndicadorAberto] = useState(null); // null | 'voluntarios' | 'servicos' | 'pendentes' | 'recusadas'
@@ -71,25 +72,31 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
   }, []);
 
   async function carregarDados() {
-    setLoading(true);
+    if (!ministerialCache.consolidados) {
+      setLoading(true);
+    }
     try {
       const res = await ministeriosService.obterRelatoriosConsolidados();
-      setRawDados(res || {
+      const dadosNormalizados = res || {
         ministerios: [],
         membros: [],
         escalas: [],
         historicos: [],
         funcoes: []
-      });
+      };
+      ministerialCache.consolidados = dadosNormalizados;
+      setRawDados(dadosNormalizados);
     } catch (e) {
       console.error('Erro ao carregar dados consolidados para relatórios:', e);
-      setRawDados({
-        ministerios: [],
-        membros: [],
-        escalas: [],
-        historicos: [],
-        funcoes: []
-      });
+      if (!ministerialCache.consolidados) {
+        setRawDados({
+          ministerios: [],
+          membros: [],
+          escalas: [],
+          historicos: [],
+          funcoes: []
+        });
+      }
     } finally {
       setLoading(false);
     }

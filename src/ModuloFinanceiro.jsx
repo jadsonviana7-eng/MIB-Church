@@ -46,16 +46,26 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
-  SlidersHorizontal
+  SlidersHorizontal,
+  PanelRightClose,
+  PanelRightOpen
 } from 'lucide-react';
+
+// Cache em memória do Módulo Financeiro para abertura instantânea da Visão Geral e troca de abas
+const cacheModuloFinanceiro = {
+  transacoes: null,
+  contas: null,
+  categorias: null
+};
 
 export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membroLogado, hasAccess, filtrosMobileAberto, setFiltrosMobileAberto, onNavigate }) {
   const [abaAtiva, setAbaAtiva] = useState(submenu || 'resumo');
-  const [transacoes, setTransacoes] = useState([]);
-  const [contas, setContas] = useState([]);
-  const [categorias, setCategorias] = useState([]);
-  const [carregando, setCarregando] = useState(true);
+  const [transacoes, setTransacoes] = useState(() => cacheModuloFinanceiro.transacoes || []);
+  const [contas, setContas] = useState(() => cacheModuloFinanceiro.contas || []);
+  const [categorias, setCategorias] = useState(() => cacheModuloFinanceiro.categorias || []);
+  const [carregando, setCarregando] = useState(() => !cacheModuloFinanceiro.transacoes);
   const [filtrosPainelExpandidos, setFiltrosPainelExpandidos] = useState(false);
+  const [painelLateralRecolhido, setPainelLateralRecolhido] = useState(false);
   const [isDark, setIsDark] = useState(() => typeof document !== 'undefined' && document.documentElement.classList.contains('dark'));
 
   useEffect(() => {
@@ -106,7 +116,9 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
 
   // Sincroniza a aba ativa quando o submenu mudar pelo menu principal
   useEffect(() => {
-    if (submenu) setAbaAtiva(submenu);
+    if (submenu) {
+      setAbaAtiva(submenu);
+    }
   }, [submenu]);
 
   const carregarDadosIniciais = useCallback(async () => {
@@ -118,17 +130,31 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
       return;
     }
 
-    setCarregando(true);
+    if (!cacheModuloFinanceiro.transacoes) {
+      setCarregando(true);
+    }
     try {
       const [resTransacoes, resContas, resCategorias] = await Promise.all([
         supabase.from('transacoes_financeiras').select('*, pessoas(nome), categorias_financeiras(nome), contas_financeiras(nome)').order('data', { ascending: false }),
-        supabase.from('contas_financeiras').select('id, nome').order('nome'),
-        supabase.from('categorias_financeiras').select('id, nome, tipo').order('nome')
+        supabase.from('contas_financeiras').select('*').order('nome'),
+        supabase.from('categorias_financeiras').select('*').order('nome')
       ]);
 
-      if (!resTransacoes.error) setTransacoes(resTransacoes.data || []);
-      if (!resContas.error) setContas(resContas.data || []);
-      if (!resCategorias.error) setCategorias(resCategorias.data || []);
+      if (!resTransacoes.error) {
+        const listaT = resTransacoes.data || [];
+        cacheModuloFinanceiro.transacoes = listaT;
+        setTransacoes(listaT);
+      }
+      if (!resContas.error) {
+        const listaCo = resContas.data || [];
+        cacheModuloFinanceiro.contas = listaCo;
+        setContas(listaCo);
+      }
+      if (!resCategorias.error) {
+        const listaCa = resCategorias.data || [];
+        cacheModuloFinanceiro.categorias = listaCa;
+        setCategorias(listaCa);
+      }
     } catch (err) {
       console.error('Erro ao carregar dados do módulo financeiro:', err);
     } finally {
@@ -409,721 +435,840 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
     );
   }
 
+  const abasFinanceiro = useMemo(() => {
+    const lista = [
+      { id: 'resumo', label: 'Visão Geral & Gráficos', icon: BarChart3, iconColor: 'text-blue-400' },
+    ];
+    if (hasAccess('Financeiro', 'Transações')) {
+      lista.push({ id: 'transacoes', label: 'Transações', icon: DollarSign, iconColor: 'text-emerald-500' });
+    }
+    if (hasAccess('Financeiro', 'Categorias')) {
+      lista.push({ id: 'categorias', label: 'Categorias', icon: Tag, iconColor: 'text-amber-500' });
+    }
+    if (hasAccess('Financeiro', 'Contas')) {
+      lista.push({ id: 'contas', label: 'Contas & Caixas', icon: Landmark, iconColor: 'text-cyan-500' });
+    }
+    if (hasAccess('Financeiro', 'Relatórios financeiros')) {
+      lista.push({ id: 'relatorios', label: 'Relatórios', icon: TrendingUp, iconColor: 'text-purple-500' });
+    }
+    if (hasAccess('Financeiro', 'Logs')) {
+      lista.push({ id: 'historico', label: 'Histórico', icon: History, iconColor: 'text-slate-400' });
+    }
+    return lista;
+  }, [hasAccess]);
+
   return (
-    <div className="space-y-4 sm:space-y-6 pb-12">
+    <div className="space-y-4 pb-12">
+      {/* BARRA COMPACTA MOBILE / TABLET (< lg) VISÍVEL EM TODO O MÓDULO FINANCEIRO */}
+      <div className="lg:hidden bg-white dark:bg-[#17223b] border border-slate-200 dark:border-[#2b3954] rounded-xl p-2.5 shadow-xs flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0 animate-pulse" />
+          <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
+            {abaAtiva === 'resumo' && 'Visão Geral & Gráficos'}
+            {abaAtiva === 'transacoes' && 'Transações Financeiras'}
+            {abaAtiva === 'categorias' && 'Categorias Financeiras'}
+            {abaAtiva === 'contas' && 'Contas & Caixas'}
+            {abaAtiva === 'relatorios' && 'Relatórios Financeiros'}
+            {abaAtiva === 'historico' && 'Histórico & Logs'}
+          </span>
+        </div>
 
-      {/* CONTEINER DO TÍTULO DA PÁGINA (PAGE HEADER) NO TOPO - OCULTO NA ABA RESUMO/DASHBOARD */}
-      {abaAtiva !== 'resumo' && (
-        <PageHeader
-          titulo={
-            abaAtiva === 'transacoes' ? 'Transações Financeiras' :
-              abaAtiva === 'categorias' ? 'Categorias Financeiras' :
-                abaAtiva === 'contas' ? 'Contas & Caixas' :
-                  abaAtiva === 'relatorios' ? 'Relatórios Financeiros' :
-                    'Histórico & Logs'
-          }
+        <div className="flex items-center gap-1.5 shrink-0">
+          <select
+            value={abaAtiva}
+            onChange={(e) => handleMudarAba(e.target.value)}
+            className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {abasFinanceiro.map((aba) => (
+              <option key={aba.id} value={aba.id}>
+                {aba.label}
+              </option>
+            ))}
+          </select>
 
-          breadcrumb={
-            abaAtiva === 'transacoes' ? ['Financeiro', 'Transações'] :
-              abaAtiva === 'categorias' ? ['Financeiro', 'Categorias'] :
-                abaAtiva === 'contas' ? ['Financeiro', 'Contas'] :
-                  abaAtiva === 'relatorios' ? ['Financeiro', 'Relatórios'] :
-                    ['Financeiro', 'Histórico']
-          }
-          onNavigate={() => handleMudarAba('resumo')}
-        />
-      )}
+          <button
+            onClick={carregarDadosIniciais}
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 transition shrink-0 cursor-pointer"
+            title="Recarregar Dados"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${carregando ? 'animate-spin text-blue-600' : ''}`} />
+          </button>
+        </div>
+      </div>
 
-      {/* NAVEGAÇÃO SUPERIOR DE SUBMÓDULOS - EXIBIDO APENAS NA PÁGINA RESUMO */}
-      {abaAtiva === 'resumo' && (
-        <>
-          {/* 1. VERSÃO DESKTOP (Mantida intacta e elegante) */}
-          <div className="hidden sm:flex bg-white dark:bg-[#17223b] border border-slate-200 dark:border-[#2b3954] rounded-2xl p-2 shadow-xs items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 shrink-0">
-              <button
-                onClick={() => handleMudarAba('resumo')}
-                className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${abaAtiva === 'resumo'
-                  ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-              >
-                <BarChart3 className="w-4 h-4 text-blue-400" />
-                <span>Visão Geral & Gráficos</span>
-              </button>
+      {/* LAYOUT PRINCIPAL COM PAINEL LATERAL FIXO E ADAPTATIVO À DIREITA NO DESKTOP (lg+) */}
+      <div className={`relative transition-all duration-200 ${painelLateralRecolhido ? 'lg:pr-12' : 'lg:pr-[196px]'}`}>
+        {/* CONTEÚDO PRINCIPAL DO MÓDULO FINANCEIRO */}
+        <div className="min-w-0 space-y-4 sm:space-y-6">
+          {/* CONTEINER DO TÍTULO DA PÁGINA (PAGE HEADER) NO TOPO - OCULTO NA ABA RESUMO/DASHBOARD */}
+          {abaAtiva !== 'resumo' && (
+            <PageHeader
+              titulo={
+                abaAtiva === 'transacoes' ? 'Transações Financeiras' :
+                  abaAtiva === 'categorias' ? 'Categorias Financeiras' :
+                    abaAtiva === 'contas' ? 'Contas & Caixas' :
+                      abaAtiva === 'relatorios' ? 'Relatórios Financeiros' :
+                        'Histórico & Logs'
+              }
+              breadcrumb={
+                abaAtiva === 'transacoes' ? ['Financeiro', 'Transações'] :
+                  abaAtiva === 'categorias' ? ['Financeiro', 'Categorias'] :
+                    abaAtiva === 'contas' ? ['Financeiro', 'Contas'] :
+                      abaAtiva === 'relatorios' ? ['Financeiro', 'Relatórios'] :
+                        ['Financeiro', 'Histórico']
+              }
+              onNavigate={() => handleMudarAba('resumo')}
+            />
+          )}
 
-              {hasAccess('Financeiro', 'Transações') && (
-                <button
-                  onClick={() => handleMudarAba('transacoes')}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${abaAtiva === 'transacoes'
-                    ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                >
-                  <DollarSign className="w-4 h-4 text-emerald-500" />
-                  <span>Transações</span>
-                </button>
-              )}
+          {/* ABA: VISÃO GERAL COM PAINEL DE FILTROS E NOVOS GRÁFICOS DINÂMICOS */}
+          {abaAtiva === 'resumo' && (
+            <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300">
 
-              {hasAccess('Financeiro', 'Categorias') && (
-                <button
-                  onClick={() => handleMudarAba('categorias')}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${abaAtiva === 'categorias'
-                    ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                >
-                  <Tag className="w-4 h-4 text-amber-500" />
-                  <span>Categorias</span>
-                </button>
-              )}
+              {/* BARRA DE FILTROS DINÂMICOS - COMPACTA E EXPANDÍVEL EM MOBILE */}
+              <div className="bg-[#0f172a] dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-white shadow-md border border-slate-800 dark:border-[#2b3954] space-y-3 sm:space-y-4">
 
-              {hasAccess('Financeiro', 'Contas') && (
-                <button
-                  onClick={() => handleMudarAba('contas')}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${abaAtiva === 'contas'
-                    ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                >
-                  <Landmark className="w-4 h-4 text-cyan-500" />
-                  <span>Contas & Caixas</span>
-                </button>
-              )}
+                {/* Cabeçalho do Filtro com Toggle Desktop e Mobile */}
+                <div className={`flex flex-wrap items-center justify-between gap-2 ${filtrosPainelExpandidos ? 'border-b border-slate-800 dark:border-[#2b3954] pb-3 sm:pb-4' : ''}`}>
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
+                    <div>
+                      <h2 className="text-sm sm:text-base font-black text-white leading-tight">
+                        Filtros dos Gráficos
+                      </h2>
+                      <p className="text-[10px] sm:text-xs text-slate-400 font-medium hidden sm:block">
+                        Altere os filtros para atualizar instantaneamente todos os gráficos e métricas.
+                      </p>
+                    </div>
+                  </div>
 
-              {hasAccess('Financeiro', 'Relatórios financeiros') && (
-                <button
-                  onClick={() => handleMudarAba('relatorios')}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${abaAtiva === 'relatorios'
-                    ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                >
-                  <TrendingUp className="w-4 h-4 text-purple-500" />
-                  <span>Relatórios</span>
-                </button>
-              )}
+                  {/* Controles Desktop e Mobile */}
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {/* Botões de Atalhos Rápidos para Desktop */}
+                    <div className="hidden sm:flex flex-wrap items-center gap-1.5">
+                      <button
+                        onClick={() => aplicarAtalhoPeriodo('este_mes')}
+                        className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 transition border border-slate-700 dark:border-[#2b3954] cursor-pointer"
+                      >
+                        Este Mês
+                      </button>
+                      <button
+                        onClick={() => aplicarAtalhoPeriodo('mes_anterior')}
+                        className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 transition border border-slate-700 dark:border-[#2b3954] cursor-pointer"
+                      >
+                        Mês Anterior
+                      </button>
+                      <button
+                        onClick={() => aplicarAtalhoPeriodo('este_ano')}
+                        className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 transition border border-slate-700 dark:border-[#2b3954] cursor-pointer"
+                      >
+                        Ano Atual
+                      </button>
+                      <button
+                        onClick={() => aplicarAtalhoPeriodo('todos')}
+                        className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 transition border border-slate-700 dark:border-[#2b3954] cursor-pointer"
+                      >
+                        Todo o Período
+                      </button>
+                      <button
+                        onClick={() => aplicarAtalhoPeriodo('limpar')}
+                        className="px-3 py-1.5 rounded-lg bg-[#881337] hover:bg-[#9f1239] text-xs font-bold text-rose-200 transition border border-rose-900 flex items-center gap-1 cursor-pointer"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        Limpar
+                      </button>
+                    </div>
 
-              {hasAccess('Financeiro', 'Logs') && (
-                <button
-                  onClick={() => handleMudarAba('historico')}
-                  className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 shrink-0 ${abaAtiva === 'historico'
-                    ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                >
-                  <History className="w-4 h-4 text-slate-400" />
-                  <span>Histórico</span>
-                </button>
-              )}
-            </div>
-
-            <button
-              onClick={carregarDadosIniciais}
-              className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition shrink-0"
-              title="Recarregar Dados"
-            >
-              <RefreshCw className={`w-4 h-4 ${carregando ? 'animate-spin text-blue-600' : ''}`} />
-            </button>
-          </div>
-
-          {/* 2. VERSÃO MOBILE (Compacta de 1 linha sem desestruturar o layout) */}
-          <div className="sm:hidden bg-white dark:bg-[#17223b] border border-slate-200 dark:border-[#2b3954] rounded-xl p-2.5 shadow-xs flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-600 shrink-0 animate-pulse" />
-              <span className="text-xs font-black text-slate-800 dark:text-slate-100 truncate">
-                {abaAtiva === 'resumo' && 'Visão Geral & Gráficos'}
-                {abaAtiva === 'transacoes' && 'Transações Financeiras'}
-                {abaAtiva === 'categorias' && 'Categorias Financeiras'}
-                {abaAtiva === 'contas' && 'Contas & Caixas'}
-                {abaAtiva === 'relatorios' && 'Relatórios Financeiros'}
-                {abaAtiva === 'historico' && 'Histórico & Logs'}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1.5 shrink-0">
-              <select
-                value={abaAtiva}
-                onChange={(e) => handleMudarAba(e.target.value)}
-                className="bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="resumo">📊 Visão Geral & Gráficos</option>
-                {hasAccess('Financeiro', 'Transações') && <option value="transacoes">💵 Transações</option>}
-                {hasAccess('Financeiro', 'Categorias') && <option value="categorias">🏷️ Categorias</option>}
-                {hasAccess('Financeiro', 'Contas') && <option value="contas">🏛️ Contas & Caixas</option>}
-                {hasAccess('Financeiro', 'Relatórios financeiros') && <option value="relatorios">📈 Relatórios</option>}
-                {hasAccess('Financeiro', 'Logs') && <option value="historico">📜 Histórico / Logs</option>}
-              </select>
-
-              <button
-                onClick={carregarDadosIniciais}
-                className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 transition shrink-0"
-                title="Recarregar Dados"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${carregando ? 'animate-spin text-blue-600' : ''}`} />
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* ABA: VISÃO GERAL COM PAINEL DE FILTROS E NOVOS GRÁFICOS DINÂMICOS */}
-      {abaAtiva === 'resumo' && (
-        <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-300">
-
-          {/* BARRA DE FILTROS DINÂMICOS - COMPACTA E EXPANDÍVEL EM MOBILE */}
-          <div className="bg-[#0f172a] dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl text-white shadow-md border border-slate-800 dark:border-[#2b3954] space-y-3 sm:space-y-4">
-
-            {/* Cabeçalho do Filtro com Toggle Mobile */}
-            <div className="flex items-center justify-between gap-2 border-b border-slate-800 dark:border-[#2b3954] pb-3 sm:pb-4">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
-                <div>
-                  <h2 className="text-sm sm:text-base font-black text-white leading-tight">
-                    Filtros dos Gráficos
-                  </h2>
-                  <p className="text-[10px] sm:text-xs text-slate-400 font-medium hidden sm:block">
-                    Altere os filtros para atualizar instantaneamente todos os gráficos e métricas.
-                  </p>
+                    {/* Botão Ocultar / Mostrar Filtros (Desktop e Mobile) */}
+                    <button
+                      type="button"
+                      onClick={() => setFiltrosPainelExpandidos((prev) => !prev)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center gap-1.5 transition cursor-pointer ${filtrosPainelExpandidos
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white border-blue-500'
+                          : 'bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-slate-200 border-slate-700 dark:border-[#2b3954]'
+                        }`}
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5" />
+                      <span>{filtrosPainelExpandidos ? 'Ocultar Filtros' : 'Mostrar Filtros'}</span>
+                      {filtrosPainelExpandidos ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Controles Mobile */}
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setFiltrosPainelExpandidos(!filtrosPainelExpandidos)}
-                  className="sm:hidden px-2.5 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] flex items-center gap-1"
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-blue-400" />
-                  <span>{filtrosPainelExpandidos ? 'Ocultar' : 'Filtrar'}</span>
-                  {filtrosPainelExpandidos ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                </button>
-
-                {/* Botões de Atalhos Rápidos para Desktop */}
-                <div className="hidden sm:flex flex-wrap items-center gap-1.5">
+                {/* Atalhos Rápidos Horizontais para Mobile */}
+                <div className="sm:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
                   <button
                     onClick={() => aplicarAtalhoPeriodo('este_mes')}
-                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 transition border border-slate-700 dark:border-[#2b3954]"
+                    className="px-2.5 py-1 rounded-md bg-[#1e293b] dark:bg-slate-900/90 text-[11px] font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] shrink-0"
                   >
                     Este Mês
                   </button>
                   <button
                     onClick={() => aplicarAtalhoPeriodo('mes_anterior')}
-                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 transition border border-slate-700 dark:border-[#2b3954]"
+                    className="px-2.5 py-1 rounded-md bg-[#1e293b] dark:bg-slate-900/90 text-[11px] font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] shrink-0"
                   >
-                    Mês Anterior
+                    Mês Ant.
                   </button>
                   <button
                     onClick={() => aplicarAtalhoPeriodo('este_ano')}
-                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 transition border border-slate-700 dark:border-[#2b3954]"
+                    className="px-2.5 py-1 rounded-md bg-[#1e293b] dark:bg-slate-900/90 text-[11px] font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] shrink-0"
                   >
                     Ano Atual
                   </button>
                   <button
                     onClick={() => aplicarAtalhoPeriodo('todos')}
-                    className="px-3 py-1.5 rounded-lg bg-[#1e293b] hover:bg-[#334155] dark:bg-slate-900/90 dark:hover:bg-slate-800 text-xs font-bold text-slate-200 transition border border-slate-700 dark:border-[#2b3954]"
+                    className="px-2.5 py-1 rounded-md bg-[#1e293b] dark:bg-slate-900/90 text-[11px] font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] shrink-0"
                   >
-                    Todo o Período
+                    Todos
                   </button>
-                  <button
-                    onClick={() => aplicarAtalhoPeriodo('limpar')}
-                    className="px-3 py-1.5 rounded-lg bg-[#881337] hover:bg-[#9f1239] text-xs font-bold text-rose-200 transition border border-rose-900 flex items-center gap-1"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                    Limpar
-                  </button>
+                  {temFiltroAtivo && (
+                    <button
+                      onClick={() => aplicarAtalhoPeriodo('limpar')}
+                      className="px-2.5 py-1 rounded-md bg-[#881337] text-[11px] font-bold text-rose-200 border border-rose-900 shrink-0 flex items-center gap-1"
+                    >
+                      <X className="w-3 h-3" /> Limpar
+                    </button>
+                  )}
+                </div>
+
+                {/* Form de Filtros (Expandível e recolhível em Desktop e Mobile) */}
+                {filtrosPainelExpandidos && (
+                  <div className="space-y-3 animate-in fade-in duration-200">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 pt-1">
+
+                      {/* Campo Busca Nome - Alinhamento Perfeito */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Pesquisar Lançamentos</label>
+                        <div className="relative flex items-center">
+                          <input
+                            type="text"
+                            value={buscaNome}
+                            onChange={(e) => setBuscaNome(e.target.value)}
+                            placeholder="Nome, fornecedor, nota..."
+                            className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-3 py-2 pl-9 pr-8 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                          />
+                          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          {buscaNome && (
+                            <button onClick={() => setBuscaNome('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition">
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Data Início */}
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Data Início</label>
+                        <input
+                          type="date"
+                          value={dataInicioFiltro}
+                          onChange={(e) => setDataInicioFiltro(e.target.value)}
+                          className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                        />
+                      </div>
+
+                      {/* Data Fim */}
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Data Fim</label>
+                        <input
+                          type="date"
+                          value={dataFimFiltro}
+                          onChange={(e) => setDataFimFiltro(e.target.value)}
+                          className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                        />
+                      </div>
+
+                      {/* Tipo */}
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Tipo</label>
+                        <select
+                          value={tipoTransacaoFiltro}
+                          onChange={(e) => setTipoTransacaoFiltro(e.target.value)}
+                          className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                        >
+                          <option value="">Todos Tipos</option>
+                          <option value="receita">Receita</option>
+                          <option value="despesa">Despesa</option>
+                        </select>
+                      </div>
+
+                      {/* Status */}
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Status</label>
+                        <select
+                          value={statusTransacaoFiltro}
+                          onChange={(e) => setStatusTransacaoFiltro(e.target.value)}
+                          className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                        >
+                          <option value="">Todos Status</option>
+                          <option value="pago">Pago / Recebido</option>
+                          <option value="pendente">Pendente</option>
+                        </select>
+                      </div>
+
+                    </div>
+
+                    {/* Linha Secundária de Filtros: Conta e Categoria */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-slate-800 dark:border-[#2b3954]">
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Conta / Caixa</label>
+                        <select
+                          value={contasSelecionadas[0] || ''}
+                          onChange={(e) => setContaFiltro(e.target.value ? [e.target.value] : [])}
+                          className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                        >
+                          <option value="">Todas as Contas</option>
+                          {contas.map(c => (
+                            <option key={c.id} value={c.id}>{c.nome}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Categoria</label>
+                        <select
+                          value={categoriasSelecionadas[0] || ''}
+                          onChange={(e) => setCategoriaFiltro(e.target.value ? [e.target.value] : [])}
+                          className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
+                        >
+                          <option value="">Todas as Categorias</option>
+                          {categorias.map(c => (
+                            <option key={c.id} value={c.id}>{c.nome} ({c.tipo})</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Badge de Indicador do Filtro Ativo */}
+                <div className="flex items-center justify-between text-[11px] sm:text-xs text-slate-400 pt-1">
+                  <span className="font-semibold">
+                    Exibindo <strong className="text-white font-black">{statsFiltradas.qtdTransacoes}</strong> lançamentos
+                  </span>
+                  {temFiltroAtivo && (
+                    <span className="bg-blue-600/30 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider">
+                      Filtros Ativos
+                    </span>
+                  )}
+                </div>
+
+              </div>
+
+              {/* METRIC CARDS OTIMIZADOS PARA MOBILE (GRID 2x2 EM SMARTPHONES) */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+
+                {/* Card Receitas - Verde */}
+                <div className="bg-[#059669] dark:bg-emerald-950/70 dark:border dark:border-emerald-800/60 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200">
+                  <div className="min-w-0">
+                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-100 dark:text-emerald-300 truncate">Total Recebido</p>
+                    <p className="text-sm sm:text-2xl font-black mt-0.5 sm:mt-1 tracking-tight truncate">{formatMoeda(statsFiltradas.totalReceitas)}</p>
+                  </div>
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 dark:bg-emerald-500/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
+                    <ArrowUpRight className="w-4 h-4 sm:w-6 sm:h-6 text-white dark:text-emerald-300" />
+                  </div>
+                </div>
+
+                {/* Card Despesas - Vermelho */}
+                <div className="bg-[#e11d48] dark:bg-rose-950/70 dark:border dark:border-rose-800/60 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200">
+                  <div className="min-w-0">
+                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-rose-100 dark:text-rose-300 truncate">Total Pago</p>
+                    <p className="text-sm sm:text-2xl font-black mt-0.5 sm:mt-1 tracking-tight truncate">{formatMoeda(statsFiltradas.totalDespesas)}</p>
+                  </div>
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 dark:bg-rose-500/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
+                    <ArrowDownRight className="w-4 h-4 sm:w-6 sm:h-6 text-white dark:text-rose-300" />
+                  </div>
+                </div>
+
+                {/* Card Saldo Líquido - Azul / Âmbar */}
+                <div className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200 ${statsFiltradas.saldoLiquido >= 0
+                  ? 'bg-[#2563eb] dark:bg-blue-950/70 dark:border dark:border-blue-800/60'
+                  : 'bg-[#d97706] dark:bg-amber-950/70 dark:border dark:border-amber-800/60'
+                  }`}>
+                  <div className="min-w-0">
+                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider opacity-90 dark:text-blue-300 truncate">Saldo Líquido</p>
+                    <p className="text-sm sm:text-2xl font-black mt-0.5 sm:mt-1 tracking-tight truncate">{formatMoeda(statsFiltradas.saldoLiquido)}</p>
+                  </div>
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 dark:bg-white/10 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
+                    <Wallet className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+                  </div>
+                </div>
+
+                {/* Card Pendentes - Âmbar */}
+                <div className="bg-[#d97706] dark:bg-amber-950/70 dark:border dark:border-amber-800/60 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200">
+                  <div className="min-w-0">
+                    <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-amber-100 dark:text-amber-300 truncate">Pendentes</p>
+                    <p className="text-sm sm:text-2xl font-black mt-0.5 sm:mt-1 tracking-tight truncate">{formatMoeda(statsFiltradas.totalPendentes)}</p>
+                  </div>
+                  <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 dark:bg-amber-500/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
+                    <Clock className="w-4 h-4 sm:w-6 sm:h-6 text-white dark:text-amber-300" />
+                  </div>
+                </div>
+
+              </div>
+
+              {/* GRÁFICO PRINCIPAL: EVOLUÇÃO TEMPORAL COM RESPONSIVIDADE MOBILE */}
+              <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6 border-b border-slate-100 dark:border-[#2b3954] pb-3 sm:pb-4">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+                      <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+                      Fluxo de Caixa no Período
+                    </h3>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">
+                      Evolução das entradas, saídas e saldo filtrados.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2.5 text-[11px] font-bold">
+                    <span className="flex items-center gap-1 text-[#10b981]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] inline-block" /> Receitas
+                    </span>
+                    <span className="flex items-center gap-1 text-[#f43f5e]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#f43f5e] inline-block" /> Despesas
+                    </span>
+                    <span className="flex items-center gap-1 text-[#2563eb] dark:text-[#60a5fa]">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb] dark:bg-[#60a5fa] inline-block" /> Saldo
+                    </span>
+                  </div>
+                </div>
+
+                <div className="h-64 sm:h-80 w-full">
+                  {dadosEvolucaoTemporal.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs gap-2 italic">
+                      <BarChart3 className="w-8 h-8 opacity-30 text-slate-400" />
+                      Nenhum lançamento no filtro.
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
+                      <ComposedChart data={dadosEvolucaoTemporal} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#2b3954' : '#f1f5f9'} />
+                        <XAxis dataKey="name" tick={{ fontSize: 10, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+                        <Tooltip
+                          formatter={(val, name) => [`R$ ${formatMoedaValor(val)}`, name]}
+                          contentStyle={{
+                            background: isDark ? '#17223b' : '#ffffff',
+                            border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
+                            color: isDark ? '#f8fafc' : '#0f172a',
+                            borderRadius: '14px',
+                            boxShadow: '0 10px 20px -5px rgba(0,0,0,0.3)',
+                            fontSize: '11px'
+                          }}
+                          itemStyle={{ color: isDark ? '#f8fafc' : '#0f172a' }}
+                          labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: 'bold' }}
+                        />
+                        <Bar dataKey="receitas" name="Receitas" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                        <Bar dataKey="despesas" name="Despesas" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                        <Area type="monotone" dataKey="saldo" name="Saldo Líquido" stroke="#2563eb" strokeWidth={2.5} fill="#3b82f6" fillOpacity={0.12} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Atalhos Rápidos Horizontais para Mobile */}
-            <div className="sm:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-              <button
-                onClick={() => aplicarAtalhoPeriodo('este_mes')}
-                className="px-2.5 py-1 rounded-md bg-[#1e293b] dark:bg-slate-900/90 text-[11px] font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] shrink-0"
-              >
-                Este Mês
-              </button>
-              <button
-                onClick={() => aplicarAtalhoPeriodo('mes_anterior')}
-                className="px-2.5 py-1 rounded-md bg-[#1e293b] dark:bg-slate-900/90 text-[11px] font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] shrink-0"
-              >
-                Mês Ant.
-              </button>
-              <button
-                onClick={() => aplicarAtalhoPeriodo('este_ano')}
-                className="px-2.5 py-1 rounded-md bg-[#1e293b] dark:bg-slate-900/90 text-[11px] font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] shrink-0"
-              >
-                Ano Atual
-              </button>
-              <button
-                onClick={() => aplicarAtalhoPeriodo('todos')}
-                className="px-2.5 py-1 rounded-md bg-[#1e293b] dark:bg-slate-900/90 text-[11px] font-bold text-slate-200 border border-slate-700 dark:border-[#2b3954] shrink-0"
-              >
-                Todos
-              </button>
-              {temFiltroAtivo && (
-                <button
-                  onClick={() => aplicarAtalhoPeriodo('limpar')}
-                  className="px-2.5 py-1 rounded-md bg-[#881337] text-[11px] font-bold text-rose-200 border border-rose-900 shrink-0 flex items-center gap-1"
-                >
-                  <X className="w-3 h-3" /> Limpar
-                </button>
-              )}
-            </div>
+              {/* GRID DE GRÁFICOS SECUNDÁRIOS: CATEGORIAS DE RECEITA & DESPESA */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
 
-            {/* Form de Filtros (Expandível em Mobile, Sempre visível em Desktop) */}
-            <div className={`space-y-3 ${filtrosPainelExpandidos ? 'block' : 'hidden sm:block'}`}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 pt-1">
+                {/* Top Categorias - Receita */}
+                <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-[#2b3954] pb-2.5">
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Top Categorias de Receita</h3>
+                      <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Principais entradas filtradas</p>
+                    </div>
+                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
+                  </div>
 
-                {/* Campo Busca Nome - Alinhamento Perfeito */}
-                <div className="sm:col-span-2">
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Pesquisar Lançamentos</label>
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      value={buscaNome}
-                      onChange={(e) => setBuscaNome(e.target.value)}
-                      placeholder="Nome, fornecedor, nota..."
-                      className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-3 py-2 pl-9 pr-8 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
-                    />
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    {buscaNome && (
-                      <button onClick={() => setBuscaNome('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
+                  <div className="h-52 sm:h-64 w-full">
+                    {dadosCategoriasFiltradas.receitas.length === 0 ? (
+                      <div className="h-full flex items-center justify-center text-slate-400 text-xs italic">
+                        Sem receitas no filtro.
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
+                        <BarChart data={dadosCategoriasFiltradas.receitas} layout="vertical" margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? '#2b3954' : '#f1f5f9'} />
+                          <XAxis type="number" tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+                          <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: isDark ? '#cbd5e1' : '#334155' }} width={95} axisLine={false} tickLine={false} />
+                          <Tooltip
+                            formatter={(val) => [`R$ ${formatMoedaValor(val)}`, 'Total']}
+                            contentStyle={{
+                              background: isDark ? '#17223b' : '#ffffff',
+                              border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
+                              color: isDark ? '#f8fafc' : '#0f172a',
+                              borderRadius: '14px',
+                              fontSize: '11px'
+                            }}
+                          />
+                          <Bar dataKey="value" name="Total R$" radius={[0, 4, 4, 0]}>
+                            {dadosCategoriasFiltradas.receitas.map((entry, index) => (
+                              <Cell key={`cell-rec-${index}`} fill={coresSolidas[index % coresSolidas.length]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
                     )}
                   </div>
                 </div>
 
-                {/* Data Início */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Data Início</label>
-                  <input
-                    type="date"
-                    value={dataInicioFiltro}
-                    onChange={(e) => setDataInicioFiltro(e.target.value)}
-                    className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
-                  />
-                </div>
-
-                {/* Data Fim */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Data Fim</label>
-                  <input
-                    type="date"
-                    value={dataFimFiltro}
-                    onChange={(e) => setDataFimFiltro(e.target.value)}
-                    className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
-                  />
-                </div>
-
-                {/* Tipo */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Tipo</label>
-                  <select
-                    value={tipoTransacaoFiltro}
-                    onChange={(e) => setTipoTransacaoFiltro(e.target.value)}
-                    className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
-                  >
-                    <option value="">Todos Tipos</option>
-                    <option value="receita">Receita</option>
-                    <option value="despesa">Despesa</option>
-                  </select>
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Status</label>
-                  <select
-                    value={statusTransacaoFiltro}
-                    onChange={(e) => setStatusTransacaoFiltro(e.target.value)}
-                    className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
-                  >
-                    <option value="">Todos Status</option>
-                    <option value="pago">Pago / Recebido</option>
-                    <option value="pendente">Pendente</option>
-                  </select>
-                </div>
-
-              </div>
-
-              {/* Linha Secundária de Filtros: Conta e Categoria */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 border-t border-slate-800 dark:border-[#2b3954]">
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Conta / Caixa</label>
-                  <select
-                    value={contasSelecionadas[0] || ''}
-                    onChange={(e) => setContaFiltro(e.target.value ? [e.target.value] : [])}
-                    className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
-                  >
-                    <option value="">Todas as Contas</option>
-                    {contas.map(c => (
-                      <option key={c.id} value={c.id}>{c.nome}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Categoria</label>
-                  <select
-                    value={categoriasSelecionadas[0] || ''}
-                    onChange={(e) => setCategoriaFiltro(e.target.value ? [e.target.value] : [])}
-                    className="w-full bg-[#1e293b] dark:bg-slate-900 border border-slate-700 dark:border-[#2b3954] rounded-xl px-2.5 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500 h-[38px]"
-                  >
-                    <option value="">Todas as Categorias</option>
-                    {categorias.map(c => (
-                      <option key={c.id} value={c.id}>{c.nome} ({c.tipo})</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Badge de Indicador do Filtro Ativo */}
-            <div className="flex items-center justify-between text-[11px] sm:text-xs text-slate-400 pt-1">
-              <span className="font-semibold">
-                Exibindo <strong className="text-white font-black">{statsFiltradas.qtdTransacoes}</strong> lançamentos
-              </span>
-              {temFiltroAtivo && (
-                <span className="bg-blue-600/30 text-blue-300 border border-blue-500/40 px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider">
-                  Filtros Ativos
-                </span>
-              )}
-            </div>
-
-          </div>
-
-          {/* METRIC CARDS OTIMIZADOS PARA MOBILE (GRID 2x2 EM SMARTPHONES) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-
-            {/* Card Receitas - Verde */}
-            <div className="bg-[#059669] dark:bg-emerald-950/70 dark:border dark:border-emerald-800/60 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200">
-              <div className="min-w-0">
-                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-100 dark:text-emerald-300 truncate">Total Recebido</p>
-                <p className="text-sm sm:text-2xl font-black mt-0.5 sm:mt-1 tracking-tight truncate">{formatMoeda(statsFiltradas.totalReceitas)}</p>
-              </div>
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 dark:bg-emerald-500/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
-                <ArrowUpRight className="w-4 h-4 sm:w-6 sm:h-6 text-white dark:text-emerald-300" />
-              </div>
-            </div>
-
-            {/* Card Despesas - Vermelho */}
-            <div className="bg-[#e11d48] dark:bg-rose-950/70 dark:border dark:border-rose-800/60 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200">
-              <div className="min-w-0">
-                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-rose-100 dark:text-rose-300 truncate">Total Pago</p>
-                <p className="text-sm sm:text-2xl font-black mt-0.5 sm:mt-1 tracking-tight truncate">{formatMoeda(statsFiltradas.totalDespesas)}</p>
-              </div>
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 dark:bg-rose-500/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
-                <ArrowDownRight className="w-4 h-4 sm:w-6 sm:h-6 text-white dark:text-rose-300" />
-              </div>
-            </div>
-
-            {/* Card Saldo Líquido - Azul / Âmbar */}
-            <div className={`p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200 ${statsFiltradas.saldoLiquido >= 0
-              ? 'bg-[#2563eb] dark:bg-blue-950/70 dark:border dark:border-blue-800/60'
-              : 'bg-[#d97706] dark:bg-amber-950/70 dark:border dark:border-amber-800/60'
-              }`}>
-              <div className="min-w-0">
-                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider opacity-90 dark:text-blue-300 truncate">Saldo Líquido</p>
-                <p className="text-sm sm:text-2xl font-black mt-0.5 sm:mt-1 tracking-tight truncate">{formatMoeda(statsFiltradas.saldoLiquido)}</p>
-              </div>
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 dark:bg-white/10 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
-                <Wallet className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
-              </div>
-            </div>
-
-            {/* Card Pendentes - Âmbar */}
-            <div className="bg-[#d97706] dark:bg-amber-950/70 dark:border dark:border-amber-800/60 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-sm flex items-center justify-between transition hover:-translate-y-0.5 duration-200">
-              <div className="min-w-0">
-                <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-amber-100 dark:text-amber-300 truncate">Pendentes</p>
-                <p className="text-sm sm:text-2xl font-black mt-0.5 sm:mt-1 tracking-tight truncate">{formatMoeda(statsFiltradas.totalPendentes)}</p>
-              </div>
-              <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/20 dark:bg-amber-500/20 flex items-center justify-center backdrop-blur-md shrink-0 ml-1">
-                <Clock className="w-4 h-4 sm:w-6 sm:h-6 text-white dark:text-amber-300" />
-              </div>
-            </div>
-
-          </div>
-
-          {/* GRÁFICO PRINCIPAL: EVOLUÇÃO TEMPORAL COM RESPONSIVIDADE MOBILE */}
-          <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6 border-b border-slate-100 dark:border-[#2b3954] pb-3 sm:pb-4">
-              <div>
-                <h3 className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
-                  Fluxo de Caixa no Período
-                </h3>
-                <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">
-                  Evolução das entradas, saídas e saldo filtrados.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2.5 text-[11px] font-bold">
-                <span className="flex items-center gap-1 text-[#10b981]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] inline-block" /> Receitas
-                </span>
-                <span className="flex items-center gap-1 text-[#f43f5e]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#f43f5e] inline-block" /> Despesas
-                </span>
-                <span className="flex items-center gap-1 text-[#2563eb] dark:text-[#60a5fa]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb] dark:bg-[#60a5fa] inline-block" /> Saldo
-                </span>
-              </div>
-            </div>
-
-            <div className="h-64 sm:h-80 w-full">
-              {dadosEvolucaoTemporal.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400 text-xs gap-2 italic">
-                  <BarChart3 className="w-8 h-8 opacity-30 text-slate-400" />
-                  Nenhum lançamento no filtro.
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
-                  <ComposedChart data={dadosEvolucaoTemporal} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#2b3954' : '#f1f5f9'} />
-                    <XAxis dataKey="name" tick={{ fontSize: 10, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      formatter={(val, name) => [`R$ ${formatMoedaValor(val)}`, name]}
-                      contentStyle={{
-                        background: isDark ? '#17223b' : '#ffffff',
-                        border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
-                        color: isDark ? '#f8fafc' : '#0f172a',
-                        borderRadius: '14px',
-                        boxShadow: '0 10px 20px -5px rgba(0,0,0,0.3)',
-                        fontSize: '11px'
-                      }}
-                      itemStyle={{ color: isDark ? '#f8fafc' : '#0f172a' }}
-                      labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: 'bold' }}
-                    />
-                    <Bar dataKey="receitas" name="Receitas" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={28} />
-                    <Bar dataKey="despesas" name="Despesas" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={28} />
-                    <Area type="monotone" dataKey="saldo" name="Saldo Líquido" stroke="#2563eb" strokeWidth={2.5} fill="#3b82f6" fillOpacity={0.12} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-
-          {/* GRID DE GRÁFICOS SECUNDÁRIOS: CATEGORIAS DE RECEITA & DESPESA */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-
-            {/* Top Categorias - Receita */}
-            <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-[#2b3954] pb-2.5">
-                <div>
-                  <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Top Categorias de Receita</h3>
-                  <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Principais entradas filtradas</p>
-                </div>
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-
-              <div className="h-52 sm:h-64 w-full">
-                {dadosCategoriasFiltradas.receitas.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-slate-400 text-xs italic">
-                    Sem receitas no filtro.
+                {/* Top Categorias - Despesa */}
+                <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-[#2b3954] pb-2.5">
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Top Categorias de Despesa</h3>
+                      <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Principais saídas filtradas</p>
+                    </div>
+                    <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 dark:text-rose-400" />
                   </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
-                    <BarChart data={dadosCategoriasFiltradas.receitas} layout="vertical" margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? '#2b3954' : '#f1f5f9'} />
-                      <XAxis type="number" tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
-                      <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: isDark ? '#cbd5e1' : '#334155' }} width={95} axisLine={false} tickLine={false} />
-                      <Tooltip
-                        formatter={(val) => [`R$ ${formatMoedaValor(val)}`, 'Total']}
-                        contentStyle={{
-                          background: isDark ? '#17223b' : '#ffffff',
-                          border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
-                          color: isDark ? '#f8fafc' : '#0f172a',
-                          borderRadius: '14px',
-                          fontSize: '11px'
-                        }}
-                      />
-                      <Bar dataKey="value" name="Total R$" radius={[0, 4, 4, 0]}>
-                        {dadosCategoriasFiltradas.receitas.map((entry, index) => (
-                          <Cell key={`cell-rec-${index}`} fill={coresSolidas[index % coresSolidas.length]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </div>
 
-            {/* Top Categorias - Despesa */}
-            <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-[#2b3954] pb-2.5">
-                <div>
-                  <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Top Categorias de Despesa</h3>
-                  <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Principais saídas filtradas</p>
-                </div>
-                <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 dark:text-rose-400" />
-              </div>
-
-              <div className="h-52 sm:h-64 w-full">
-                {dadosCategoriasFiltradas.despesas.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-slate-400 text-xs italic">
-                    Sem despesas no filtro.
+                  <div className="h-52 sm:h-64 w-full">
+                    {dadosCategoriasFiltradas.despesas.length === 0 ? (
+                      <div className="h-full flex items-center justify-center text-slate-400 text-xs italic">
+                        Sem despesas no filtro.
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
+                        <BarChart data={dadosCategoriasFiltradas.despesas} layout="vertical" margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? '#2b3954' : '#f1f5f9'} />
+                          <XAxis type="number" tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+                          <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: isDark ? '#cbd5e1' : '#334155' }} width={95} axisLine={false} tickLine={false} />
+                          <Tooltip
+                            formatter={(val) => [`R$ ${formatMoedaValor(val)}`, 'Total']}
+                            contentStyle={{
+                              background: isDark ? '#17223b' : '#ffffff',
+                              border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
+                              color: isDark ? '#f8fafc' : '#0f172a',
+                              borderRadius: '14px',
+                              fontSize: '11px'
+                            }}
+                          />
+                          <Bar dataKey="value" name="Total R$" radius={[0, 4, 4, 0]}>
+                            {dadosCategoriasFiltradas.despesas.map((entry, index) => (
+                              <Cell key={`cell-des-${index}`} fill={['#f43f5e', '#e11d48', '#d97706', '#8b5cf6', '#ef4444'][index % 5]} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
                   </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
-                    <BarChart data={dadosCategoriasFiltradas.despesas} layout="vertical" margin={{ left: 0, right: 20, top: 10, bottom: 10 }}>
-                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={isDark ? '#2b3954' : '#f1f5f9'} />
-                      <XAxis type="number" tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
-                      <YAxis dataKey="name" type="category" tick={{ fontSize: 9, fill: isDark ? '#cbd5e1' : '#334155' }} width={95} axisLine={false} tickLine={false} />
-                      <Tooltip
-                        formatter={(val) => [`R$ ${formatMoedaValor(val)}`, 'Total']}
-                        contentStyle={{
-                          background: isDark ? '#17223b' : '#ffffff',
-                          border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
-                          color: isDark ? '#f8fafc' : '#0f172a',
-                          borderRadius: '14px',
-                          fontSize: '11px'
-                        }}
-                      />
-                      <Bar dataKey="value" name="Total R$" radius={[0, 4, 4, 0]}>
-                        {dadosCategoriasFiltradas.despesas.map((entry, index) => (
-                          <Cell key={`cell-des-${index}`} fill={['#f43f5e', '#e11d48', '#d97706', '#8b5cf6', '#ef4444'][index % 5]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </div>
-
-          </div>
-
-          {/* GRID DE GRÁFICOS: PROPORÇÃO DE STATUS & MOVIMENTAÇÃO POR CONTA */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-
-            {/* Gráfico Donut de Status (Pago vs Pendente) */}
-            <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
-              <div className="border-b border-slate-100 dark:border-[#2b3954] pb-2.5 mb-3 flex items-center justify-between">
-                <div>
-                  <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Proporção de Status</h3>
-                  <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Pago vs Pendente</p>
                 </div>
-                <PieIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
+
               </div>
 
-              <div className="h-48 sm:h-56 w-full flex items-center justify-center">
-                {dadosStatusPie.length === 0 ? (
-                  <div className="text-slate-400 text-xs italic">Sem dados no filtro.</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
-                    <PieChart>
-                      <Pie
-                        data={dadosStatusPie}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={45}
-                        outerRadius={70}
-                        paddingAngle={4}
-                        dataKey="value"
-                      >
-                        {dadosStatusPie.map((entry, index) => (
-                          <Cell key={`pie-cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(val) => [`R$ ${formatMoedaValor(val)}`, 'Valor']}
-                        contentStyle={{
-                          background: isDark ? '#17223b' : '#ffffff',
-                          border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
-                          color: isDark ? '#f8fafc' : '#0f172a',
-                          borderRadius: '14px',
-                          fontSize: '11px'
-                        }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: 10, color: isDark ? '#cbd5e1' : '#475569' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </div>
+              {/* GRID DE GRÁFICOS: PROPORÇÃO DE STATUS & MOVIMENTAÇÃO POR CONTA */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
 
-            {/* Gráfico de Contas / Caixas */}
-            <div className="lg:col-span-2 bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
-              <div className="border-b border-slate-100 dark:border-[#2b3954] pb-2.5 mb-3 flex items-center justify-between">
-                <div>
-                  <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Movimentação por Conta / Caixa</h3>
-                  <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Totais de entradas e saídas por conta financeira</p>
-                </div>
-                <Landmark className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 dark:text-cyan-400" />
-              </div>
-
-              <div className="h-48 sm:h-56 w-full">
-                {dadosSaldosContas.length === 0 ? (
-                  <div className="h-full flex items-center justify-center text-slate-400 text-xs italic">
-                    Sem dados por conta no filtro.
+                {/* Gráfico Donut de Status (Pago vs Pendente) */}
+                <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
+                  <div className="border-b border-slate-100 dark:border-[#2b3954] pb-2.5 mb-3 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Proporção de Status</h3>
+                      <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Pago vs Pendente</p>
+                    </div>
+                    <PieIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
                   </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
-                    <BarChart data={dadosSaldosContas} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#2b3954' : '#f1f5f9'} />
-                      <XAxis dataKey="name" tick={{ fontSize: 10, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
-                      <Tooltip
-                        formatter={(val, name) => [`R$ ${formatMoedaValor(val)}`, name]}
-                        contentStyle={{
-                          background: isDark ? '#17223b' : '#ffffff',
-                          border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
-                          color: isDark ? '#f8fafc' : '#0f172a',
-                          borderRadius: '14px',
-                          fontSize: '11px'
-                        }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: 10, color: isDark ? '#cbd5e1' : '#475569' }} />
-                      <Bar dataKey="receitas" name="Receitas" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={26} />
-                      <Bar dataKey="despesas" name="Despesas" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={26} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-            </div>
 
-          </div>
+                  <div className="h-48 sm:h-56 w-full flex items-center justify-center">
+                    {dadosStatusPie.length === 0 ? (
+                      <div className="text-slate-400 text-xs italic">Sem dados no filtro.</div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
+                        <PieChart>
+                          <Pie
+                            data={dadosStatusPie}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={45}
+                            outerRadius={70}
+                            paddingAngle={4}
+                            dataKey="value"
+                          >
+                            {dadosStatusPie.map((entry, index) => (
+                              <Cell key={`pie-cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(val) => [`R$ ${formatMoedaValor(val)}`, 'Valor']}
+                            contentStyle={{
+                              background: isDark ? '#17223b' : '#ffffff',
+                              border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
+                              color: isDark ? '#f8fafc' : '#0f172a',
+                              borderRadius: '14px',
+                              fontSize: '11px'
+                            }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 10, color: isDark ? '#cbd5e1' : '#475569' }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+
+                {/* Gráfico de Contas / Caixas */}
+                <div className="lg:col-span-2 bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
+                  <div className="border-b border-slate-100 dark:border-[#2b3954] pb-2.5 mb-3 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Movimentação por Conta / Caixa</h3>
+                      <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Totais de entradas e saídas por conta financeira</p>
+                    </div>
+                    <Landmark className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 dark:text-cyan-400" />
+                  </div>
+
+                  <div className="h-48 sm:h-56 w-full">
+                    {dadosSaldosContas.length === 0 ? (
+                      <div className="h-full flex items-center justify-center text-slate-400 text-xs italic">
+                        Sem dados por conta no filtro.
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={180}>
+                        <BarChart data={dadosSaldosContas} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#2b3954' : '#f1f5f9'} />
+                          <XAxis dataKey="name" tick={{ fontSize: 10, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+                          <YAxis tick={{ fontSize: 10, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
+                          <Tooltip
+                            formatter={(val, name) => [`R$ ${formatMoedaValor(val)}`, name]}
+                            contentStyle={{
+                              background: isDark ? '#17223b' : '#ffffff',
+                              border: isDark ? '1px solid #2b3954' : '1px solid #e2e8f0',
+                              color: isDark ? '#f8fafc' : '#0f172a',
+                              borderRadius: '14px',
+                              fontSize: '11px'
+                            }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 10, color: isDark ? '#cbd5e1' : '#475569' }} />
+                          <Bar dataKey="receitas" name="Receitas" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={26} />
+                          <Bar dataKey="despesas" name="Despesas" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={26} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+          )}
+
+          {/* OUTRAS SUB-ABAS DO MÓDULO FINANCEIRO */}
+          {abaAtiva === 'transacoes' && (
+            <TransacoesFinanceiras
+              dataInicioFiltro={dataInicioFiltro}
+              setDataInicioFiltro={setDataInicioFiltro}
+              dataFimFiltro={dataFimFiltro}
+              setDataFimFiltro={setDataFimFiltro}
+              tipoTransacaoFiltro={tipoTransacaoFiltro}
+              setTipoTransacaoFiltro={setTipoTransacaoFiltro}
+              statusTransacaoFiltro={statusTransacaoFiltro}
+              setStatusTransacaoFiltro={setStatusTransacaoFiltro}
+              contaFiltro={contaFiltro}
+              setContaFiltro={setContaFiltro}
+              categoriaFiltro={categoriaFiltro}
+              setCategoriaFiltro={setCategoriaFiltro}
+              transacoesIniciais={transacoes}
+              contasIniciais={contas}
+              categoriasIniciais={categorias}
+              usuarioLogado={usuarioLogado}
+              membroLogado={membroLogado}
+              hasAccess={hasAccess}
+              filtrosMobileAberto={filtrosMobileAberto}
+              setFiltrosMobileAberto={setFiltrosMobileAberto}
+              onVoltar={() => handleMudarAba('resumo')}
+            />
+          )}
+
+          {abaAtiva === 'categorias' && (
+            <CategoriasFinanceiras
+              usuarioLogado={usuarioLogado}
+              membroLogado={membroLogado}
+              hasAccess={hasAccess}
+              categoriasIniciais={categorias}
+              onCategoriasAtualizadas={setCategorias}
+              onVoltar={() => handleMudarAba('resumo')}
+            />
+          )}
+
+          {abaAtiva === 'contas' && (
+            <ContasFinanceiras
+              usuarioLogado={usuarioLogado}
+              membroLogado={membroLogado}
+              hasAccess={hasAccess}
+              contasIniciais={contas}
+              onContasAtualizadas={setContas}
+              onVoltar={() => handleMudarAba('resumo')}
+            />
+          )}
+
+          {abaAtiva === 'relatorios' && <RelatoriosFinanceiros onVoltar={() => handleMudarAba('resumo')} />}
+
+          {abaAtiva === 'historico' && <HistoricoFinanceiro onVoltar={() => handleMudarAba('resumo')} />}
 
         </div>
-      )}
 
-      {/* OUTRAS SUB-ABAS DO MÓDULO FINANCEIRO */}
-      {abaAtiva === 'transacoes' && (
-        <TransacoesFinanceiras
-          dataInicioFiltro={dataInicioFiltro}
-          setDataInicioFiltro={setDataInicioFiltro}
-          dataFimFiltro={dataFimFiltro}
-          setDataFimFiltro={setDataFimFiltro}
-          tipoTransacaoFiltro={tipoTransacaoFiltro}
-          setTipoTransacaoFiltro={setTipoTransacaoFiltro}
-          statusTransacaoFiltro={statusTransacaoFiltro}
-          setStatusTransacaoFiltro={setStatusTransacaoFiltro}
-          contaFiltro={contaFiltro}
-          setContaFiltro={setContaFiltro}
-          categoriaFiltro={categoriaFiltro}
-          setCategoriaFiltro={setCategoriaFiltro}
-          usuarioLogado={usuarioLogado}
-          membroLogado={membroLogado}
-          hasAccess={hasAccess}
-          filtrosMobileAberto={filtrosMobileAberto}
-          setFiltrosMobileAberto={setFiltrosMobileAberto}
-          onVoltar={() => handleMudarAba('resumo')}
-        />
-      )}
+        {/* COLUNA LATERAL FIXA À DIREITA NO DESKTOP (lg+) */}
+        <div
+          className={`hidden lg:flex print:hidden fixed right-4 z-30 flex-col gap-3 transition-all duration-200 ${
+            abaAtiva === 'resumo'
+              ? 'top-16'
+              : (abaAtiva === 'categorias' || abaAtiva === 'contas' || abaAtiva === 'relatorios')
+                ? 'top-[104px]'
+                : 'top-[112px]'
+          } ${painelLateralRecolhido ? 'w-14' : 'w-52'}`}
+        >
+          <aside
+            className={`w-full flex flex-col bg-white dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] rounded-2xl p-2 shadow-md space-y-1.5 ${painelLateralRecolhido ? 'items-center' : ''
+              }`}
+          >
+            <div className={`flex items-center w-full py-1.5 border-b border-slate-100 dark:border-[#24334f] ${painelLateralRecolhido ? 'justify-center px-0' : 'justify-between px-2'}`}>
+              {!painelLateralRecolhido && (
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  Financeiro
+                </span>
+              )}
+              <div className="flex items-center gap-0.5">
+                {!painelLateralRecolhido && (
+                  <button
+                    type="button"
+                    onClick={carregarDadosIniciais}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1c2b4a] rounded-lg transition cursor-pointer"
+                    title="Recarregar Dados"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${carregando ? 'animate-spin text-blue-600' : ''}`} />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setPainelLateralRecolhido((v) => !v)}
+                  className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-[#1c2b4a] rounded-lg transition cursor-pointer"
+                  title={painelLateralRecolhido ? 'Expandir painel Financeiro' : 'Recolher painel Financeiro'}
+                >
+                  {painelLateralRecolhido ? <PanelRightOpen className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
 
-      {abaAtiva === 'categorias' && (
-        <CategoriasFinanceiras usuarioLogado={usuarioLogado} membroLogado={membroLogado} hasAccess={hasAccess} onVoltar={() => handleMudarAba('resumo')} />
-      )}
+            <nav className="flex flex-col gap-1 w-full">
+              {abasFinanceiro.map((aba) => {
+                const Icone = aba.icon;
+                const ativo = abaAtiva === aba.id;
+                return (
+                  <button
+                    key={aba.id}
+                    type="button"
+                    onClick={() => handleMudarAba(aba.id)}
+                    title={aba.label}
+                    className={`w-full flex items-center rounded-xl text-xs font-extrabold transition-all cursor-pointer ${painelLateralRecolhido ? 'justify-center p-2.5' : 'gap-2.5 px-3 py-2.5 text-left'
+                      } ${ativo
+                        ? 'bg-[#0f172a] dark:bg-blue-600 text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1c2b4a] hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                  >
+                    <Icone className={`w-4 h-4 shrink-0 ${ativo ? 'text-white' : aba.iconColor}`} />
+                    {!painelLateralRecolhido && <span className="truncate">{aba.label}</span>}
+                  </button>
+                );
+              })}
+            </nav>
 
-      {abaAtiva === 'contas' && (
-        <ContasFinanceiras usuarioLogado={usuarioLogado} membroLogado={membroLogado} hasAccess={hasAccess} onVoltar={() => handleMudarAba('resumo')} />
-      )}
+            {painelLateralRecolhido && (
+              <button
+                type="button"
+                onClick={carregarDadosIniciais}
+                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1c2b4a] rounded-xl transition cursor-pointer border-t border-slate-100 dark:border-[#24334f] w-full flex justify-center"
+                title="Recarregar Dados"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${carregando ? 'animate-spin text-blue-600' : ''}`} />
+              </button>
+            )}
+          </aside>
 
-      {abaAtiva === 'relatorios' && <RelatoriosFinanceiros onVoltar={() => handleMudarAba('resumo')} />}
+          {/* AÇÕES FIXAS DE TRANSAÇÕES (+ RECEITA / + DESPESA) ABAIXO DO MENU LATERAL */}
+          {abaAtiva === 'transacoes' && (
+            <div
+              className={`w-full flex flex-col gap-2 bg-white dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] rounded-2xl p-2 shadow-md ${painelLateralRecolhido ? 'items-center' : ''
+                }`}
+            >
+              {!painelLateralRecolhido && (
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 pt-1">
+                  Novo Lançamento
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('mib-financeiro-nova-transacao', { detail: 'receita' }))}
+                title="Nova Receita"
+                className={`w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 text-white text-xs font-black uppercase tracking-wider border border-emerald-400/30 shadow-md shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer flex items-center ${painelLateralRecolhido ? 'justify-center p-2.5' : 'justify-center gap-2 px-3 py-2.5'
+                  }`}
+              >
+                <span className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 text-sm font-black leading-none">+</span>
+                {!painelLateralRecolhido && <span>Receita</span>}
+              </button>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('mib-financeiro-nova-transacao', { detail: 'despesa' }))}
+                title="Nova Despesa"
+                className={`w-full rounded-xl bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 hover:from-rose-500 hover:via-red-500 hover:to-rose-600 text-white text-xs font-black uppercase tracking-wider border border-rose-400/30 shadow-md shadow-rose-600/20 transition-all active:scale-95 cursor-pointer flex items-center ${painelLateralRecolhido ? 'justify-center p-2.5' : 'justify-center gap-2 px-3 py-2.5'
+                  }`}
+              >
+                <span className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 text-sm font-black leading-none">+</span>
+                {!painelLateralRecolhido && <span>Despesa</span>}
+              </button>
+            </div>
+          )}
 
-      {abaAtiva === 'historico' && <HistoricoFinanceiro onVoltar={() => handleMudarAba('resumo')} />}
+          {/* AÇÃO FIXA DE CATEGORIAS (+ NOVA CATEGORIA) ABAIXO DO MENU LATERAL */}
+          {abaAtiva === 'categorias' && hasAccess('Financeiro', 'Categorias', 'editar') && (
+            <div
+              className={`w-full flex flex-col gap-2 bg-white dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] rounded-2xl p-2 shadow-md ${
+                painelLateralRecolhido ? 'items-center' : ''
+              }`}
+            >
+              {!painelLateralRecolhido && (
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 pt-1">
+                  Ação Rápida
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('mib-financeiro-nova-categoria', { detail: 'receita' }))}
+                title="Nova Categoria"
+                className={`w-full rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 text-white text-xs font-black uppercase tracking-wider border border-emerald-400/30 shadow-md shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer flex items-center ${
+                  painelLateralRecolhido ? 'justify-center p-2.5' : 'justify-center gap-2 px-3 py-2.5'
+                }`}
+              >
+                <span className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 text-sm font-black leading-none">+</span>
+                {!painelLateralRecolhido && <span>Nova Categoria</span>}
+              </button>
+            </div>
+          )}
 
+          {/* AÇÃO FIXA DE CONTAS & CAIXAS (+ NOVA CONTA) ABAIXO DO MENU LATERAL */}
+          {abaAtiva === 'contas' && hasAccess('Financeiro', 'Contas/Caixas', 'editar') && (
+            <div
+              className={`w-full flex flex-col gap-2 bg-white dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] rounded-2xl p-2 shadow-md ${
+                painelLateralRecolhido ? 'items-center' : ''
+              }`}
+            >
+              {!painelLateralRecolhido && (
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 pt-1">
+                  Ação Rápida
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('mib-financeiro-nova-conta'))}
+                title="Nova Conta"
+                className={`w-full rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white text-xs font-black uppercase tracking-wider border border-blue-400/30 shadow-md shadow-blue-600/20 transition-all active:scale-95 cursor-pointer flex items-center ${
+                  painelLateralRecolhido ? 'justify-center p-2.5' : 'justify-center gap-2 px-3 py-2.5'
+                }`}
+              >
+                <span className="w-5 h-5 rounded-lg bg-white/20 flex items-center justify-center shrink-0 text-sm font-black leading-none">+</span>
+                {!painelLateralRecolhido && <span>Nova Conta</span>}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

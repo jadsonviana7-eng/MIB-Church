@@ -447,12 +447,26 @@ function FormularioLateral({ editando, onCancelarEdicao, onSalvo, usuarioLogado 
   );
 }
 
+// Cache em memória para abertura instantânea ao trocar de aba
+let cacheCategoriasMemoria = null;
+
 // ─── Componente principal ─────────────────────────────────────────────────────
-export default function CategoriasFinanceiras({ usuarioLogado, membroLogado, hasAccess, onVoltar }) {
+export default function CategoriasFinanceiras({
+  usuarioLogado,
+  membroLogado,
+  hasAccess,
+  categoriasIniciais,
+  onCategoriasAtualizadas,
+  onVoltar
+}) {
   const podeEditar = hasAccess('Financeiro', 'Categorias', 'editar');
 
-  const [categorias, setCategorias] = useState([]);
-  const [carregando, setCarregando] = useState(true);
+  const listaInicial = (Array.isArray(categoriasIniciais) && categoriasIniciais.length > 0)
+    ? categoriasIniciais
+    : (cacheCategoriasMemoria || []);
+
+  const [categorias, setCategorias] = useState(listaInicial);
+  const [carregando, setCarregando] = useState(listaInicial.length === 0);
   const [editandoDesktop, setEditandoDesktop] = useState(null);
 
   // modal mobile
@@ -463,18 +477,47 @@ export default function CategoriasFinanceiras({ usuarioLogado, membroLogado, has
   // aba mobile
   const [abaMobile, setAbaMobile] = useState('receita');
 
-  const carregarCategorias = useCallback(async () => {
-    setCarregando(true);
+  // Sincroniza se as categorias iniciais chegarem do pai antes do fetch local
+  useEffect(() => {
+    if (Array.isArray(categoriasIniciais) && categoriasIniciais.length > 0) {
+      cacheCategoriasMemoria = categoriasIniciais;
+      setCategorias((atual) => (atual.length === 0 ? categoriasIniciais : atual));
+      setCarregando(false);
+    }
+  }, [categoriasIniciais]);
+
+  const carregarCategorias = useCallback(async ({ silencioso = false } = {}) => {
+    if (!silencioso && !cacheCategoriasMemoria?.length) {
+      setCarregando(true);
+    }
     const { data, error } = await supabase
       .from('categorias_financeiras')
       .select('*')
       .order('nome');
     if (error) console.error('Erro ao carregar categorias:', error.message);
-    if (data) setCategorias(data);
+    if (data) {
+      cacheCategoriasMemoria = data;
+      setCategorias(data);
+      if (onCategoriasAtualizadas) onCategoriasAtualizadas(data);
+    }
     setCarregando(false);
-  }, []);
+  }, [onCategoriasAtualizadas]);
 
-  useEffect(() => { carregarCategorias(); }, [carregarCategorias]);
+  useEffect(() => {
+    carregarCategorias({ silencioso: true });
+  }, [carregarCategorias]);
+
+  // Escuta clique do botão fixo "+ Nova Categoria" abaixo do painel lateral direito (Desktop)
+  useEffect(() => {
+    const onNovaCategoria = (e) => {
+      if (!podeEditar) return;
+      setModalEditando(null);
+      setModalTipoInicial(e?.detail === 'despesa' ? 'despesa' : 'receita');
+      setModalAberto(true);
+    };
+    window.addEventListener('mib-financeiro-nova-categoria', onNovaCategoria);
+    return () => window.removeEventListener('mib-financeiro-nova-categoria', onNovaCategoria);
+  }, [podeEditar]);
 
   const removerCategoria = async (id) => {
     if (!(await window.confirmModal('Excluir Categoria', 'Excluir esta categoria permanentemente?'))) return;
@@ -483,7 +526,7 @@ export default function CategoriasFinanceiras({ usuarioLogado, membroLogado, has
       const { error } = await supabase.from('categorias_financeiras').delete().eq('id', id);
       if (error) throw error;
       await registrarLogFinanceiro(usuarioLogado?.email, 'Exclusão de Categoria', `Removeu a categoria: ${cat?.nome} (${cat?.tipo})`);
-      carregarCategorias();
+      carregarCategorias({ silencioso: true });
     } catch (err) {
       alert('Erro ao excluir categoria: ' + err.message);
     }
@@ -515,38 +558,34 @@ export default function CategoriasFinanceiras({ usuarioLogado, membroLogado, has
   return (
     <div className="space-y-4">
 
-      {/* ── DESKTOP ─────────────────────────────────────────────────────────── */}
-      <div className={`hidden md:grid gap-6 items-start ${podeEditar ? 'grid-cols-[300px_1fr]' : 'grid-cols-1'}`}>
-
-        {/* formulário lateral */}
+      {/* ── DESKTOP (2 colunas cheias: Receitas e Despesas; criação/edição via Modal) ── */}
+      <div className="hidden md:block space-y-4">
         {podeEditar && (
-          <FormularioLateral
-            editando={editandoDesktop}
-            onCancelarEdicao={() => setEditandoDesktop(null)}
-            onSalvo={carregarCategorias}
-            usuarioLogado={usuarioLogado}
-          />
+          <div className="flex lg:hidden justify-end">
+            <button
+              type="button"
+              onClick={() => abrirNovaMobile('receita')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:via-teal-500 hover:to-emerald-600 text-white text-xs font-black uppercase tracking-wider shadow-md cursor-pointer transition active:scale-95"
+            >
+              <IconPlus size={14} />
+              <span>Nova Categoria</span>
+            </button>
+          </div>
         )}
 
-        {/* listas */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-          {carregando
-            ? <div className="col-span-2 py-20 text-center text-sm text-slate-400">Carregando categorias...</div>
-            : <>
-                <SecaoLista
-                  titulo="Receitas" tipo="receita" lista={receitas}
-                  onEdit={abrirEdicaoDesktop} onDelete={removerCategoria}
-                  podeEditar={podeEditar}
-                  onNova={(t) => { setEditandoDesktop(null); /* foco no form */ }}
-                />
-                <SecaoLista
-                  titulo="Despesas" tipo="despesa" lista={despesas}
-                  onEdit={abrirEdicaoDesktop} onDelete={removerCategoria}
-                  podeEditar={podeEditar}
-                  onNova={() => { setEditandoDesktop(null); }}
-                />
-              </>
-          }
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+          <SecaoLista
+            titulo="Receitas" tipo="receita" lista={receitas}
+            onEdit={abrirEdicaoMobile} onDelete={removerCategoria}
+            podeEditar={podeEditar}
+            onNova={(t) => abrirNovaMobile(t || 'receita')}
+          />
+          <SecaoLista
+            titulo="Despesas" tipo="despesa" lista={despesas}
+            onEdit={abrirEdicaoMobile} onDelete={removerCategoria}
+            podeEditar={podeEditar}
+            onNova={(t) => abrirNovaMobile(t || 'despesa')}
+          />
         </div>
       </div>
 
@@ -626,7 +665,7 @@ export default function CategoriasFinanceiras({ usuarioLogado, membroLogado, has
         editando={modalEditando}
         tipoInicial={modalTipoInicial}
         onFechar={() => { setModalAberto(false); setModalEditando(null); }}
-        onSalvo={carregarCategorias}
+        onSalvo={() => carregarCategorias({ silencioso: true })}
         usuarioLogado={usuarioLogado}
       />
     </div>

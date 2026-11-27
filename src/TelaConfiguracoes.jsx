@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { aplicarTema } from './themeUtils';
 import EditorCarteirinhaConfig from './EditorCarteirinhaConfig';
+import PainelWhatsAppConfig from './PainelWhatsAppConfig';
 import { isBadgingSupported, getBadgePermissionStatus, requestBadgePermission, setAppBadge, clearAppBadge, isStandalone, syncAndroidNotificationBadge } from './badgeUtils';
 import { 
   formatarDataHoraAuditoria, 
@@ -596,6 +597,19 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
       corBordaHover: 'hover:border-sky-300 dark:hover:border-sky-600/70',
       badge: null,
     },
+    ...(eAdminOuPastor
+      ? [
+          {
+            id: 'whatsapp',
+            label: 'WhatsApp Automático',
+            desc: 'Servidor próprio, recibos em PDF e avisos',
+            icon: Smartphone,
+            corIcone: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200/70 dark:border-emerald-800/60',
+            corBordaHover: 'hover:border-emerald-300 dark:hover:border-emerald-600/70',
+            badge: null,
+          },
+        ]
+      : []),
     ...(eAdminOuPastor
       ? [
           {
@@ -2045,6 +2059,11 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
               }}
               membroLogado={membroLogado}
             />
+          )}
+
+          {/* ── ABA: WHATSAPP AUTOMÁTICO ── */}
+          {abaAtiva === 'whatsapp' && eAdminOuPastor && (
+            <PainelWhatsAppConfig />
           )}
 
         </div>

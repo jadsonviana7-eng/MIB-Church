@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { PageHeader } from './ui';
 import { MenuIcons } from './icons';
+import { prefetchModuloUtilitarios } from './utilitariosCache';
 import EscalasMinisterial from './EscalasMinisterial';
 import CarneGenerator from './CarneGenerator';
 import LeitorQRCode from './LeitorQRCode';
@@ -121,6 +122,11 @@ function getUtilitarios({ membroLogado, temVinculoEscala }) {
 export default function ModuloUtilitarios(props) {
   const { submenu, onNavigate, usuarioLogado, membroLogado, temVinculoEscala } = props;
   const utilitarios = getUtilitarios({ membroLogado, temVinculoEscala });
+
+  // Pré-carrega em segundo plano os dados das ferramentas de Utilitários para abertura instantânea
+  useEffect(() => {
+    prefetchModuloUtilitarios(usuarioLogado?.email);
+  }, [usuarioLogado?.email]);
 
   let conteudo = null;
 

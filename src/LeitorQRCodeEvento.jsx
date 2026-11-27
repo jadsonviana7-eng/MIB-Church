@@ -4,12 +4,14 @@ import { jsPDF } from 'jspdf';
 import { baixarCartaoPNG, baixarCartaoPDF } from './cartaoDigital';
 import { supabase } from './supabaseClient';
 import { Card, PageHeader } from './ui';
-import { extrairValorInscricao } from './eventoInscricaoUtils';
+import { extrairValorInscricao, findInJsonGlobal, extrairParcelasInscricao } from './eventoInscricaoUtils';
+import { dispararReciboQuitacaoAutomatico } from './services/whatsappServerService';
 import './LeitorQRCode.css';
 import {
   Camera, QrCode, CheckCircle, AlertCircle,
   RefreshCw, Loader2, Download, Share2,
-  User, Calendar, DollarSign, Tag, Info, Clock
+  User, Calendar, DollarSign, Tag, Info, Clock,
+  ShieldCheck, ShieldAlert, Ticket
 } from 'lucide-react';
 
 export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizada }) {
@@ -17,6 +19,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
   const [cameraAtiva, setCameraAtiva] = useState(false);
   const [erroCamera, setErroCamera] = useState('');
   const [recibo, setRecibo] = useState(null);
+  const [checkinResultado, setCheckinResultado] = useState(null);
 
   const html5QrCodeRef = useRef(null);
   const processandoRef = useRef(false);
@@ -156,8 +159,25 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
   async function onScanSuccess(result) {
     if (processandoRef.current) return;
 
-    // Se for um Pix, tenta extrair o código interno de pagamento
-    const codigoLimpo = extrairCodigoInternoPix(result);
+    // 1. Verifica se é o QR Code do Recibo Especial de Quitação (Check-in / Acesso ao Evento)
+    const texto = String(result || '').trim();
+    if (texto.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(texto);
+        if (parsed && parsed.tipo === 'RECIBO_MIB_EVENTO' && parsed.inscricao_id) {
+          processandoRef.current = true;
+          await pararCamera();
+          await validarAcessoEMarcarPresenca(parsed);
+          processandoRef.current = false;
+          return;
+        }
+      } catch (_) {
+        // Não é JSON válido — segue para o fluxo de baixa de parcela
+      }
+    }
+
+    // 2. Se for um Pix, tenta extrair o código interno de pagamento
+    const codigoLimpo = extrairCodigoInternoPix(texto);
 
     // O formato esperado gerado pelo CarneGenerator é: EVENTO|inscricaoId|parcelaNum
     if (codigoLimpo && codigoLimpo.startsWith('EVENTO|')) {
@@ -168,6 +188,157 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
       await darBaixaEvento(inscricaoId, parcelaNum);
 
       processandoRef.current = false;
+    }
+  }
+
+  async function validarAcessoEMarcarPresenca(qrPayload) {
+    setRecibo(null);
+    setCheckinResultado(null);
+    setStatus({ loading: true, msg: 'Validando credencial e buscando inscrição...', type: 'info' });
+
+    try {
+      const { data: inscricao, error: errorFetch } = await supabase
+        .from('agenda_inscricoes')
+        .select('*, agenda_eventos(id, titulo, data_inicio, local_nome, valor_tipo, valor_transporte)')
+        .eq('id', qrPayload.inscricao_id)
+        .single();
+
+      if (errorFetch || !inscricao) {
+        setCheckinResultado({
+          permitido: false,
+          jaPresente: false,
+          motivo: 'Inscrição não encontrada na lista oficial do evento.',
+          nome: qrPayload.participante || 'Participante não identificado',
+          evento: '—',
+          codigoRecibo: qrPayload.recibo || '—'
+        });
+        setStatus({ loading: false, msg: 'Inscrição não encontrada.', type: 'error' });
+        return;
+      }
+
+      const dados = inscricao.dados_inscricao || {};
+      const nome = findInJsonGlobal(dados, ['nome', 'nome completo', 'completo']) || qrPayload.participante || 'Participante';
+      const cpf = findInJsonGlobal(dados, 'cpf') || '';
+      const telefone = findInJsonGlobal(dados, ['telefone', 'celular', 'whatsapp', 'contato']) || '';
+      const incluiTransporte = findInJsonGlobal(dados, 'transporte')?.toString().toLowerCase().startsWith('sim');
+      const eventoTitulo = inscricao.agenda_eventos?.titulo || 'Evento MIB';
+      const codigoRecibo = qrPayload.recibo || `REC-${new Date().getFullYear()}-${String(inscricao.id).slice(0, 8).toUpperCase()}`;
+
+      // Verifica se pertence ao evento aberto atualmente (quando aberto pelo DashboardEvento)
+      if (eventoId && String(inscricao.evento_id) !== String(eventoId)) {
+        setCheckinResultado({
+          permitido: false,
+          jaPresente: false,
+          motivo: `Este recibo pertence a outro evento ("${eventoTitulo}").`,
+          nome,
+          evento: eventoTitulo,
+          codigoRecibo,
+          cpf,
+          telefone,
+          incluiTransporte,
+          statusPagamento: inscricao.status_pagamento
+        });
+        setStatus({ loading: false, msg: 'Recibo de outro evento.', type: 'error' });
+        return;
+      }
+
+      // Verifica se inscrição foi cancelada
+      if (inscricao.status_pagamento === 'cancelado') {
+        setCheckinResultado({
+          permitido: false,
+          jaPresente: false,
+          motivo: 'Inscrição cancelada. Acesso não autorizado.',
+          nome,
+          evento: eventoTitulo,
+          codigoRecibo,
+          cpf,
+          telefone,
+          incluiTransporte,
+          statusPagamento: 'cancelado'
+        });
+        setStatus({ loading: false, msg: 'Inscrição cancelada.', type: 'error' });
+        return;
+      }
+
+      // Verifica quitação para eventos pagos
+      const isEventoPago = inscricao.agenda_eventos?.valor_tipo === 'pago';
+      const totalParc = Number(findInJsonGlobal(dados, 'parcelas')) || extrairParcelasInscricao(dados) || 1;
+      const pagas = Array.isArray(dados.parcelas_pagas) ? dados.parcelas_pagas : [];
+      const isQuitado = !isEventoPago || inscricao.status_pagamento === 'pago' || (totalParc > 1 && pagas.length >= totalParc);
+
+      if (!isQuitado) {
+        setCheckinResultado({
+          permitido: false,
+          jaPresente: false,
+          motivo: totalParc > 1
+            ? `Pagamento pendente (${pagas.length}/${totalParc} parcelas pagas). Regularize na recepção para liberar o acesso.`
+            : 'Pagamento ainda consta como pendente na lista de inscritos.',
+          nome,
+          evento: eventoTitulo,
+          codigoRecibo,
+          cpf,
+          telefone,
+          incluiTransporte,
+          statusPagamento: inscricao.status_pagamento || 'pendente'
+        });
+        setStatus({ loading: false, msg: 'Pagamento pendente.', type: 'error' });
+        return;
+      }
+
+      // Verifica se a presença já foi registrada anteriormente
+      if (dados.presenca_confirmada) {
+        setCheckinResultado({
+          permitido: true,
+          jaPresente: true,
+          motivo: 'A presença deste participante já foi registrada anteriormente.',
+          nome,
+          evento: eventoTitulo,
+          codigoRecibo,
+          cpf,
+          telefone,
+          incluiTransporte,
+          statusPagamento: 'pago',
+          presencaEm: dados.presenca_em || null
+        });
+        setStatus({ loading: false, msg: 'Presença já registrada.', type: 'warning' });
+        return;
+      }
+
+      // Marca presença no banco (dentro de dados_inscricao)
+      const agoraIso = new Date().toISOString();
+      const { error: errorUpdate } = await supabase
+        .from('agenda_inscricoes')
+        .update({
+          dados_inscricao: {
+            ...dados,
+            presenca_confirmada: true,
+            presenca_em: agoraIso,
+            presenca_codigo_recibo: codigoRecibo
+          }
+        })
+        .eq('id', inscricao.id);
+
+      if (errorUpdate) throw errorUpdate;
+
+      setCheckinResultado({
+        permitido: true,
+        jaPresente: false,
+        motivo: 'Inscrição validada na lista e presença confirmada com sucesso!',
+        nome,
+        evento: eventoTitulo,
+        codigoRecibo,
+        cpf,
+        telefone,
+        incluiTransporte,
+        statusPagamento: 'pago',
+        presencaEm: agoraIso
+      });
+      setStatus({ loading: false, msg: `Acesso liberado para ${nome}!`, type: 'success' });
+
+      if (onBaixaRealizada) onBaixaRealizada();
+    } catch (err) {
+      setCheckinResultado(null);
+      setStatus({ loading: false, msg: 'Erro ao validar acesso: ' + err.message, type: 'error' });
     }
   }
 
@@ -182,7 +353,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
       // 1. Busca os dados atuais da inscrição no evento
       const { data: inscricao, error: errorFetch } = await supabase
         .from('agenda_inscricoes')
-        .select('*, agenda_eventos(titulo)')
+        .select('*, agenda_eventos(id, titulo, data_inicio, local_nome, valor_tipo, valor_transporte)')
         .eq('id', inscricaoId)
         .single();
 
@@ -249,6 +420,18 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
 
       // Notifica o componente pai (ex: DashboardEvento) para recarregar os dados
       if (onBaixaRealizada) onBaixaRealizada();
+
+      // Se a baixa quitou a inscrição por completo, dispara automaticamente o Recibo Especial em PDF via WhatsApp
+      if (novoStatusPg === 'pago' && inscricao.status_pagamento !== 'pago') {
+        dispararReciboQuitacaoAutomatico({
+          evento: inscricao.agenda_eventos,
+          inscrito: {
+            ...inscricao,
+            status_pagamento: 'pago',
+            dados_inscricao: { ...dados, parcelas_pagas: novasParcelas }
+          }
+        }).catch((err) => console.warn('[WhatsApp Auto] Recibo não enviado automaticamente:', err?.message));
+      }
     } catch (err) {
       setRecibo(null);
       setStatus({ loading: false, msg: 'Erro ao dar baixa: ' + err.message, type: 'error' });
@@ -258,6 +441,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
   function handleProximaLeitura() {
     setStatus({ loading: false, msg: '', type: '' });
     setRecibo(null);
+    setCheckinResultado(null);
     iniciarCamera();
   }
 
@@ -546,8 +730,8 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
                 </div>
                 <div>
                   <h3 className="font-extrabold text-sm text-slate-300 uppercase tracking-wider">Câmera Desativada</h3>
-                  <p className="text-xs text-slate-500 mt-1 max-w-[240px] leading-relaxed">
-                    Ative o leitor para escanear o QR Code de baixa impresso no cartão digital.
+                  <p className="text-xs text-slate-500 mt-1 max-w-[260px] leading-relaxed">
+                    Ative o leitor para escanear o QR Code do <strong>Recibo (Check-in / Presença)</strong> ou do <strong>Carnê (Baixa de Parcela)</strong>.
                   </p>
                 </div>
                 <button
@@ -588,7 +772,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
           )}
 
           {/* Scanning status / Baixa Feedback details */}
-          {status.msg && !recibo && (
+          {status.msg && !recibo && !checkinResultado && (
             <div className="animate-in fade-in zoom-in duration-200">
               {status.loading ? (
                 <div className="p-8 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700 rounded-2xl flex flex-col items-center justify-center text-center space-y-3">
@@ -633,6 +817,104 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Resultado de Credenciamento / Check-in via QR Code do Recibo */}
+          {checkinResultado && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom duration-300">
+              <div
+                className={`relative rounded-3xl p-5 space-y-4 border-2 shadow-sm overflow-hidden ${
+                  !checkinResultado.permitido
+                    ? 'bg-rose-50/70 dark:bg-rose-950/40 border-rose-300 dark:border-rose-700/70'
+                    : checkinResultado.jaPresente
+                      ? 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/70'
+                      : 'bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-400 dark:border-emerald-700/80'
+                }`}
+              >
+                <div className="flex flex-col items-center text-center gap-2 pb-3 border-b border-black/10 dark:border-white/10">
+                  <div
+                    className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm ${
+                      !checkinResultado.permitido
+                        ? 'bg-rose-600 text-white'
+                        : checkinResultado.jaPresente
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-emerald-600 text-white'
+                    }`}
+                  >
+                    {!checkinResultado.permitido ? (
+                      <ShieldAlert size={28} />
+                    ) : checkinResultado.jaPresente ? (
+                      <AlertCircle size={28} />
+                    ) : (
+                      <ShieldCheck size={28} />
+                    )}
+                  </div>
+
+                  <div>
+                    <span
+                      className={`inline-block px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest mb-1 ${
+                        !checkinResultado.permitido
+                          ? 'bg-rose-600 text-white'
+                          : checkinResultado.jaPresente
+                            ? 'bg-amber-500 text-white'
+                            : 'bg-emerald-600 text-white'
+                      }`}
+                    >
+                      {!checkinResultado.permitido
+                        ? 'Acesso Negado'
+                        : checkinResultado.jaPresente
+                          ? 'Presença Já Registrada'
+                          : 'Acesso Liberado • Presente'}
+                    </span>
+                    <h4 className="text-lg font-black text-slate-900 dark:text-white leading-tight">
+                      {checkinResultado.nome}
+                    </h4>
+                    <p
+                      className={`text-xs font-semibold mt-1 leading-relaxed ${
+                        !checkinResultado.permitido
+                          ? 'text-rose-700 dark:text-rose-300'
+                          : checkinResultado.jaPresente
+                            ? 'text-amber-800 dark:text-amber-300'
+                            : 'text-emerald-800 dark:text-emerald-300'
+                      }`}
+                    >
+                      {checkinResultado.motivo}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-xs text-slate-700 dark:text-slate-200 font-medium">
+                  <div className="flex justify-between items-center py-1 border-b border-black/5 dark:border-white/10">
+                    <span className="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5"><Calendar size={13} /> Evento</span>
+                    <span className="font-extrabold text-slate-800 dark:text-white truncate max-w-[210px]">{checkinResultado.evento}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-black/5 dark:border-white/10">
+                    <span className="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5"><Ticket size={13} /> Recibo</span>
+                    <span className="font-mono font-bold text-slate-800 dark:text-slate-100">{checkinResultado.codigoRecibo}</span>
+                  </div>
+                  {checkinResultado.cpf && (
+                    <div className="flex justify-between items-center py-1 border-b border-black/5 dark:border-white/10">
+                      <span className="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5"><User size={13} /> CPF</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-100">{checkinResultado.cpf}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center py-1 border-b border-black/5 dark:border-white/10">
+                    <span className="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5"><Tag size={13} /> Transporte</span>
+                    <span className="font-bold text-slate-800 dark:text-slate-100">
+                      {checkinResultado.incluiTransporte ? 'Sim (Ônibus/Caravana)' : 'Próprio / Sem'}
+                    </span>
+                  </div>
+                  {checkinResultado.presencaEm && (
+                    <div className="flex justify-between items-center py-1">
+                      <span className="font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5"><Clock size={13} /> Check-in em</span>
+                      <span className="font-bold text-emerald-700 dark:text-emerald-300">
+                        {new Date(checkinResultado.presencaEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

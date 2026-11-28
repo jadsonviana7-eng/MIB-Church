@@ -73,7 +73,6 @@ export default function HistoricoMinisterial({ initialStatus = null, hideHeader 
         {!hideHeader && (
           <div>
             <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">Histórico Ministerial</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Rastreabilidade completa de movimentações, escalas e promoções de voluntários.</p>
           </div>
         )}
 
@@ -116,7 +115,7 @@ export default function HistoricoMinisterial({ initialStatus = null, hideHeader 
                 <div key={log.id} className="relative group">
                   {/* Ponto na timeline */}
                   <span className="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full bg-white dark:bg-[#17223b] border-2 border-blue-500 group-hover:scale-125 transition-transform" />
-                  
+
                   <div className="bg-slate-50/50 dark:bg-[#111a30]/60 hover:bg-slate-50 dark:hover:bg-[#111a30] border border-slate-100 dark:border-[#2b3954] rounded-xl p-4 transition">
                     <div className="flex justify-between items-start flex-wrap gap-2">
                       <div className="flex items-center gap-2">

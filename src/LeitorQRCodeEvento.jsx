@@ -754,7 +754,7 @@ export default function LeitorQRCodeEvento({ onVoltar, eventoId, onBaixaRealizad
   return (
     <div className="max-w-xl mx-auto pt-0 px-0 pb-12 sm:px-6 space-y-6 mx-[-3px] sm:mx-auto">
       <div className="mx-[3px] sm:mx-0">
-        <PageHeader titulo="Baixa de Evento (QR)" onNavigate={onVoltar} />
+        <PageHeader titulo="Baixa de Evento (QR)" onNavigate={onVoltar} onVoltar={onVoltar} />
       </div>
 
       <Card className="p-0 overflow-hidden shadow-xl border border-slate-100 dark:border-slate-800 rounded-[28px] bg-white dark:bg-slate-900">

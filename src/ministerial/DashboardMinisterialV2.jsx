@@ -7,6 +7,7 @@ import {
 import { ministeriosService, clarearCorParaModoEscuro } from './services/ministeriosService';
 import { ministerialCache } from './ministerialCache';
 import { useIsDarkMode } from './hooks/useIsDarkMode';
+import { InfoTooltipButton } from '../ui';
 
 function Card({ titulo, valor, Icon, corSub, desc, onClick }) {
   return (
@@ -738,11 +739,14 @@ export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNa
   return (
     <div className="space-y-6">
       {!hideHeader && (
-        <div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
             Painel de Indicadores
           </h1>
-          <p className="text-xs text-slate-500">Métricas consolidadas de participação, voluntários e engajamento ministerial. Clique nos cartões para ver os detalhes.</p>
+          <InfoTooltipButton
+            texto="Métricas consolidadas de participação, voluntários e engajamento ministerial. Clique nos cartões para ver os detalhes."
+            size={16}
+          />
         </div>
       )}
 
@@ -966,12 +970,17 @@ export default function DashboardMinisterialV2({ onNavegarTab, onVerMembro, onNa
             <span className="text-[9px] font-black uppercase tracking-widest bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full border border-blue-500/10 inline-block mb-3">
               Engajamento Inteligente
             </span>
-            <h3 className="text-xl font-black tracking-tight leading-tight mt-1">
-              "Reduzindo tarefas manuais da liderança e conectando a igreja através do serviço."
-            </h3>
-            <p className="text-xs text-slate-300/80 mt-2 max-w-md">
-              A autoescala inteligente distribui as tarefas ponderando a disponibilidade declarada por cada voluntário e rotacionando as equipes de forma justa.
-            </p>
+            <div className="flex items-start gap-2 mt-1">
+              <h3 className="text-xl font-black tracking-tight leading-tight">
+                "Reduzindo tarefas manuais da liderança e conectando a igreja através do serviço."
+              </h3>
+              <InfoTooltipButton
+                texto="A autoescala inteligente distribui as tarefas ponderando a disponibilidade declarada por cada voluntário e rotacionando as equipes de forma justa."
+                size={15}
+                variant="onDark"
+                className="mt-1"
+              />
+            </div>
           </div>
 
           {/* Mini-cards em Glassmorphism com Métricas Avançadas */}

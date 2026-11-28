@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
-import { Card, CardHeader } from './ui';
+import { Card, CardHeader, InfoTooltipButton } from './ui';
 import { registrarLogFinanceiro } from './financeiroUtils';
 
 // Cache em memória para abertura instantânea ao trocar de aba
@@ -206,12 +206,12 @@ export default function ContasFinanceiras({
 
             <div className="px-6 py-4 flex items-center justify-between border-b border-blue-100 dark:border-[#2b3954] bg-blue-50/70 dark:bg-[#1c2b4a]">
               <div>
-                <h3 className="text-base font-black text-slate-800 dark:text-slate-100">
-                  {editandoId ? 'Editar Conta / Caixa' : 'Nova Conta / Caixa'}
-                </h3>
-                <p className="text-[11px] font-bold text-blue-600 dark:text-blue-400 mt-0.5">
-                  Organize bancos, cofres e caixas da igreja
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-base font-black text-slate-800 dark:text-slate-100">
+                    {editandoId ? 'Editar Conta / Caixa' : 'Nova Conta / Caixa'}
+                  </h3>
+                  <InfoTooltipButton texto="Organize bancos, cofres e caixas da igreja" size={14} />
+                </div>
               </div>
               <button
                 type="button"

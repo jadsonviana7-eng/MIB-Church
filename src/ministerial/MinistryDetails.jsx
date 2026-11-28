@@ -16,21 +16,28 @@ import {
 } from 'lucide-react';
 
 import { supabase } from '../supabaseClient';
+import { InfoTooltipButton } from '../ui';
 import FuncoesMinisteriais from './FuncoesMinisteriais';
 import { MinistryIcon } from '../ui';
 import MembroHistoricoModal from './components/MembroHistoricoModal';
 import MinistryMonthlyOverview from './components/MinistryMonthlyOverview';
 import { escalasService } from './services/escalasService';
 import { isLouvorMinistry, clarearCorParaModoEscuro } from './services/ministeriosService';
+import { ministerialCache } from './ministerialCache';
 import { useIsDarkMode } from './hooks/useIsDarkMode';
 
 export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, onMinisterioCarregado }) {
   const isDark = useIsDarkMode();
   const [aba, setAba] = useState('equipe');
-  const [ministerio, setMinisterio] = useState(null);
-  const [membros, setMembros] = useState([]);
-  const [funcoes, setFuncoes] = useState([]);
-  const [loading, setLoading] = useState(true);
+
+  const cacheInicial = ministerialCache.detalhesPorMinisterio?.[ministerioId];
+  const minDaLista = (ministerialCache.ministerios || []).find(m => m.id === ministerioId) || null;
+  const minInicial = cacheInicial?.ministerio || minDaLista;
+
+  const [ministerio, setMinisterio] = useState(() => minInicial);
+  const [membros, setMembros] = useState(() => cacheInicial?.membros || []);
+  const [funcoes, setFuncoes] = useState(() => cacheInicial?.funcoes || []);
+  const [loading, setLoading] = useState(() => !minInicial);
 
   // Detecta se é o Ministério de Louvor / Música
   const isMinisterioLouvor = useMemo(() => {
@@ -44,7 +51,7 @@ export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, 
   const [funcoesSelecionadas, setFuncoesSelecionadas] = useState([]);
   const [customFuncaoInput, setCustomFuncaoInput] = useState('');
   const [lider, setLider] = useState(false);
-  const [pessoas, setPessoas] = useState([]);
+  const [pessoas, setPessoas] = useState(() => cacheInicial?.pessoas || ministerialCache.todasPessoas || []);
   const [editingMembro, setEditingMembro] = useState(null);
   const [modalHistoricoAberto, setModalHistoricoAberto] = useState(false);
   const [membroSelecionadoHistorico, setMembroSelecionadoHistorico] = useState(null);
@@ -210,72 +217,88 @@ export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, 
 
   useEffect(() => {
     if (ministerioId) {
+      const cached = ministerialCache.detalhesPorMinisterio?.[ministerioId];
+      const fromList = (ministerialCache.ministerios || []).find(m => m.id === ministerioId) || null;
+      const minSnap = cached?.ministerio || fromList;
+      if (minSnap) {
+        setMinisterio(minSnap);
+        onMinisterioCarregado?.(minSnap);
+        setLoading(false);
+      }
+      if (cached?.membros) setMembros(cached.membros);
+      if (cached?.funcoes) setFuncoes(cached.funcoes);
+      if (cached?.pessoas) setPessoas(cached.pessoas);
       carregar();
     }
   }, [ministerioId]);
 
   async function carregar() {
-    setLoading(true);
+    const temCache = Boolean(
+      ministerialCache.detalhesPorMinisterio?.[ministerioId]?.ministerio ||
+      (ministerialCache.ministerios || []).some(m => m.id === ministerioId)
+    );
+    if (!temCache) setLoading(true);
     try {
-      const { data: ministerioData } = await supabase
-        .from('ministerios')
-        .select('*')
-        .eq('id', ministerioId)
-        .single();
-
-      const { data: membrosData } = await supabase
-        .from('ministerio_membros')
-        .select(`
-          *,
-          pessoas (
-            id,
-            nome,
-            telefone,
-            foto_url,
-            cargo
-          )
-        `)
-        .eq('ministerio_id', ministerioId);
-
-      let funcoesData = [];
-      try {
-        const { data: fData, error: fErr } = await supabase
+      const [resMin, resMembros, resFuncoes, resPessoas] = await Promise.all([
+        supabase
+          .from('ministerios')
+          .select('*')
+          .eq('id', ministerioId)
+          .single(),
+        supabase
+          .from('ministerio_membros')
+          .select(`
+            *,
+            pessoas (
+              id,
+              nome,
+              telefone,
+              foto_url,
+              cargo
+            )
+          `)
+          .eq('ministerio_id', ministerioId),
+        supabase
           .from('ministerio_funcoes')
           .select('*')
           .eq('ministerio_id', ministerioId)
-          .order('ordem', { ascending: true });
-        if (!fErr && fData) {
-          funcoesData = fData.sort((a, b) => {
-            const ordA = a.ordem !== undefined && a.ordem !== null ? Number(a.ordem) : 999999;
-            const ordB = b.ordem !== undefined && b.ordem !== null ? Number(b.ordem) : 999999;
-            if (ordA !== ordB) return ordA - ordB;
-            return (a.nome || '').localeCompare(b.nome || '');
-          });
-        }
-      } catch (_) {
-        const { data: fData2 } = await supabase
-          .from('ministerio_funcoes')
-          .select('*')
-          .eq('ministerio_id', ministerioId);
-        funcoesData = (fData2 || []).sort((a, b) => {
-          const ordA = a.ordem !== undefined && a.ordem !== null ? Number(a.ordem) : 999999;
-          const ordB = b.ordem !== undefined && b.ordem !== null ? Number(b.ordem) : 999999;
-          if (ordA !== ordB) return ordA - ordB;
-          return (a.nome || '').localeCompare(b.nome || '');
-        });
-      }
+          .order('ordem', { ascending: true })
+          .then(async (res) => {
+            if (!res.error) return res;
+            return supabase
+              .from('ministerio_funcoes')
+              .select('*')
+              .eq('ministerio_id', ministerioId);
+          }),
+        supabase
+          .from('pessoas')
+          .select('id, nome, cargo, foto_url, telefone')
+          .eq('status', 'ativo')
+          .order('nome')
+      ]);
 
-      const { data: pessoasData } = await supabase
-        .from('pessoas')
-        .select('id, nome, cargo, foto_url, telefone')
-        .eq('status', 'ativo')
-        .order('nome');
+      const ministerioData = resMin?.data || null;
+      const membrosData = resMembros?.data || [];
+      const funcoesData = (resFuncoes?.data || []).slice().sort((a, b) => {
+        const ordA = a.ordem !== undefined && a.ordem !== null ? Number(a.ordem) : 999999;
+        const ordB = b.ordem !== undefined && b.ordem !== null ? Number(b.ordem) : 999999;
+        if (ordA !== ordB) return ordA - ordB;
+        return (a.nome || '').localeCompare(b.nome || '');
+      });
+      const pessoasData = resPessoas?.data || [];
+
+      ministerialCache.detalhesPorMinisterio[ministerioId] = {
+        ministerio: ministerioData,
+        membros: membrosData,
+        funcoes: funcoesData,
+        pessoas: pessoasData
+      };
 
       setMinisterio(ministerioData);
       onMinisterioCarregado?.(ministerioData);
-      setMembros(membrosData || []);
-      setFuncoes(funcoesData || []);
-      setPessoas(pessoasData || []);
+      setMembros(membrosData);
+      setFuncoes(funcoesData);
+      setPessoas(pessoasData);
     } catch (error) {
       console.error(error);
     } finally {
@@ -520,16 +543,16 @@ export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, 
                     <MinistryIcon icone={ministerio.icone} nome={ministerio.nome} size={26} style={{ color: isDark ? corMin : '#ffffff' }} />
                   </div>
 
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 flex items-center gap-2">
                     <h1
                       className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white truncate nome-ministerio-contraste"
                       style={{ color: isDark ? corMin : undefined }}
                     >
                       {ministerio.nome}
                     </h1>
-                    <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 truncate">
-                      {ministerio.descricao || 'Sem descrição.'}
-                    </p>
+                    {ministerio.descricao && (
+                      <InfoTooltipButton texto={ministerio.descricao} size={16} />
+                    )}
                   </div>
                 </>
               );
@@ -745,8 +768,10 @@ export default function MinistryDetails({ ministerioId, onVoltar, onNavegarTab, 
       {aba === 'fardamentos' && (
         <div className="bg-white rounded-xl shadow p-4 sm:p-6 space-y-6">
           <div className="pb-2 border-b border-slate-50">
-            <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">Configuração de Fardamentos</h3>
-            <p className="text-xs text-slate-400 mt-1">Configure os tipos de fardamento que este ministério utiliza.</p>
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider">Configuração de Fardamentos</h3>
+              <InfoTooltipButton texto="Configure os tipos de fardamento que este ministério utiliza." size={14} />
+            </div>
           </div>
 
           <form onSubmit={handleAdicionarFardamento} className="flex flex-col sm:flex-row gap-2">

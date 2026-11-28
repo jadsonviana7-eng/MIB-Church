@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { PageHeader, Card, Avatar } from './ui';
+import { PageHeader, Card, Avatar, InfoTooltipButton } from './ui';
 import {
   BarChart,
   Bar,
@@ -1703,21 +1703,27 @@ export default function TestePerfilComportamental({
       {etapa === 'intro' && (
         <div className="space-y-6">
           {/* Banner Hero */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1e3a8a] via-indigo-800 to-slate-900 p-6 sm:p-8 text-white shadow-xl border border-white/10">
-            <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-blue-400/15 blur-3xl pointer-events-none" />
-            <div className="absolute left-1/3 -bottom-20 w-56 h-56 rounded-full bg-emerald-400/10 blur-3xl pointer-events-none" />
+          <div className="relative rounded-3xl bg-gradient-to-br from-[#1e3a8a] via-indigo-800 to-slate-900 p-6 sm:p-8 text-white shadow-xl border border-white/10">
+            <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+              <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-blue-400/15 blur-3xl" />
+              <div className="absolute left-1/3 -bottom-20 w-56 h-56 rounded-full bg-emerald-400/10 blur-3xl" />
+            </div>
             <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-3 max-w-2xl">
+              <div className="space-y-2.5 max-w-2xl">
                 <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] bg-white/15 text-blue-100 px-3 py-1 rounded-full border border-white/15">
                   <Sparkles size={12} />
                   Avaliação Comportamental • Ned Herrmann
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
-                  Descubra seu Perfil Comportamental e Dominância Cerebral
-                </h2>
-                <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed">
-                  Responda às <strong>25 questões</strong> escolhendo a alternativa que mais combina com você. Ao final, descubra seus percentuais nos 4 arquétipos (<strong>Águia, Gato, Lobo e Tubarão</strong>) e o mapa de <strong>Atividade Cerebral</strong> — salvos automaticamente na sua ficha em <em>Informações Adicionais</em>.
-                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">
+                    Descubra seu Perfil Comportamental e Dominância Cerebral
+                  </h2>
+                  <InfoTooltipButton
+                    texto="Responda às 25 questões escolhendo a alternativa que mais combina com você. Ao final, descubra seus percentuais nos 4 arquétipos (Águia, Gato, Lobo e Tubarão) e o mapa de Atividade Cerebral — salvos automaticamente na sua ficha em Informações Adicionais."
+                    size={17}
+                    variant="onDark"
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2.5 shrink-0">
                 {['I', 'C', 'O', 'A'].map((cod) => {
@@ -1746,13 +1752,14 @@ export default function TestePerfilComportamental({
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-800/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                   <UserCheck size={20} />
                 </div>
-                <div>
+                <div className="flex items-center gap-1.5">
                   <h3 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">
                     Membro Avaliado
                   </h3>
-                  <p className="text-xs text-slate-400">
-                    Os resultados serão gravados automaticamente em <strong>Detalhes do Membro → Informações Adicionais</strong>.
-                  </p>
+                  <InfoTooltipButton
+                    texto="Os resultados serão gravados automaticamente em Detalhes do Membro → Informações Adicionais."
+                    size={14}
+                  />
                 </div>
               </div>
             </div>

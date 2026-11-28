@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 
 import { ministeriosService } from './services/ministeriosService';
+import { InfoTooltipButton } from '../ui';
 
 const PRESET_COLORS = [
   { name: 'Azul', value: '#2563eb' },
@@ -139,10 +140,12 @@ export default function FuncoesMinisteriais({ ministerioId }) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-lg font-black text-slate-800 uppercase tracking-wider">
-            Funções
-          </h2>
-          <p className="text-xs text-slate-400">Configure as funções de apoio e serviço deste ministério.</p>
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-wider">
+              Funções
+            </h2>
+            <InfoTooltipButton texto="Configure as funções de apoio e serviço deste ministério." size={14} />
+          </div>
         </div>
 
         <button

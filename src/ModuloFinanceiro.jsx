@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from './supabaseClient';
-import { PageHeader, SelectFiltro } from './ui';
+import { PageHeader, SelectFiltro, InfoTooltipButton } from './ui';
 import TransacoesFinanceiras from './TransacoesFinanceiras';
 import CategoriasFinanceiras from './CategoriasFinanceiras';
 import ContasFinanceiras from './ContasFinanceiras';
@@ -497,9 +497,9 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
       </div>
 
       {/* LAYOUT PRINCIPAL COM PAINEL LATERAL FIXO E ADAPTATIVO À DIREITA NO DESKTOP (lg+) */}
-      <div className={`relative transition-all duration-200 ${painelLateralRecolhido ? 'lg:pr-12' : 'lg:pr-[196px]'}`}>
+      <div className="relative flex flex-col lg:flex-row gap-6 items-start w-full">
         {/* CONTEÚDO PRINCIPAL DO MÓDULO FINANCEIRO */}
-        <div className="min-w-0 space-y-4 sm:space-y-6">
+        <div className="flex-1 min-w-0 w-full space-y-4 sm:space-y-6">
           {/* CONTEINER DO TÍTULO DA PÁGINA (PAGE HEADER) NO TOPO - OCULTO NA ABA RESUMO/DASHBOARD */}
           {abaAtiva !== 'resumo' && (
             <PageHeader
@@ -532,13 +532,15 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 <div className={`flex flex-wrap items-center justify-between gap-2 ${filtrosPainelExpandidos ? 'border-b border-slate-800 dark:border-[#2b3954] pb-3 sm:pb-4' : ''}`}>
                   <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
-                    <div>
+                    <div className="flex items-center gap-1.5">
                       <h2 className="text-sm sm:text-base font-black text-white leading-tight">
                         Filtros dos Gráficos
                       </h2>
-                      <p className="text-[10px] sm:text-xs text-slate-400 font-medium hidden sm:block">
-                        Altere os filtros para atualizar instantaneamente todos os gráficos e métricas.
-                      </p>
+                      <InfoTooltipButton
+                        texto="Altere os filtros para atualizar instantaneamente todos os gráficos e métricas."
+                        size={14}
+                        variant="onDark"
+                      />
                     </div>
                   </div>
 
@@ -810,14 +812,15 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
               {/* GRÁFICO PRINCIPAL: EVOLUÇÃO TEMPORAL COM RESPONSIVIDADE MOBILE */}
               <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 sm:mb-6 border-b border-slate-100 dark:border-[#2b3954] pb-3 sm:pb-4">
-                  <div>
+                  <div className="flex items-center gap-1.5">
                     <h3 className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                       <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                       Fluxo de Caixa no Período
                     </h3>
-                    <p className="text-[11px] text-slate-400 dark:text-slate-400 mt-0.5">
-                      Evolução das entradas, saídas e saldo filtrados.
-                    </p>
+                    <InfoTooltipButton
+                      texto="Evolução das entradas, saídas e saldo filtrados."
+                      size={14}
+                    />
                   </div>
 
                   <div className="flex items-center gap-2.5 text-[11px] font-bold">
@@ -873,9 +876,9 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 {/* Top Categorias - Receita */}
                 <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-[#2b3954] pb-2.5">
-                    <div>
+                    <div className="flex items-center gap-1.5">
                       <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Top Categorias de Receita</h3>
-                      <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Principais entradas filtradas</p>
+                      <InfoTooltipButton texto="Principais entradas filtradas" size={14} />
                     </div>
                     <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
                   </div>
@@ -915,9 +918,9 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 {/* Top Categorias - Despesa */}
                 <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-[#2b3954] pb-2.5">
-                    <div>
+                    <div className="flex items-center gap-1.5">
                       <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Top Categorias de Despesa</h3>
-                      <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Principais saídas filtradas</p>
+                      <InfoTooltipButton texto="Principais saídas filtradas" size={14} />
                     </div>
                     <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-rose-600 dark:text-rose-400" />
                   </div>
@@ -962,9 +965,9 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 {/* Gráfico Donut de Status (Pago vs Pendente) */}
                 <div className="bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
                   <div className="border-b border-slate-100 dark:border-[#2b3954] pb-2.5 mb-3 flex items-center justify-between">
-                    <div>
+                    <div className="flex items-center gap-1.5">
                       <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Proporção de Status</h3>
-                      <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Pago vs Pendente</p>
+                      <InfoTooltipButton texto="Pago vs Pendente" size={14} />
                     </div>
                     <PieIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
                   </div>
@@ -1008,9 +1011,9 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
                 {/* Gráfico de Contas / Caixas */}
                 <div className="lg:col-span-2 bg-white dark:bg-[#17223b] p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md flex flex-col justify-between">
                   <div className="border-b border-slate-100 dark:border-[#2b3954] pb-2.5 mb-3 flex items-center justify-between">
-                    <div>
+                    <div className="flex items-center gap-1.5">
                       <h3 className="text-xs sm:text-sm font-black text-slate-800 dark:text-slate-100">Movimentação por Conta / Caixa</h3>
-                      <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-400">Totais de entradas e saídas por conta financeira</p>
+                      <InfoTooltipButton texto="Totais de entradas e saídas por conta financeira" size={14} />
                     </div>
                     <Landmark className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-600 dark:text-cyan-400" />
                   </div>
@@ -1105,15 +1108,19 @@ export default function ModuloFinanceiro({ meses, submenu, usuarioLogado, membro
 
         </div>
 
+        {/* PLACEHOLDER DE ESPAÇO PARA O PAINEL LATERAL FIXO À DIREITA (DESKTOP) */}
+        <div
+          className={`hidden lg:block print:hidden shrink-0 transition-all duration-200 pointer-events-none ${
+            painelLateralRecolhido ? 'w-14' : 'w-60'
+          }`}
+          aria-hidden="true"
+        />
+
         {/* COLUNA LATERAL FIXA À DIREITA NO DESKTOP (lg+) */}
         <div
-          className={`hidden lg:flex print:hidden fixed right-4 z-30 flex-col gap-3 transition-all duration-200 ${
-            abaAtiva === 'resumo'
-              ? 'top-16'
-              : (abaAtiva === 'categorias' || abaAtiva === 'contas' || abaAtiva === 'relatorios')
-                ? 'top-[104px]'
-                : 'top-[112px]'
-          } ${painelLateralRecolhido ? 'w-14' : 'w-52'}`}
+          className={`hidden lg:flex print:hidden fixed right-6 top-20 z-30 flex-col gap-3 transition-all duration-200 ${
+            painelLateralRecolhido ? 'w-14' : 'w-60'
+          }`}
         >
           <aside
             className={`w-full flex flex-col bg-white dark:bg-[#17223b] border border-slate-200/80 dark:border-[#2b3954] rounded-2xl p-2 shadow-md space-y-1.5 ${painelLateralRecolhido ? 'items-center' : ''

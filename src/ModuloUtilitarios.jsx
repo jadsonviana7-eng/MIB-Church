@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { PageHeader } from './ui';
+import { PageHeader, InfoTooltipButton } from './ui';
 import { MenuIcons } from './icons';
 import { prefetchModuloUtilitarios } from './utilitariosCache';
 import EscalasMinisterial from './EscalasMinisterial';
@@ -136,15 +136,20 @@ export default function ModuloUtilitarios(props) {
 
 
         {/* ── BANNER PREMIUM DE INTRODUÇÃO ── */}
-        <div className="relative rounded-[24px] overflow-hidden p-6 md:p-8 bg-gradient-to-r from-[#1e3a8a] via-[#14296b] to-[#1e3a8a] text-white shadow-lg border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-3 max-w-xl text-center md:text-left">
+        <div className="relative rounded-[24px] p-6 md:p-8 bg-gradient-to-r from-[#1e3a8a] via-[#14296b] to-[#1e3a8a] text-white shadow-lg border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2.5 max-w-xl text-center md:text-left">
             <span className="text-[10px] font-black uppercase tracking-[0.25em] bg-blue-500/30 text-blue-200 px-3 py-1 rounded-full border border-blue-400/20">
               Central de Operações
             </span>
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">Equipados para Toda Boa Obra</h2>
-            <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-medium">
-              A Central de Utilitários reúne ferramentas administrativas, financeiras e de intercessão da MIB Church. Utilize esses recursos para simplificar sua rotina e aproximar a igreja.
-            </p>
+            <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight">Equipados para Toda Boa Obra</h2>
+              <InfoTooltipButton
+                texto="A Central de Utilitários reúne ferramentas administrativas, financeiras e de intercessão da MIB Church. Utilize esses recursos para simplificar sua rotina e aproximar a igreja."
+                size={17}
+                align="responsive"
+                variant="onDark"
+              />
+            </div>
           </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shrink-0 text-center md:text-right max-w-[240px]">
             <p className="text-xs italic text-blue-100 font-medium leading-relaxed">
@@ -231,7 +236,7 @@ export default function ModuloUtilitarios(props) {
   } else if (submenu === 'repertorio') {
     conteudo = <RepertorioLouvor onVoltar={() => onNavigate('resumo')} {...props} />;
   } else if (submenu === 'escalas') {
-    conteudo = <EscalasMinisterial {...props} />;
+    conteudo = <EscalasMinisterial onVoltar={() => onNavigate('resumo')} {...props} />;
   } else if (submenu === 'relatorio-semanal') {
     conteudo = <RelatorioSemanal usuarioLogado={usuarioLogado} />;
   } else if (submenu === 'calculadora') {
@@ -276,13 +281,20 @@ export default function ModuloUtilitarios(props) {
 
   if (!conteudo) return null;
 
+  const ocultarMenuDireito = ['escalas', 'repertorio', 'gerador-documentos', 'certificados'].includes(submenu);
+
   return (
     <div className="flex gap-6 items-start w-full">
       <div className="flex-1 min-w-0">{conteudo}</div>
 
-      {/* Painel lateral fixo de atalhos — apenas em telas grandes */}
-      <aside className={`${['escalas', 'repertorio', 'gerador-documentos', 'certificados'].includes(submenu) ? 'hidden' : 'hidden xl:block'} w-64 shrink-0 sticky top-6`}>
-        <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm p-4">
+      {/* Placeholder de espaço para o painel lateral fixo à direita */}
+      {!ocultarMenuDireito && (
+        <div className="hidden xl:block w-64 shrink-0 pointer-events-none" aria-hidden="true" />
+      )}
+
+      {/* Painel lateral fixo de atalhos — posição padronizada no topo direito */}
+      <aside className={`${ocultarMenuDireito ? 'hidden' : 'hidden xl:block'} fixed right-6 top-20 z-30 w-64`}>
+        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md p-4 max-h-[calc(100vh-6.5rem)] overflow-y-auto scrollbar-none">
           <h3 className="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 px-2 mb-2">
             Utilitários
           </h3>

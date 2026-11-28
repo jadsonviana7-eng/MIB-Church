@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabaseClient';
 import { utilitariosCache } from './utilitariosCache';
-import { Card, CardHeader, PageHeader } from './ui';
+import { Card, CardHeader, PageHeader, InfoTooltipButton } from './ui';
 import { 
   UserPlus, Save, CheckCircle2, AlertCircle, RefreshCw, 
   Search, Trash2, Users, Phone, MapPin, Calendar, 
@@ -228,10 +228,10 @@ export default function FormularioVisitante({ onVoltar }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto pt-0 px-0 pb-12 sm:px-6 space-y-6 mx-[-3px] sm:mx-auto animate-in fade-in duration-300">
+    <div className="w-full pt-0 pb-12 space-y-6 animate-in fade-in duration-300">
       
       {/* Cabeçalho */}
-      <div className="mx-[3px] sm:mx-0 flex justify-between items-center">
+      <div className="flex justify-between items-center">
         <PageHeader 
           titulo="Ficha de Visitante" 
           breadcrumb={['Utilitários', 'Recepção']} 
@@ -239,7 +239,7 @@ export default function FormularioVisitante({ onVoltar }) {
         {onVoltar && (
           <button
             onClick={onVoltar}
-            className="hidden sm:block px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-extrabold hover:bg-slate-50 transition cursor-pointer"
+            className="lg:hidden shrink-0 px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-xs font-extrabold hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer"
           >
             ← Voltar
           </button>
@@ -247,15 +247,20 @@ export default function FormularioVisitante({ onVoltar }) {
       </div>
 
       {/* Banner de Boas Vindas */}
-      <div className="relative rounded-[24px] overflow-hidden p-6 md:p-8 bg-gradient-to-br from-pink-900 via-[#4c0519] to-[#3b0764] text-white shadow-xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="space-y-3 max-w-xl text-center md:text-left">
+      <div className="relative rounded-[24px] p-6 md:p-8 bg-gradient-to-br from-pink-900 via-[#4c0519] to-[#3b0764] text-white shadow-xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="space-y-2.5 max-w-xl text-center md:text-left">
           <span className="text-[10px] font-black uppercase tracking-[0.25em] bg-rose-500/30 text-rose-200 px-3 py-1 rounded-full border border-rose-400/20">
             Recepção e Acolhimento
           </span>
-          <h2 className="text-xl md:text-2xl font-extrabold tracking-tight">Amar é Servir com Acolhimento</h2>
-          <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-medium">
-            Registre e gerencie a chegada de cada novo amigo da igreja. Essas informações nos ajudam a manter contato e integrá-los de forma calorosa.
-          </p>
+          <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
+            <h2 className="text-xl md:text-2xl font-extrabold tracking-tight">Amar é Servir com Acolhimento</h2>
+            <InfoTooltipButton
+              texto="Registre e gerencie a chegada de cada novo amigo da igreja. Essas informações nos ajudam a manter contato e integrá-los de forma calorosa."
+              size={16}
+              align="responsive"
+              variant="onDark"
+            />
+          </div>
         </div>
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shrink-0 text-center md:text-right max-w-[260px] hidden sm:block">
           <p className="text-xs italic text-rose-200 font-medium leading-relaxed">

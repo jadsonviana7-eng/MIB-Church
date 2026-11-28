@@ -44,8 +44,8 @@ export default function CalculadoraTributos() {
   const formatBRL = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 px-0 sm:px-6 pb-12 font-sans mx-[-3px] sm:mx-auto">
-      <div className="mx-[3px] sm:mx-0">
+    <div className="w-full pt-0 pb-12 space-y-6 font-sans">
+      <div>
         <PageHeader titulo="Calculadora de Tributos" breadcrumb={['Utilitários', 'Calculadora']} />
       </div>
 

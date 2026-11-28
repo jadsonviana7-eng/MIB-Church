@@ -1305,6 +1305,7 @@ export default function GeradorCertificados({ pessoas = [], onVoltar = null }) {
           subtitulo="Emita certificados oficiais da EDB (Ouro), Batismo nas Águas e Apresentação de Crianças em A4 Paisagem."
           breadcrumb={['Utilitários', 'Certificados']}
           onNavigate={() => onVoltar && onVoltar()}
+          onVoltar={onVoltar}
         />
       </div>
 

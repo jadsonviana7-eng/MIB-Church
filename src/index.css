@@ -1308,6 +1308,62 @@ html.dark .modulo-gestao-ministerial [style*="color:#c026d3"] {
    Solução para contraste vivo, feedback tátil e estética premium MIB
 ══════════════════════════════════════════════════════════════════════ */
 
+/* ── PADRÃO OFICIAL DE HOVER DO SISTEMA (MIB CHURCH) ── */
+/* Baseado no hover da lista de escalas do Módulo Ministerial */
+.mib-card-hover {
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.mib-card-hover:hover {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 6px 18px -2px rgba(37, 99, 235, 0.2), 0 2px 6px -1px rgba(37, 99, 235, 0.1) !important;
+  transform: translateY(-2px);
+}
+
+html.dark .mib-card-hover:hover {
+  background: linear-gradient(135deg, #1c3562 0%, #152646 100%) !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 6px 20px -2px rgba(37, 99, 235, 0.4), 0 2px 8px -1px rgba(37, 99, 235, 0.2) !important;
+  transform: translateY(-2px);
+}
+
+/* Hover elegante padrão para alternativas / pills selecionáveis */
+.mib-option-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.mib-option-hover:hover {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+  border-color: #3b82f6 !important;
+  color: #1d4ed8 !important;
+  box-shadow: 0 4px 12px -2px rgba(37, 99, 235, 0.22) !important;
+  transform: translateY(-1px);
+}
+
+html.dark .mib-option-hover:hover {
+  background: linear-gradient(135deg, #1e3a6e 0%, #172d56 100%) !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px -2px rgba(59, 130, 246, 0.38) !important;
+  transform: translateY(-1px);
+}
+
+.mib-option-selected {
+  background: linear-gradient(135deg, #2563eb 0%, #4338ca 100%) !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px -2px rgba(37, 99, 235, 0.45) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.mib-option-selected:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #3730a3 100%) !important;
+  border-color: #93c5fd !important;
+  box-shadow: 0 6px 18px -2px rgba(37, 99, 235, 0.55) !important;
+  transform: translateY(-1px);
+}
+
 /* 1. Cards de Eventos / Cultos (Lista Lateral Esquerda) */
 .card-evento-btn {
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;

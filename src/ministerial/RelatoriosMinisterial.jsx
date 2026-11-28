@@ -20,6 +20,7 @@ import {
 import { supabase } from '../supabaseClient';
 import { ministeriosService } from './services/ministeriosService';
 import { ministerialCache } from './ministerialCache';
+import { InfoTooltipButton } from '../ui';
 import { jsPDF } from 'jspdf';
 
 export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNavegarGlobal, hideHeader = false }) {
@@ -1605,8 +1606,14 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
                 <TrendingUp size={18} />
               </div>
               <div>
-                <h3 className="text-base font-black uppercase tracking-wider">Central de Perguntas Estratégicas</h3>
-                <p className="text-[11px] text-slate-400 mt-0.5">Visão analítica gerencial para tomada de decisão pastoral e coordenação.</p>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-base font-black uppercase tracking-wider">Central de Perguntas Estratégicas</h3>
+                  <InfoTooltipButton
+                    texto="Visão analítica gerencial para tomada de decisão pastoral e coordenação."
+                    size={14}
+                    variant="onDark"
+                  />
+                </div>
               </div>
             </div>
 
@@ -1660,8 +1667,14 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
               {activeQuestao === 'crescimento' && (
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-sm font-black text-white">Ministérios com Maior Expansão</h4>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Ranqueados pelo total de novos membros adicionados nos últimos 60 dias.</p>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-sm font-black text-white">Ministérios com Maior Expansão</h4>
+                      <InfoTooltipButton
+                        texto="Ranqueados pelo total de novos membros adicionados nos últimos 60 dias."
+                        size={14}
+                        variant="onDark"
+                      />
+                    </div>
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     {stats.rankingCrescimento.slice(0, 4).map((min) => (
@@ -1694,8 +1707,14 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
               {activeQuestao === 'sem_escalar' && (
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-sm font-black text-white">Voluntários sem Participações Recentes</h4>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Voluntários ativos integrados em equipes sem escalas há mais de 30 dias (ou nunca escalados).</p>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-sm font-black text-white">Voluntários sem Participações Recentes</h4>
+                      <InfoTooltipButton
+                        texto="Voluntários ativos integrados em equipes sem escalas há mais de 30 dias (ou nunca escalados)."
+                        size={14}
+                        variant="onDark"
+                      />
+                    </div>
                   </div>
                   <div className="max-h-[220px] overflow-y-auto pr-1 space-y-2 custom-scrollbar">
                     {stats.voluntarioSemEscala.map((vol) => (
@@ -1732,10 +1751,14 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
               {activeQuestao === 'sobrecarga' && (
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-sm font-black text-white">Sobrecarga de Voluntários no Mês</h4>
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      Fator calculado dividindo o total de escalas confirmadas pela quantidade de membros ativos. Fatores altos indicam que poucos voluntários estão trabalhando excessivamente.
-                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-sm font-black text-white">Sobrecarga de Voluntários no Mês</h4>
+                      <InfoTooltipButton
+                        texto="Fator calculado dividindo o total de escalas confirmadas pela quantidade de membros ativos. Fatores altos indicam que poucos voluntários estão trabalhando excessivamente."
+                        size={14}
+                        variant="onDark"
+                      />
+                    </div>
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     {stats.rankingSobrecarga.slice(0, 4).map((min) => (
@@ -1771,8 +1794,14 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
               {activeQuestao === 'lider_equipe' && (
                 <div className="space-y-4">
                   <div>
-                    <h4 className="text-sm font-black text-white">Líderes com Maiores Equipes</h4>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Total de membros individuais diferentes coordenados sob o comando de cada líder.</p>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-sm font-black text-white">Líderes com Maiores Equipes</h4>
+                      <InfoTooltipButton
+                        texto="Total de membros individuais diferentes coordenados sob o comando de cada líder."
+                        size={14}
+                        variant="onDark"
+                      />
+                    </div>
                   </div>
                   <div className="grid md:grid-cols-3 gap-4">
                     {stats.graficoTopLideres.slice(0, 6).map((item, index) => (
@@ -1814,10 +1843,13 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
               <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
                 <Users size={20} />
               </div>
-              <h3 className="font-bold text-slate-800 text-sm">Relatório Geral de Voluntários</h3>
-              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                Exporta uma lista completa estruturada de voluntários contendo nome, e-mail, telefone, cargo, ministérios e funções específicas correspondentes, agrupados por Ministério.
-              </p>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-bold text-slate-800 dark:text-white text-sm">Relatório Geral de Voluntários</h3>
+                <InfoTooltipButton
+                  texto="Exporta uma lista completa estruturada de voluntários contendo nome, e-mail, telefone, cargo, ministérios e funções específicas correspondentes, agrupados por Ministério."
+                  size={14}
+                />
+              </div>
             </div>
             <div className="mt-6 grid grid-cols-3 gap-2">
               <button
@@ -1856,10 +1888,13 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
               <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4">
                 <Calendar size={20} />
               </div>
-              <h3 className="font-bold text-slate-800 text-sm">Histórico Consolidado de Escalas</h3>
-              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                Tabela detalhada de todas as escalas cadastradas no sistema, incluindo o título do evento, data/hora, local, função escalada, voluntário atribuído e status de confirmação, agrupados por Ministério.
-              </p>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-bold text-slate-800 dark:text-white text-sm">Histórico Consolidado de Escalas</h3>
+                <InfoTooltipButton
+                  texto="Tabela detalhada de todas as escalas cadastradas no sistema, incluindo o título do evento, data/hora, local, função escalada, voluntário atribuído e status de confirmação, agrupados por Ministério."
+                  size={14}
+                />
+              </div>
             </div>
             <div className="mt-6 grid grid-cols-3 gap-2">
               <button
@@ -1898,10 +1933,13 @@ export default function RelatoriosMinisterial({ onNavegarTab, onVerMembro, onNav
               <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4 border border-amber-100">
                 <Calendar size={20} />
               </div>
-              <h3 className="font-bold text-slate-800 text-sm">Programação Mensal (Quadro Mural)</h3>
-              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                Gera um PDF diagramado e otimizado para impressão física e fixação no quadro de avisos ou mural de programação da igreja.
-              </p>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-bold text-slate-800 dark:text-white text-sm">Programação Mensal (Quadro Mural)</h3>
+                <InfoTooltipButton
+                  texto="Gera um PDF diagramado e otimizado para impressão física e fixação no quadro de avisos ou mural de programação da igreja."
+                  size={14}
+                />
+              </div>
 
               {/* Seletores de Período */}
               <div className="grid grid-cols-2 gap-3 mt-4">

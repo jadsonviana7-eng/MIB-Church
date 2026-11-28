@@ -3,13 +3,14 @@ import {
   Plus, Pencil, Trash2, X, ChevronRight, Eye, Info, Pin, Lightbulb,
   Music, Heart, Sparkles, Shield, Home, Flame, BookOpen, Users, 
   Compass, Clapperboard, Award, Mic, MessageSquare, Calendar, 
-  HelpingHand, Scroll, Smile, Globe, Video, Tv, Wrench, Hammer
+  HelpingHand, Scroll, Smile, Globe, Video, Tv, Wrench, Hammer,
+  LayoutGrid, List
 } from 'lucide-react';
 import { ministeriosService, clarearCorParaModoEscuro } from './services/ministeriosService';
-import { ministerialCache } from './ministerialCache';
+import { ministerialCache, salvarCacheMinisterios } from './ministerialCache';
 import { useIsDarkMode } from './hooks/useIsDarkMode';
 import MinistryDetails from './MinistryDetails';
-import { MinistryIcon } from '../ui';
+import { MinistryIcon, InfoTooltipButton } from '../ui';
 
 const DISPONIVEIS_ICONES = [
   { id: 'Music', label: 'Música/Louvor', icon: Music },
@@ -56,6 +57,22 @@ export default function MinisteriosManager({
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [selectedMinistryId, setSelectedMinistryId] = useState(initialSelectedMinistryId);
+  const [modoVisualizacao, setModoVisualizacao] = useState(() => {
+    try {
+      return localStorage.getItem('mib_ministerios_visualizacao') || 'blocos';
+    } catch {
+      return 'blocos';
+    }
+  });
+
+  function alterarModoVisualizacao(modo) {
+    setModoVisualizacao(modo);
+    try {
+      localStorage.setItem('mib_ministerios_visualizacao', modo);
+    } catch {
+      // ignore
+    }
+  }
 
   const [form, setForm] = useState({
     nome: '',
@@ -87,7 +104,7 @@ export default function MinisteriosManager({
   async function carregar() {
     try {
       const dados = await ministeriosService.listarMinisterios();
-      ministerialCache.ministerios = dados || [];
+      salvarCacheMinisterios(dados || []);
       setMinisterios(dados || []);
     } catch (error) {
       console.error('Erro ao carregar ministérios:', error);
@@ -172,13 +189,11 @@ export default function MinisteriosManager({
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         {!hideHeader ? (
-          <div>
+          <div className="flex items-center gap-2">
             <h2 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
               Ministérios
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Cadastre os ministérios ativos da igreja e configure suas equipes.
-            </p>
+            <InfoTooltipButton texto="Cadastre os ministérios ativos da igreja e configure suas equipes." size={16} />
           </div>
         ) : (
           <div className="flex items-center gap-2">
@@ -192,6 +207,38 @@ export default function MinisteriosManager({
         )}
 
         <div className="flex items-center gap-2 ml-auto">
+          {/* Alternador Blocos / Lista */}
+          <div className="inline-flex items-center p-1 rounded-xl bg-white dark:bg-[#17223b] border border-slate-200/90 dark:border-[#2b3954] shadow-2xs">
+            <button
+              type="button"
+              onClick={() => alterarModoVisualizacao('blocos')}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                modoVisualizacao === 'blocos'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+              }`}
+              title="Visualizar em blocos"
+              aria-label="Visualizar em blocos"
+            >
+              <LayoutGrid size={14} strokeWidth={2.4} />
+              <span className="hidden sm:inline">Blocos</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => alterarModoVisualizacao('lista')}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                modoVisualizacao === 'lista'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
+              }`}
+              title="Visualizar em lista"
+              aria-label="Visualizar em lista"
+            >
+              <List size={14} strokeWidth={2.4} />
+              <span className="hidden sm:inline">Lista</span>
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={() => setInfoModalOpen(true)}
@@ -215,84 +262,162 @@ export default function MinisteriosManager({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
-        {ministerios.map((m) => {
-          const corClara = clarearCorParaModoEscuro(m.cor_principal || '#2563eb');
-          return (
-            <div
-              key={m.id}
-              onClick={() => {
-                setSelectedMinistryId(m.id);
-                onMinisterioAtivoChange?.(m);
-              }}
-              className="bg-white dark:bg-[#17223b] rounded-2xl shadow-sm border border-slate-100/80 dark:border-[#2b3954] border-t-[4px] p-4 sm:p-5 cursor-pointer hover:shadow-md hover:border-slate-200 dark:hover:border-slate-500 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 flex flex-col justify-between group"
-              style={{ borderTopColor: isDark ? corClara : (m.cor_principal || '#2563eb') }}
-            >
-              <div>
-                <div className="flex justify-between items-start">
+      {ministerios.length === 0 ? (
+        <div className="bg-white dark:bg-[#17223b] rounded-2xl border-2 border-dashed border-slate-200/80 dark:border-[#2b3954] p-12 text-center text-slate-400 italic">
+          Nenhum ministério cadastrado. Clique no botão acima para adicionar o primeiro!
+        </div>
+      ) : modoVisualizacao === 'lista' ? (
+        <div className="space-y-2.5">
+          {ministerios.map((m) => {
+            const corClara = clarearCorParaModoEscuro(m.cor_principal || '#2563eb');
+            const corAtiva = isDark ? corClara : (m.cor_principal || '#2563eb');
+            return (
+              <div
+                key={m.id}
+                onClick={() => {
+                  setSelectedMinistryId(m.id);
+                  onMinisterioAtivoChange?.(m);
+                }}
+                className="bg-white dark:bg-[#17223b] rounded-2xl shadow-2xs border border-slate-100/90 dark:border-[#2b3954] border-l-[4px] px-4 py-3 cursor-pointer hover:shadow-md hover:border-slate-200 dark:hover:border-slate-500 transition-all duration-200 flex items-center justify-between gap-3 group"
+                style={{ borderLeftColor: corAtiva }}
+              >
+                <div className="flex items-center gap-3.5 min-w-0 flex-1">
                   <div
-                    className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shadow-xs shrink-0"
                     style={{
                       backgroundColor: isDark ? `${corClara}25` : (m.cor_principal || '#2563eb') + '15',
-                      color: isDark ? corClara : (m.cor_principal || '#2563eb'),
+                      color: corAtiva,
                       border: isDark ? `1px solid ${corClara}40` : undefined
                     }}
                   >
                     <MinistryIcon icone={m.icone} nome={m.nome} size={18} />
                   </div>
 
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="min-w-0 flex-1 flex items-center gap-1.5">
+                    <h3
+                      className="font-black text-xs sm:text-sm truncate nome-ministerio-contraste"
+                      style={{ color: isDark ? corClara : '#1e293b' }}
+                    >
+                      {m.nome}
+                    </h3>
+                    {m.descricao && (
+                      <InfoTooltipButton texto={m.descricao} size={14} />
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                  <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         editar(m);
                       }}
-                      className="p-1 sm:p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                      className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
                       title="Editar"
                     >
                       <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
                     <button
+                      type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         excluir(m.id);
                       }}
-                      className="p-1 sm:p-1.5 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                      className="p-1.5 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition cursor-pointer"
                       title="Excluir"
                     >
                       <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
                   </div>
+
+                  <div className="hidden md:flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors pl-2 border-l border-slate-100 dark:border-[#2b3954]">
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Equipe</span>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transform group-hover:translate-x-1 transition-all shrink-0" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
+          {ministerios.map((m) => {
+            const corClara = clarearCorParaModoEscuro(m.cor_principal || '#2563eb');
+            return (
+              <div
+                key={m.id}
+                onClick={() => {
+                  setSelectedMinistryId(m.id);
+                  onMinisterioAtivoChange?.(m);
+                }}
+                className="bg-white dark:bg-[#17223b] rounded-2xl shadow-sm border border-slate-100/80 dark:border-[#2b3954] border-t-[4px] p-4 sm:p-5 cursor-pointer hover:shadow-md hover:border-slate-200 dark:hover:border-slate-500 hover:-translate-y-1 hover:shadow-lg transition-all duration-200 flex flex-col justify-between group"
+                style={{ borderTopColor: isDark ? corClara : (m.cor_principal || '#2563eb') }}
+              >
+                <div>
+                  <div className="flex justify-between items-start">
+                    <div
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0"
+                      style={{
+                        backgroundColor: isDark ? `${corClara}25` : (m.cor_principal || '#2563eb') + '15',
+                        color: isDark ? corClara : (m.cor_principal || '#2563eb'),
+                        border: isDark ? `1px solid ${corClara}40` : undefined
+                      }}
+                    >
+                      <MinistryIcon icone={m.icone} nome={m.nome} size={18} />
+                    </div>
+
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          editar(m);
+                        }}
+                        className="p-1 sm:p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
+                        title="Editar"
+                      >
+                        <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          excluir(m.id);
+                        }}
+                        className="p-1 sm:p-1.5 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                        title="Excluir"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 sm:mt-4 flex items-center gap-1.5 min-w-0">
+                    <h3
+                      className="font-black text-xs sm:text-sm truncate nome-ministerio-contraste"
+                      style={{ color: isDark ? corClara : '#1e293b' }}
+                    >
+                      {m.nome}
+                    </h3>
+                    {m.descricao && (
+                      <InfoTooltipButton texto={m.descricao} size={14} />
+                    )}
+                  </div>
                 </div>
 
-                <h3
-                  className="font-black mt-3 sm:mt-4 text-xs sm:text-sm flex items-center gap-1.5 truncate nome-ministerio-contraste"
-                  style={{ color: isDark ? corClara : '#1e293b' }}
-                >
-                  {m.nome}
-                </h3>
-                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                  {m.descricao || 'Nenhuma descrição informada.'}
-                </p>
+                <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-50 dark:border-[#2b3954] flex items-center justify-between text-slate-400 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-wider flex items-center gap-1 truncate">
+                    <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    Ver Equipe & Funções
+                  </span>
+                  <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform shrink-0" />
+                </div>
               </div>
-
-              <div className="mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-slate-50 dark:border-[#2b3954] flex items-center justify-between text-slate-400 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-wider flex items-center gap-1 truncate">
-                  <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                  Ver Equipe & Funções
-                </span>
-                <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 transform group-hover:translate-x-1 transition-transform shrink-0" />
-              </div>
-            </div>
-          );
-        })}
-
-        {ministerios.length === 0 && (
-          <div className="col-span-full bg-white rounded-2xl border-2 border-dashed border-slate-200/80 p-12 text-center text-slate-400 italic">
-            Nenhum ministério cadastrado. Clique no botão acima para adicionar o primeiro!
-          </div>
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Modal de Cadastro/Edição */}
       {modalOpen && (
@@ -427,24 +552,24 @@ export default function MinisteriosManager({
       {/* Modal de Políticas de Acesso & Escalas */}
       {infoModalOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 bg-slate-900/50 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200"
           onClick={() => setInfoModalOpen(false)}
         >
           <div 
-            className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all animate-in zoom-in-95 duration-200"
+            className="bg-white dark:bg-[#131d31] rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 dark:border-[#2b3954] overflow-hidden transform transition-all animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header do Modal */}
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-blue-50/70 via-slate-50 to-indigo-50/70">
+            <div className="p-5 border-b border-slate-100 dark:border-[#2b3954] flex justify-between items-center bg-gradient-to-r from-blue-50/70 via-slate-50 to-indigo-50/70 dark:from-[#17223b] dark:via-[#1a2847] dark:to-[#17223b]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-600/25 border border-blue-400/30">
                   <Info size={20} />
                 </div>
                 <div>
-                  <h3 className="font-black text-slate-800 text-sm tracking-tight">
+                  <h3 className="font-black text-slate-800 dark:text-white text-sm tracking-tight">
                     Políticas de Acesso & Escalas
                   </h3>
-                  <p className="text-[11px] text-slate-500 font-medium">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                     Regras para liderança e permissões
                   </p>
                 </div>
@@ -452,7 +577,7 @@ export default function MinisteriosManager({
               <button
                 type="button"
                 onClick={() => setInfoModalOpen(false)}
-                className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition cursor-pointer"
+                className="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/80 flex items-center justify-center transition cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -460,13 +585,13 @@ export default function MinisteriosManager({
 
             {/* Conteúdo do Modal */}
             <div className="p-5 space-y-4 text-xs">
-              <div className="p-4 bg-blue-50/60 border border-blue-100 rounded-2xl space-y-2">
-                <h4 className="font-bold text-blue-950 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                  <Pin size={13} className="text-blue-600 shrink-0" />
+              <div className="p-4 bg-blue-50/60 dark:bg-blue-950/45 border border-blue-100 dark:border-blue-800/50 rounded-2xl space-y-2">
+                <h4 className="font-bold text-blue-950 dark:text-blue-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                  <Pin size={13} className="text-blue-600 dark:text-blue-400 shrink-0" />
                   Observação sobre Políticas de Acesso & Escalas
                 </h4>
-                <p className="text-slate-700 leading-relaxed font-medium">
-                  Se o <strong>Membro</strong> ou o <strong>Líder de Célula</strong> for cadastrado como <strong>Líder de algum ministério</strong>, a função{' '}
+                <p className="text-slate-700 dark:text-slate-200 leading-relaxed font-medium">
+                  Se o <strong className="text-slate-900 dark:text-white">Membro</strong> ou o <strong className="text-slate-900 dark:text-white">Líder de Célula</strong> for cadastrado como <strong className="text-slate-900 dark:text-white">Líder de algum ministério</strong>, a função{' '}
                   <span className="inline-flex items-center px-2 py-0.5 mx-0.5 rounded-md text-[10px] font-bold bg-blue-600 text-white shadow-2xs">
                     Escalar
                   </span>{' '}
@@ -474,20 +599,20 @@ export default function MinisteriosManager({
                 </p>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100/80 text-slate-600 text-[11px] leading-relaxed flex items-start gap-2">
-                <Lightbulb size={14} className="text-amber-500 shrink-0 mt-0.5" />
+              <div className="p-3 bg-slate-50 dark:bg-[#17223b] rounded-xl border border-slate-100/80 dark:border-[#2b3954] text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed flex items-start gap-2">
+                <Lightbulb size={14} className="text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
                 <span>
-                  <strong>Dica:</strong> Para conceder permissão de escala a um membro, basta adicioná-lo na liderança do respectivo ministério dentro dos detalhes do ministério.
+                  <strong className="text-slate-800 dark:text-white">Dica:</strong> Para conceder permissão de escala a um membro, basta adicioná-lo na liderança do respectivo ministério dentro dos detalhes do ministério.
                 </span>
               </div>
             </div>
 
             {/* Footer do Modal */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+            <div className="p-4 border-t border-slate-100 dark:border-[#2b3954] bg-slate-50/50 dark:bg-[#17223b]/80 flex justify-end">
               <button
                 type="button"
                 onClick={() => setInfoModalOpen(false)}
-                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-100 transition active:scale-95 cursor-pointer"
+                className="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-600/25 border border-blue-400/30 transition active:scale-95 cursor-pointer"
               >
                 Entendi
               </button>

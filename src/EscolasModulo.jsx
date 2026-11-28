@@ -854,7 +854,7 @@ export default function EscolasModulo({
               type="button"
               onClick={() => onNavigate('resumo')}
               title="Voltar para Escolas"
-              className="w-9 h-9 rounded-xl bg-white dark:bg-[#131d31] border border-slate-200 dark:border-[#24334f] text-slate-600 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1c2b4a] hover:border-blue-400 dark:hover:border-blue-500 flex items-center justify-center shadow-2xs transition cursor-pointer shrink-0"
+              className="w-9 h-9 rounded-xl !bg-transparent text-slate-600 dark:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center transition cursor-pointer shrink-0"
             >
               <ArrowLeft size={18} />
             </button>
@@ -864,7 +864,7 @@ export default function EscolasModulo({
               type="button"
               onClick={() => onNavigate('cursos')}
               title="Voltar para Cursos"
-              className="w-9 h-9 rounded-xl bg-white dark:bg-[#131d31] border border-slate-200 dark:border-[#24334f] text-slate-600 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1c2b4a] hover:border-blue-400 dark:hover:border-blue-500 flex items-center justify-center shadow-2xs transition cursor-pointer shrink-0"
+              className="w-9 h-9 rounded-xl !bg-transparent text-slate-600 dark:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center transition cursor-pointer shrink-0"
             >
               <ArrowLeft size={18} />
             </button>

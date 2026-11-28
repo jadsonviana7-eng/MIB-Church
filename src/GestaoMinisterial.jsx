@@ -16,10 +16,12 @@ import {
   ShieldAlert,
   Menu,
   X,
-  Music
+  Music,
+  Plus
 } from 'lucide-react';
 import RepertorioLouvor from './RepertorioLouvor';
 import { isLouvorMinistry } from './ministerial/services/ministeriosService';
+import { InfoTooltipButton } from './ui';
 
 export default function GestaoMinisterial(props) {
   const { submenu, onNavigate, membroLogado } = props;
@@ -35,6 +37,7 @@ export default function GestaoMinisterial(props) {
   const [filtroStatusEscala, setFiltroStatusEscala] = useState(null);
   const [filtroMesEscala, setFiltroMesEscala] = useState(null);
   const [filtroAnoEscala, setFiltroAnoEscala] = useState(null);
+  const [podeEscalarDesktop, setPodeEscalarDesktop] = useState(false);
 
   // Controle de recolhimento da coluna direita
   const [colunaRecolhida, setColunaRecolhida] = useState(() => {
@@ -98,7 +101,6 @@ export default function GestaoMinisterial(props) {
         id: 'config',
         label: 'Ministérios',
         titulo: 'Ministérios',
-        desc: 'Cadastre os ministérios ativos da igreja e configure suas equipes e funções.',
         menuDesc: 'Equipes, líderes e funções',
         icon: Settings
       },
@@ -106,7 +108,6 @@ export default function GestaoMinisterial(props) {
         id: 'escalas',
         label: 'Escalas',
         titulo: 'Escalas Ministeriais',
-        desc: 'Planejamento de cultos, eventos, distribuição de funções e escalas de voluntários.',
         menuDesc: 'Cultos, eventos e voluntários',
         icon: Calendar
       },
@@ -129,7 +130,6 @@ export default function GestaoMinisterial(props) {
         id: 'relatorios',
         label: 'Relatórios',
         titulo: 'Indicadores e Relatórios',
-        desc: 'Relatórios analíticos e indicadores de desempenho ministerial.',
         menuDesc: 'Estatísticas e dados',
         icon: BarChart3
       },
@@ -137,7 +137,6 @@ export default function GestaoMinisterial(props) {
         id: 'historico',
         label: 'Histórico',
         titulo: 'Histórico Ministerial',
-        desc: 'Rastreabilidade completa de movimentações, escalas e promoções de voluntários.',
         menuDesc: 'Registro de movimentações',
         icon: Clock
       }
@@ -154,20 +153,19 @@ export default function GestaoMinisterial(props) {
       {/* ── CABEÇALHO DO MÓDULO (OCULTO NA ABA DASHBOARD) ── */}
       {aba !== 'dashboard' && (
         <>
-          <div className="hidden md:block animate-in fade-in duration-300">
+          <div className="hidden md:flex items-center gap-2 animate-in fade-in duration-300">
             <h1 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
               {abaAtual.titulo || abaAtual.label}
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {abaAtual.desc}
-            </p>
+            {abaAtual.desc && <InfoTooltipButton texto={abaAtual.desc} size={16} />}
           </div>
 
-          {/* ── CARD BRANCO DE TÍTULO NO MOBILE (MESMA LARGURA DOS ELEMENTOS DA PÁGINA) ── */}
-          <div className="md:hidden w-full mb-4 bg-white dark:bg-[#17223b] px-4 py-3.5 rounded-b-2xl sm:rounded-b-3xl rounded-t-none border border-t-0 border-slate-200/90 dark:border-[#2b3954] shadow-2xs flex items-center justify-center">
+          {/* ── TÍTULO NO MOBILE SEM FUNDO ── */}
+          <div className="md:hidden w-full mb-2 py-1 flex items-center justify-center gap-1.5">
             <h1 className="text-sm font-black uppercase tracking-wider text-slate-800 dark:text-white text-center truncate">
               {abaAtual.titulo || abaAtual.label}
             </h1>
+            {abaAtual.desc && <InfoTooltipButton texto={abaAtual.desc} size={14} align="center" />}
           </div>
         </>
       )}
@@ -191,7 +189,7 @@ export default function GestaoMinisterial(props) {
                   : a.id === 'repertorio'
                     ? 'text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/40'
                     : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-[#1c2b4a]'
-                }`}
+                  }`}
                 title={a.label}
               >
                 <Icon size={18} strokeWidth={ativo ? 2.5 : 2} className="shrink-0 mb-1" />
@@ -222,6 +220,7 @@ export default function GestaoMinisterial(props) {
               initialFiltroMes={filtroMesEscala}
               initialFiltroAno={filtroAnoEscala}
               colunaRecolhida={colunaRecolhida}
+              onPodeEscalarChange={setPodeEscalarDesktop}
             />
           )}
           {aba === 'historico' && (
@@ -281,21 +280,17 @@ export default function GestaoMinisterial(props) {
 
         {/* ── PLACEHOLDER DE ESPAÇO PARA O MENU FIXO À DIREITA (DESKTOP) ── */}
         <div
-          className={`hidden lg:block shrink-0 transition-all duration-300 pointer-events-none ${
-            colunaRecolhida ? 'lg:w-20' : 'lg:w-64 xl:w-72'
-          }`}
+          className={`hidden lg:block shrink-0 transition-all duration-300 pointer-events-none ${colunaRecolhida ? 'lg:w-20' : 'lg:w-64 xl:w-72'
+            }`}
           aria-hidden="true"
         />
 
         {/* ── MENU DE NAVEGAÇÃO FIXO À DIREITA SEM ROLAGEM (DESKTOP) ── */}
         <aside
-          className={`hidden lg:block transition-all duration-300 fixed lg:right-10 z-30 ${
-            aba === 'dashboard' ? 'lg:top-16' : 'lg:top-[128px]'
-          } ${
-            colunaRecolhida ? 'lg:w-20' : 'lg:w-64 xl:w-72'
-          }`}
+          className={`hidden lg:block transition-all duration-300 fixed right-6 top-20 z-30 ${colunaRecolhida ? 'lg:w-20' : 'lg:w-64 xl:w-72'
+            }`}
         >
-          <div className="bg-white/95 dark:bg-[#17223b]/95 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md p-3.5 space-y-3 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-none">
+          <div className="bg-white/95 dark:bg-[#17223b]/95 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-[#2b3954] shadow-md p-3.5 space-y-3 max-h-[calc(100vh-6.5rem)] overflow-y-auto scrollbar-none">
             {/* Header da Coluna Lateral */}
             {colunaRecolhida ? (
               <div className="flex flex-col items-center pb-2 border-b border-slate-100 dark:border-[#2b3954] gap-2">
@@ -419,6 +414,23 @@ export default function GestaoMinisterial(props) {
               </div>
             )}
           </div>
+
+          {/* Botão Oficial Azul "Escalar" fixado abaixo do menu lateral direito (Desktop) */}
+          {aba === 'escalas' && podeEscalarDesktop && (
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new CustomEvent('mib-abrir-modal-escala'))}
+              title="Escalar Voluntários no Culto"
+              className={`mt-3 w-full group flex items-center justify-center ${colunaRecolhida ? 'p-3.5' : 'gap-2.5 px-5 py-3.5'} bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-2xl shadow-lg shadow-blue-600/35 hover:shadow-blue-600/55 border border-blue-400/40 ring-2 ring-blue-500/20 active:scale-95 transition-all duration-200 cursor-pointer font-black text-xs uppercase tracking-wider animate-in fade-in slide-in-from-top-2`}
+            >
+              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0 group-hover:rotate-90 transition-transform duration-300">
+                <Plus size={16} strokeWidth={3} className="text-white" />
+              </div>
+              {!colunaRecolhida && (
+                <span className="drop-shadow-xs truncate">Escalar</span>
+              )}
+            </button>
+          )}
         </aside>
       </div>
     </div>

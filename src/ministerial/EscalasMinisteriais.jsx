@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Calendar, Plus, X, Search, Check, AlertCircle, Share2, Printer, CheckCircle, XCircle, Trash2, ChevronLeft, ChevronRight, Pencil, Sparkles, Zap, UserCheck, RefreshCw, MessageCircle } from 'lucide-react';
 import { escalasService, limparTextoJustificativa } from './services/escalasService';
 import { autoEscalaService } from './services/autoEscalaService';
@@ -7,7 +7,7 @@ import { ministerialCache } from './ministerialCache';
 import { useIsDarkMode } from './hooks/useIsDarkMode';
 import { supabase } from '../supabaseClient';
 import { toPng } from 'html-to-image';
-import { MinistryIcon } from '../ui';
+import { MinistryIcon, InfoTooltipButton } from '../ui';
 
 export default function EscalasMinisteriais({
   membroLogado,
@@ -16,7 +16,8 @@ export default function EscalasMinisteriais({
   initialStatus = null,
   initialFiltroMes = null,
   initialFiltroAno = null,
-  colunaRecolhida = false
+  colunaRecolhida = false,
+  onPodeEscalarChange = null
 }) {
   const isDark = useIsDarkMode();
   const [eventos, setEventos] = useState(() => ministerialCache.eventos || []);
@@ -261,6 +262,30 @@ export default function EscalasMinisteriais({
   const permissaoLower = membroLogado?.permissao?.toLowerCase() || '';
   const isPerfilRestrito = ['membro', 'lider-celula', 'lider', 'supervisor'].includes(permissaoLower);
   const isMembroNormal = isPerfilRestrito && !isLiderMinisterio;
+
+  const abrirModalEscalaRef = useRef(null);
+  abrirModalEscalaRef.current = abrirModalEscala;
+
+  useEffect(() => {
+    const handleAbrirExterno = () => {
+      abrirModalEscalaRef.current?.();
+    };
+    window.addEventListener('mib-abrir-modal-escala', handleAbrirExterno);
+    return () => window.removeEventListener('mib-abrir-modal-escala', handleAbrirExterno);
+  }, []);
+
+  const podeExibirBotaoEscalar = !isMembroNormal && !modalEscala && !modalEvento && !modalGerador && !modalApontamento && !modalSubstituicao;
+
+  useEffect(() => {
+    if (typeof onPodeEscalarChange === 'function') {
+      onPodeEscalarChange(podeExibirBotaoEscalar);
+    }
+    return () => {
+      if (typeof onPodeEscalarChange === 'function') {
+        onPodeEscalarChange(false);
+      }
+    };
+  }, [podeExibirBotaoEscalar, onPodeEscalarChange]);
 
   const [modalGradeMobile, setModalGradeMobile] = useState(false);
 
@@ -2899,7 +2924,7 @@ export default function EscalasMinisteriais({
                       {eventoSelecionado.titulo}
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-1.5">
-                      <span className="font-bold text-slate-600 dark:text-slate-300">📅 {new Date(eventoSelecionado.data_evento).toLocaleDateString('pt-BR')}</span>
+                      <span className="font-bold text-slate-600 dark:text-slate-300">📅 {(() => { const info = obterInfoDataBrasilia(eventoSelecionado.data_evento); return `${info.diaNum}/${String(info.mesIndex + 1).padStart(2, '0')}/${info.ano}`; })()}</span>
                       <span>· ⏰ {obterHoraExibicao(eventoSelecionado)}</span>
                       <span>· 📍 {eventoSelecionado.local || 'Templo Sede'}</span>
                     </p>
@@ -3881,12 +3906,12 @@ export default function EscalasMinisteriais({
             {/* Cabeçalho */}
             <div className="flex justify-between items-center p-4 sm:p-6 border-b border-slate-100 bg-slate-50/50">
               <div>
-                <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  🗓️ Gerador Mensal de Eventos
-                </h3>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  Planeje e gere em lote toda a programação de cultos do mês.
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                    🗓️ Gerador Mensal de Eventos
+                  </h3>
+                  <InfoTooltipButton texto="Planeje e gere em lote toda a programação de cultos do mês." size={14} />
+                </div>
               </div>
               <button type="button" onClick={() => setModalGerador(false)} className="text-slate-400 hover:text-slate-600 cursor-pointer">
                 <X size={20} />
@@ -3967,12 +3992,15 @@ export default function EscalasMinisteriais({
                   {/* Bloco Esquerdo: Cultos Semanais Padrão */}
                   <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col space-y-4">
                     <div className="border-b border-slate-50 pb-2">
-                      <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                        🔄 Cultos Padrão Semanais
-                      </h4>
-                      <p className="text-[9px] text-slate-400 mt-0.5">
-                        Define os cultos recorrentes da semana (serão replicados para todo o mês selecionado).
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                          🔄 Cultos Padrão Semanais
+                        </h4>
+                        <InfoTooltipButton
+                          texto="Define os cultos recorrentes da semana (serão replicados para todo o mês selecionado)."
+                          size={13}
+                        />
+                      </div>
                     </div>
 
                     {/* Lista de Cultos Padrão */}
@@ -4062,12 +4090,15 @@ export default function EscalasMinisteriais({
                   {/* Bloco Direito: Eventos Customizados */}
                   <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col space-y-4">
                     <div className="border-b border-slate-50 pb-2">
-                      <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                        ⭐ Programações e Eventos Especiais
-                      </h4>
-                      <p className="text-[9px] text-slate-400 mt-0.5">
-                        Acrescente congressos, seminários, rede de homens/mulheres ou outras datas pontuais.
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                          ⭐ Programações e Eventos Especiais
+                        </h4>
+                        <InfoTooltipButton
+                          texto="Acrescente congressos, seminários, rede de homens/mulheres ou outras datas pontuais."
+                          size={13}
+                        />
+                      </div>
                     </div>
 
                     {/* Lista de Eventos Customizados */}
@@ -4178,12 +4209,15 @@ export default function EscalasMinisteriais({
                 <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-xs flex flex-col space-y-4 h-full">
                   <div className="border-b border-slate-50 pb-2 flex justify-between items-center">
                     <div>
-                      <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                        📋 Prévia dos Eventos a serem Criados
-                      </h4>
-                      <p className="text-[9px] text-slate-400 mt-0.5">
-                        Marque ou desmarque os eventos abaixo para refinar o lote antes de salvar de fato no sistema.
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                          📋 Prévia dos Eventos a serem Criados
+                        </h4>
+                        <InfoTooltipButton
+                          texto="Marque ou desmarque os eventos abaixo para refinar o lote antes de salvar de fato no sistema."
+                          size={13}
+                        />
+                      </div>
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg">
                       Total Selecionado: {previaEventos.filter(p => p.incluir).length}
@@ -4685,12 +4719,16 @@ export default function EscalasMinisteriais({
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400 bg-indigo-950/60 px-2.5 py-0.5 rounded-full border border-indigo-800/60 inline-block mb-1.5">
                   Gestão Ministerial · Frequência
                 </span>
-                <h3 className="text-base sm:text-lg font-black tracking-tight flex items-center gap-2 text-white">
-                  <span>📋</span> Apontamento de Presença
-                </h3>
-                <p className="text-xs text-slate-300 mt-0.5">
-                  Registre o comparecimento, falta justificada ou negativação do voluntário.
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-base sm:text-lg font-black tracking-tight flex items-center gap-2 text-white">
+                    <span>📋</span> Apontamento de Presença
+                  </h3>
+                  <InfoTooltipButton
+                    texto="Registre o comparecimento, falta justificada ou negativação do voluntário."
+                    size={14}
+                    variant="onDark"
+                  />
+                </div>
               </div>
               <button
                 type="button"
@@ -4966,12 +5004,16 @@ export default function EscalasMinisteriais({
                 <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-950/60 px-2.5 py-0.5 rounded-full border border-amber-800/60 inline-block mb-1.5">
                   Gestão Ministerial · Substituição
                 </span>
-                <h3 className="text-base sm:text-lg font-black tracking-tight flex items-center gap-2 text-white">
-                  <span>🔄</span> Substituir Voluntário
-                </h3>
-                <p className="text-xs text-slate-300 mt-0.5">
-                  Escala um substituto preservando o registro original para relatórios e rankings.
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <h3 className="text-base sm:text-lg font-black tracking-tight flex items-center gap-2 text-white">
+                    <span>🔄</span> Substituir Voluntário
+                  </h3>
+                  <InfoTooltipButton
+                    texto="Escala um substituto preservando o registro original para relatórios e rankings."
+                    size={14}
+                    variant="onDark"
+                  />
+                </div>
               </div>
               <button
                 type="button"
@@ -5222,12 +5264,12 @@ export default function EscalasMinisteriais({
         </div>
       )}
 
-      {/* Botão Oficial Azul "Escalar" Fixo Flutuante */}
-      {!isMembroNormal && !modalEscala && !modalEvento && !modalGerador && !modalApontamento && !modalSubstituicao && (
+      {/* Botão Oficial Azul "Escalar" Fixo Flutuante (apenas Mobile/Tablet; no Desktop fica abaixo do menu lateral direito) */}
+      {podeExibirBotaoEscalar && (
         <button
           type="button"
           onClick={() => abrirModalEscala()}
-          className="fixed bottom-20 md:bottom-8 right-5 md:right-8 z-40 group flex items-center gap-2.5 px-5 py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-full shadow-2xl shadow-blue-600/40 hover:shadow-blue-600/60 border border-blue-400/40 ring-4 ring-blue-500/20 active:scale-95 hover:scale-105 transition-all duration-300 cursor-pointer font-black text-xs uppercase tracking-wider animate-in fade-in slide-in-from-bottom-4"
+          className="lg:hidden fixed bottom-20 md:bottom-8 right-5 md:right-8 z-40 group flex items-center gap-2.5 px-5 py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-600 text-white rounded-full shadow-2xl shadow-blue-600/40 hover:shadow-blue-600/60 border border-blue-400/40 ring-4 ring-blue-500/20 active:scale-95 hover:scale-105 transition-all duration-300 cursor-pointer font-black text-xs uppercase tracking-wider animate-in fade-in slide-in-from-bottom-4"
           title="Escalar Voluntários no Culto"
         >
           <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center group-hover:rotate-90 transition-transform duration-300">

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { 
   Music, Heart, Sparkles, Shield, Home, Flame, BookOpen, Users, 
   Compass, Clapperboard, Award, Mic, MessageSquare, Calendar, 
-  HelpingHand, Scroll, Smile, Globe, Video, Tv, Wrench, Hammer, Settings
+  HelpingHand, Scroll, Smile, Globe, Video, Tv, Wrench, Hammer, Settings,
+  Info, X, ChevronLeft
 } from 'lucide-react';
 import { 
   PieChart, 
@@ -62,13 +63,101 @@ export function Card({ children, className = '', style = {}, ...props }) {
   );
 }
 
+export function InfoTooltipButton({ texto, size = 15, align = 'left', variant = 'default', className = '' }) {
+  const [aberto, setAberto] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (!aberto) return;
+    const handleOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setAberto(false);
+      }
+    };
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setAberto(false);
+    };
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+      document.removeEventListener('keydown', handleKey);
+    };
+  }, [aberto]);
+
+  if (!texto) return null;
+
+  const posClass =
+    align === 'center'
+      ? 'left-1/2 -translate-x-1/2'
+      : align === 'right'
+        ? 'right-0'
+        : align === 'responsive'
+          ? 'left-1/2 -translate-x-1/2 md:left-0 md:translate-x-0'
+          : 'left-0';
+
+  const btnStyle =
+    variant === 'onDark'
+      ? aberto
+        ? 'text-white bg-white/25 ring-2 ring-white/30'
+        : 'text-white/75 hover:text-white hover:bg-white/15'
+      : aberto
+        ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/70 ring-2 ring-blue-500/25'
+        : 'text-slate-400 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/80 dark:hover:bg-blue-950/50';
+
+  return (
+    <span ref={containerRef} className={`relative inline-flex items-center align-middle ${className}`}>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setAberto((prev) => !prev);
+        }}
+        title="Ver descrição"
+        aria-label="Ver descrição"
+        aria-expanded={aberto}
+        className={`inline-flex items-center justify-center w-6 h-6 rounded-full transition-all cursor-pointer shrink-0 active:scale-95 ${btnStyle}`}
+      >
+        <Info size={size} strokeWidth={2.3} />
+      </button>
+
+      {aberto && (
+        <div
+          role="dialog"
+          onClick={(e) => e.stopPropagation()}
+          className={`absolute ${posClass} top-full mt-2 z-50 w-72 sm:w-80 max-w-[85vw] bg-white dark:bg-[#17223b] border border-slate-200/90 dark:border-[#2b3954] rounded-2xl shadow-xl shadow-slate-900/10 dark:shadow-black/50 p-3.5 text-left animate-in fade-in zoom-in-95 duration-150`}
+        >
+          <div className="flex items-start justify-between gap-2.5">
+            <div className="flex items-start gap-2 min-w-0">
+              <Info size={14} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+              <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-200 font-medium normal-case tracking-normal">
+                {texto}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setAberto(false)}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-0.5 rounded-lg transition cursor-pointer shrink-0"
+              aria-label="Fechar descrição"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+    </span>
+  );
+}
+
 export function CardHeader({ titulo, subtitulo, children, className = '' }) {
   return (
     <div
       className={`card-header flex flex-wrap items-center justify-between gap-3 border-b border-[#0095ff]/15 bg-slate-50/50 dark:bg-slate-800/80 dark:border-slate-700 ${className}`.trim()}
       style={{ fontFamily: "var(--font-body)" }}
     >
-      <div>
+      <div className="flex items-center gap-1.5 min-w-0">
         {titulo && (
           <h3 
             className="text-base font-bold text-[var(--text-heading)] dark:text-white tracking-tight" 
@@ -77,14 +166,7 @@ export function CardHeader({ titulo, subtitulo, children, className = '' }) {
             {titulo}
           </h3>
         )}
-        {subtitulo && (
-          <p 
-            className="text-xs text-[var(--text-muted)] dark:text-slate-400 mt-0.5"
-            style={{ fontFamily: "var(--font-body)", fontWeight: 400 }}
-          >
-            {subtitulo}
-          </p>
-        )}
+        {subtitulo && <InfoTooltipButton texto={subtitulo} size={14} />}
       </div>
       {children}
     </div>
@@ -377,13 +459,26 @@ export function Recentes({ titulo, itens, render }) {
   );
 }
 
-export function PageHeader({ titulo, subtitulo, breadcrumb = [], onNavigate, children }) {
+export function PageHeader({ titulo, subtitulo, breadcrumb = [], onNavigate, onVoltar, children }) {
   return (
     <div className="mb-6 xl:mb-2 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between pt-0 w-full">
-      <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 w-full md:w-auto">
-        <div className="flex flex-col w-full md:w-auto bg-white dark:bg-slate-800 border border-t-0 border-slate-200/90 dark:border-slate-700 md:bg-transparent md:dark:bg-transparent md:border-0 rounded-t-none rounded-b-2xl sm:rounded-b-3xl md:rounded-none px-4 py-3.5 md:p-0 shadow-2xs md:shadow-none text-center md:text-left items-center md:items-start">
-          <h2 className="mt-0 text-sm sm:text-base md:text-3xl xl:text-[18px] font-black uppercase md:normal-case tracking-wider md:tracking-tight text-slate-800 dark:text-white text-center md:text-left">{titulo}</h2>
-          {subtitulo && <p className="mt-1 md:mt-2 text-[11px] md:text-sm text-[var(--text-muted)] dark:text-slate-400 max-w-3xl text-center md:text-left">{subtitulo}</p>}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
+        <div className="flex flex-col w-full md:w-auto py-1 md:py-0 text-center md:text-left items-center md:items-start">
+          <div className="inline-flex items-center justify-center md:justify-start gap-2 max-w-full">
+            {onVoltar && (
+              <button
+                type="button"
+                onClick={onVoltar}
+                title="Voltar"
+                aria-label="Voltar"
+                className="w-8 h-8 rounded-xl !bg-transparent hover:bg-slate-200/60 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-center transition-all active:scale-95 cursor-pointer shrink-0"
+              >
+                <ChevronLeft size={18} strokeWidth={2.5} />
+              </button>
+            )}
+            <h2 className="mt-0 text-sm sm:text-base md:text-3xl xl:text-[18px] font-black uppercase md:normal-case tracking-wider md:tracking-tight text-slate-800 dark:text-white text-center md:text-left">{titulo}</h2>
+            {subtitulo && <InfoTooltipButton texto={subtitulo} size={15} align="responsive" />}
+          </div>
         </div>
         {breadcrumb.length > 0 && (
           <nav className="hidden md:flex items-center gap-2 text-[11px] font-bold tracking-tight text-slate-400" aria-label="Breadcrumb">

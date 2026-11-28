@@ -1059,6 +1059,7 @@ export default function GeradorDocumentos({ pessoas = [], membroLogado = null, o
           subtitulo="Emita ofícios timbrados, atas, declarações e termos de casamento religioso prontos para impressão ou PDF."
           breadcrumb={['Utilitários', 'Gerador de Documentos']}
           onNavigate={() => onVoltar && onVoltar()}
+          onVoltar={onVoltar}
         />
       </div>
 

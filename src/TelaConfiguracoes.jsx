@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
-import { Card, CardHeader, PageHeader } from './ui';
+import { Card, CardHeader, PageHeader, InfoTooltipButton } from './ui';
 import {
   mascaraTelefone,
   mascaraCNPJ,
@@ -628,16 +628,14 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
   const abaAtualObj = abasConfig.find((a) => a.id === abaAtiva) || abasConfig[0];
 
   return (
-    <div className="w-full max-w-full sm:max-w-5xl space-y-5 px-2">
+    <div className="w-full space-y-4 pb-12">
       <div className={mobileTelaAberta ? 'hidden md:block' : 'block'}>
-        <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-transparent">
-          <div className="text-center sm:text-left">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-transparent">
+          <div className="flex items-center justify-center sm:justify-start gap-2">
             <h2 className="text-lg sm:text-2xl font-black tracking-tight text-slate-800 dark:text-white">
               {t[idioma].configuracoes}
             </h2>
-            <p className="mt-1 text-xs sm:text-sm text-[var(--text-muted)] dark:text-slate-400 max-w-3xl">
-              {t[idioma].subtitulo}
-            </p>
+            <InfoTooltipButton texto={t[idioma].subtitulo} size={16} align="responsive" />
           </div>
           <div className="flex justify-center sm:justify-end shrink-0">
             <button
@@ -728,9 +726,12 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
-        {/* NAVEGAÇÃO POR ABAS - Sidebar apenas no desktop (md+) */}
-        <div className="hidden md:block md:col-span-3 bg-white dark:bg-[#17223b] border border-slate-100 dark:border-[#2b3954] rounded-2xl p-2.5 shadow-3xs space-y-1">
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] lg:grid-cols-[260px_1fr] gap-6 items-start">
+        {/* PLACEHOLDER DE ESPAÇO PARA O MENU FIXO À ESQUERDA (DESKTOP) */}
+        <div className="hidden md:block pointer-events-none" aria-hidden="true" />
+
+        {/* NAVEGAÇÃO POR ABAS - Menu fixo no desktop alinhado ao topo do conteúdo */}
+        <div className="hidden md:block fixed left-20 top-[116px] z-30 w-[240px] lg:w-[260px] max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-none bg-white/95 dark:bg-[#17223b]/95 backdrop-blur-md border border-slate-200/80 dark:border-[#2b3954] rounded-2xl p-2.5 shadow-md space-y-1">
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-3.5 py-2">
             {t[idioma].categorias}
           </p>
@@ -772,7 +773,7 @@ export default function TelaConfiguracoes({ membroLogado, onFechar }) {
         </div>
 
         {/* PAINEL DE CONTEÚDO (no mobile aparece apenas quando uma categoria é clicada) */}
-        <div className={`${mobileTelaAberta ? 'block' : 'hidden md:block'} md:col-span-9 space-y-4`}>
+        <div className={`${mobileTelaAberta ? 'block' : 'hidden md:block'} min-w-0 space-y-4`}>
 
           {/* ── ABA 1: INSTITUCIONAL ── */}
           {abaAtiva === 'institucional' && (

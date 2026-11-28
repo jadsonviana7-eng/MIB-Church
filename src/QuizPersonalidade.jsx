@@ -199,10 +199,10 @@ function OptionPill({ value, label, selected, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] transition-all cursor-pointer whitespace-nowrap active:scale-95 ${
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] cursor-pointer whitespace-nowrap active:scale-95 border ${
         selected
-          ? 'font-bold bg-blue-700 dark:bg-blue-600 text-white border border-blue-700 dark:border-blue-500 shadow-sm'
-          : 'font-medium bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'
+          ? 'font-bold mib-option-selected'
+          : 'font-medium bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 mib-option-hover'
       }`}
     >
       <span
@@ -220,10 +220,10 @@ function OptionPill({ value, label, selected, onClick }) {
 function QuestionCard({ question, answer, onChange }) {
   return (
     <div
-      className={`rounded-2xl p-4 sm:p-5 transition-all duration-200 border ${
+      className={`rounded-2xl p-4 sm:p-5 border mib-card-hover ${
         answer
           ? 'bg-white dark:bg-slate-900 border-blue-200 dark:border-blue-900/60 shadow-xs ring-1 ring-blue-500/10 dark:ring-blue-500/20'
-          : 'bg-white dark:bg-slate-900/70 border-slate-150 dark:border-slate-800/80 hover:border-slate-200 dark:hover:border-slate-700'
+          : 'bg-white dark:bg-slate-900/70 border-slate-200/80 dark:border-slate-800/80 shadow-2xs'
       }`}
     >
       <p className="text-xs sm:text-[13px] font-semibold text-slate-700 dark:text-slate-200 mb-3 leading-relaxed flex items-start gap-2">
@@ -451,9 +451,9 @@ export default function QuizPersonalidade({ usuarioLogado }) {
   // ── RESULT VIEW ────────────────────────────────────────────────────────
   if (showResult) {
     return (
-      <div className="quiz-temperamento-container mx-[-3px] sm:mx-auto px-0 w-full max-w-[760px] animate-in fade-in duration-300">
+      <div className="quiz-temperamento-container w-full pt-0 pb-12 animate-in fade-in duration-300">
         {/* Header */}
-        <div className="mx-[3px] sm:mx-0 p-6 sm:p-7 rounded-[22px] mb-5 text-white relative overflow-hidden bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 dark:from-slate-900 dark:via-blue-950 dark:to-slate-900 border border-blue-700/40 dark:border-blue-900/50 shadow-md">
+        <div className="p-6 sm:p-7 rounded-[22px] mb-5 text-white relative overflow-hidden bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 dark:from-slate-900 dark:via-blue-950 dark:to-slate-900 border border-blue-700/40 dark:border-blue-900/50 shadow-md">
           <div className="absolute -right-5 -top-5 opacity-10 pointer-events-none">
             <IconBrain />
           </div>
@@ -554,9 +554,9 @@ export default function QuizPersonalidade({ usuarioLogado }) {
 
   // ── QUIZ VIEW ──────────────────────────────────────────────────────────
   return (
-    <div className="quiz-temperamento-container mx-[-3px] sm:mx-auto px-0 w-full max-w-[680px] animate-in fade-in duration-300">
+    <div className="quiz-temperamento-container w-full pt-0 pb-12 animate-in fade-in duration-300">
       {/* Header Card */}
-      <div className="mx-[3px] sm:mx-0 p-6 sm:p-7 rounded-[22px] mb-6 text-white bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 dark:from-slate-900 dark:via-blue-950 dark:to-slate-900 border border-blue-700/40 dark:border-blue-900/50 shadow-md">
+      <div className="p-6 sm:p-7 rounded-[22px] mb-6 text-white bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 dark:from-slate-900 dark:via-blue-950 dark:to-slate-900 border border-blue-700/40 dark:border-blue-900/50 shadow-md">
         <div className="flex items-center gap-3 mb-2.5">
           <div className="w-11 h-11 rounded-xl bg-white/15 dark:bg-blue-600/30 text-white dark:text-blue-300 border border-white/20 dark:border-blue-500/30 flex items-center justify-center shrink-0">
             <IconBrain />

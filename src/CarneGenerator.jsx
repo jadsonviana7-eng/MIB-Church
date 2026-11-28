@@ -993,9 +993,9 @@ export default function CarneGenerator({ pessoaIdInicial = null, inscricaoIdInic
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-12">
-      <div className="carne-print-page max-w-7xl mx-auto pt-0 px-0 pb-3 sm:px-6 sm:pb-6 space-y-6 print:p-0 print:max-w-none mx-[-3px] sm:mx-auto">
+      <div className="carne-print-page w-full pt-0 pb-3 sm:pb-6 space-y-6 print:p-0 print:max-w-none">
         {/* Cabeçalho */}
-        <div className="print:hidden mx-[3px] sm:mx-0">
+        <div className="print:hidden">
           <PageHeader
             titulo="Gerador de Carnê"
             onNavigate={onVoltar}

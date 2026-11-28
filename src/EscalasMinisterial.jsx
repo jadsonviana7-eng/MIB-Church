@@ -103,7 +103,7 @@ const exportStyles = `
 `;
 
 // ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
-export default function EscalasMinisterial() {
+export default function EscalasMinisterial({ onVoltar }) {
   // Permite que o usuário adicione escalas personalizadas em runtime
   const [configEscalas, setConfigEscalas] = useState(() => {
     try {
@@ -573,6 +573,19 @@ export default function EscalasMinisterial() {
         className="rounded-2xl px-4 sm:px-6 py-4 sm:py-5 flex items-center gap-3 sm:gap-4 shadow-lg"
         style={{ background: `linear-gradient(135deg, ${cor.bg}, ${cor.accent})` }}
       >
+        {onVoltar && (
+          <button
+            type="button"
+            onClick={onVoltar}
+            title="Voltar"
+            aria-label="Voltar"
+            className="w-9 h-9 rounded-xl !bg-transparent hover:bg-white/15 flex items-center justify-center text-white transition cursor-pointer active:scale-95 flex-shrink-0"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+        )}
         {config?.iconUrl ? (
           <img src={config.iconUrl} alt={tipo} className="w-10 h-10 sm:w-12 sm:h-12 object-contain rounded-xl bg-white/10 p-2 flex-shrink-0" />
         ) : config?.iconSvg ? (

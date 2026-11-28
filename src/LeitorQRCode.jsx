@@ -140,8 +140,8 @@ export default function LeitorQRCode({ onVoltar }) {
   }
 
   return (
-    <div className="max-w-xl mx-auto pt-0 px-0 pb-12 sm:px-6 space-y-6 mx-[-3px] sm:mx-auto">
-      <div className="mx-[3px] sm:mx-0">
+    <div className="w-full pt-0 pb-12 space-y-6">
+      <div>
         <PageHeader titulo="Leitor de Carnê" breadcrumb={['Utilitários', 'Leitor QR']} onNavigate={onVoltar} />
       </div>
 

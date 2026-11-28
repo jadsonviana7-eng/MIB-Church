@@ -2,12 +2,32 @@ import { supabase } from '../supabaseClient';
 import { ministeriosService } from './services/ministeriosService';
 import { escalasService } from './services/escalasService';
 
+function lerCacheSessao(chave) {
+  try {
+    const raw = sessionStorage.getItem(chave);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function salvarCacheMinisterios(lista) {
+  const dados = lista || [];
+  ministerialCache.ministerios = dados;
+  try {
+    sessionStorage.setItem('mib_cache_ministerios', JSON.stringify(dados));
+  } catch {
+    // ignore quota errors
+  }
+}
+
 // Cache em memória compartilhado entre todas as páginas do Módulo Ministerial
 // Permite abertura instantânea (stale-while-revalidate) ao alternar entre abas.
 export const ministerialCache = {
   dashboard: null,
   consolidados: null,
-  ministerios: null,
+  ministerios: lerCacheSessao('mib_cache_ministerios'),
+  detalhesPorMinisterio: {},
   eventos: null,
   escalasPorEvento: {},
   minhasEscalasPorMembro: {},
@@ -29,7 +49,7 @@ export function prefetchModuloMinisterial(membroId = null) {
       .then((res) => { if (res) ministerialCache.consolidados = res; })
       .catch(() => {}),
     ministeriosService.listarMinisterios()
-      .then((res) => { if (res) ministerialCache.ministerios = res; })
+      .then((res) => { if (res) salvarCacheMinisterios(res); })
       .catch(() => {}),
     escalasService.listarEventos()
       .then((res) => { if (res) ministerialCache.eventos = res; })

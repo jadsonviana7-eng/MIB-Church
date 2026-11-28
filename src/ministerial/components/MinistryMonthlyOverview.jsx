@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { escalasService } from '../services/escalasService';
 import { supabase } from '../../supabaseClient';
+import { InfoTooltipButton } from '../../ui';
 
 const NOMES_MESES = [
   'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -477,12 +478,15 @@ export default function MinistryMonthlyOverview({ ministerio, onVoltar }) {
                 {ministerio?.nome}
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight mt-1 flex items-center gap-2">
-              <Calendar size={22} className="text-blue-600 shrink-0" /> {NOMES_MESES[filtroMes]} de {filtroAno}
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Visão geral de todos os voluntários escalados e disparos de confirmação via WhatsApp.
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+                <Calendar size={22} className="text-blue-600 shrink-0" /> {NOMES_MESES[filtroMes]} de {filtroAno}
+              </h2>
+              <InfoTooltipButton
+                texto="Visão geral de todos os voluntários escalados e disparos de confirmação via WhatsApp."
+                size={15}
+              />
+            </div>
           </div>
 
           {/* Controles de Mês/Ano */}

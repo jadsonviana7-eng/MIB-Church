@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { utilitariosCache } from './utilitariosCache';
+import { InfoTooltipButton } from './ui';
 import {
   Music,
   Calendar,
@@ -1486,7 +1487,7 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 <button
                   type="button"
                   onClick={onVoltar}
-                  className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 shadow-xs transition cursor-pointer shrink-0 active:scale-95"
+                  className="inline-flex items-center justify-center w-9 h-9 rounded-xl !bg-transparent hover:bg-slate-200/60 dark:hover:bg-slate-800/60 text-slate-600 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition cursor-pointer shrink-0 active:scale-95"
                   title="Voltar"
                 >
                   <ChevronLeft size={20} strokeWidth={2.5} />
@@ -1500,6 +1501,10 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                   <h1 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-slate-100 tracking-tight">
                     Repertório de Louvor
                   </h1>
+                  <InfoTooltipButton
+                    texto="Planejamento musical dos cultos com biblioteca de músicas e sugestões inteligentes."
+                    size={16}
+                  />
                   {statusBanco && !statusBanco.conectado && (
                     <button
                       type="button"
@@ -1512,9 +1517,6 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                     </button>
                   )}
                 </div>
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                  Planejamento musical dos cultos com biblioteca de músicas e sugestões inteligentes.
-                </p>
               </div>
             </div>
           </div>
@@ -3243,17 +3245,21 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
               </div>
 
               {/* Destaque Inteligente */}
-              <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 text-white shadow-xl relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div className="space-y-1.5 max-w-xl">
                   <span className="px-2.5 py-0.5 rounded-full bg-blue-500/30 text-blue-200 text-[10px] font-black uppercase tracking-wider border border-blue-400/20">
                     Sugestor Automático Ativo
                   </span>
-                  <h3 className="text-lg sm:text-xl font-black">
-                    Monte repertórios balanceados sem repetições cansativas
-                  </h3>
-                  <p className="text-xs text-blue-100/80 leading-relaxed font-medium">
-                    O algoritmo analisa o histórico de cultos salvos e sugere automaticamente músicas conhecidas pela igreja intercaladas com canções que não são cantadas há semanas.
-                  </p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-lg sm:text-xl font-black">
+                      Monte repertórios balanceados sem repetições cansativas
+                    </h3>
+                    <InfoTooltipButton
+                      texto="O algoritmo analisa o histórico de cultos salvos e sugere automaticamente músicas conhecidas pela igreja intercaladas com canções que não são cantadas há semanas."
+                      size={16}
+                      variant="onDark"
+                    />
+                  </div>
                 </div>
 
                 <button
@@ -3350,13 +3356,17 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
         </div>
 
 
-        {/* ── COLUNA FIXA/STICKY À DIREITA (DESKTOP) (QUANDO NÃO EMBUTIDO) ── */}
+        {/* ── PLACEHOLDER + COLUNA FIXA À DIREITA (DESKTOP) (QUANDO NÃO EMBUTIDO) ── */}
         {!hideSidebar && (
-          <aside
-            className={`hidden lg:block shrink-0 transition-all duration-300 lg:sticky lg:top-4 z-20 ${colunaRecolhida ? 'lg:w-16' : 'lg:w-60 xl:w-64'
-              }`}
-          >
-            <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-sm p-3.5 space-y-3">
+          <>
+            <div
+              className={`hidden lg:block shrink-0 transition-all duration-300 pointer-events-none ${colunaRecolhida ? 'lg:w-16' : 'lg:w-60 xl:w-64'}`}
+              aria-hidden="true"
+            />
+            <aside
+              className={`hidden lg:block transition-all duration-300 fixed right-6 top-20 z-30 ${colunaRecolhida ? 'lg:w-16' : 'lg:w-60 xl:w-64'}`}
+            >
+              <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-md p-3.5 space-y-3 max-h-[calc(100vh-6.5rem)] overflow-y-auto scrollbar-none">
               {/* Header da Coluna Lateral */}
               {colunaRecolhida ? (
                 <div className="flex flex-col items-center pb-2 border-b border-slate-100 dark:border-slate-800 gap-2">
@@ -3507,7 +3517,8 @@ export default function RepertorioLouvor({ onVoltar, hideHeader = false, hideSid
                 </div>
               )}
             </div>
-          </aside>
+            </aside>
+          </>
         )}
       </div>
 

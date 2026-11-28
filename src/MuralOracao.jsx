@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from './supabaseClient';
 import { utilitariosCache } from './utilitariosCache';
-import { Card, PageHeader, Avatar } from './ui';
+import { Card, PageHeader, Avatar, InfoTooltipButton } from './ui';
 import { Clock, CheckCircle2, Heart } from 'lucide-react';
 
 export default function MuralOracao() {
@@ -68,7 +68,7 @@ export default function MuralOracao() {
 
   if (carregando) {
     return (
-      <div className="max-w-6xl mx-auto pt-0 px-4 pb-12 sm:pt-0 sm:px-6 space-y-6 text-center py-20">
+      <div className="w-full pt-0 pb-12 space-y-6 text-center py-20">
         <div className="animate-spin inline-block w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full mb-4" />
         <p className="text-slate-500 font-bold text-sm">Carregando mural de orações...</p>
       </div>
@@ -76,8 +76,8 @@ export default function MuralOracao() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto pt-0 px-0 pb-12 sm:px-6 space-y-6 mx-[-3px] sm:mx-auto">
-      <div className="mx-[3px] sm:mx-0">
+    <div className="w-full pt-0 pb-12 space-y-6">
+      <div>
         <PageHeader 
           titulo="Mural de Orações" 
           breadcrumb={['Admin', 'Oração']} 
@@ -85,15 +85,20 @@ export default function MuralOracao() {
       </div>
 
       {/* Intro Banner */}
-      <div className="relative rounded-[24px] overflow-hidden p-6 md:p-8 bg-gradient-to-br from-indigo-950 via-[#1e1b4b] to-[#0f172a] text-white shadow-xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="space-y-3 max-w-xl text-center md:text-left">
+      <div className="relative rounded-[24px] p-6 md:p-8 bg-gradient-to-br from-indigo-950 via-[#1e1b4b] to-[#0f172a] text-white shadow-xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="space-y-2.5 max-w-xl text-center md:text-left">
           <span className="text-[10px] font-black uppercase tracking-[0.25em] bg-indigo-500/30 text-indigo-200 px-3 py-1 rounded-full border border-indigo-400/20">
             Painel de Intercessão
           </span>
-          <h2 className="text-xl md:text-2xl font-extrabold tracking-tight">Clamor pelos Nossos Irmãos</h2>
-          <p className="text-xs md:text-sm text-slate-200 leading-relaxed font-medium">
-            Acompanhe as necessidades da igreja. Interceda, ore e marque os pedidos como concluídos quando a resposta chegar, fortalecendo a nossa fé comunitária.
-          </p>
+          <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
+            <h2 className="text-xl md:text-2xl font-extrabold tracking-tight">Clamor pelos Nossos Irmãos</h2>
+            <InfoTooltipButton
+              texto="Acompanhe as necessidades da igreja. Interceda, ore e marque os pedidos como concluídos quando a resposta chegar, fortalecendo a nossa fé comunitária."
+              size={16}
+              align="responsive"
+              variant="onDark"
+            />
+          </div>
         </div>
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4 shrink-0 text-center md:text-right max-w-[260px]">
           <p className="text-xs italic text-indigo-200 font-medium leading-relaxed">
